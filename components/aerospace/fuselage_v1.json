@@ -1,0 +1,36 @@
+{
+  "name": "fuselage_v1",
+  "category": "aerospace",
+  "description": "Parametric fuselage with elliptical cross-section and tapering nose/tail",
+  "parameters": {
+    "length": {
+      "param_type": "Float",
+      "default": {"Float": 60.0},
+      "min": 30.0,
+      "max": 120.0,
+      "description": "Total fuselage length"
+    },
+    "diameter": {
+      "param_type": "Float",
+      "default": {"Float": 8.0},
+      "min": 2.0,
+      "max": 20.0,
+      "description": "Maximum diameter"
+    },
+    "nose_ratio": {
+      "param_type": "Float",
+      "default": {"Float": 0.7},
+      "min": 0.3,
+      "max": 1.0,
+      "description": "Nose taper ratio"
+    },
+    "tail_ratio": {
+      "param_type": "Float",
+      "default": {"Float": 0.5},
+      "min": 0.3,
+      "max": 1.0,
+      "description": "Tail taper ratio"
+    }
+  },
+  "script_template": "let fuselage = fuselage_parametric(#{length}, #{diameter}, #{nose_ratio}, #{tail_ratio});\nfuselage"
+}

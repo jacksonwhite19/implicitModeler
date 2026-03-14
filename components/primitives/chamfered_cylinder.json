@@ -1,0 +1,29 @@
+{
+  "name": "chamfered_cylinder",
+  "category": "primitives",
+  "description": "Cylinder with chamfered (rounded) top and bottom edges",
+  "parameters": {
+    "radius": {
+      "param_type": "Float",
+      "default": {"Float": 5.0},
+      "min": 1.0,
+      "max": 50.0,
+      "description": "Cylinder radius"
+    },
+    "height": {
+      "param_type": "Float",
+      "default": {"Float": 15.0},
+      "min": 2.0,
+      "max": 100.0,
+      "description": "Cylinder height"
+    },
+    "chamfer": {
+      "param_type": "Float",
+      "default": {"Float": 1.0},
+      "min": 0.1,
+      "max": 5.0,
+      "description": "Chamfer/rounding size"
+    }
+  },
+  "script_template": "let inner = cylinder(#{radius} - #{chamfer}, #{height} - 2.0 * #{chamfer});\nlet result = offset(inner, #{chamfer});\nresult"
+}

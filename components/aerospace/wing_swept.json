@@ -1,0 +1,55 @@
+{
+  "name": "wing_swept",
+  "category": "aerospace",
+  "description": "Swept wing with NACA airfoil, taper, and dihedral",
+  "parameters": {
+    "designation": {
+      "param_type": "String",
+      "default": {"String": "2412"},
+      "description": "NACA 4-digit designation"
+    },
+    "root_chord": {
+      "param_type": "Float",
+      "default": {"Float": 12.0},
+      "min": 5.0,
+      "max": 30.0,
+      "description": "Root chord length"
+    },
+    "tip_chord": {
+      "param_type": "Float",
+      "default": {"Float": 6.0},
+      "min": 2.0,
+      "max": 20.0,
+      "description": "Tip chord length"
+    },
+    "span": {
+      "param_type": "Float",
+      "default": {"Float": 40.0},
+      "min": 20.0,
+      "max": 80.0,
+      "description": "Wing span"
+    },
+    "sweep": {
+      "param_type": "Float",
+      "default": {"Float": 8.0},
+      "min": 0.0,
+      "max": 30.0,
+      "description": "Sweep angle (degrees)"
+    },
+    "dihedral": {
+      "param_type": "Float",
+      "default": {"Float": 2.0},
+      "min": -5.0,
+      "max": 10.0,
+      "description": "Dihedral angle (degrees)"
+    },
+    "twist": {
+      "param_type": "Float",
+      "default": {"Float": -1.5},
+      "min": -5.0,
+      "max": 5.0,
+      "description": "Washout twist (degrees)"
+    }
+  },
+  "script_template": "let wing = wing_with_airfoil(#{designation}, #{root_chord}, #{tip_chord}, #{span}, #{sweep}, #{dihedral}, #{twist});\nwing"
+}

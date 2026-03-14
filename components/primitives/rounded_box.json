@@ -1,0 +1,36 @@
+{
+  "name": "rounded_box",
+  "category": "primitives",
+  "description": "Box with rounded edges using smooth union",
+  "parameters": {
+    "width": {
+      "param_type": "Float",
+      "default": {"Float": 20.0},
+      "min": 1.0,
+      "max": 100.0,
+      "description": "Box width (X)"
+    },
+    "height": {
+      "param_type": "Float",
+      "default": {"Float": 15.0},
+      "min": 1.0,
+      "max": 100.0,
+      "description": "Box height (Y)"
+    },
+    "depth": {
+      "param_type": "Float",
+      "default": {"Float": 10.0},
+      "min": 1.0,
+      "max": 100.0,
+      "description": "Box depth (Z)"
+    },
+    "radius": {
+      "param_type": "Float",
+      "default": {"Float": 2.0},
+      "min": 0.1,
+      "max": 10.0,
+      "description": "Edge rounding radius"
+    }
+  },
+  "script_template": "let box = box_(#{width}, #{height}, #{depth});\nlet corners = sphere(#{radius});\nlet result = smooth_union(box, corners, #{radius});\nresult"
+}

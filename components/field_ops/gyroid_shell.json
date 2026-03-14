@@ -1,0 +1,36 @@
+{
+  "name": "gyroid_shell",
+  "category": "field_ops",
+  "description": "Hollow sphere filled with gyroid lattice",
+  "parameters": {
+    "outer_radius": {
+      "param_type": "Float",
+      "default": {"Float": 30.0},
+      "min": 10.0,
+      "max": 100.0,
+      "description": "Outer sphere radius"
+    },
+    "shell_thickness": {
+      "param_type": "Float",
+      "default": {"Float": 2.0},
+      "min": 0.5,
+      "max": 5.0,
+      "description": "Shell wall thickness"
+    },
+    "cell_size": {
+      "param_type": "Float",
+      "default": {"Float": 5.0},
+      "min": 2.0,
+      "max": 10.0,
+      "description": "Gyroid cell size"
+    },
+    "strut_thickness": {
+      "param_type": "Float",
+      "default": {"Float": 0.8},
+      "min": 0.3,
+      "max": 2.0,
+      "description": "Lattice strut thickness"
+    }
+  },
+  "script_template": "let outer_sphere = sphere(#{outer_radius});\nlet inner_sphere = sphere(#{outer_radius} - #{shell_thickness});\nlet shell = subtract(outer_sphere, inner_sphere);\nlet lattice = gyroid(#{cell_size}, #{strut_thickness});\nlet lattice_fill = intersect(inner_sphere, lattice);\nlet result = union(shell, lattice_fill);\nresult"
+}

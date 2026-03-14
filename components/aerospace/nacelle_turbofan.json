@@ -1,0 +1,36 @@
+{
+  "name": "nacelle_turbofan",
+  "category": "aerospace",
+  "description": "Turbofan engine nacelle with inlet and exhaust",
+  "parameters": {
+    "length": {
+      "param_type": "Float",
+      "default": {"Float": 10.0},
+      "min": 5.0,
+      "max": 20.0,
+      "description": "Nacelle length"
+    },
+    "diameter": {
+      "param_type": "Float",
+      "default": {"Float": 4.0},
+      "min": 2.0,
+      "max": 8.0,
+      "description": "Maximum diameter"
+    },
+    "inlet_diameter": {
+      "param_type": "Float",
+      "default": {"Float": 3.5},
+      "min": 1.5,
+      "max": 7.0,
+      "description": "Inlet diameter"
+    },
+    "exhaust_diameter": {
+      "param_type": "Float",
+      "default": {"Float": 2.5},
+      "min": 1.0,
+      "max": 6.0,
+      "description": "Exhaust diameter"
+    }
+  },
+  "script_template": "let nacelle = nacelle(#{length}, #{diameter}, #{inlet_diameter}, #{exhaust_diameter});\nnacelle"
+}

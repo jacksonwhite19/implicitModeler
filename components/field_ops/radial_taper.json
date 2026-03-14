@@ -1,0 +1,29 @@
+{
+  "name": "radial_taper",
+  "category": "field_ops",
+  "description": "Sphere with variable thickness shell (thick at center, thin at poles)",
+  "parameters": {
+    "radius": {
+      "param_type": "Float",
+      "default": {"Float": 20.0},
+      "min": 10.0,
+      "max": 50.0,
+      "description": "Sphere radius"
+    },
+    "min_thickness": {
+      "param_type": "Float",
+      "default": {"Float": 1.0},
+      "min": 0.5,
+      "max": 5.0,
+      "description": "Minimum shell thickness (at poles)"
+    },
+    "max_thickness": {
+      "param_type": "Float",
+      "default": {"Float": 4.0},
+      "min": 1.0,
+      "max": 10.0,
+      "description": "Maximum shell thickness (at equator)"
+    }
+  },
+  "script_template": "let base_sphere = sphere(#{radius});\nlet thickness_field = radial_field(0.0, 0.0, 0.0, 0.0, #{radius}, #{max_thickness}, #{min_thickness});\nlet result = shell_with_field(base_sphere, thickness_field);\nresult"
+}
