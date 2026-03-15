@@ -87,6 +87,18 @@ pub struct SdfGrid {
     pub bounds_max: Vec3,
 }
 
+impl SdfGrid {
+    /// Clone all grid data into an owned struct (for background threads).
+    pub fn clone_data(&self) -> SdfGrid {
+        SdfGrid {
+            data:       self.data.clone(),
+            resolution: self.resolution,
+            bounds_min: self.bounds_min,
+            bounds_max: self.bounds_max,
+        }
+    }
+}
+
 pub struct RaymarchRenderer {
     pipeline:               wgpu::RenderPipeline,
     uniform_buffer:         wgpu::Buffer,

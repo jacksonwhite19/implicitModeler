@@ -19,6 +19,8 @@ use crate::scripting::MassPoint;
 use crate::mesh::compute_volume;
 use crate::ui::spline_editor::{SplineEditorState, show_spline_editor};
 use crate::ui::spine_editor::{SpineEditorState, SpineEditorTarget, show_spine_editor};
+use crate::ui::project_tree::{ProjectTree, show_project_tree, find_name_in_script,
+                               count_occurrences, rename_in_script};
 use crate::sdf::spine::LongitudinalSplines;
 use crate::settings::AppSettings;
 
@@ -150,6 +152,48 @@ pub struct App {
     settings:                AppSettings,
     /// Whether the Settings modal is open.
     settings_open:           bool,
+
+    // Floating panel visibility
+    section_view_open:       bool,
+    thickness_open:          bool,
+    fea_open:                bool,
+
+    // Project tree panel
+    project_tree:            ProjectTree,
+    /// Character offset in script_text to place the cursor on the next frame.
+    pending_cursor_offset:   Option<usize>,
+    /// Line number (0-indexed) to scroll the editor to on the next frame.
+    pending_scroll_line:     Option<usize>,
+
+    // Measurement tools
+    measure_open:            bool,
+    measurements:            crate::analysis::MeasurementResults,
+    measure_density:         f32,   // g/cm³
+    measurements_stale:      bool,
+    measure_running:         bool,
+    measure_receiver:        Option<std::sync::mpsc::Receiver<(f32, f32, glam::Vec3)>>,
+    cs_axis:                 crate::project::Axis,
+    cs_position:             f32,
+    cs_running:              bool,
+    cs_receiver:             Option<std::sync::mpsc::Receiver<f32>>,
+    /// Which point is being picked: Some(0) = A, Some(1) = B.
+    pick_mode:               Option<u8>,
+    point_a:                 Option<glam::Vec3>,
+    point_b:                 Option<glam::Vec3>,
+    dist_kind:               crate::analysis::DistanceMeasureKind,
+    /// Custom projection vector (user-editable, normalized on use).
+    custom_proj_vec:         glam::Vec3,
+    show_cg_marker:          bool,
+    /// Last known viewport rect, used for viewport picking.
+    last_viewport_rect:      egui::Rect,
+    /// Next auto-label index for saved distance measurements.
+    distance_label_idx:      usize,
+
+    // Script editor enhancements
+    /// Autocomplete popup state.
+    autocomplete_state:      crate::ui::AutocompleteState,
+    /// Scroll offset of the code editor last frame (used for autocomplete positioning).
+    last_editor_scroll_y:    f32,
 }
 
 impl App {
@@ -255,6 +299,32 @@ impl App {
             fea_show_conditions:    true,
             settings:               AppSettings::load(),
             settings_open:          false,
+            section_view_open:      false,
+            thickness_open:         false,
+            fea_open:               false,
+            project_tree:           ProjectTree::default(),
+            pending_cursor_offset:  None,
+            pending_scroll_line:    None,
+            measure_open:           false,
+            measurements:           crate::analysis::MeasurementResults::default(),
+            measure_density:        1.24,
+            measurements_stale:     false,
+            measure_running:        false,
+            measure_receiver:       None,
+            cs_axis:                crate::project::Axis::X,
+            cs_position:            0.0,
+            cs_running:             false,
+            cs_receiver:            None,
+            pick_mode:              None,
+            point_a:                None,
+            point_b:                None,
+            dist_kind:              crate::analysis::DistanceMeasureKind::Distance3D,
+            custom_proj_vec:        glam::Vec3::X,
+            show_cg_marker:         false,
+            last_viewport_rect:     egui::Rect::NOTHING,
+            distance_label_idx:     1,
+            autocomplete_state:     crate::ui::AutocompleteState::default(),
+            last_editor_scroll_y:   0.0,
         };
 
         // Try to restore from auto-save
@@ -472,6 +542,40 @@ let lattice = conformal_gyroid_field(
 );
 union(structure, lattice)
 "),
+            ("Project Tree Demo", "\
+// Project Tree Demo
+// Shows Components, FEA Conditions, and Mass points in the project tree.
+// Run this script, then inspect the Project panel on the left.
+
+// ── Components ────────────────────────────────────────────────────────────────
+let battery  = component_named(\"battery\",  box_(80.0, 30.0, 20.0), 5.0, 180.0);
+let avionics = component_named(\"avionics\", box_(36.0, 36.0,  8.0), 3.0,  25.0);
+let motor    = component_named(\"motor\",    cylinder(15.0, 30.0),   5.0,  45.0);
+
+let battery  = place(battery,   0.0,  0.0,  0.0);
+let avionics = place(avionics, 50.0,  0.0,  0.0);
+let motor    = place(motor,   -70.0,  0.0,  0.0);
+
+// ── Structural shell ──────────────────────────────────────────────────────────
+let envelope = smooth_union(keepout(battery), keepout(avionics), 8.0);
+let envelope = smooth_union(envelope, keepout(motor), 8.0);
+let shell    = offset(envelope, 2.0);
+
+// ── FEA boundary conditions ───────────────────────────────────────────────────
+let mount_region = box_(10.0, 10.0, 10.0);
+let mount_region = translate(mount_region, -70.0, 0.0, 0.0);
+fixed_support(mount_region, \"motor_mount\");
+
+let aero_load = box_(80.0, 40.0, 5.0);
+let aero_load = translate(aero_load, 0.0, 0.0, 15.0);
+force_load(aero_load, \"aero_lift\", 0.0, 0.0, -50.0);
+
+gravity_load(0.0, 0.0, -9810.0);
+
+// ── OML ───────────────────────────────────────────────────────────────────────
+let aero = fuselage_parametric(200.0, 60.0, 0.7, 0.5);
+smooth_union(aero, shell, 12.0)
+"),
         ]
     }
 
@@ -572,6 +676,20 @@ union(structure, lattice)
                 self.error_message = None;
                 self.eval_time_ms = Some(eval_time);
                 self.mesh_time_ms = Some(mesh_time);
+
+                // Mark measurements stale (model changed).
+                if self.measurements.volume_mm3.is_some() {
+                    self.measurements_stale = true;
+                }
+
+                // Rebuild project tree from latest data.
+                let profile_names: Vec<String> = self.profiles.keys().cloned().collect();
+                self.project_tree.rebuild(
+                    &self.mass_points,
+                    &self.fea_setup,
+                    &profile_names,
+                    &self.splines,
+                );
             }
             Err(e) => {
                 self.error_message = Some(e);
@@ -1018,6 +1136,43 @@ impl eframe::App for App {
             ctx.request_repaint_after(std::time::Duration::from_millis(100));
         }
 
+        // Poll background measurement analysis thread
+        if self.measure_running {
+            if let Some(ref rx) = self.measure_receiver {
+                if let Ok((vol, sa, com)) = rx.try_recv() {
+                    let mass = vol / 1000.0 * self.measure_density;  // mm³ → cm³ → g
+                    self.measurements.volume_mm3       = Some(vol);
+                    self.measurements.surface_area_mm2 = Some(sa);
+                    self.measurements.center_of_mass   = Some(com);
+                    self.measurements.print_mass_g     = Some(mass);
+                    self.measurements_stale            = false;
+                    self.measure_running               = false;
+                    self.measure_receiver              = None;
+                }
+            }
+            ctx.request_repaint_after(std::time::Duration::from_millis(100));
+        }
+
+        // Poll background cross-section thread
+        if self.cs_running {
+            if let Some(ref rx) = self.cs_receiver {
+                if let Ok(area) = rx.try_recv() {
+                    let label = format!("{:?}={:.1}", self.cs_axis, self.cs_position);
+                    self.measurements.cross_sections.push(
+                        crate::analysis::CrossSectionMeasurement {
+                            label,
+                            axis:     self.cs_axis.clone(),
+                            position: self.cs_position,
+                            area_mm2: area,
+                        }
+                    );
+                    self.cs_running  = false;
+                    self.cs_receiver = None;
+                }
+            }
+            ctx.request_repaint_after(std::time::Duration::from_millis(100));
+        }
+
         // Poll background thickness analysis thread
         if self.thickness_running {
             let mut done = false;
@@ -1228,6 +1383,22 @@ impl eframe::App for App {
 
                 ui.separator();
 
+                let sv_label = if self.section_view_open { "✂ Section ✓" } else { "✂ Section" };
+                if ui.button(sv_label).clicked() { self.section_view_open = !self.section_view_open; }
+
+                let th_label = if self.thickness_open { "🔍 Thickness ✓" } else { "🔍 Thickness" };
+                if ui.button(th_label).clicked() { self.thickness_open = !self.thickness_open; }
+
+                let fea_label = if self.fea_open { "🔬 FEA ✓" } else { "🔬 FEA" };
+                if ui.button(fea_label).clicked() { self.fea_open = !self.fea_open; }
+
+                let measure_label = if self.measure_open { "📐 Measure ✓" } else { "📐 Measure" };
+                if ui.button(measure_label).clicked() {
+                    self.measure_open = !self.measure_open;
+                }
+
+                ui.separator();
+
                 // Quick-access run button in menu bar
                 let run_label = if self.is_processing { "⏳ Running…" } else { "▶ Run  F5" };
                 if ui.button(run_label).clicked() && !self.is_processing {
@@ -1279,6 +1450,49 @@ impl eframe::App for App {
                 });
             });
         });
+
+        // Project tree panel (leftmost)
+        egui::SidePanel::left("project_tree_panel")
+            .default_width(220.0)
+            .min_width(120.0)
+            .resizable(true)
+            .show(ctx, |ui| {
+                ui.heading("Project");
+                ui.separator();
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    let interaction = show_project_tree(ui, &mut self.project_tree);
+
+                    // Jump to script definition on node click
+                    if let Some(name) = interaction.jump_to_name {
+                        if let Some((offset, line)) = find_name_in_script(&self.script_text, &name) {
+                            self.pending_cursor_offset = Some(offset);
+                            self.pending_scroll_line   = Some(line);
+                        }
+                    }
+
+                    // Start rename on right-click
+                    if let Some((node_id, old_name)) = interaction.start_rename {
+                        let count = count_occurrences(&self.script_text, &old_name);
+                        self.project_tree.rename = Some(crate::ui::project_tree::RenameState {
+                            node_id,
+                            old_name: old_name.clone(),
+                            buffer: old_name,
+                            needs_confirm: count > 3,
+                            occurrence_count: count,
+                        });
+                    }
+
+                    // Apply confirmed rename immediately
+                    if let Some((old_name, new_name)) = interaction.confirmed_rename {
+                        let new_script = rename_in_script(&self.script_text, &old_name, &new_name);
+                        if new_script != self.script_text {
+                            self.script_text = new_script;
+                            self.push_history();
+                            self.execute_script();
+                        }
+                    }
+                });
+            });
 
         // Left panel: Code editor (or spline editor when active_profile is Some)
         egui::SidePanel::left("code_panel")
@@ -1498,20 +1712,159 @@ impl eframe::App for App {
                     .size(11.0)
                     .color(egui::Color32::GRAY));
 
-                egui::ScrollArea::vertical().show(ui, |ui| {
+                // Scroll to target line if a tree node was clicked.
+                let line_height = ui.text_style_height(&egui::TextStyle::Monospace);
+                let scroll_area = if let Some(line) = self.pending_scroll_line.take() {
+                    let visible_rows = (ui.available_height() / line_height).floor() as usize;
+                    let target_y = (line.saturating_sub(visible_rows / 2)) as f32 * line_height;
+                    egui::ScrollArea::vertical().vertical_scroll_offset(target_y)
+                } else {
+                    egui::ScrollArea::vertical()
+                };
+
+                // Intercept autocomplete navigation keys before TextEdit sees them.
+                let (ac_up, ac_down, ac_confirm, ac_dismiss) = if self.autocomplete_state.visible {
+                    ctx.input_mut(|i| {
+                        let up      = i.consume_key(egui::Modifiers::NONE, egui::Key::ArrowUp);
+                        let down    = i.consume_key(egui::Modifiers::NONE, egui::Key::ArrowDown);
+                        let confirm = i.consume_key(egui::Modifiers::NONE, egui::Key::Tab)
+                                   || i.consume_key(egui::Modifiers::NONE, egui::Key::Enter);
+                        let dismiss = i.consume_key(egui::Modifiers::NONE, egui::Key::Escape);
+                        (up, down, confirm, dismiss)
+                    })
+                } else {
+                    (false, false, false, false)
+                };
+
+                if ac_dismiss { self.autocomplete_state.visible = false; }
+                if ac_up && self.autocomplete_state.selected_index > 0 {
+                    self.autocomplete_state.selected_index -= 1;
+                }
+                if ac_down {
+                    let max = self.autocomplete_state.match_indices.len().saturating_sub(1);
+                    if self.autocomplete_state.selected_index < max {
+                        self.autocomplete_state.selected_index += 1;
+                    }
+                }
+
+                // Build syntax-highlighting layouter (no per-frame allocation in the common case:
+                // egui caches galleys internally keyed by LayoutJob content).
+                let mut layouter = |ui: &egui::Ui, text: &str, wrap_width: f32| {
+                    let font_id = ui.style()
+                        .text_styles[&egui::TextStyle::Monospace]
+                        .clone();
+                    let mut job = crate::ui::syntax::highlight_script(text, font_id);
+                    job.wrap.max_width = wrap_width;
+                    ui.fonts(|f| f.layout_job(job))
+                };
+
+                let editor_top = ui.cursor().min.y;
+                let scroll_out = scroll_area.show(ui, |ui| {
                     let response = ui.add(
                         egui::TextEdit::multiline(&mut self.script_text)
                             .desired_width(f32::INFINITY)
                             .desired_rows(30)
                             .code_editor()
-                            .font(egui::TextStyle::Monospace),
+                            .font(egui::TextStyle::Monospace)
+                            .layouter(&mut layouter),
                     );
+
+                    // Apply pending cursor (from project tree node click).
+                    if let Some(offset) = self.pending_cursor_offset.take() {
+                        let mut state = egui::text_edit::TextEditState::load(ctx, response.id)
+                            .unwrap_or_default();
+                        let cursor = egui::text::CCursor::new(offset);
+                        state.cursor.set_char_range(Some(egui::text::CCursorRange::one(cursor)));
+                        state.store(ctx, response.id);
+                        response.request_focus();
+                    }
 
                     // Push to history when editor loses focus and text changed
                     if response.lost_focus() && response.changed() {
                         self.push_history();
                     }
+
+                    // Update autocomplete from cursor position.
+                    if let Some(te_state) = egui::text_edit::TextEditState::load(ctx, response.id) {
+                        if let Some(range) = te_state.cursor.char_range() {
+                            let cursor_offset = range.primary.index;
+
+                            // Apply confirmed autocomplete from previous frame.
+                            if ac_confirm && self.autocomplete_state.visible {
+                                let sel_list_i = self.autocomplete_state.selected_index;
+                                if let Some(&global_i) = self.autocomplete_state.match_indices.get(sel_list_i) {
+                                    let new_cursor = crate::ui::autocomplete::apply_completion(
+                                        &mut self.script_text,
+                                        self.autocomplete_state.token_start,
+                                        cursor_offset,
+                                        &crate::ui::autocomplete::ALL_COMPLETIONS[global_i],
+                                    );
+                                    // Move cursor to inside the parens.
+                                    let mut st = egui::text_edit::TextEditState::load(ctx, response.id)
+                                        .unwrap_or_default();
+                                    let c = egui::text::CCursor::new(new_cursor);
+                                    st.cursor.set_char_range(Some(egui::text::CCursorRange::one(c)));
+                                    st.store(ctx, response.id);
+                                    self.autocomplete_state.visible = false;
+                                }
+                            } else {
+                                // Compute anchor position for autocomplete popup.
+                                let cursor_line = self.script_text[..cursor_offset.min(self.script_text.len())]
+                                    .chars().filter(|&c| c == '\n').count();
+                                let anchor = egui::pos2(
+                                    response.rect.min.x + 20.0,
+                                    editor_top + (cursor_line + 1) as f32 * line_height
+                                        - self.last_editor_scroll_y,
+                                );
+                                crate::ui::autocomplete::update_completions(
+                                    &mut self.autocomplete_state,
+                                    &self.script_text,
+                                    cursor_offset,
+                                    anchor,
+                                );
+                            }
+
+                            // Signature tooltip anchor (above cursor line).
+                            let cursor_line = self.script_text[..cursor_offset.min(self.script_text.len())]
+                                .chars().filter(|&c| c == '\n').count();
+                            let tip_anchor = egui::pos2(
+                                response.rect.min.x + 20.0,
+                                editor_top + cursor_line as f32 * line_height
+                                    - self.last_editor_scroll_y - 28.0,
+                            );
+                            crate::ui::autocomplete::show_signature_tooltip(
+                                ctx,
+                                &self.script_text,
+                                cursor_offset,
+                                tip_anchor,
+                            );
+                        }
+                    }
+
+                    response
                 });
+
+                self.last_editor_scroll_y = scroll_out.state.offset.y;
+
+                // Show autocomplete popup (outside scroll area so it floats freely).
+                let action = crate::ui::autocomplete::show_autocomplete(
+                    ctx, &mut self.autocomplete_state,
+                );
+                if let crate::ui::autocomplete::AutocompleteAction::Confirm(global_i) = action {
+                    // Mouse click on completion — need cursor from last known state.
+                    // We can't easily get cursor here, so use token_start + token_len as cursor approx.
+                    let cursor_approx = self.autocomplete_state.token_start
+                        + self.autocomplete_state.token.len();
+                    let new_cursor = crate::ui::autocomplete::apply_completion(
+                        &mut self.script_text,
+                        self.autocomplete_state.token_start,
+                        cursor_approx,
+                        &crate::ui::autocomplete::ALL_COMPLETIONS[global_i],
+                    );
+                    // Request a cursor update on next frame via pending_cursor_offset.
+                    self.pending_cursor_offset = Some(new_cursor);
+                    self.autocomplete_state.visible = false;
+                }
 
                 ui.separator();
 
@@ -1706,13 +2059,44 @@ impl eframe::App for App {
                 } // end EditorMode::Script
             });
 
-        // Right sidebar: Section View controls
-        egui::SidePanel::right("section_view_panel")
-            .default_width(180.0)
-            .resizable(true)
-            .show(ctx, |ui| {
-                self.render_section_view_panel(ui);
-            });
+        // Section View floating window
+        if self.section_view_open {
+            let mut open = true;
+            egui::Window::new("✂ Section View")
+                .open(&mut open)
+                .resizable(true)
+                .default_width(220.0)
+                .show(ctx, |ui| {
+                    self.render_section_view_panel(ui);
+                });
+            self.section_view_open = open;
+        }
+
+        // Wall Thickness floating window
+        if self.thickness_open {
+            let mut open = true;
+            egui::Window::new("🔍 Wall Thickness")
+                .open(&mut open)
+                .resizable(true)
+                .default_width(220.0)
+                .show(ctx, |ui| {
+                    self.render_thickness_panel(ui);
+                });
+            self.thickness_open = open;
+        }
+
+        // FEA floating window
+        if self.fea_open {
+            let mut open = true;
+            egui::Window::new("🔬 FEA")
+                .open(&mut open)
+                .resizable(true)
+                .default_width(280.0)
+                .show(ctx, |ui| {
+                    self.render_fea_panel(ui);
+                });
+            self.fea_open = open;
+        }
 
         // Center panel: 3D Viewport
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -1729,6 +2113,9 @@ impl eframe::App for App {
 
         // Settings modal
         self.show_settings_modal(ctx);
+
+        // Measurement popup
+        self.show_measure_popup(ctx);
     }
 }
 
@@ -2040,6 +2427,7 @@ impl App {
             ui.available_size(),
             egui::Sense::click_and_drag(),
         );
+        self.last_viewport_rect = rect;
 
         // Handle camera controls
         if response.dragged_by(egui::PointerButton::Primary) {
@@ -2067,6 +2455,20 @@ impl App {
         }
 
         self.last_mouse_pos = response.hover_pos();
+
+        // Viewport picking for measurement point A/B
+        if let Some(pick) = self.pick_mode {
+            if response.clicked() && !self.is_dragging_left {
+                if let (Some(click_pos), Some(grid)) = (response.interact_pointer_pos(), &self.current_sdf_grid) {
+                    let hit = self.unproject_and_march(click_pos, rect, grid.as_ref());
+                    if let Some(p) = hit {
+                        if pick == 0 { self.point_a = Some(p); }
+                        else         { self.point_b = Some(p); }
+                        self.pick_mode = None;
+                    }
+                }
+            }
+        }
 
         // Handle zoom
         if response.hovered() {
@@ -2129,6 +2531,38 @@ impl App {
             if let Some(ref viz) = self.fea_viz {
                 let painter = ui.painter().with_clip_rect(rect);
                 Self::draw_fea_overlays(&painter, viz, &self.camera, rect);
+            }
+        }
+
+        // Draw measurement overlays (picked points, CG marker).
+        {
+            let painter = ui.painter().with_clip_rect(rect);
+            if let Some(p) = self.point_a {
+                if let Some(s) = Self::project_to_screen(p, &self.camera, rect) {
+                    painter.circle_filled(s, 6.0, egui::Color32::from_rgb(220, 60, 60));
+                    painter.circle_stroke(s, 6.0, egui::Stroke::new(1.5, egui::Color32::WHITE));
+                    painter.text(s + egui::vec2(8.0, -8.0), egui::Align2::LEFT_BOTTOM,
+                        "A", egui::FontId::proportional(12.0), egui::Color32::from_rgb(220,60,60));
+                }
+            }
+            if let Some(p) = self.point_b {
+                if let Some(s) = Self::project_to_screen(p, &self.camera, rect) {
+                    painter.circle_filled(s, 6.0, egui::Color32::from_rgb(60, 120, 220));
+                    painter.circle_stroke(s, 6.0, egui::Stroke::new(1.5, egui::Color32::WHITE));
+                    painter.text(s + egui::vec2(8.0, -8.0), egui::Align2::LEFT_BOTTOM,
+                        "B", egui::FontId::proportional(12.0), egui::Color32::from_rgb(60,120,220));
+                }
+            }
+            if self.show_cg_marker {
+                if let Some(cg) = self.measurements.center_of_mass {
+                    Self::draw_cg_crosshair(&painter, cg, &self.camera, rect);
+                }
+                // Also draw script-defined CG if available.
+                if let Some(cg) = self.cg {
+                    if self.measurements.center_of_mass != Some(cg) {
+                        Self::draw_cg_crosshair_color(&painter, cg, egui::Color32::from_rgb(255,200,0), &self.camera, rect);
+                    }
+                }
             }
         }
     }
@@ -2248,6 +2682,471 @@ impl App {
                 grey,
             );
         }
+    }
+
+    // ── Measurement helpers ───────────────────────────────────────────────────
+
+    fn unproject_and_march(
+        &self,
+        screen_pos: egui::Pos2,
+        rect:       egui::Rect,
+        grid:       &crate::render::SdfGrid,
+    ) -> Option<Vec3> {
+        // Convert screen pos to NDC [-1, 1].
+        let nx =  (screen_pos.x - rect.left()) / rect.width()  * 2.0 - 1.0;
+        let ny = -((screen_pos.y - rect.top())  / rect.height() * 2.0 - 1.0);
+
+        // Unproject near and far planes through the inverse VP matrix.
+        let inv_vp = self.camera.view_projection().inverse();
+        let near4 = inv_vp * glam::Vec4::new(nx, ny, -1.0, 1.0);
+        let far4  = inv_vp * glam::Vec4::new(nx, ny,  1.0, 1.0);
+        let near_w = Vec3::new(near4.x / near4.w, near4.y / near4.w, near4.z / near4.w);
+        let far_w  = Vec3::new(far4.x  / far4.w,  far4.y  / far4.w,  far4.z  / far4.w);
+        let dir = (far_w - near_w).normalize_or_zero();
+        if dir.length_squared() < 0.0001 { return None; }
+        let max_dist = (far_w - near_w).length();
+        crate::analysis::ray_march_grid(grid, near_w, dir, max_dist)
+    }
+
+    fn draw_cg_crosshair(
+        painter: &egui::Painter,
+        cg:      Vec3,
+        camera:  &Camera,
+        rect:    egui::Rect,
+    ) {
+        Self::draw_cg_crosshair_color(painter, cg, egui::Color32::from_rgb(100, 220, 255), camera, rect);
+    }
+
+    fn draw_cg_crosshair_color(
+        painter: &egui::Painter,
+        cg:      Vec3,
+        color:   egui::Color32,
+        camera:  &Camera,
+        rect:    egui::Rect,
+    ) {
+        let arm = 6.0f32;
+        let axes = [
+            (Vec3::X * arm, Vec3::NEG_X * arm),
+            (Vec3::Y * arm, Vec3::NEG_Y * arm),
+            (Vec3::Z * arm, Vec3::NEG_Z * arm),
+        ];
+        for (a, b) in axes {
+            if let (Some(pa), Some(pb)) = (
+                Self::project_to_screen(cg + a, camera, rect),
+                Self::project_to_screen(cg + b, camera, rect),
+            ) {
+                painter.line_segment([pa, pb], egui::Stroke::new(2.0, color));
+            }
+        }
+        if let Some(center) = Self::project_to_screen(cg, camera, rect) {
+            painter.circle_filled(center, 4.0, color);
+        }
+    }
+
+    // ── Measurement popup ─────────────────────────────────────────────────────
+
+    fn show_measure_popup(&mut self, ctx: &egui::Context) {
+        if !self.measure_open { return; }
+
+        let mut open = true;
+        egui::Window::new("📐 Measurements")
+            .open(&mut open)
+            .resizable(true)
+            .default_width(340.0)
+            .show(ctx, |ui| {
+                // Stale warning
+                if self.measurements_stale {
+                    egui::Frame::none()
+                        .fill(egui::Color32::from_rgba_unmultiplied(180, 150, 0, 60))
+                        .inner_margin(egui::Margin::symmetric(8.0, 4.0))
+                        .show(ui, |ui| {
+                            ui.label(egui::RichText::new(
+                                "⚠ Results may be outdated — re-run analysis after the model changes."
+                            ).color(egui::Color32::from_rgb(255, 220, 0)).small());
+                        });
+                    ui.add_space(4.0);
+                }
+
+                // ── Section 1: Model Properties ──────────────────────────────
+                ui.strong("Model Properties");
+                ui.horizontal(|ui| {
+                    let btn_label = if self.measure_running { "⏳ Running…" } else { "Run Analysis" };
+                    if ui.button(btn_label).clicked() && !self.measure_running {
+                        if let Some(ref grid) = self.current_sdf_grid {
+                            let grid = grid.as_ref().clone_data();
+                            let (tx, rx) = std::sync::mpsc::channel();
+                            self.measure_receiver = Some(rx);
+                            self.measure_running  = true;
+                            std::thread::spawn(move || {
+                                let (v, s, c) = crate::analysis::compute_model_properties(&grid);
+                                let _ = tx.send((v, s, c));
+                            });
+                        }
+                    }
+                    if self.measure_running { ui.spinner(); }
+                });
+
+                if let Some(v) = self.measurements.volume_mm3 {
+                    egui::Grid::new("model_props").num_columns(2).show(ui, |ui| {
+                        ui.label("Volume:");
+                        ui.label(format!("{:.3} cm³", v / 1000.0));
+                        ui.end_row();
+                        if let Some(sa) = self.measurements.surface_area_mm2 {
+                            ui.label("Surface Area:");
+                            ui.label(format!("{:.2} cm²", sa / 100.0));
+                            ui.end_row();
+                        }
+                        if let Some(com) = self.measurements.center_of_mass {
+                            ui.label("Center of Mass:");
+                            ui.label(format!("({:.1}, {:.1}, {:.1}) mm", com.x, com.y, com.z));
+                            ui.end_row();
+                        }
+                        if let Some(mass) = self.measurements.print_mass_g {
+                            ui.label("Print Mass:");
+                            ui.label(format!("{:.1} g", mass));
+                            ui.end_row();
+                        }
+                    });
+
+                    // Density input + presets
+                    ui.horizontal(|ui| {
+                        ui.label("Density:");
+                        let changed = ui.add(
+                            egui::DragValue::new(&mut self.measure_density)
+                                .speed(0.01)
+                                .range(0.1..=20.0)
+                                .suffix(" g/cm³"),
+                        ).changed();
+                        egui::ComboBox::from_id_salt("density_preset")
+                            .selected_text("Preset")
+                            .show_ui(ui, |ui| {
+                                if ui.selectable_label(false, "PLA 1.24").clicked()  { self.measure_density = 1.24; }
+                                if ui.selectable_label(false, "PETG 1.27").clicked() { self.measure_density = 1.27; }
+                                if ui.selectable_label(false, "ABS 1.05").clicked()  { self.measure_density = 1.05; }
+                                if ui.selectable_label(false, "Resin 1.10").clicked(){ self.measure_density = 1.10; }
+                            });
+                        if changed {
+                            if let Some(v) = self.measurements.volume_mm3 {
+                                self.measurements.print_mass_g = Some(v / 1000.0 * self.measure_density);
+                            }
+                        }
+                    });
+                }
+
+                ui.separator();
+
+                // ── Section 2: Cross-Section Area ─────────────────────────────
+                ui.strong("Cross-Section Area");
+                ui.horizontal(|ui| {
+                    ui.label("Axis:");
+                    ui.radio_value(&mut self.cs_axis, crate::project::Axis::X, "X");
+                    ui.radio_value(&mut self.cs_axis, crate::project::Axis::Y, "Y");
+                    ui.radio_value(&mut self.cs_axis, crate::project::Axis::Z, "Z");
+                });
+                if let Some(ref grid) = self.current_sdf_grid {
+                    let (lo, hi) = match self.cs_axis {
+                        crate::project::Axis::X => (grid.bounds_min.x, grid.bounds_max.x),
+                        crate::project::Axis::Y => (grid.bounds_min.y, grid.bounds_max.y),
+                        crate::project::Axis::Z => (grid.bounds_min.z, grid.bounds_max.z),
+                    };
+                    self.cs_position = self.cs_position.clamp(lo, hi);
+                    ui.add(egui::Slider::new(&mut self.cs_position, lo..=hi).text("Position"));
+                }
+                ui.horizontal(|ui| {
+                    let label = if self.cs_running { "⏳ Running…" } else { "Measure" };
+                    if ui.button(label).clicked() && !self.cs_running {
+                        if let (Some(sdf), Some(grid)) = (&self.current_sdf, &self.current_sdf_grid) {
+                            let sdf   = sdf.clone();
+                            let axis  = self.cs_axis.clone();
+                            let pos   = self.cs_position;
+                            let bmin  = grid.bounds_min;
+                            let bmax  = grid.bounds_max;
+                            let (tx, rx) = std::sync::mpsc::channel();
+                            self.cs_receiver = Some(rx);
+                            self.cs_running  = true;
+                            std::thread::spawn(move || {
+                                let area = crate::analysis::measure_cross_section(
+                                    sdf, &axis, pos, bmin, bmax, 256,
+                                );
+                                let _ = tx.send(area);
+                            });
+                        }
+                    }
+                    if self.cs_running { ui.spinner(); }
+                });
+                egui::ScrollArea::vertical().max_height(120.0).id_salt("cs_scroll").show(ui, |ui| {
+                    let mut to_remove = None;
+                    for (i, cs) in self.measurements.cross_sections.iter().enumerate() {
+                        ui.horizontal(|ui| {
+                            if ui.small_button("✕").clicked() { to_remove = Some(i); }
+                            ui.label(format!("{} → {:.2} mm²", cs.label, cs.area_mm2));
+                        });
+                    }
+                    if let Some(i) = to_remove { self.measurements.cross_sections.remove(i); }
+                });
+                if !self.measurements.cross_sections.is_empty() {
+                    if ui.small_button("Clear All").clicked() {
+                        self.measurements.cross_sections.clear();
+                    }
+                }
+
+                ui.separator();
+
+                // ── Section 3: Point Distance ─────────────────────────────────
+                ui.strong("Point Distance");
+
+                // Point A / B pickers
+                let sdf_for_snap = self.current_sdf.clone();
+                for (lbl, pt_field, pick_idx, color) in [
+                    ("A", 0usize, 0u8, egui::Color32::from_rgb(220, 60, 60)),
+                    ("B", 1usize, 1u8, egui::Color32::from_rgb(60, 120, 220)),
+                ] {
+                    ui.horizontal(|ui| {
+                        ui.colored_label(color, lbl);
+
+                        let pt_ref = if pt_field == 0 { &mut self.point_a } else { &mut self.point_b };
+                        let mut xyz = pt_ref.unwrap_or(Vec3::ZERO);
+                        let mut changed = false;
+                        changed |= ui.add(egui::DragValue::new(&mut xyz.x).speed(0.1).prefix("x ").max_decimals(2)).changed();
+                        changed |= ui.add(egui::DragValue::new(&mut xyz.y).speed(0.1).prefix("y ").max_decimals(2)).changed();
+                        changed |= ui.add(egui::DragValue::new(&mut xyz.z).speed(0.1).prefix("z ").max_decimals(2)).changed();
+                        if changed { *pt_ref = Some(xyz); }
+
+                        // Pick from viewport
+                        let picking = self.pick_mode == Some(pick_idx);
+                        let pick_btn = if picking {
+                            egui::Button::new("Picking…").fill(egui::Color32::from_rgb(40, 100, 40))
+                        } else {
+                            egui::Button::new("Pick")
+                        };
+                        if ui.add(pick_btn).on_hover_text("Click in the 3D viewport to place this point").clicked() {
+                            self.pick_mode = if picking { None } else { Some(pick_idx) };
+                        }
+
+                        // Snap to nearest surface
+                        let snap_enabled = pt_ref.is_some() && sdf_for_snap.is_some();
+                        if ui.add_enabled(snap_enabled, egui::Button::new("→ Surface"))
+                            .on_hover_text("Move point to nearest point on the SDF surface")
+                            .clicked()
+                        {
+                            if let (Some(p), Some(sdf)) = (*pt_ref, &sdf_for_snap) {
+                                *pt_ref = Some(crate::analysis::snap_to_surface(sdf.as_ref(), p, 64));
+                            }
+                        }
+                    });
+                }
+
+                ui.add_space(4.0);
+
+                // Measurement type selector
+                ui.horizontal(|ui| {
+                    ui.label("Type:");
+                    egui::ComboBox::from_id_salt("dist_kind")
+                        .selected_text(self.dist_kind.label())
+                        .width(160.0)
+                        .show_ui(ui, |ui| {
+                            for k in crate::analysis::DistanceMeasureKind::all() {
+                                ui.selectable_value(&mut self.dist_kind, k.clone(), k.label());
+                            }
+                        });
+                });
+
+                // Custom vector input
+                if self.dist_kind == crate::analysis::DistanceMeasureKind::CustomVector {
+                    ui.horizontal(|ui| {
+                        ui.label("Vector:");
+                        ui.add(egui::DragValue::new(&mut self.custom_proj_vec.x).speed(0.01).prefix("x ").max_decimals(3));
+                        ui.add(egui::DragValue::new(&mut self.custom_proj_vec.y).speed(0.01).prefix("y ").max_decimals(3));
+                        ui.add(egui::DragValue::new(&mut self.custom_proj_vec.z).speed(0.01).prefix("z ").max_decimals(3));
+                        if ui.small_button("Normalize").clicked() {
+                            let n = self.custom_proj_vec.normalize_or(Vec3::X);
+                            self.custom_proj_vec = n;
+                        }
+                    });
+                }
+
+                // Live results
+                if let (Some(a), Some(b)) = (self.point_a, self.point_b) {
+                    let custom = if self.dist_kind == crate::analysis::DistanceMeasureKind::CustomVector {
+                        Some(self.custom_proj_vec)
+                    } else { None };
+                    let sdf_ref = self.current_sdf.as_ref().map(|s| s.as_ref());
+                    let m = crate::analysis::PointDistanceMeasurement::compute(
+                        String::new(), a, b, self.dist_kind.clone(), custom, sdf_ref,
+                    );
+
+                    // Always show full breakdown
+                    egui::Frame::none()
+                        .fill(egui::Color32::from_rgba_unmultiplied(0, 0, 0, 60))
+                        .inner_margin(egui::Margin::symmetric(8.0, 6.0))
+                        .show(ui, |ui| {
+                            egui::Grid::new("dist_results").num_columns(2).spacing([20.0, 2.0]).show(ui, |ui| {
+                                ui.label("3D Distance:");
+                                ui.label(format!("{:.4} mm", m.distance_3d));
+                                ui.end_row();
+                                ui.label("ΔX:");
+                                ui.label(format!("{:.4} mm", m.delta.x));
+                                ui.end_row();
+                                ui.label("ΔY:");
+                                ui.label(format!("{:.4} mm", m.delta.y));
+                                ui.end_row();
+                                ui.label("ΔZ:");
+                                ui.label(format!("{:.4} mm", m.delta.z));
+                                ui.end_row();
+
+                                // Primary derived value
+                                match &self.dist_kind {
+                                    crate::analysis::DistanceMeasureKind::Distance3D => {}
+                                    crate::analysis::DistanceMeasureKind::Angle => {
+                                        if let Some(angs) = m.angles_deg {
+                                            ui.label("Angle from X:");
+                                            ui.label(format!("{:.3}°", angs[0]));
+                                            ui.end_row();
+                                            ui.label("Angle from Y:");
+                                            ui.label(format!("{:.3}°", angs[1]));
+                                            ui.end_row();
+                                            ui.label("Angle from Z:");
+                                            ui.label(format!("{:.3}°", angs[2]));
+                                            ui.end_row();
+                                        }
+                                    }
+                                    k => {
+                                        ui.label(egui::RichText::new(format!("{}:", k.label())).strong());
+                                        ui.label(egui::RichText::new(format!("{:.4} mm", m.primary_mm)).strong());
+                                        ui.end_row();
+                                    }
+                                }
+
+                                // Midpoint
+                                let mid = (a + b) * 0.5;
+                                ui.label("Midpoint:");
+                                ui.label(format!("({:.2}, {:.2}, {:.2})", mid.x, mid.y, mid.z));
+                                ui.end_row();
+                            });
+                        });
+
+                    ui.horizontal(|ui| {
+                        if ui.button("Save").clicked() {
+                            let label = format!("D{}", self.distance_label_idx);
+                            self.distance_label_idx += 1;
+                            let custom2 = if self.dist_kind == crate::analysis::DistanceMeasureKind::CustomVector {
+                                Some(self.custom_proj_vec)
+                            } else { None };
+                            let sdf_ref2 = self.current_sdf.as_ref().map(|s| s.as_ref());
+                            self.measurements.point_distances.push(
+                                crate::analysis::PointDistanceMeasurement::compute(
+                                    label, a, b, self.dist_kind.clone(), custom2, sdf_ref2,
+                                )
+                            );
+                        }
+                        if ui.button("Swap A↔B").clicked() {
+                            std::mem::swap(&mut self.point_a, &mut self.point_b);
+                        }
+                        if ui.button("Clear").clicked() {
+                            self.point_a = None;
+                            self.point_b = None;
+                            self.pick_mode = None;
+                        }
+                    });
+                }
+
+                // Saved measurements list
+                if !self.measurements.point_distances.is_empty() {
+                    ui.add_space(4.0);
+                    egui::ScrollArea::vertical().max_height(120.0).id_salt("dist_scroll").show(ui, |ui| {
+                        let mut to_remove = None;
+                        for (i, pd) in self.measurements.point_distances.iter().enumerate() {
+                            ui.horizontal(|ui| {
+                                if ui.small_button("✕").clicked() { to_remove = Some(i); }
+                                let summary = match &pd.kind {
+                                    crate::analysis::DistanceMeasureKind::Angle =>
+                                        if let Some(a) = pd.angles_deg {
+                                            format!("{} — ∠X:{:.1}° ∠Y:{:.1}° ∠Z:{:.1}°", pd.label, a[0], a[1], a[2])
+                                        } else { format!("{} — {:.3} mm", pd.label, pd.primary_mm) },
+                                    k => {
+                                        if *k == crate::analysis::DistanceMeasureKind::Distance3D {
+                                            format!("{} — {:.4} mm", pd.label, pd.distance_3d)
+                                        } else {
+                                            format!("{} — 3D:{:.3}  {}:{:.3} mm", pd.label, pd.distance_3d, k.label(), pd.primary_mm)
+                                        }
+                                    }
+                                };
+                                ui.label(summary).on_hover_text(
+                                    format!("A({:.2},{:.2},{:.2})  B({:.2},{:.2},{:.2})\nΔ({:.3},{:.3},{:.3})",
+                                        pd.point_a.x, pd.point_a.y, pd.point_a.z,
+                                        pd.point_b.x, pd.point_b.y, pd.point_b.z,
+                                        pd.delta.x, pd.delta.y, pd.delta.z)
+                                );
+                            });
+                        }
+                        if let Some(i) = to_remove { self.measurements.point_distances.remove(i); }
+                    });
+                    if ui.small_button("Clear All").clicked() {
+                        self.measurements.point_distances.clear();
+                    }
+                }
+
+                ui.separator();
+
+                // ── Section 4: CG Visualization ───────────────────────────────
+                ui.strong("CG Visualization");
+                ui.checkbox(&mut self.show_cg_marker, "Show Center of Mass in viewport");
+                if self.show_cg_marker {
+                    if let Some(cg) = self.measurements.center_of_mass {
+                        ui.label(egui::RichText::new(
+                            format!("Geometric CG: ({:.1}, {:.1}, {:.1}) mm", cg.x, cg.y, cg.z)
+                        ).color(egui::Color32::from_rgb(100, 220, 255)).small());
+                    }
+                    if let Some(cg) = self.cg {
+                        ui.label(egui::RichText::new(
+                            format!("Script CG: ({:.1}, {:.1}, {:.1}) mm", cg.x, cg.y, cg.z)
+                        ).color(egui::Color32::from_rgb(255, 200, 0)).small());
+                    }
+                }
+
+                ui.separator();
+
+                // ── Section 5: Export ─────────────────────────────────────────
+                ui.strong("Export");
+                if ui.button("Copy to Clipboard").clicked() {
+                    let text = self.format_measurements_text();
+                    ctx.copy_text(text);
+                }
+            });
+
+        self.measure_open = open;
+    }
+
+    fn format_measurements_text(&self) -> String {
+        let mut s = String::from("=== Measurements ===\n");
+        if let Some(v) = self.measurements.volume_mm3 {
+            s += &format!("Volume: {:.3} cm³\n", v / 1000.0);
+        }
+        if let Some(sa) = self.measurements.surface_area_mm2 {
+            s += &format!("Surface Area: {:.2} cm²\n", sa / 100.0);
+        }
+        if let Some(com) = self.measurements.center_of_mass {
+            s += &format!("Center of Mass: ({:.1}, {:.1}, {:.1}) mm\n", com.x, com.y, com.z);
+        }
+        if let Some(mass) = self.measurements.print_mass_g {
+            s += &format!("Print Mass: {:.1} g (density {:.2} g/cm³)\n", mass, self.measure_density);
+        }
+        if !self.measurements.cross_sections.is_empty() {
+            s += "\n--- Cross-Sections ---\n";
+            for cs in &self.measurements.cross_sections {
+                s += &format!("{}: {:.2} mm²\n", cs.label, cs.area_mm2);
+            }
+        }
+        if !self.measurements.point_distances.is_empty() {
+            s += "\n--- Point Distances ---\n";
+            for pd in &self.measurements.point_distances {
+                s += &format!("{}: {:.3} mm  A({:.1},{:.1},{:.1})  B({:.1},{:.1},{:.1})\n",
+                    pd.label, pd.primary_mm,
+                    pd.point_a.x, pd.point_a.y, pd.point_a.z,
+                    pd.point_b.x, pd.point_b.y, pd.point_b.z);
+            }
+        }
+        s
     }
 }
 
@@ -2488,13 +3387,6 @@ impl App {
             });
         }
 
-        ui.add_space(8.0);
-        ui.separator();
-        self.render_thickness_panel(ui);
-
-        ui.add_space(8.0);
-        ui.separator();
-        self.render_fea_panel(ui);
     }
 
     fn render_thickness_panel(&mut self, ui: &mut egui::Ui) {
