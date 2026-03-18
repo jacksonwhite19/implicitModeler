@@ -13,6 +13,7 @@ use super::section::Section2D;
 pub enum CrossSection {
     Circle { radius: f32 },
     Ellipse { width: f32, height: f32 },
+    Rect { width: f32, height: f32 },
 }
 
 impl CrossSection {
@@ -29,15 +30,24 @@ impl CrossSection {
                     height: h1 + (h2 - h1) * t,
                 }
             }
-            // Mixed variants: treat Circle as equal-axis Ellipse
+            (CrossSection::Rect { width: w1, height: h1 },
+             CrossSection::Rect { width: w2, height: h2 }) => {
+                CrossSection::Rect {
+                    width:  w1 + (w2 - w1) * t,
+                    height: h1 + (h2 - h1) * t,
+                }
+            }
+            // Mixed variants: map everything to Ellipse half-extents for smooth blending
             _ => {
                 let (w1, h1) = match self {
                     CrossSection::Circle { radius: r } => (*r, *r),
                     CrossSection::Ellipse { width, height } => (*width, *height),
+                    CrossSection::Rect { width, height } => (*width * 0.5, *height * 0.5),
                 };
                 let (w2, h2) = match other {
                     CrossSection::Circle { radius: r } => (*r, *r),
                     CrossSection::Ellipse { width, height } => (*width, *height),
+                    CrossSection::Rect { width, height } => (*width * 0.5, *height * 0.5),
                 };
                 CrossSection::Ellipse {
                     width:  w1 + (w2 - w1) * t,
@@ -56,6 +66,12 @@ impl Section2D for CrossSection {
                 // Approximate ellipse SDF (exact form is expensive; good enough for MC)
                 let p = point / Vec2::new(*width, *height);
                 (p.length() - 1.0) * width.min(*height)
+            }
+            CrossSection::Rect { width, height } => {
+                // Standard 2D box SDF with half-extents
+                let half = Vec2::new(*width * 0.5, *height * 0.5);
+                let d = point.abs() - half;
+                d.max(Vec2::ZERO).length() + d.x.max(d.y).min(0.0)
             }
         }
     }

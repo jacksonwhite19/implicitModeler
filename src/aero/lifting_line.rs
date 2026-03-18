@@ -259,7 +259,7 @@ fn gaussian_solve(a: &[Vec<f32>], b: &[f32]) -> Vec<f32> {
     for col in 0..n {
         // Partial pivot.
         let max_row = (col..n).max_by(|&r1, &r2| {
-            mat[r1][col].abs().partial_cmp(&mat[r2][col].abs()).unwrap()
+            mat[r1][col].abs().partial_cmp(&mat[r2][col].abs()).unwrap_or(std::cmp::Ordering::Equal)
         }).unwrap_or(col);
         mat.swap(col, max_row);
         rhs.swap(col, max_row);

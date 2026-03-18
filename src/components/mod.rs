@@ -158,6 +158,7 @@ impl ComponentInstance {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::components::library::{ParameterDef, ParamType};
 
     #[test]
     fn test_component_instance_default_params() {

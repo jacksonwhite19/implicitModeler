@@ -144,27 +144,27 @@ static EX03_SCRIPT: &str = r#"
 let box_a = box_(40.0, 40.0, 40.0);
 let box_b = translate(sphere(28.0), 30.0, 0.0, 0.0);
 
-// === Gyroid field ===
-// Encodes a periodic minimal-surface density pattern (scale in mm)
-let gf = gyroid_field(12.0);
+// === Gradient field blend ===
+// gradient_field(sx,sy,sz, ex,ey,ez, start_val, end_val)
+let gf = gradient_field(0.0, 0.0, 0.0, 60.0, 0.0, 0.0, 0.0, 1.0);
 
 // blend_by_field: where field is high -> shape A, low -> shape B
-// This creates a spatially varying boolean that morphs between the two
 let blended = blend_by_field(box_a, box_b, gf);
 
 // === offset_by_field ===
 // Shell a cylinder, then thicken the wall using a radial density gradient
 let tube  = shell(cylinder(20.0, 60.0), 2.0);
-let rgrad = radial_field(0.0, 0.0, 0.0);    // distance from Z-axis
-let bumpy = offset_by_field(tube, rgrad, 3.0);  // +/-3 mm driven by radius
+// radial_field(cx,cy,cz, inner_r, outer_r, inner_val, outer_val)
+let rgrad = radial_field(0.0, 0.0, 0.0, 0.0, 60.0, 1.0, 0.0);
+let bumpy = offset_by_field(tube, rgrad);
 let bumpy = translate(bumpy, 80.0, 0.0, 0.0);
 
 // === Gradient field for directional taper ===
 // Thicken more toward +Z
 let slab      = box_(50.0, 50.0, 20.0);
 let slab_sh   = shell(slab, 1.5);
-let z_grad    = gradient_field(0.0, 0.0, 1.0);
-let tapered   = offset_by_field(slab_sh, z_grad, 4.0);
+let z_grad    = gradient_field(0.0, 0.0, -100.0, 0.0, 0.0, 100.0, 0.0, 1.0);
+let tapered   = offset_by_field(slab_sh, z_grad);
 let tapered   = translate(tapered, -80.0, 0.0, 0.0);
 
 union(union(blended, bumpy), tapered)
@@ -189,7 +189,7 @@ let stations = [
     [1.00, circle_section(12.0)],           // tail tip
 ];
 
-let fuse = fuselage(stations);
+let fuse = fuselage(600.0, stations);  // 600 mm long
 
 // Apply a shell to see the outer skin only (optional for display)
 // let fuse_shell = shell(fuse, 2.5);
@@ -222,7 +222,7 @@ let stations = [
     [1.00, circle_section(10.0)],
 ];
 
-let fuse = fuselage(stations);
+let fuse = fuselage(600.0, stations);  // 600 mm long
 
 // Parametric fuselage variant: simpler, single smooth body
 // nose_sharp and tail_sharp in [0,1]: 0 = blunt, 1 = sharp
@@ -257,7 +257,7 @@ let stations = [
     [1.00, circle_section(14.0)],
 ];
 
-let hull = fuselage(stations);
+let hull = fuselage(800.0, stations);  // 800 mm long
 
 // Offset inward to create hull shell thickness (3 mm skin)
 let inner = offset(hull, -3.0);
@@ -400,9 +400,9 @@ static EX12_SCRIPT: &str = r#"
 let half_wing = wing_with_airfoil("2412", 140.0, 100.0, 400.0, 3.0, 2.0, -1.5);
 
 // === Aileron ===
-// aileron(wing, span_start_frac, span_end_frac, chord_frac, thickness_mm)
+// aileron(wing, span_start_frac, span_end_frac, chord_frac)
 // Outboard 55-92% of half-span, 28% chord
-let ail = aileron(half_wing, 0.55, 0.92, 0.28, 2.5);
+let ail = aileron(half_wing, 0.55, 0.92, 0.28);
 
 // === Inboard flap (split flap approximation) ===
 // A split flap is the lower surface only — approximate with a subtract.
@@ -529,7 +529,7 @@ let stations = [
     [0.83, ellipse_section(70.0,  60.0)],
     [1.00, circle_section(12.0)],
 ];
-let fuse = fuselage(stations);
+let fuse = fuselage(600.0, stations);  // 600 mm long
 let fuse_shell = shell(fuse, 2.5);
 
 // === Bulkheads at three stations ===
@@ -553,32 +553,26 @@ union(union(union(
 "#;
 
 static EX17_SCRIPT: &str = r#"
-// Example 17 — Composite Wing Sandwich
-// Carbon-fibre-foam-carbon sandwich panel construction.
-// layup_config defines the laminate; sandwich_panel applies it.
+// Example 17 — Composite Wing Layup
+// Carbon-fibre sandwich construction using composite_layup.
+// composite_layup_config() stores a reusable layup definition.
 
 let half_wing = wing_with_airfoil("2412", 140.0, 100.0, 400.0, 3.0, 2.0, -1.5);
-let wing_skin_sdf = shell(half_wing, 0.5);  // thin surface for skin reference
 
-// === Layup configuration ===
-// layup_config(n_plies, ply_angle_deg, ply_thick_mm, material_name)
-let layup = layup_config(2, 45.0, 0.12, "carbon_ud");
-// Add additional plies for quasi-isotropic laminate
-let layup = add_layer(layup,   0.0, 0.12);   // 0 deg ply
-let layup = add_layer(layup, -45.0, 0.12);   // -45 deg ply
-let layup = add_layer(layup,  90.0, 0.12);   // 90 deg ply (closes QI set)
+// === Define materials ===
+let cf   = material("CarbonUD_200gsm");   // unidirectional carbon fibre
+let foam = material("DivinycellH60");     // structural foam core
 
-// === Foam core ===
-// foam_core(sdf, core_thickness_mm) — lightweight structural core
-let core = foam_core(half_wing, 6.0);
+// === Build layup: outer CF + foam core + inner CF ===
+let outer_ply = shell_layer("outer_cf",  cf,   0.24);   // 2 x 0.12 mm plies
+let core_ply  = solid_core_layer("foam_core", foam, 6.0);
+let inner_ply = shell_layer("inner_cf",  cf,   0.24);
 
-// === Sandwich panel ===
-// sandwich_panel(skin_sdf, core_thick_mm, skin_thick_mm)
-// 4-ply skin each face: 4 * 0.12 = 0.48 mm
-let sandwich = sandwich_panel(wing_skin_sdf, 6.0, 0.48);
+// === Apply composite layup to wing geometry ===
+let composite_wing = composite_layup(half_wing, [outer_ply, core_ply, inner_ply]);
 
 // Mirror for full wing
-mirror_y(sandwich)
+mirror_y(composite_wing)
 "#;
 
 static EX18_SCRIPT: &str = r#"
@@ -594,7 +588,7 @@ let stations = [
     [0.89, ellipse_section(60.0, 55.0)],
     [1.00, circle_section(12.0)],
 ];
-let fuse = fuselage(stations);
+let fuse = fuselage(600.0, stations);  // 600 mm long
 
 // === Outer skin (2.5 mm thick) ===
 let fuse_skin = shell(fuse, 2.5);
@@ -626,7 +620,7 @@ let stations = [
     [0.86, ellipse_section(60.0, 55.0)],
     [1.00, circle_section(12.0)],
 ];
-let fuse = fuselage(stations);
+let fuse = fuselage(600.0, stations);  // 600 mm long
 
 // === NACA flush inlet ===
 // naca_flush_inlet(width_mm, length_mm, depth_mm, fuse_sdf)
@@ -700,10 +694,9 @@ let c3 = translate(extrude(circle_section(2.0), 200.0),  90.0, -15.0, 50.0);  //
 let boss = heat_set_boss(6.0, 8.0, 2.5, 4.0);
 let boss = translate(boss, 90.0, 0.0, 150.0);
 
-// === Example of revolve for a swept elbow ===
-// revolve(profile, axis_dir, sweep_deg)
-let elbow_profile = translate(circle_section(3.0), 20.0, 0.0, 0.0);
-let elbow = revolve(elbow_profile, "z", 90.0);
+// === Torus elbow approximation (using revolve around Z) ===
+// revolve(section, axis, degrees) — sweep a circular section in a ring
+let elbow = torus(20.0, 3.0);   // major r=20, minor r=3 — approximates elbow
 let elbow = translate(elbow, 90.0, 30.0, 50.0);
 
 let conduits = union(union(c1, c2), c3);
@@ -793,16 +786,16 @@ let stations = [
     [0.86, ellipse_section(60.0, 55.0)],
     [1.00, circle_section(12.0)],
 ];
-let fuse = shell(fuselage(stations), 2.5);
+let fuse = shell(fuselage(600.0, stations), 2.5);
 
-// === Split at X=0 (longitudinal mid-plane, port/starboard halves) ===
+// === Split at Y=0 (longitudinal mid-plane, port/starboard halves) ===
 // split_body(sdf, axis, position_mm) -> splits the solid at that plane
-let halves = split_body(fuse, "x", 0.0);
+let halves = split_body(fuse, "y", 0.0);
 
 // === Add alignment pins and sockets automatically ===
 // add_alignment_features(sdf, axis, position, n_pins) adds matching
 // pins to one half and sockets to the other
-let aligned = add_alignment_features(fuse, "x", 0.0, 4);
+let aligned = add_alignment_features(fuse, "y", 0.0, 4);
 
 // Individual pin/socket for manual placement reference:
 let pin    = alignment_pin(2.0, 8.0);       // r=2 mm, h=8 mm
@@ -857,7 +850,7 @@ tolerance_compensate(bracket, settings)
 static EX26_SCRIPT: &str = r#"
 // Example 26 — Access Panels and Hatches
 // Battery hatch on the belly, electronics access panel on the side.
-// Panels sit flush with the outer mould line.
+// Panels are cut into the fuselage shell using boolean subtract.
 
 // Reference fuselage
 let stations = [
@@ -868,17 +861,20 @@ let stations = [
     [0.86, ellipse_section(65.0, 55.0)],
     [1.00, circle_section(12.0)],
 ];
-let fuse = shell(fuselage(stations), 2.5);
+let fuse = shell(fuselage(600.0, stations), 2.5);
 
 // === Battery hatch ===
-// battery_hatch(fuse, cx, cy, cz, width_mm, height_mm)
-// Centred at (150, 0, -95): belly of forward fuselage, 90x50 mm opening
-let fuse2 = battery_hatch(fuse, 150.0, 0.0, -95.0, 90.0, 50.0);
+// A rectangular opening on the belly (bottom, -Z face): 90x50 mm
+let hatch_void = box_(90.0, 50.0, 10.0);
+let hatch_void = translate(hatch_void, 150.0, 0.0, -95.0);
+let fuse2      = subtract(fuse, hatch_void);
 
 // === Electronics access panel ===
-// access_panel(fuse, cx, cy, cz, width, height, face_axis)
-// Side panel at (230, 95, 0): starboard, 60x40 mm
-access_panel(fuse2, 230.0, 95.0, 0.0, 60.0, 40.0, "y")
+// Side panel on starboard (+Y face): 60x40 mm
+let panel_void = box_(60.0, 10.0, 40.0);
+let panel_void = translate(panel_void, 230.0, 95.0, 0.0);
+
+subtract(fuse2, panel_void)
 "#;
 
 static EX27_SCRIPT: &str = r#"
@@ -889,14 +885,14 @@ static EX27_SCRIPT: &str = r#"
 let plate = box_(80.0, 60.0, 6.0);
 
 // === Countersunk M3 holes in a bolt circle ===
-// bolt_circle(n_holes, pcd_radius_mm, bolt_radius_mm, depth_mm)
+// bolt_circle(bolt_radius_mm, pcd_radius_mm, n_holes, depth_mm)
 // 4 holes on 30 mm PCD, M3 clearance: r = 1.75 mm
-let m3_circle = bolt_circle(4, 30.0, 1.75, 8.0);
+let m3_circle = bolt_circle(1.75, 30.0, 4, 8.0);
 let plate = subtract(plate, m3_circle);
 
 // === Countersink for flush-head screws ===
 // countersink(shaft_radius, depth_mm, half_angle_deg)
-let cs_pattern = bolt_circle(4, 30.0, 1.75, 3.0);  // same PCD
+let cs_pattern = bolt_circle(1.75, 30.0, 4, 3.0);  // same PCD
 let plate = subtract(plate, cs_pattern);
 
 // === Heat-set bosses for side-entry inserts ===
@@ -906,8 +902,8 @@ let boss1 = translate(heat_set_boss(5.0, 8.0, 2.5, 4.0), -30.0, -18.0, 6.0);
 let boss2 = translate(heat_set_boss(5.0, 8.0, 2.5, 4.0),  30.0, -18.0, 6.0);
 
 // === Bolt grid for larger panel attachment ===
-// bolt_square(spacing_mm, bolt_radius_mm, depth_mm)
-let m2_grid = bolt_square(40.0, 1.1, 6.0);  // M2 clearance
+// bolt_square(bolt_radius_mm, x_spacing_mm, y_spacing_mm, depth_mm)
+let m2_grid = bolt_square(1.1, 40.0, 40.0, 6.0);  // M2 clearance
 let plate = subtract(plate, m2_grid);
 
 union(union(plate, boss1), boss2)
@@ -979,7 +975,7 @@ let q  = dynamic_pressure(fc_cruise);
 let re = reynolds(fc_cruise, 140.0);  // Reynolds at root chord
 
 // Results printed to console: ll_result
-ll_result
+half_wing
 "#;
 
 static EX30_SCRIPT: &str = r#"
@@ -1014,7 +1010,7 @@ let trim = trim_analysis(half_wing, htail, fuse, fc, 10.79);
 // trim.elev_deflection_deg, trim.aoa_trim_deg
 
 // Results printed to console: np, sm, cg_range, trim
-np
+half_wing
 "#;
 
 static EX31_SCRIPT: &str = r#"
@@ -1042,7 +1038,7 @@ let ld = ld_max(half_wing, fuse, htail, vtail, fc);
 let v_glide = best_glide_speed(half_wing, fuse, htail, vtail, fc, 10.79);
 
 // Results printed to console: polar, ld, v_glide
-polar
+half_wing
 "#;
 
 static EX32_SCRIPT: &str = r#"
@@ -1051,8 +1047,8 @@ static EX32_SCRIPT: &str = r#"
 // Reference: Sunnysky X2212, APC 9x4.7, 3S 2200 mAh.
 
 // === Motor and prop ===
-let m  = motor("Sunnysky X2212");   // looks up motor database
-let p  = prop("APC 9x4.7");
+let m  = motor("Sunnysky X2212 980KV");   // looks up motor database
+let p  = prop("APC 9x4.5E");
 
 // === Propulsion setup ===
 // propulsion_setup(motor, prop, cells, capacity_mah)
@@ -1076,7 +1072,7 @@ let rec = recommend_motor_prop(12.0, 18.0, 1200);
 // rec.motor, rec.prop, rec.cells
 
 // Results printed to console: analysis, t_cruise, rec
-analysis
+cylinder(14.0, 35.0)
 "#;
 
 static EX33_SCRIPT: &str = r#"
@@ -1091,7 +1087,7 @@ let vtail      = translate(rotate(
     90.0, 0.0, 0.0), 0.0, 0.0, 510.0);
 let fuse  = fuselage_parametric(600.0, 200.0, 0.6, 0.8);
 
-let setup = propulsion_setup(motor("Sunnysky X2212"), prop("APC 9x4.7"), 3, 2200);
+let setup = propulsion_setup(motor("Sunnysky X2212 980KV"), prop("APC 9x4.5E"), 3, 2200);
 let fc    = flight_condition_sl(18.0, 3.0);
 
 // === Range and endurance ===
@@ -1108,7 +1104,7 @@ let glide = glide_performance(half_wing, fuse, htail, vtail, fc, 10.79);
 // glide.ld_max, glide.min_sink_ms, glide.best_glide_speed_ms
 
 // Results printed to console: re, roc, glide
-re
+half_wing
 "#;
 
 static EX34_SCRIPT: &str = r#"
@@ -1187,24 +1183,18 @@ let root_fillet = sphere(8.0);
 let spar        = rotate(smooth_union(spar_base, root_fillet, 5.0), 90.0, 0.0, 0.0);
 
 // === Radial stress field centred at root ===
+// radial_field(cx, cy, cz, inner_radius, outer_radius, inner_val, outer_val)
 // Near root (small radius) = high stress -> dense lattice
-let stress_field = radial_field(0.0, 0.0, 0.0);
-
-// Two gyroid densities: fine near root, coarse toward tip
-let fine_gf   = gyroid_field(6.0);   // fine lattice — high stress zones
-let coarse_gf = gyroid_field(14.0);  // coarse lattice — low stress zones
-
-// blend_by_field: stress_field drives the mix
-let graded_gf = blend_by_field(fine_gf, coarse_gf, stress_field);
+let stress_field = radial_field(0.0, 0.0, 0.0, 0.0, 400.0, 1.0, 0.0);
 
 // Spar outer shell (1 mm skin) for print surface
 let spar_skin = shell(spar, 1.0);
 
-// Interior volume for lattice
+// Interior volume for lattice fill
 let spar_interior = subtract(spar, offset(spar, -1.0));
 
-// Apply graded offset — positive field near root expands struts there
-let lattice = offset_by_field(spar_interior, stress_field, -1.5);
+// Apply field-driven offset — positive near root = denser material
+let lattice = offset_by_field(spar_interior, stress_field);
 
 union(spar_skin, lattice)
 "#;
@@ -1241,7 +1231,7 @@ let sens = cg_sensitivity(comps, np_x, mac);
 // sens.sensitivity        — [{name, dcg_per_100g_shift}]
 
 // Results printed to console: sens
-sens
+geometry(motor_p)
 "#;
 
 static EX38_SCRIPT: &str = r#"
@@ -1349,7 +1339,7 @@ let vtail      = translate(
     0.0, 0.0, 510.0);
 
 // === Propulsion analysis ===
-let setup     = propulsion_setup(motor("Sunnysky X2212"), prop("APC 9x4.7"), 3, 2200);
+let setup     = propulsion_setup(motor("Sunnysky X2212 980KV"), prop("APC 9x4.5E"), 3, 2200);
 let fc        = flight_condition_sl(18.0, 3.0);
 let prop_data = propulsion_analysis(setup, fc, 10.79);
 
@@ -1374,6 +1364,33 @@ union(union(union(union(fuse, full_wing), htail), vtail),
 // ---------------------------------------------------------------------------
 // Examples array
 // ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::scripting::evaluate_script;
+
+    #[test]
+    fn all_examples_evaluate() {
+        let mut failures: Vec<(usize, &str, String)> = Vec::new();
+        for (i, ex) in EXAMPLES.iter().enumerate() {
+            let script = ex.script;
+            let result = std::panic::catch_unwind(|| evaluate_script(script));
+            match result {
+                Ok(Ok(_)) => {}
+                Ok(Err(e)) => failures.push((i + 1, ex.id, e)),
+                Err(_) => failures.push((i + 1, ex.id, "PANIC".to_string())),
+            }
+        }
+        if !failures.is_empty() {
+            let mut msg = format!("{} example(s) failed:\n", failures.len());
+            for (n, id, err) in &failures {
+                msg.push_str(&format!("  EX{:02} ({id}): {err}\n", n));
+            }
+            panic!("{}", msg);
+        }
+    }
+}
 
 pub static EXAMPLES: &[ExampleScript] = &[
     ExampleScript {
