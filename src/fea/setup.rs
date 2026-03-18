@@ -7,11 +7,13 @@ use crate::sdf::Sdf;
 
 // ── Region types (runtime only — contain Arc<dyn Sdf>, not serialisable) ──────
 
+#[derive(Clone)]
 pub struct FEARegion {
     pub name: String,
     pub sdf:  Arc<dyn Sdf>,
 }
 
+#[derive(Clone)]
 pub struct FEAAxisRegion {
     pub name:         String,
     pub sdf:          Arc<dyn Sdf>,
@@ -20,18 +22,21 @@ pub struct FEAAxisRegion {
     pub constrain_z:  bool,
 }
 
+#[derive(Clone)]
 pub struct FEAForceRegion {
     pub name:  String,
     pub sdf:   Arc<dyn Sdf>,
     pub force: Vec3,   // Newtons
 }
 
+#[derive(Clone)]
 pub struct FEAPressureRegion {
     pub name:      String,
     pub sdf:       Arc<dyn Sdf>,
     pub magnitude: f32,  // Pa, positive = inward
 }
 
+#[derive(Clone)]
 pub struct FEATorqueRegion {
     pub name:      String,
     pub sdf:       Arc<dyn Sdf>,
@@ -39,6 +44,7 @@ pub struct FEATorqueRegion {
     pub magnitude: f32,  // N·mm
 }
 
+#[derive(Clone)]
 pub struct FEAMotorRegion {
     pub name:      String,
     pub sdf:       Arc<dyn Sdf>,
@@ -48,7 +54,7 @@ pub struct FEAMotorRegion {
 }
 
 /// All FEA boundary conditions collected from one script execution.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct FEASetup {
     pub fixed_supports:  Vec<FEARegion>,
     pub fixed_axes:      Vec<FEAAxisRegion>,

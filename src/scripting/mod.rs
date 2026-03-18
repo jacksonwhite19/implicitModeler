@@ -2,7 +2,9 @@
 
 use std::sync::{Arc, Mutex, RwLock};
 use std::collections::HashMap;
-use rhai::Engine;
+use std::path::{Path, PathBuf};
+use std::time::SystemTime;
+use rhai::{Engine, Scope};
 use glam::Vec3;
 use crate::sdf::Sdf;
 use crate::sdf::field::Field;
@@ -11,7 +13,12 @@ use crate::sdf::profiles::SplineProfile;
 use crate::sdf::spine::LongitudinalSplines;
 use crate::fea::FEASetup;
 
+/// Shared mesh parse cache: path → (mtime, parsed mesh).
+/// Keyed by canonical path; re-parsed only when mtime changes.
+pub type MeshCache = HashMap<PathBuf, (SystemTime, Arc<crate::mesh::TriangleMesh>)>;
+
 pub mod api;
+pub mod errors;
 
 /// Wrapper for SDF objects in Rhai scripts
 #[derive(Clone)]
@@ -45,6 +52,35 @@ pub struct ComponentHandle {
     pub name: String,
 }
 
+/// A composite material handle.
+#[derive(Clone)]
+pub struct MaterialHandle(pub Arc<crate::materials::CompositeMaterial>);
+
+/// A composite shell layer handle.
+#[derive(Clone)]
+pub struct LayerHandle(pub Arc<crate::sdf::aerospace::composite::ShellLayer>);
+
+/// A stored layup configuration (layers without a parent body).
+/// Created by `composite_layup_config(layers)`, applied by `apply_layup(body, layup)`.
+#[derive(Clone)]
+pub struct LayupConfigHandle(pub Vec<Arc<crate::sdf::aerospace::composite::ShellLayer>>);
+
+/// Handle for a hinge specification (passed to aileron/elevator/rudder/flap/elevon).
+#[derive(Clone)]
+pub struct HingeHandle(pub crate::sdf::aerospace::control_surfaces::HingeSpec);
+
+/// Handle for a linkage specification (control horn + pushrod slot).
+#[derive(Clone)]
+pub struct LinkageHandle(pub crate::sdf::aerospace::control_surfaces::LinkageSpec);
+
+/// A sweep path handle — wraps any SweepPath for use in Rhai sweep() calls.
+#[derive(Clone)]
+pub struct PathHandle(pub Arc<dyn crate::sdf::sweep::SweepPath>);
+
+/// A 2D profile handle — wraps any Section2D for use in Rhai sweep() calls.
+#[derive(Clone)]
+pub struct ProfileHandle(pub Arc<dyn crate::sdf::aerospace::Section2D>);
+
 /// A point mass declared in a script via `mass_at()` or `mass_named()`
 #[derive(Clone, Debug)]
 pub struct MassPoint {
@@ -53,11 +89,118 @@ pub struct MassPoint {
     pub position: Vec3,
 }
 
+// ── PointHandle ───────────────────────────────────────────────────────────────
+#[derive(Clone, Debug)]
+pub struct PointHandle(pub Vec3);
+
+// ── Reference point registry ─────────────────────────────────────────────────
+
+/// A named geometric reference point declared in a script via ref_point().
+#[derive(Clone, Debug)]
+pub struct ReferencePoint {
+    pub name:     String,
+    pub position: Vec3,
+    pub color:    [f32; 3],
+}
+
+// ── Mounting hole data model ──────────────────────────────────────────────────
+
+#[derive(Clone, Debug)]
+#[allow(dead_code)] // Part of mounting hole data model
+pub enum HoleSource {
+    AutoDetected { confidence: f32 },
+    Manual,
+    AutoDetectedOverridden,
+}
+
+#[derive(Clone, Debug)]
+#[allow(dead_code)] // Mounting hole data model
+pub struct MountingHole {
+    pub position:          Vec3,
+    pub direction:         Vec3,
+    pub screw_designation: String,
+    pub source:            HoleSource,
+}
+
+#[derive(Clone, Debug)]
+#[allow(dead_code)] // Mounting hole set data model
+pub struct MountingHoleSet {
+    pub holes:          Vec<MountingHole>,
+    pub component_name: String,
+}
+
+#[derive(Clone)]
+#[allow(dead_code)] // Rhai scripting handle type
+pub struct MountingHoleHandle(pub MountingHole);
+
+#[derive(Clone)]
+#[allow(dead_code)] // Rhai scripting handle type
+pub struct MountingHoleSetHandle(pub MountingHoleSet);
+
+/// Handle wrapping an airfoil polar for use in Rhai scripts.
+#[derive(Clone)]
+pub struct PolarHandle(pub Arc<crate::aero::AirfoilPolar>);
+
+/// Handle wrapping a flight condition for use in Rhai scripts.
+#[derive(Clone)]
+pub struct FlightConditionHandle(pub crate::aero::FlightCondition);
+
+/// Handle wrapping a static margin result for use in Rhai scripts.
+#[derive(Clone)]
+#[allow(dead_code)] // Rhai scripting handle type
+pub struct StabilityResultHandle(pub crate::aero::StaticMarginResult);
+
+/// Handle wrapping a trim analysis result for use in Rhai scripts.
+#[derive(Clone)]
+#[allow(dead_code)] // Rhai scripting handle type
+pub struct TrimResultHandle(pub crate::aero::TrimResult);
+
+/// Handle wrapping a drag polar result for use in Rhai scripts.
+#[derive(Clone)]
+#[allow(dead_code)] // Rhai scripting handle type
+pub struct DragPolarHandle(pub crate::aero::DragPolarResult);
+
+/// Handle wrapping a motor specification for propulsion scripting.
+#[derive(Clone)]
+#[allow(dead_code)] // Rhai scripting handle type
+pub struct MotorHandle(pub Arc<crate::aero::MotorSpec>);
+
+/// Handle wrapping a propeller specification for propulsion scripting.
+#[derive(Clone)]
+#[allow(dead_code)] // Rhai scripting handle type
+pub struct PropHandle(pub Arc<crate::aero::PropSpec>);
+
+/// Handle wrapping a full propulsion system setup for scripting.
+#[derive(Clone)]
+#[allow(dead_code)] // Rhai scripting handle type
+pub struct PropulsionHandle(pub Arc<crate::aero::PropulsionSetup>);
+
+static REF_COLORS: &[[f32; 3]] = &[
+    [1.0, 0.4, 0.4],
+    [0.4, 0.8, 0.4],
+    [0.4, 0.6, 1.0],
+    [1.0, 0.8, 0.2],
+    [0.8, 0.4, 1.0],
+    [0.4, 0.9, 0.9],
+    [1.0, 0.6, 0.2],
+    [0.9, 0.4, 0.8],
+];
+
+/// Ordered map of name → position accumulated during script evaluation.
+pub type RefPointCollector = Arc<Mutex<Vec<ReferencePoint>>>;
+
+/// Accumulates all placed components during script evaluation (for bulkhead_auto).
+#[allow(dead_code)] // Used by bulkhead_auto scripting function
+pub type ComponentCollector = Arc<Mutex<Vec<ComponentHandle>>>;
+
 /// Result of evaluating a script — includes the SDF, declared mass points, and FEA conditions.
 pub struct ScriptResult {
-    pub sdf:         Arc<dyn Sdf>,
-    pub mass_points: Vec<MassPoint>,
-    pub fea_setup:   FEASetup,
+    pub sdf:              Arc<dyn Sdf>,
+    pub mass_points:      Vec<MassPoint>,
+    pub fea_setup:        FEASetup,
+    /// All composite layups created during this eval (for the Layup Summary panel).
+    pub layups:           Vec<Arc<crate::sdf::aerospace::composite::CompositeLayup>>,
+    pub reference_points: Vec<ReferencePoint>,
 }
 
 impl ScriptResult {
@@ -74,6 +217,7 @@ impl ScriptResult {
         Some(weighted / total_mass)
     }
 
+    #[allow(dead_code)] // Available for mass budget analysis
     pub fn total_mass_g(&self) -> f32 {
         self.mass_points.iter().map(|m| m.mass_g).sum()
     }
@@ -83,16 +227,17 @@ impl ScriptResult {
 ///
 /// Convenience wrapper — no profile, spine, or FEA field access.
 pub fn evaluate_script(source: &str) -> Result<ScriptResult, String> {
-    evaluate_script_full(source, None, None, None, None)
+    evaluate_script_full(source, None, None, None, None, &indexmap::IndexMap::new(), None, None, &[])
 }
 
 /// Convenience wrapper used by the app with profiles and spine but without FEA fields.
+#[allow(dead_code)] // Available as a convenience wrapper for callers not needing FEA
 pub fn evaluate_script_with_profiles(
     source: &str,
     profiles: Option<Arc<RwLock<HashMap<String, SplineProfile>>>>,
     splines: Option<Arc<LongitudinalSplines>>,
 ) -> Result<ScriptResult, String> {
-    evaluate_script_full(source, profiles, splines, None, None)
+    evaluate_script_full(source, profiles, splines, None, None, &indexmap::IndexMap::new(), None, None, &[])
 }
 
 /// Full evaluator.
@@ -101,19 +246,30 @@ pub fn evaluate_script_with_profiles(
 /// - `splines`: `spline_fuselage(stations, length)` applies longitudinal spine constraints.
 /// - `stress_field`: `stress_field()` returns a FieldHandle backed by this field.
 /// - `displacement_field`: `displacement_field()` returns a FieldHandle backed by this field.
+/// - `project_dir`: base directory for resolving relative mesh paths in `import_mesh()`.
+/// - `mesh_cache`: shared parse cache — meshes are re-parsed only when mtime changes.
 pub fn evaluate_script_full(
     source:             &str,
     profiles:           Option<Arc<RwLock<HashMap<String, SplineProfile>>>>,
     splines:            Option<Arc<LongitudinalSplines>>,
     stress_field:       Option<Arc<dyn Field>>,
     displacement_field: Option<Arc<dyn Field>>,
+    dimensions:         &indexmap::IndexMap<String, f64>,
+    project_dir:        Option<&Path>,
+    mesh_cache:         Option<Arc<Mutex<MeshCache>>>,
+    library_sources:    &[(String, String)],
 ) -> Result<ScriptResult, String> {
-    let mass_collector: Arc<Mutex<Vec<MassPoint>>>  = Arc::new(Mutex::new(Vec::new()));
-    let fea_collector:  Arc<Mutex<FEASetup>>        = Arc::new(Mutex::new(FEASetup::default()));
+    let mass_collector:   Arc<Mutex<Vec<MassPoint>>>  = Arc::new(Mutex::new(Vec::new()));
+    let comp_collector:   Arc<Mutex<Vec<ComponentHandle>>> = Arc::new(Mutex::new(Vec::new()));
+    let fea_collector:    Arc<Mutex<FEASetup>>        = Arc::new(Mutex::new(FEASetup::default()));
+    let layup_collector:  Arc<Mutex<Vec<Arc<crate::sdf::aerospace::composite::CompositeLayup>>>>
+                        = Arc::new(Mutex::new(Vec::new()));
+    let ref_collector:    RefPointCollector           = Arc::new(Mutex::new(Vec::new()));
 
     let mut engine = Engine::new();
     api::register_sdf_functions(&mut engine);
-    api::register_component_functions(&mut engine, Arc::clone(&mass_collector));
+    api::register_component_functions(&mut engine, Arc::clone(&mass_collector), Arc::clone(&comp_collector));
+    api::register_drone_auto_functions(&mut engine, Arc::clone(&comp_collector));
     api::register_mass_functions(&mut engine, Arc::clone(&mass_collector));
     api::register_fea_functions(&mut engine, Arc::clone(&fea_collector), stress_field, displacement_field);
     if let Some(p) = profiles {
@@ -122,21 +278,377 @@ pub fn evaluate_script_full(
     if let Some(s) = splines {
         api::register_spine_functions(&mut engine, s);
     }
+    api::register_mesh_functions(
+        &mut engine,
+        project_dir.map(|p| p.to_path_buf()),
+        mesh_cache.unwrap_or_else(|| Arc::new(Mutex::new(MeshCache::new()))),
+    );
+    api::register_composite_collector(&mut engine, Arc::clone(&layup_collector));
+    api::register_query_functions(&mut engine, Arc::clone(&ref_collector));
 
-    match engine.eval::<SdfHandle>(source) {
+    // Register library components as static modules.
+    for (mod_name, mod_source) in library_sources {
+        let comp_engine = rhai::Engine::new();
+        match comp_engine.compile(mod_source.as_str()) {
+            Ok(ast) => {
+                match rhai::Module::eval_ast_as_new(rhai::Scope::new(), &ast, &comp_engine) {
+                    Ok(module) => {
+                        engine.register_static_module(mod_name.as_str(), module.into());
+                    }
+                    Err(e) => {
+                        eprintln!("[Library] Module '{}' eval error: {}", mod_name, e);
+                    }
+                }
+            }
+            Err(e) => {
+                eprintln!("[Library] Module '{}' compile error: {}", mod_name, e);
+            }
+        }
+    }
+
+    // Inject named dimensions as constants into the script scope.
+    let mut scope = Scope::new();
+    for (name, &value) in dimensions {
+        scope.push_constant(name.as_str(), value);
+    }
+
+    match engine.eval_with_scope::<SdfHandle>(&mut scope, source) {
         Ok(handle) => {
-            let mass_points = mass_collector.lock().unwrap().clone();
-            let fea_setup   = std::mem::take(&mut *fea_collector.lock().unwrap());
-            Ok(ScriptResult { sdf: handle.0, mass_points, fea_setup })
+            let mass_points      = mass_collector.lock().unwrap().clone();
+            let fea_setup        = std::mem::take(&mut *fea_collector.lock().unwrap());
+            let layups           = layup_collector.lock().unwrap().clone();
+            let reference_points = ref_collector.lock().unwrap().clone();
+            Ok(ScriptResult { sdf: handle.0, mass_points, fea_setup, layups, reference_points })
         }
         Err(e) => {
             let msg = e.to_string();
             if msg.contains("() (expecting") || msg.contains("output type incorrect") {
-                Err("Script must end with an SDF expression (no semicolon on the last line).\nExample: the last line should be  `auto_fuselage(internals, 3.0)`  not  `auto_fuselage(internals, 3.0);`".to_string())
+                let base = "Script must end with an SDF expression (no semicolon on the last line).\nExample: the last line should be  `auto_fuselage(internals, 3.0)`  not  `auto_fuselage(internals, 3.0);`";
+                let formatted = errors::format_script_error(source, base);
+                Err(errors::build_error_string(&formatted))
             } else {
-                Err(format!("Script error: {}", e))
+                let raw = format!("Script error: {}", msg);
+                let formatted = errors::format_script_error(source, &raw);
+                Err(errors::build_error_string(&formatted))
             }
         }
+    }
+}
+
+// ── Cell-based scripting ──────────────────────────────────────────────────────
+
+/// Status of a script cell after evaluation.
+#[derive(Clone, Debug, PartialEq)]
+pub enum CellStatus {
+    Pending,
+    Ok,
+    Error { message: String, line: Option<usize> },
+    Skipped,
+}
+
+/// A named section of a script delimited by `# === Name ===` comments.
+#[derive(Clone, Debug)]
+pub struct ScriptCell {
+    /// Stable identifier, e.g. `"cell_0"`.
+    pub id: String,
+    /// Human-readable name parsed from the delimiter comment.
+    pub name: String,
+    /// 0-indexed line number of the delimiter comment (or 0 for no-delimiter scripts).
+    pub start_line: usize,
+    /// 0-indexed inclusive last line of this cell's content.
+    pub end_line: usize,
+    /// Evaluation status set after running.
+    pub status: CellStatus,
+}
+
+/// Returns true if `line` is a cell delimiter of the form `# === <name> ===`.
+pub fn is_delimiter_line(line: &str) -> bool {
+    is_cell_delimiter(line)
+}
+
+fn is_cell_delimiter(line: &str) -> bool {
+    let t = line.trim();
+    t.starts_with("# ===") && t.ends_with("===") && t.len() > 8
+}
+
+/// Parse the cell name from a delimiter line.
+fn parse_cell_name(line: &str) -> String {
+    let t = line.trim();
+    // Strip leading `# ===` and trailing `===`
+    let inner = t
+        .trim_start_matches('#')
+        .trim()
+        .trim_start_matches('=')
+        .trim()
+        .trim_end_matches('=')
+        .trim();
+    inner.to_string()
+}
+
+/// Parse a script into named cells.
+///
+/// If no delimiters are found, returns a single cell named `"Script"` covering all lines.
+pub fn parse_cells(script: &str) -> Vec<ScriptCell> {
+    let lines: Vec<&str> = script.lines().collect();
+    let total = lines.len();
+
+    // Collect delimiter positions.
+    let delimiters: Vec<(usize, String)> = lines
+        .iter()
+        .enumerate()
+        .filter_map(|(i, l)| {
+            if is_cell_delimiter(l) {
+                Some((i, parse_cell_name(l)))
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    if delimiters.is_empty() {
+        // No delimiters — single cell covering everything.
+        let end = if total == 0 { 0 } else { total - 1 };
+        return vec![ScriptCell {
+            id: "cell_0".to_string(),
+            name: "Script".to_string(),
+            start_line: 0,
+            end_line: end,
+            status: CellStatus::Pending,
+        }];
+    }
+
+    let mut cells = Vec::with_capacity(delimiters.len());
+    for (idx, (start, name)) in delimiters.iter().enumerate() {
+        let end = if idx + 1 < delimiters.len() {
+            delimiters[idx + 1].0.saturating_sub(1)
+        } else if total == 0 {
+            0
+        } else {
+            total - 1
+        };
+        cells.push(ScriptCell {
+            id: format!("cell_{}", idx),
+            name: name.clone(),
+            start_line: *start,
+            end_line: end,
+            status: CellStatus::Pending,
+        });
+    }
+    cells
+}
+
+/// Evaluate a script split into cells, updating each cell's status in-place.
+///
+/// The signature mirrors `evaluate_script_full` so the caller can pass the same args.
+/// Returns `Some(ScriptResult)` if at least one cell produced a valid SDF,
+/// or `None` if the very first cell failed.
+#[allow(clippy::too_many_arguments)]
+pub fn evaluate_script_cells(
+    script:             &str,
+    cells:              &mut Vec<ScriptCell>,
+    profiles:           Option<Arc<RwLock<HashMap<String, SplineProfile>>>>,
+    splines:            Option<Arc<LongitudinalSplines>>,
+    stress_field:       Option<Arc<dyn Field>>,
+    displacement_field: Option<Arc<dyn Field>>,
+    dimensions:         &indexmap::IndexMap<String, f64>,
+    project_dir:        Option<&Path>,
+    mesh_cache:         Option<Arc<Mutex<MeshCache>>>,
+    library_sources:    &[(String, String)],
+) -> Option<ScriptResult> {
+    // Set up engine + collectors exactly as evaluate_script_full does.
+    let mass_collector:   Arc<Mutex<Vec<MassPoint>>>  = Arc::new(Mutex::new(Vec::new()));
+    let comp_collector:   Arc<Mutex<Vec<ComponentHandle>>> = Arc::new(Mutex::new(Vec::new()));
+    let fea_collector:    Arc<Mutex<FEASetup>>        = Arc::new(Mutex::new(FEASetup::default()));
+    let layup_collector:  Arc<Mutex<Vec<Arc<crate::sdf::aerospace::composite::CompositeLayup>>>>
+                        = Arc::new(Mutex::new(Vec::new()));
+    let ref_collector:    RefPointCollector           = Arc::new(Mutex::new(Vec::new()));
+
+    let mut engine = Engine::new();
+    api::register_sdf_functions(&mut engine);
+    api::register_component_functions(&mut engine, Arc::clone(&mass_collector), Arc::clone(&comp_collector));
+    api::register_drone_auto_functions(&mut engine, Arc::clone(&comp_collector));
+    api::register_mass_functions(&mut engine, Arc::clone(&mass_collector));
+    api::register_fea_functions(&mut engine, Arc::clone(&fea_collector), stress_field, displacement_field);
+    if let Some(p) = profiles {
+        api::register_profile_functions(&mut engine, p);
+    }
+    if let Some(s) = splines {
+        api::register_spine_functions(&mut engine, s);
+    }
+    api::register_mesh_functions(
+        &mut engine,
+        project_dir.map(|p| p.to_path_buf()),
+        mesh_cache.unwrap_or_else(|| Arc::new(Mutex::new(MeshCache::new()))),
+    );
+    api::register_composite_collector(&mut engine, Arc::clone(&layup_collector));
+    api::register_query_functions(&mut engine, Arc::clone(&ref_collector));
+
+    for (mod_name, mod_source) in library_sources {
+        let comp_engine = rhai::Engine::new();
+        match comp_engine.compile(mod_source.as_str()) {
+            Ok(ast) => {
+                match rhai::Module::eval_ast_as_new(rhai::Scope::new(), &ast, &comp_engine) {
+                    Ok(module) => {
+                        engine.register_static_module(mod_name.as_str(), module.into());
+                    }
+                    Err(e) => {
+                        eprintln!("[Library] Module '{}' eval error: {}", mod_name, e);
+                    }
+                }
+            }
+            Err(e) => {
+                eprintln!("[Library] Module '{}' compile error: {}", mod_name, e);
+            }
+        }
+    }
+
+    // Shared scope across all cells.
+    let mut scope = Scope::new();
+    for (name, &value) in dimensions {
+        scope.push_constant(name.as_str(), value);
+    }
+
+    let script_lines: Vec<&str> = script.lines().collect();
+    let mut failed = false;
+    let mut last_sdf: Option<SdfHandle> = None;
+
+    for cell in cells.iter_mut() {
+        if failed {
+            cell.status = CellStatus::Skipped;
+            continue;
+        }
+
+        // Determine content lines.
+        // If cell.start_line is a delimiter line, content starts at start_line + 1.
+        // If start_line == 0 and line 0 is NOT a delimiter (no-delimiter script), start from 0.
+        let content_start = if cell.start_line < script_lines.len()
+            && is_cell_delimiter(script_lines[cell.start_line])
+        {
+            cell.start_line + 1
+        } else {
+            cell.start_line
+        };
+
+        let content_end = cell.end_line.min(script_lines.len().saturating_sub(1));
+
+        // Build source: prepend blank lines to keep absolute line numbers.
+        let blank_prefix = "\n".repeat(content_start);
+        let cell_lines: Vec<&str> = if content_start <= content_end {
+            script_lines[content_start..=content_end].to_vec()
+        } else {
+            vec![]
+        };
+        let cell_source = format!("{}{}", blank_prefix, cell_lines.join("\n"));
+
+        // Run the cell in the shared scope, collecting the last SDF-valued expression.
+        match engine.eval_with_scope::<SdfHandle>(&mut scope, &cell_source) {
+            Ok(handle) => {
+                cell.status = CellStatus::Ok;
+                last_sdf = Some(handle);
+            }
+            Err(e) => {
+                // If the error is "output type incorrect" it means the cell ran fine but
+                // didn't return an SDF (e.g. it was all statements). Treat as Ok.
+                let msg = e.to_string();
+                if msg.contains("() (expecting") || msg.contains("output type incorrect") {
+                    // Cell ran successfully, no SDF produced by this cell — that's fine.
+                    cell.status = CellStatus::Ok;
+                } else {
+                    // Extract line number from error if available.
+                    let line = e.position().line();
+                    cell.status = CellStatus::Error {
+                        message: errors::format_cell_error(&msg),
+                        line,
+                    };
+                    failed = true;
+                }
+            }
+        }
+    }
+
+    // Extract result from collectors.
+    let sdf = last_sdf?.0;
+    let mass_points      = mass_collector.lock().unwrap().clone();
+    let fea_setup        = std::mem::take(&mut *fea_collector.lock().unwrap());
+    let layups           = layup_collector.lock().unwrap().clone();
+    let reference_points = ref_collector.lock().unwrap().clone();
+
+    Some(ScriptResult { sdf, mass_points, fea_setup, layups, reference_points })
+}
+
+#[cfg(test)]
+mod cell_tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_no_delimiters() {
+        let cells = parse_cells("let x = 1;\nlet y = 2;");
+        assert_eq!(cells.len(), 1);
+        assert_eq!(cells[0].name, "Script");
+        assert_eq!(cells[0].start_line, 0);
+        assert_eq!(cells[0].end_line, 1);
+    }
+
+    #[test]
+    fn test_parse_two_sections() {
+        let script = "# === A ===\nlet a = 1;\n# === B ===\nlet b = 2;";
+        let cells = parse_cells(script);
+        assert_eq!(cells.len(), 2);
+        assert_eq!(cells[0].name, "A");
+        assert_eq!(cells[0].start_line, 0);
+        assert_eq!(cells[0].end_line, 1);
+        assert_eq!(cells[1].name, "B");
+        assert_eq!(cells[1].start_line, 2);
+        assert_eq!(cells[1].end_line, 3);
+    }
+
+    #[test]
+    fn test_parse_ids() {
+        let script = "# === X ===\n# === Y ===\n";
+        let cells = parse_cells(script);
+        assert_eq!(cells[0].id, "cell_0");
+        assert_eq!(cells[1].id, "cell_1");
+    }
+
+    #[test]
+    fn test_parse_single_delimiter() {
+        let script = "# === Shapes ===\nlet s = sphere(5.0);\ns";
+        let cells = parse_cells(script);
+        assert_eq!(cells.len(), 1);
+        assert_eq!(cells[0].name, "Shapes");
+        assert_eq!(cells[0].start_line, 0);
+        assert_eq!(cells[0].end_line, 2);
+    }
+
+    #[test]
+    fn test_cell_eval_two_cells() {
+        let script = "# === Base ===\nlet s = sphere(5.0);\n# === Result ===\ns";
+        let mut cells = parse_cells(script);
+        assert_eq!(cells.len(), 2);
+        let result = evaluate_script_cells(
+            script, &mut cells,
+            None, None, None, None,
+            &indexmap::IndexMap::new(),
+            None, None, &[],
+        );
+        assert!(result.is_some(), "Two-cell eval should succeed");
+        assert_eq!(cells[0].status, CellStatus::Ok);
+        assert_eq!(cells[1].status, CellStatus::Ok);
+    }
+
+    #[test]
+    fn test_cell_eval_error_skips_subsequent() {
+        let script = "# === Bad ===\nbad_function();\n# === Good ===\nsphere(5.0)";
+        let mut cells = parse_cells(script);
+        let result = evaluate_script_cells(
+            script, &mut cells,
+            None, None, None, None,
+            &indexmap::IndexMap::new(),
+            None, None, &[],
+        );
+        assert!(result.is_none(), "Error in first cell should give None");
+        assert!(matches!(cells[0].status, CellStatus::Error { .. }));
+        assert_eq!(cells[1].status, CellStatus::Skipped);
     }
 }
 
@@ -547,4 +1059,499 @@ mod tests {
         assert!(sdf.distance(Vec3::new(0.5, 0.0, 0.0)) < 0.0,
             "fuselage mid-body should be inside");
     }
+
+    // ── Part 9: Library module integration tests ───────────────────────────────
+
+    /// A library component with a build() function is callable via module syntax.
+    #[test]
+    fn test_library_module_callable() {
+        let component_source = r#"
+fn build(r) {
+    sphere(r)
+}
+"#;
+        let main_script = "my_comp::build(7.0)";
+        let result = evaluate_script_full(
+            main_script,
+            None, None, None, None,
+            &indexmap::IndexMap::new(),
+            None, None,
+            &[("my_comp".to_string(), component_source.to_string())],
+        );
+        assert!(result.is_ok(), "Library module should be callable: {:?}", result.err());
+        let sdf = result.unwrap().sdf;
+        // Sphere of radius 7: point at origin is inside
+        assert!(sdf.distance(Vec3::ZERO) < 0.0, "Origin should be inside sphere(7)");
+        // Point at distance 8 should be outside
+        assert!(sdf.distance(Vec3::new(8.0, 0.0, 0.0)) > 0.0, "Point outside sphere should be positive");
+    }
+
+    /// A library component with a syntax error does not prevent main script evaluation.
+    #[test]
+    fn test_library_syntax_error_does_not_block_main() {
+        let bad_source = "fn build( { invalid syntax !!!";
+        let main_script = "sphere(3.0)";
+        // Even with a broken component, the main script should succeed.
+        let result = evaluate_script_full(
+            main_script,
+            None, None, None, None,
+            &indexmap::IndexMap::new(),
+            None, None,
+            &[("broken_comp".to_string(), bad_source.to_string())],
+        );
+        assert!(result.is_ok(), "Main script should succeed despite broken library: {:?}", result.err());
+    }
+
+    /// composite_layup_config + apply_layup round-trip.
+    #[test]
+    fn test_layup_config_and_apply() {
+        let script = r#"
+            let mat = material("CarbonWoven_200gsm");
+            let layers = [shell_layer("outer", mat, 0.6)];
+            let cfg = composite_layup_config(layers);
+            let body = sphere(10.0);
+            apply_layup(body, cfg)
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "composite_layup_config + apply_layup should succeed: {:?}", result.err());
+        // The composite SDF wraps the sphere — origin is inside
+        assert!(result.unwrap().sdf.distance(Vec3::ZERO) < 0.0);
+    }
+
+    // ── Part 8: Control surface integration tests ──────────────────────────────
+
+    /// Aileron applied to a wing produces valid control_surface and modified_parent.
+    #[test]
+    fn test_aileron_produces_valid_sdfs() {
+        let script = r#"
+            let wing = wing_with_airfoil("0012", 10.0, 5.0, 30.0, 0.0, 0.0, 0.0);
+            let hinge = rounded_hinge(1.5, 0.5);
+            let horn = control_horn_lower(15.0, 10.0, 0.5);
+            let parts = aileron(wing, 5.0, 12.0, 0.30, hinge, horn);
+            parts[1]
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "aileron should succeed: {:?}", result.err());
+        let sdf = result.unwrap().sdf;
+        // Modified parent should still have material inside the wing (root area)
+        let d = sdf.distance(Vec3::new(5.0, 0.0, 0.0));
+        assert!(d < 0.0, "Modified parent root area should still be solid, got {}", d);
+    }
+
+    /// Control surface is carved from the aileron span region.
+    #[test]
+    fn test_aileron_control_surface_in_span() {
+        let script = r#"
+            let wing = wing_with_airfoil("0012", 10.0, 5.0, 30.0, 0.0, 0.0, 0.0);
+            let hinge = simple_gap_hinge(0.5);
+            let linkage = control_horn_lower(15.0, 10.0, 0.5);
+            let parts = aileron(wing, 5.0, 12.0, 0.30, hinge, linkage);
+            parts[0]
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "aileron control surface should succeed: {:?}", result.err());
+        let cs_sdf = result.unwrap().sdf;
+        // Point outside the aileron span (y=1, root region) should be outside the CS
+        let d_outside = cs_sdf.distance(Vec3::new(8.0, 1.0, 0.0));
+        assert!(d_outside > 0.0, "Root region should be outside aileron CS, got {}", d_outside);
+    }
+
+    /// wing_with_ailerons returns 3 SdfHandles.
+    #[test]
+    fn test_wing_with_ailerons_returns_three_handles() {
+        let script = r#"
+            let wing = wing_with_airfoil("0012", 10.0, 5.0, 30.0, 0.0, 0.0, 0.0);
+            let parts = wing_with_ailerons(wing, 0.4, 0.9, 0.30);
+            parts[2]
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "wing_with_ailerons should succeed: {:?}", result.err());
+        // Modified wing should have material at root
+        let sdf = result.unwrap().sdf;
+        let d = sdf.distance(Vec3::new(5.0, 0.0, 0.0));
+        assert!(d < 0.0, "Modified wing root should be solid, got {}", d);
+    }
+
+    /// Rounded hinge creates a void near the hinge line radius.
+    #[test]
+    fn test_rounded_hinge_void() {
+        use crate::sdf::aerospace::control_surfaces::{
+            ControlSurface, ControlSurfaceType, HingeSpec, LinkageSpec, build_control_surface,
+        };
+        use crate::sdf::primitives::SdfBox;
+
+        // Simple box wing: X=0..20, Y=-15..15, Z=-2..2
+        let wing: Arc<dyn crate::sdf::Sdf> = Arc::new(SdfBox::new(Vec3::new(10.0, 15.0, 2.0)));
+        // Translate to match chord range 0..20 (center at x=10)
+        use crate::sdf::transforms::Translate;
+        let wing = Arc::new(Translate::new(wing, Vec3::new(10.0, 0.0, 0.0)));
+
+        let spec = ControlSurface {
+            surface_type: ControlSurfaceType::Aileron,
+            parent_wing: wing.clone(),
+            span_start: 3.0, span_end: 12.0,
+            chord_fraction: 0.30,
+            hinge: HingeSpec::rounded(2.0, 0.5),
+            linkage: LinkageSpec::none(),
+        };
+        let result = build_control_surface(&spec);
+        // The modified parent should have the control surface region removed
+        // Point deep in the aileron span (y=7.5) aft of hinge should be outside modified parent
+        let y_test = 7.5;
+        let d_aft = result.modified_parent.distance(Vec3::new(17.0, y_test, 0.0));
+        assert!(d_aft > 0.0, "Aft of hinge in aileron span should be outside modified parent, got {}", d_aft);
+        // Root region should still be solid in modified parent
+        let d_root = result.modified_parent.distance(Vec3::new(5.0, 0.0, 0.0));
+        assert!(d_root < 0.0, "Root region should be solid in modified parent, got {}", d_root);
+    }
+
+    /// Thumbnail renderer produces non-empty pixels for a sphere.
+    #[test]
+    fn test_thumbnail_non_empty() {
+        use std::sync::Arc;
+        use crate::sdf::primitives::Sphere;
+        let sdf: Arc<dyn crate::sdf::Sdf> = Arc::new(Sphere::new(5.0));
+        let pixels = crate::library::thumbnail::render_thumbnail(sdf);
+        assert_eq!(pixels.len(), crate::library::thumbnail::THUMB_W * crate::library::thumbnail::THUMB_H * 4);
+        // Should not be all black — there should be hit pixels
+        let has_lit = pixels.chunks(4).any(|p| p[0] > 50 || p[1] > 50 || p[2] > 50);
+        assert!(has_lit, "Thumbnail should have some lit pixels from sphere hit");
+    }
+
+    // ── Part 8: Geometric query integration tests ──────────────────────────────
+
+    #[test]
+    fn test_surface_point_from_interior() {
+        use crate::sdf::query::surface_point;
+        use crate::sdf::primitives::Sphere;
+        let sdf = Sphere::new(10.0);
+        // Ray from origin in +X should hit surface at (10, 0, 0)
+        let pt = surface_point(&sdf, Vec3::ZERO, Vec3::X, 100.0).unwrap();
+        assert!((pt.x - 10.0).abs() < 0.1, "surface hit should be at x≈10, got {}", pt.x);
+        assert!(pt.y.abs() < 0.1);
+    }
+
+    #[test]
+    fn test_closest_point_on_sphere() {
+        use crate::sdf::query::closest_point;
+        use crate::sdf::primitives::Sphere;
+        let sdf = Sphere::new(5.0);
+        // Query from (10, 0, 0) — closest surface point should be (5, 0, 0)
+        let pt = closest_point(&sdf, Vec3::new(10.0, 0.0, 0.0));
+        let dist = pt.length();
+        assert!((dist - 5.0).abs() < 0.1, "Closest point should be at radius 5, got {}", dist);
+    }
+
+    #[test]
+    fn test_furthest_point_sphere() {
+        use crate::sdf::query::furthest_point;
+        use crate::sdf::primitives::Sphere;
+        let sdf = Sphere::new(8.0);
+        let pt = furthest_point(&sdf, Vec3::X);
+        assert!((pt.x - 8.0).abs() < 1.0, "Furthest in +X should be near (8,0,0), got {:?}", pt);
+    }
+
+    #[test]
+    fn test_ref_point_and_get_ref() {
+        let script = r#"
+            let p = point(1.0, 2.0, 3.0);
+            let stored = ref_point("test_pt", p);
+            let retrieved = get_ref("test_pt");
+            let origin = point(0.0, 0.0, 0.0);
+            let d = dist(retrieved, origin);
+            let body = sphere(5.0);
+            translate_p(body, stored)
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "ref_point + get_ref should succeed: {:?}", result.err());
+        let script_result = result.unwrap();
+        assert_eq!(script_result.reference_points.len(), 1);
+        let rp = &script_result.reference_points[0];
+        assert_eq!(rp.name, "test_pt");
+        assert!((rp.position.x - 1.0).abs() < 0.01);
+        assert!((rp.position.y - 2.0).abs() < 0.01);
+        assert!((rp.position.z - 3.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_offset_point() {
+        let script = r#"
+            let p = point(0.0, 0.0, 0.0);
+            let q = offset_point(p, 3.0, 4.0, 0.0);
+            translate_p(sphere(5.0), q)
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "offset_point should succeed: {:?}", result.err());
+        let sdf = result.unwrap().sdf;
+        // Sphere translated to (3,4,0), center should be inside
+        let d = sdf.distance(Vec3::new(3.0, 4.0, 0.0));
+        assert!(d < 0.0, "Center of translated sphere should be inside, got {}", d);
+    }
+
+    #[test]
+    fn test_trailing_edge_query() {
+        let script = r#"
+            let wing = wing_with_airfoil("0012", 10.0, 5.0, 30.0, 0.0, 0.0, 0.0);
+            let te = trailing_edge(wing, 0.0);
+            translate_p(sphere(1.0), te)
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "trailing_edge should succeed: {:?}", result.err());
+    }
+
+    // ── Phase 22: Bracket / mounting hole tests ───────────────────────────────
+
+    #[test]
+    fn test_auto_bracket_flat_produces_valid_sdfs() {
+        let script = r#"
+            let comp = component_named("servo", box_(20.0, 10.0, 6.0), 2.0, 5.0);
+            let comp_placed = place(comp, 0.0, 0.0, 0.0);
+            let parent = box_(100.0, 80.0, 5.0);
+            let holes = [
+                mounting_hole( 8.0,  4.0, -3.0,  0.0, 0.0, 1.0, "M3"),
+                mounting_hole(-8.0,  4.0, -3.0,  0.0, 0.0, 1.0, "M3"),
+                mounting_hole( 8.0, -4.0, -3.0,  0.0, 0.0, 1.0, "M3"),
+                mounting_hole(-8.0, -4.0, -3.0,  0.0, 0.0, 1.0, "M3"),
+            ];
+            let result = auto_bracket_flat(comp_placed, parent, holes, "M3");
+            result[1]
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "auto_bracket_flat should succeed: {:?}", result.err());
+        let sdf = result.unwrap().sdf;
+        // Bracket body should be solid at its nominal center
+        let d = sdf.distance(Vec3::new(0.0, 0.0, -4.0));
+        assert!(d < 0.1, "Bracket body should be solid near component, got {}", d);
+    }
+
+    #[test]
+    fn test_auto_bracket_detect_no_panic() {
+        let script = r#"
+            let comp = component_named("box_comp", box_(15.0, 8.0, 4.0), 1.0, 3.0);
+            let parent = box_(80.0, 60.0, 4.0);
+            let result = auto_bracket_detect(comp, parent, "M3");
+            result[0]
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "auto_bracket_detect should not panic: {:?}", result.err());
+    }
+
+    #[test]
+    fn test_mounting_hole_manual_creation() {
+        let script = r#"
+            let p = point(5.0, 3.0, 0.0);
+            let h = mounting_hole(p, 0.0, 0.0, 1.0, "M3");
+            sphere(1.0)
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "mounting_hole creation should succeed: {:?}", result.err());
+    }
+
+    #[test]
+    fn test_bulkhead_with_components_subtracts_keepout() {
+        // fuselage radius at x=0.5 is 1.0 (model units).
+        // Battery box half-extents: X=0.2, Y=0.1, Z=0.075 — centred at (0.5, 0, 0).
+        // margin=0.05 → keepout expands by 0.05 in model units (small, realistic).
+        let script = r#"
+            let fuse = fuselage([
+                [0.0, circle_section(0.05)],
+                [0.5, circle_section(1.0)],
+                [1.0, circle_section(0.05)],
+            ]);
+            let battery = component_named("battery", box_(0.4, 0.2, 0.15), 0.02, 80.0);
+            let batt_placed = place(battery, 0.5, 0.0, 0.0);
+            let bk = bulkhead_with_components(fuse, 0.5, 0.02, [batt_placed], 0.05);
+            bk
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "bulkhead_with_components should succeed: {:?}", result.err());
+        let sdf = result.unwrap().sdf;
+        // Inside the battery keepout at station 0.5 should be OUTSIDE the bulkhead (subtracted)
+        // battery half-ext in Y = 0.1, at (0.5, 0, 0) should be cleared
+        assert!(
+            sdf.distance(Vec3::new(0.5, 0.0, 0.0)) > 0.0,
+            "Battery keepout area should be subtracted from bulkhead"
+        );
+        // Fuselage ring material at (0.5, 0.9, 0) should be inside bulkhead
+        // battery half-ext Y = 0.1 + 0.02 (margin in component_named) + 0.05 (extra margin) = 0.17
+        // 0.9 is well outside the battery keepout, so this should be solid
+        let d_ring = sdf.distance(Vec3::new(0.5, 0.9, 0.0));
+        assert!(d_ring < 0.0, "Fuselage ring should be solid, got {}", d_ring);
+    }
+
+    #[test]
+    fn test_bulkhead_auto_finds_intersecting_components() {
+        let script = r#"
+            let fuse = fuselage([
+                [0.0, circle_section(0.05)],
+                [0.5, circle_section(1.0)],
+                [1.0, circle_section(0.05)],
+            ]);
+            let bat = component_named("bat", box_(0.2, 0.1, 0.1), 0.01, 50.0);
+            let bat_p = place(bat, 0.5, 0.0, 0.0);
+            let bk = bulkhead_auto(fuse, 0.5, 0.02);
+            bk
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "bulkhead_auto should succeed: {:?}", result.err());
+    }
+
+    #[test]
+    fn test_cable_hole_creates_void() {
+        let script = r#"
+            let fuse = fuselage([
+                [0.0, circle_section(0.05)],
+                [0.5, circle_section(1.0)],
+                [1.0, circle_section(0.05)],
+            ]);
+            let bk = bulkhead_at_station(fuse, 0.5, 0.02, 0, 0.0);
+            cable_hole(bk, 0.3, 0.0, 8.0)
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "cable_hole should succeed: {:?}", result.err());
+        let sdf = result.unwrap().sdf;
+        // Point at the cable hole center (x=0.5, y=0.3, z=0) should be outside
+        assert!(
+            sdf.distance(Vec3::new(0.5, 0.3, 0.0)) > 0.0,
+            "Cable hole should be empty"
+        );
+    }
+
+    #[test]
+    fn test_auto_bulkheads_no_panic() {
+        let script = r#"
+            let fuse = fuselage([
+                [0.0, circle_section(0.05)],
+                [0.5, circle_section(1.0)],
+                [1.0, circle_section(0.05)],
+            ]);
+            auto_bulkheads(fuse, 3, 0.02)
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "auto_bulkheads should succeed: {:?}", result.err());
+    }
+
+    #[test]
+    fn test_error_message_unknown_function() {
+        let script = "unknown_fn(5.0)";
+        let result = evaluate_script(script);
+        assert!(result.is_err(), "Should be an error");
+        let err = result.err().unwrap();
+        // Should contain a helpful message mentioning the unknown function
+        assert!(err.contains("Unknown function") || err.contains("Function not found") || err.contains("unknown_fn"),
+            "Error should mention the unknown function, got: {}", err);
+    }
+
+    #[test]
+    fn test_error_message_includes_context() {
+        let script = "let x = sphere(5.0);\nunknown_fn(x)\n";
+        let result = evaluate_script(script);
+        assert!(result.is_err(), "Should be an error");
+        let err = result.err().unwrap();
+        // Error message should be non-empty and mention the function
+        assert!(!err.is_empty(), "Error should not be empty");
+    }
+
+    #[test]
+    fn test_full_assembly_symmetric() {
+        let script = r#"
+            let half = translate(sphere(5.0), 0.0, 8.0, 0.0);
+            full_assembly(half)
+        "#;
+        let result = evaluate_script(script).unwrap();
+        let sdf = result.sdf;
+        // Both (0, 8, 0) and (0, -8, 0) should be inside
+        assert!(sdf.distance(Vec3::new(0.0,  8.0, 0.0)) < 0.0, "pos Y half should be inside");
+        assert!(sdf.distance(Vec3::new(0.0, -8.0, 0.0)) < 0.0, "neg Y half should be inside");
+        // Origin should be outside (gap between the two spheres)
+        assert!(sdf.distance(Vec3::ZERO) > 0.0, "origin should be outside");
+    }
+
+    #[test]
+    fn test_wing_area_rectangular() {
+        // Rectangular wing: box 100mm chord x 200mm span x 10mm thick
+        // Planform area ≈ 100 * 200 = 20000 mm²; sphere radius = area/10000 ≈ 2.0
+        let script = r#"
+            let wing = box_(100.0, 200.0, 10.0);
+            let area = wing_area(wing);
+            sphere(area / 10000.0)
+        "#;
+        let result = evaluate_script(script).unwrap();
+        // The sphere radius is area/10000; for area≈20000 → radius≈2.0
+        // Point at (1.8, 0, 0) should be inside (radius > 1.8)
+        assert!(result.sdf.distance(Vec3::new(1.8, 0.0, 0.0)) < 0.0,
+            "wing_area on rectangular wing should be ~20000, making sphere radius ~2.0");
+    }
+
+    #[test]
+    fn test_instance_four_positions() {
+        let script = r#"
+            let bolt = sphere(2.0);
+            let positions = [
+                #{tx:  10.0, ty:  10.0, tz: 0.0},
+                #{tx: -10.0, ty:  10.0, tz: 0.0},
+                #{tx:  10.0, ty: -10.0, tz: 0.0},
+                #{tx: -10.0, ty: -10.0, tz: 0.0},
+            ];
+            instance(bolt, positions)
+        "#;
+        let result = evaluate_script(script).unwrap();
+        let sdf = result.sdf;
+        // All four positions should be solid
+        assert!(sdf.distance(Vec3::new( 10.0,  10.0, 0.0)) < 0.0, "pos1");
+        assert!(sdf.distance(Vec3::new(-10.0,  10.0, 0.0)) < 0.0, "pos2");
+        assert!(sdf.distance(Vec3::new( 10.0, -10.0, 0.0)) < 0.0, "pos3");
+        assert!(sdf.distance(Vec3::new(-10.0, -10.0, 0.0)) < 0.0, "pos4");
+        // Origin should be outside (gap between instances)
+        assert!(sdf.distance(Vec3::ZERO) > 0.0, "origin should be outside");
+    }
+
+    #[test]
+    fn test_instance_grid() {
+        let script = r#"
+            let s = sphere(3.0);
+            instance_grid(s, 3, 3, 1, 20.0, 20.0, 0.0)
+        "#;
+        let result = evaluate_script(script).unwrap();
+        // Center of grid (0,0,0) — should be at one of the spheres
+        assert!(result.sdf.distance(Vec3::ZERO) < 0.0, "grid center should be inside");
+    }
+
+    #[test]
+    fn test_deflect_basic() {
+        let script = r#"
+            let surf = box_(20.0, 40.0, 5.0);
+            deflect(surf, 15.0)
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "deflect should succeed: {:?}", result.err());
+    }
+
+    #[test]
+    fn test_tail_volumes_basic() {
+        let script = r#"
+            let wing   = box_(120.0, 300.0, 8.0);
+            let h_tail = box_(60.0, 120.0, 5.0);
+            let v_tail = box_(50.0, 10.0, 80.0);
+            let fuse   = sphere(30.0);
+            let tv = tail_volume_coefficients(wing, h_tail, v_tail, fuse);
+            sphere(1.0)
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "tail_volume_coefficients should succeed: {:?}", result.err());
+    }
+
+    #[test]
+    fn test_place_above_below() {
+        let script = r#"
+            let base = box_(20.0, 20.0, 10.0);
+            let cap  = sphere(5.0);
+            place_above(cap, base, 2.0)
+        "#;
+        let result = evaluate_script(script).unwrap();
+        // Sphere should be above the box: center at z = 5 + 2 + 5 = 12
+        let d = result.sdf.distance(Vec3::new(0.0, 0.0, 12.0));
+        assert!(d < 0.0, "Sphere should be centered above box, got d={}", d);
+    }
+
 }

@@ -1,4 +1,6 @@
 mod app;
+mod version_control;
+mod materials;
 mod sdf;
 mod mesh;
 mod render;
@@ -7,12 +9,14 @@ mod export;
 mod project;
 mod headless;
 mod components;
-mod node_graph;
-mod notebook;
 mod ui;
 mod analysis;
+mod geometry_analysis;
+mod aero;
 mod fea;
 mod settings;
+mod undo;
+mod library;
 
 use clap::Parser;
 use std::path::PathBuf;
@@ -52,6 +56,18 @@ struct Args {
     /// Use smooth normals
     #[arg(long)]
     smooth_normals: bool,
+
+    /// Override a named dimension (repeatable: --dim wingspan=820)
+    #[arg(long = "dim", value_name = "NAME=VALUE", action = clap::ArgAction::Append)]
+    dim: Vec<String>,
+
+    /// Write metrics JSON to this path
+    #[arg(long, value_name = "FILE")]
+    output_metrics: Option<PathBuf>,
+
+    /// Mesh quality: draft, normal, fine, ultra
+    #[arg(long, default_value = "normal")]
+    mesh_quality: String,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -62,14 +78,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
     if args.headless {
+        // Parse dimension overrides
+        let dim_overrides: Vec<(String, f64)> = args.dim.iter().filter_map(|s| {
+            let mut parts = s.splitn(2, '=');
+            let name  = parts.next()?.trim().to_string();
+            let value = parts.next()?.trim().parse::<f64>().ok()?;
+            Some((name, value))
+        }).collect();
+
         // Headless mode
         if let Some(batch_dir) = args.batch {
             let output_dir = args.batch_output.unwrap_or_else(|| PathBuf::from("./output"));
             headless::execute_batch(&batch_dir, &output_dir, &args.format, args.resolution, args.smooth_normals)?;
             Ok(())
         } else if let Some(script_path) = args.script {
-            let output_path = args.output.ok_or("--output is required in headless mode")?;
-            headless::execute_script_headless(&script_path, &output_path, &args.format, args.resolution, args.smooth_normals)?;
+            headless::execute_script_headless_extended(
+                &script_path,
+                args.output.as_deref(),
+                &args.format,
+                args.resolution,
+                args.smooth_normals,
+                &dim_overrides,
+                args.output_metrics.as_deref(),
+            )?;
             Ok(())
         } else {
             eprintln!("Error: --headless requires either --script or --batch");

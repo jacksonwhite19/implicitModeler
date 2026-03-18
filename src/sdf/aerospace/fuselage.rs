@@ -73,7 +73,7 @@ impl Section2D for CrossSection {
 
 /// Fuselage section at a specific station
 #[derive(Clone)]
-struct FuselageSection {
+pub struct FuselageSection {
     cross_section: Arc<dyn Section2D>,
     position: f32,        // Normalized position along fuselage axis [0, 1]
     center_offset: Vec2,  // Offset for asymmetric fuselages

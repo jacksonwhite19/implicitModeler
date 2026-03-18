@@ -21,9 +21,12 @@ pub struct Mesh {
 pub mod marching_cubes;
 pub mod adaptive_mc;
 pub use adaptive_mc::MeshQuality;
+pub mod import;
+pub use import::{TriangleMesh, parse_stl, parse_obj};
 
 /// Compute signed mesh volume using the divergence theorem (signed tetrahedral volumes).
 /// Units match the scene units cubed (mm³ if scene is in mm).
+#[allow(dead_code)] // Used in analysis module; export kept for tests
 pub fn compute_volume(mesh: &Mesh) -> f32 {
     let mut volume = 0.0f32;
     for tri in mesh.indices.chunks(3) {

@@ -55,10 +55,10 @@ impl Airfoil {
         // Winding-number pass
         let mut crossings = 0u32;
         for i in 0..n - 1 {
-            let (ax0, ay0) = self.points[i];
-            let (bx0, by0) = other.points[i];
-            let (ax1, ay1) = self.points[i + 1];
-            let (by1) = other.points[i + 1].1;
+            let (_ax0, ay0) = self.points[i];
+            let (_bx0, by0) = other.points[i];
+            let (_ax1, ay1) = self.points[i + 1];
+            let by1 = other.points[i + 1].1;
             let y0 = ay0 * s + by0 * t;
             let y1 = ay1 * s + by1 * t;
             if (y0 <= p.y && y1 > p.y) || (y1 <= p.y && y0 > p.y) {

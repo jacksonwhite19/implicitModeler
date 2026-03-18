@@ -43,6 +43,7 @@ impl SplineProfile {
         Self { control_points, sharp_points: vec![], point_roles: vec![PointRole::Free; n] }
     }
 
+    #[allow(dead_code)] // Part of spline profile construction API
     pub fn with_sharp_points(control_points: Vec<Vec2>, sharp_points: Vec<usize>) -> Self {
         let n = control_points.len();
         Self { control_points, sharp_points, point_roles: vec![PointRole::Free; n] }
@@ -249,3 +250,80 @@ mod tests {
         assert!(p.distance(Vec3::new(3.0, 0.0, 0.0)) > 0.0, "far XZ point should be outside");
     }
 }
+
+// ── RectProfile ───────────────────────────────────────────────────────────────
+
+/// Rectangular 2D cross-section (standard box SDF).
+/// Useful for square cable channels and spar caps in sweep operations.
+pub struct RectProfile {
+    pub half_w: f32,
+    pub half_h: f32,
+}
+
+impl RectProfile {
+    pub fn new(width: f32, height: f32) -> Self {
+        Self { half_w: width / 2.0, half_h: height / 2.0 }
+    }
+}
+
+impl Section2D for RectProfile {
+    fn distance_2d(&self, p: Vec2) -> f32 {
+        let q = p.abs() - Vec2::new(self.half_w, self.half_h);
+        q.max(Vec2::ZERO).length() + q.x.max(q.y).min(0.0)
+    }
+    fn lerp_to(&self, other: &dyn Section2D, t: f32) -> Arc<dyn Section2D> {
+        if let Some(o) = other.as_any().downcast_ref::<RectProfile>() {
+            Arc::new(RectProfile {
+                half_w: self.half_w + (o.half_w - self.half_w) * t,
+                half_h: self.half_h + (o.half_h - self.half_h) * t,
+            })
+        } else {
+            // Cross-type: keep self (no meaningful morphing).
+            Arc::new(RectProfile { half_w: self.half_w, half_h: self.half_h })
+        }
+    }
+    fn as_any(&self) -> &dyn Any { self }
+}
+
+// ── NGonProfile ───────────────────────────────────────────────────────────────
+
+/// Regular n-sided polygon 2D cross-section.
+/// Useful for hex standoffs and structural tubes in sweep operations.
+pub struct NGonProfile {
+    pub sides:  u32,
+    pub radius: f32,
+}
+
+impl NGonProfile {
+    pub fn new(sides: u32, radius: f32) -> Self {
+        Self { sides: sides.max(3), radius }
+    }
+}
+
+impl Section2D for NGonProfile {
+    /// IQ-style regular polygon SDF.
+    fn distance_2d(&self, p: Vec2) -> f32 {
+        let n   = self.sides as f32;
+        let an  = std::f32::consts::TAU / n;
+        let acs = Vec2::new((an / 2.0).cos(), (an / 2.0).sin());
+        // Reduce p to the first sector.
+        let bn  = p.x.atan2(p.y).rem_euclid(an) - an / 2.0;
+        let p2  = Vec2::new(bn.cos(), bn.abs().sin()) * p.length();
+        let p2  = p2 - self.radius * acs;
+        let p2  = Vec2::new(p2.x, p2.y + (-p2.y).clamp(0.0, self.radius * acs.y));
+        p2.length() * p2.x.signum()
+    }
+    fn lerp_to(&self, other: &dyn Section2D, t: f32) -> Arc<dyn Section2D> {
+        if let Some(o) = other.as_any().downcast_ref::<NGonProfile>() {
+            // Keep sides of self (morphing side count is undefined).
+            Arc::new(NGonProfile {
+                sides:  self.sides,
+                radius: self.radius + (o.radius - self.radius) * t,
+            })
+        } else {
+            Arc::new(NGonProfile { sides: self.sides, radius: self.radius })
+        }
+    }
+    fn as_any(&self) -> &dyn Any { self }
+}
+

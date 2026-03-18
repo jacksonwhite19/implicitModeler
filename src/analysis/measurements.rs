@@ -20,6 +20,7 @@ pub struct MeasurementResults {
 }
 
 #[derive(Clone)]
+#[allow(dead_code)] // Cross-section measurement result type
 pub struct CrossSectionMeasurement {
     pub label:    String,
     pub axis:     Axis,
@@ -79,6 +80,7 @@ impl DistanceMeasureKind {
 }
 
 #[derive(Clone)]
+#[allow(dead_code)]
 pub struct PointDistanceMeasurement {
     pub label:        String,
     pub point_a:      Vec3,
@@ -258,6 +260,7 @@ pub fn measure_cross_section(
 
 // ── Point distance ────────────────────────────────────────────────────────────
 
+#[allow(dead_code)] // Simple distance utility available for measurements
 pub fn measure_distance(a: Vec3, b: Vec3) -> f32 {
     (b - a).length()
 }

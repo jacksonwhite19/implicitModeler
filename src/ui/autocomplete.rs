@@ -152,6 +152,7 @@ pub struct AutocompleteState {
 pub enum AutocompleteAction {
     None,
     Confirm(usize),   // ALL_COMPLETIONS index to apply
+    #[allow(dead_code)] // Part of autocomplete action enum
     Dismiss,
 }
 
@@ -166,7 +167,12 @@ pub fn update_completions(
     anchor_pos: egui::Pos2,
 ) {
     // Extract the word immediately before (and including) cursor.
-    let before = &text[..cursor.min(text.len())];
+    // cursor is a CHARACTER index from egui CCursor; convert to byte offset for safe slicing.
+    let byte_cursor = text.char_indices()
+        .nth(cursor)
+        .map(|(b, _)| b)
+        .unwrap_or(text.len());
+    let before = &text[..byte_cursor];
     let token_start = before
         .rfind(|c: char| !c.is_alphanumeric() && c != '_')
         .map(|p| p + before[p..].chars().next().map(|c| c.len_utf8()).unwrap_or(1))

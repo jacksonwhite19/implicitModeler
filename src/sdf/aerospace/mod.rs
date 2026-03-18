@@ -7,6 +7,12 @@ pub mod fuselage;
 pub mod nacelle;
 pub mod structural;
 pub mod structural_drone;
+pub mod mechanical;
+pub mod composite;
+pub mod control_surfaces;
+pub mod stability_geometry;
+pub mod nose_tail;
+pub mod inlets;
 
 // Re-export key types
 pub use section::Section2D;
@@ -16,19 +22,18 @@ pub use fuselage::{fuselage_parametric, CrossSection, LoftedFuselage};
 pub use nacelle::nacelle_simple;
 pub use structural::{rib_slab, spar_cylinder};
 pub use structural_drone::{
-    estimate_radius_at,
     bulkhead_at_station, lightening_hole_pattern,
     rod_mount, motor_arm, motor_mount, generate_mounts_sdf,
-    wing_lattice, fuselage_lattice, fuselage_lattice_graded,
+    keepout_intersects_plane, bulkhead_with_keepouts, cable_hole_at,
+};
+pub use mechanical::{
+    bolt_circle, bolt_square, bolt_rect,
+    countersink, counterbore, slot,
+    chamfer_edge, thread_hole,
+    fc_mount, motor_mount_pattern,
 };
 
-// Convenience blend wrapper using existing SmoothUnion
-use std::sync::Arc;
-use crate::sdf::Sdf;
-use crate::sdf::booleans::SmoothUnion;
 
-/// Blend two SDFs with a specified radius
-/// This is a convenience wrapper around SmoothUnion
-pub fn blend(a: Arc<dyn Sdf>, b: Arc<dyn Sdf>, radius: f32) -> Arc<dyn Sdf> {
-    Arc::new(SmoothUnion::new(a, b, radius))
-}
+pub use nose_tail::{HaackNose, HaackTail, TangentOgive, EllipsoidNose};
+pub use inlets::{NacaInlet, InletLip, InletShape, EdfDuct, SDuct, BuriedInlet};
+

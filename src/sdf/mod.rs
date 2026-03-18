@@ -18,6 +18,10 @@ pub mod field;
 pub mod profiles;
 pub mod spine;
 pub mod lattice;
+pub mod sweep;
+pub mod mesh_import;
+pub mod print;
+pub mod query;
 
 #[cfg(test)]
 mod integration_tests {

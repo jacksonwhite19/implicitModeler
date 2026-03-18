@@ -13,22 +13,36 @@ use crate::analysis::thickness::{compute_thickness, ThicknessResult};
 use crate::project::{SectionView, SectionPlane, Axis};
 use rayon::prelude::*;
 use crate::components::{ComponentRegistry, ComponentInstance};
-use crate::node_graph::{EditorMode, NodeGraph, GraphUiState};
-use crate::notebook::Notebook;
 use crate::scripting::MassPoint;
-use crate::mesh::compute_volume;
 use crate::ui::spline_editor::{SplineEditorState, show_spline_editor};
-use crate::ui::spine_editor::{SpineEditorState, SpineEditorTarget, show_spine_editor};
+use crate::ui::spine_editor::{SpineEditorState, show_spine_editor};
 use crate::ui::project_tree::{ProjectTree, show_project_tree, find_name_in_script,
                                count_occurrences, rename_in_script};
+use crate::undo::{AppState, UndoHistory, ScriptTextCommand, SplineShapeResetCommand,
+                  LongitudinalSpineEditCommand, RenameCommand};
 use crate::sdf::spine::LongitudinalSplines;
 use crate::settings::AppSettings;
+use crate::library::LibraryManager;
+use crate::ui::library_panel::{LibraryPanelState, show_library_panel};
+use crate::ui::examples;
 
 #[derive(Clone, Copy, PartialEq, Default)]
 pub enum FEAOverlayMode { #[default] None, Stress, Displacement }
 
+#[derive(Clone, Copy, PartialEq, Default)]
+#[allow(dead_code)] // Arbitrary variant is matched but not constructed via a UI button yet
+pub enum SplitAxisUi { #[default] Z, X, Y, Arbitrary }
+
+#[derive(Clone, Copy, PartialEq, Default)]
+pub enum SplitAlignUi { #[default] None, Pins, Groove, Dovetail, BoltHoles }
+
 pub struct App {
-    script_text: String,
+    /// All user-editable state (participates in undo/redo).
+    state:       AppState,
+    /// Undo/redo history stack.
+    undo_history: UndoHistory,
+    /// Feedback text for status bar (shown 3 s after undo/redo).
+    undo_feedback: Option<(String, std::time::Instant)>,
     current_sdf: Option<Arc<dyn Sdf>>,
     current_mesh: Option<Mesh>,
     current_sdf_grid: Option<Arc<SdfGrid>>,
@@ -57,9 +71,7 @@ pub struct App {
     current_file_path: Option<std::path::PathBuf>,
     status_message: Option<String>,
 
-    // Undo/redo
-    history: Vec<String>,
-    history_index: usize,
+    // (script text undo is managed by self.undo_history / AppState)
 
     // Auto-save
     last_auto_save: std::time::Instant,
@@ -78,17 +90,6 @@ pub struct App {
     save_component_category: String,
     save_component_description: String,
 
-    // Node graph editor
-    editor_mode: EditorMode,
-    node_graph: NodeGraph,
-    graph_ui_state: GraphUiState,
-    node_graph_history: Vec<NodeGraph>,
-    node_graph_history_index: usize,
-
-    // Notebook editor
-    notebook: Notebook,
-    // Debounce: time of last notebook edit (re-render fires 600ms after last change)
-    last_nb_edit: Option<std::time::Instant>,
 
     // Mass / CG analysis
     density_g_per_cm3: f32,
@@ -101,16 +102,11 @@ pub struct App {
     export_progress: String,
     export_receiver: Option<std::sync::mpsc::Receiver<String>>,
 
-    // Spline cross-section profiles
-    /// Editor state (serialised with project).
-    profiles: HashMap<String, SplineEditorState>,
-    /// Name of the profile currently open in the spline editor, or None.
-    active_profile: Option<String>,
+    // Spline cross-section profiles (editor state lives in self.state.profiles)
     /// Thread-safe runtime view shared with the Rhai engine.
     profiles_shared: Arc<RwLock<HashMap<String, SplineProfile>>>,
 
-    // Longitudinal spine
-    splines: LongitudinalSplines,
+    // Longitudinal spine (data lives in self.state.splines)
     /// UI state for the spine editor.
     spine_editor_state: SpineEditorState,
     /// Whether the spine editor panel is open.
@@ -130,8 +126,7 @@ pub struct App {
     /// Set when new thickness data should be uploaded to the GPU on the next frame.
     thickness_needs_upload:  bool,
 
-    // FEA integration
-    fea_setup:               crate::fea::FEASetup,
+    // FEA integration (setup populated by scripts lives in self.state.fea_setup)
     fea_config:              crate::fea::FEAConfig,
     fea_running:             bool,
     fea_log:                 Vec<String>,
@@ -194,12 +189,120 @@ pub struct App {
     autocomplete_state:      crate::ui::AutocompleteState,
     /// Scroll offset of the code editor last frame (used for autocomplete positioning).
     last_editor_scroll_y:    f32,
+
+    // Dimensions panel
+    dimensions_state:        crate::ui::DimensionsState,
+    /// Set to true when a dimension changes; triggers re-eval on next frame.
+    dimensions_pending_eval: bool,
+
+    // Mesh import cache (shared with the Rhai engine).
+    mesh_cache: Arc<std::sync::Mutex<scripting::MeshCache>>,
+
+    // Composite layups collected from the last script eval (for the Layup Summary panel).
+    current_layups: Vec<Arc<crate::sdf::aerospace::composite::CompositeLayup>>,
+
+    // Print analysis
+    print_analysis_open:     bool,
+    print_analysis_settings: crate::analysis::print_analysis::PrintAnalysisSettings,
+    print_analysis_result:   Option<crate::analysis::print_analysis::PrintAnalysisResult>,
+    print_analysis_running:  bool,
+    print_analysis_receiver: Option<std::sync::mpsc::Receiver<crate::analysis::print_analysis::PrintAnalysisResult>>,
+    print_overhang_overlay:  bool,
+    print_overhang_needs_upload: bool,
+
+    // Split body tool
+    split_axis:         SplitAxisUi,
+    split_offset:       f32,
+    split_align_type:   SplitAlignUi,
+    split_pin_radius:   f32,
+    split_pin_height:   f32,
+    split_pin_count:    usize,
+    split_pattern_r:    f32,
+    split_groove_width: f32,
+    split_groove_height: f32,
+    split_dovetail_angle: f32,
+    split_bolt_radius:  f32,
+    split_boss_radius:  f32,
+    split_bolt_count:   usize,
+    split_preview:      Option<(std::sync::Arc<dyn crate::sdf::Sdf>, std::sync::Arc<dyn crate::sdf::Sdf>)>,
+    split_fit_result:   Option<crate::sdf::print::SplitFitResult>,
+
+    // Tolerance compensation
+    tolerance_settings:   crate::sdf::print::ToleranceSettings,
+    tolerance_preset:     crate::sdf::print::TolerancePreset,
+    /// Whether to wrap geometry in ToleranceCompensated automatically at export time.
+    tolerance_on_export:  bool,
+
+    // Reference points from script evaluation
+    current_ref_points: Vec<crate::scripting::ReferencePoint>,
+    show_ref_points:    bool,
+    show_dim_lines:     bool,
+
+    // Project-local component library
+    library_manager:     Option<LibraryManager>,
+    library_panel_state: LibraryPanelState,
+
+    // Aerodynamic analysis (Phase 26)
+    current_flight_condition:    Option<crate::aero::FlightCondition>,
+    current_lifting_line_result: Option<crate::aero::LiftingLineResult>,
+    /// UI inputs for flight condition panel.
+    aero_airspeed_ms:            f32,
+    aero_altitude_m:             f32,
+    aero_aoa_deg:                f32,
+    aero_panel_open:             bool,
+
+    // Aerodynamic analysis (Phase 27) — stability and drag polar
+    current_neutral_point:       Option<crate::aero::NeutralPointResult>,
+    current_static_margin:       Option<crate::aero::StaticMarginResult>,
+    current_trim_result:         Option<crate::aero::TrimResult>,
+    current_drag_polar:          Option<crate::aero::DragPolarResult>,
+    /// CG x-position input (mm) for stability panel.
+    aero_cg_x_mm:                f32,
+    /// Aircraft weight (N) for trim and performance.
+    aero_weight_n:               f32,
+
+    // Cell-based script execution (Phase 28)
+    /// Parsed cells from the current script_text.
+    script_cells: Vec<scripting::ScriptCell>,
+
+    // Phase 30 — CG sensitivity and interference analysis
+    current_cg_sensitivity:       Option<crate::analysis::CgSensitivityResult>,
+    current_interference_result:  Option<crate::analysis::InterferenceResult>,
+
+    // Version control
+    version_control:     crate::version_control::VersionControlState,
+    vc_panel_open:       bool,
+    vc_discard_confirm:  bool,
+    vc_commit_message:   String,
+    vc_new_branch_name:  String,
+    vc_new_branch_desc:  String,
+    vc_new_branch_dialog: bool,
+    vc_panel_state:      crate::ui::VCPanelState,
+
+    // Help / function reference panel
+    help_panel_open:     bool,
+    help_state:          crate::ui::HelpSearchState,
+    /// Byte offset of the script editor cursor (updated each frame for "Insert at Cursor").
+    script_cursor_byte:  usize,
+
+    // Example browser / tab system
+    /// Indices into examples::EXAMPLES for open read-only example tabs.
+    open_example_tabs:     Vec<usize>,
+    /// None = Main Script active; Some(idx) = example tab active.
+    active_example_tab:    Option<usize>,
+    /// Search string for the example browser dropdown.
+    example_search:        String,
+    /// Pending copy-to-main action from right-click context menu.
+    pending_copy_example:  Option<usize>,
 }
 
 impl App {
     pub fn new(_cc: &eframe::CreationContext) -> Self {
+        let default_script = Self::get_default_example();
         let mut app = Self {
-            script_text: Self::get_default_example(),
+            state: AppState::new(default_script.clone()),
+            undo_history: UndoHistory::default(),
+            undo_feedback: None,
             current_sdf: None,
             current_mesh: None,
             current_sdf_grid: None,
@@ -220,8 +323,6 @@ impl App {
             export_in_progress: false,
             export_progress: String::new(),
             export_receiver: None,
-            history: vec![Self::get_default_example()],
-            history_index: 0,
             last_auto_save: std::time::Instant::now(),
             auto_save_interval: std::time::Duration::from_secs(30),
             component_registry: {
@@ -260,21 +361,11 @@ impl App {
             save_component_name: String::new(),
             save_component_category: String::from("custom"),
             save_component_description: String::new(),
-            editor_mode: EditorMode::Script,
-            node_graph: NodeGraph::with_output(),
-            graph_ui_state: GraphUiState::default(),
-            node_graph_history: vec![NodeGraph::with_output()],
-            node_graph_history_index: 0,
-            notebook: Notebook::default(),
-            last_nb_edit: None,
             density_g_per_cm3: 1.0,
             mass_points: Vec::new(),
             cg: None,
             mesh_volume_mm3: None,
-            profiles: HashMap::new(),
-            active_profile: None,
             profiles_shared: Arc::new(RwLock::new(HashMap::new())),
-            splines: LongitudinalSplines::default(),
             spine_editor_state: SpineEditorState::default(),
             spine_editor_open: false,
             spine_fuselage_length: 10.0,
@@ -285,7 +376,6 @@ impl App {
             thickness_overlay_on:   false,
             thickness_receiver:     None,
             thickness_needs_upload: false,
-            fea_setup:              crate::fea::FEASetup::default(),
             fea_config:             crate::fea::FEAConfig::default(),
             fea_running:            false,
             fea_log:                Vec::new(),
@@ -325,6 +415,72 @@ impl App {
             distance_label_idx:     1,
             autocomplete_state:     crate::ui::AutocompleteState::default(),
             last_editor_scroll_y:   0.0,
+            dimensions_state:        crate::ui::DimensionsState::default(),
+            dimensions_pending_eval: false,
+            mesh_cache:              Arc::new(std::sync::Mutex::new(scripting::MeshCache::new())),
+            current_layups:          Vec::new(),
+            print_analysis_open:     false,
+            print_analysis_settings: crate::analysis::print_analysis::PrintAnalysisSettings::default(),
+            print_analysis_result:   None,
+            print_analysis_running:  false,
+            print_analysis_receiver: None,
+            print_overhang_overlay:  false,
+            print_overhang_needs_upload: false,
+            split_axis:          SplitAxisUi::Z,
+            split_offset:        0.0,
+            split_align_type:    SplitAlignUi::None,
+            split_pin_radius:    1.5,
+            split_pin_height:    3.0,
+            split_pin_count:     4,
+            split_pattern_r:     8.0,
+            split_groove_width:  10.0,
+            split_groove_height: 3.0,
+            split_dovetail_angle: 15.0,
+            split_bolt_radius:   1.5,
+            split_boss_radius:   3.0,
+            split_bolt_count:    4,
+            split_preview:       None,
+            split_fit_result:    None,
+            tolerance_settings:  crate::sdf::print::ToleranceSettings::default(),
+            tolerance_preset:    crate::sdf::print::TolerancePreset::StandardFDM,
+            tolerance_on_export: false,
+            current_ref_points:  Vec::new(),
+            show_ref_points:     true,
+            show_dim_lines:      false,
+            library_manager:     None,
+            library_panel_state: LibraryPanelState::default(),
+            current_flight_condition:    None,
+            current_lifting_line_result: None,
+            aero_airspeed_ms:            50.0,
+            aero_altitude_m:             0.0,
+            aero_aoa_deg:                5.0,
+            aero_panel_open:             false,
+            current_neutral_point:       None,
+            current_static_margin:       None,
+            current_trim_result:         None,
+            current_drag_polar:          None,
+            aero_cg_x_mm:               100.0,
+            aero_weight_n:              10.0,
+            script_cells:               Vec::new(),
+            current_cg_sensitivity:       None,
+            current_interference_result:  None,
+            version_control:     crate::version_control::VersionControlState::new_with_root(
+                &AppState::new(default_script.clone())
+            ),
+            vc_panel_open:       false,
+            vc_discard_confirm:  false,
+            vc_commit_message:   String::new(),
+            vc_new_branch_name:  String::new(),
+            vc_new_branch_desc:  String::new(),
+            vc_new_branch_dialog: false,
+            vc_panel_state:      crate::ui::VCPanelState::default(),
+            help_panel_open:     false,
+            help_state:          crate::ui::HelpSearchState::new(),
+            script_cursor_byte:  0,
+            open_example_tabs:   Vec::new(),
+            active_example_tab:  None,
+            example_search:      String::new(),
+            pending_copy_example: None,
         };
 
         // Try to restore from auto-save
@@ -392,6 +548,7 @@ impl App {
         ]
     }
 
+    #[allow(dead_code)]
     fn get_example_list() -> Vec<(&'static str, &'static str)> {
         vec![
             ("Simple Sphere", "// Simple sphere\nlet s = sphere(10.0);\ns"),
@@ -542,6 +699,31 @@ let lattice = conformal_gyroid_field(
 );
 union(structure, lattice)
 "),
+            ("Script Variables Demo", "\
+# === Parameters ===
+// All numeric literals in each section appear as live sliders on the left.
+// Drag a slider or type a new value — the shape updates instantly.
+
+let wingspan    = 200.0;
+let root_chord  = 40.0;
+let tip_chord   = 20.0;
+let sweep_deg   = 15.0;
+let dihedral_deg = 3.0;
+let twist_deg   = -2.0;
+
+# === Fuselage ===
+let fuse_length   = 150.0;
+let fuse_diameter = 22.0;
+let fuse = fuselage_parametric(fuse_length, fuse_diameter, 0.7, 0.4);
+
+# === Wing ===
+let wing = wing_with_airfoil(\"2412\", root_chord, tip_chord, wingspan, sweep_deg, dihedral_deg, twist_deg);
+let wing = translate(wing, fuse_length * 0.35, 0.0, 0.0);
+let full_wing = full_assembly(wing);
+
+# === Assembly ===
+blend(fuse, full_wing, 5.0)
+"),
             ("Project Tree Demo", "\
 // Project Tree Demo
 // Shows Components, FEA Conditions, and Mass points in the project tree.
@@ -579,13 +761,23 @@ smooth_union(aero, shell, 12.0)
         ]
     }
 
-    fn execute_notebook(&mut self) {
-        let script = crate::notebook::notebook_to_rhai(&self.notebook);
-        self.evaluate_and_render(&script);
+    fn update_vc_working_changes(&mut self) {
+        if let Some(ref head_id) = self.version_control.head_commit_id.clone() {
+            if let Some(head_commit) = self.version_control.commits.get(head_id) {
+                let head_state = head_commit.state.clone();
+                self.version_control.working_changes =
+                    crate::version_control::operations::has_working_changes(
+                        &self.state, &head_state);
+            }
+        }
     }
 
     fn execute_script(&mut self) {
-        let script = self.script_text.clone();
+        let script = self.state.script_text.clone();
+
+        // Re-detect script variables for live manipulation sliders (Phase 31).
+        self.dimensions_state.detected_variables =
+            crate::ui::script_variable_detector::detect_script_variables(&script);
 
         // Handle empty script - clear mesh
         let trimmed = script.trim();
@@ -599,7 +791,29 @@ smooth_union(aero, shell, 12.0)
             return;
         }
 
-        self.evaluate_and_render(&script);
+        // Re-parse cells; preserve prior statuses by id.
+        let mut new_cells = scripting::parse_cells(&script);
+        for cell in &mut new_cells {
+            if let Some(old) = self.script_cells.iter().find(|c| c.id == cell.id) {
+                cell.status = old.status.clone();
+            }
+        }
+        // Reset statuses to Pending for fresh eval.
+        for cell in &mut new_cells {
+            cell.status = scripting::CellStatus::Pending;
+        }
+
+        // Use cell-aware evaluation when more than one cell exists.
+        if new_cells.len() > 1 {
+            self.script_cells = new_cells;
+            self.evaluate_and_render_cells(&script);
+        } else {
+            self.script_cells = new_cells;
+            self.evaluate_and_render(&script);
+        }
+
+        // Update working changes indicator.
+        self.update_vc_working_changes();
     }
 
     fn evaluate_and_render(&mut self, script: &str) {
@@ -608,17 +822,32 @@ smooth_union(aero, shell, 12.0)
 
         let start_eval = Instant::now();
         let profiles_ref = Arc::clone(&self.profiles_shared);
-        let splines_ref = Arc::new(self.splines.clone());
+        let splines_ref = Arc::new(self.state.splines.clone());
         let sf = self.fea_stress_field.clone();
         let df = self.fea_displacement_field.clone();
-        match scripting::evaluate_script_full(script, Some(profiles_ref), Some(splines_ref), sf, df) {
+        let project_dir = self.current_file_path.as_deref().and_then(|p| p.parent()).map(|p| p.to_path_buf());
+        let library_sources = self.library_manager.as_ref()
+            .map(|m| m.module_sources())
+            .unwrap_or_default();
+        match scripting::evaluate_script_full(
+            script,
+            Some(profiles_ref),
+            Some(splines_ref),
+            sf, df,
+            &self.state.dimensions,
+            project_dir.as_deref(),
+            Some(Arc::clone(&self.mesh_cache)),
+            &library_sources,
+        ) {
             Ok(result) => {
                 let eval_time = start_eval.elapsed().as_secs_f64() * 1000.0;
 
                 // Extract CG/mass data before moving sdf out of result
                 let cg = result.center_of_gravity();
                 let mass_points = result.mass_points;
-                self.fea_setup = result.fea_setup;
+                self.state.fea_setup    = result.fea_setup;
+                self.current_layups     = result.layups;
+                self.current_ref_points = result.reference_points;
                 let sdf = result.sdf;
 
                 // Compute bounds once, reuse for both SDF grid and mesh.
@@ -662,9 +891,9 @@ smooth_union(aero, shell, 12.0)
                 }
 
                 // Pre-compute FEA BC visualization geometry (cheap 20³ sample).
-                if !self.fea_setup.is_empty() {
+                if !self.state.fea_setup.is_empty() {
                     self.fea_viz = Some(crate::fea::compute_fea_viz(
-                        &self.fea_setup, bounds_min, bounds_max,
+                        &self.state.fea_setup, bounds_min, bounds_max,
                     ));
                 } else {
                     self.fea_viz = None;
@@ -682,13 +911,21 @@ smooth_union(aero, shell, 12.0)
                     self.measurements_stale = true;
                 }
 
+                // Print analysis results are stale when the model changes.
+                if self.print_analysis_result.is_some() {
+                    self.print_analysis_result       = None;
+                    self.print_overhang_overlay      = false;
+                    self.print_overhang_needs_upload = false;
+                }
+
                 // Rebuild project tree from latest data.
-                let profile_names: Vec<String> = self.profiles.keys().cloned().collect();
+                let profile_names: Vec<String> = self.state.profiles.keys().cloned().collect();
                 self.project_tree.rebuild(
                     &self.mass_points,
-                    &self.fea_setup,
+                    &self.state.fea_setup,
                     &profile_names,
-                    &self.splines,
+                    &self.state.splines,
+                    &self.current_ref_points,
                 );
             }
             Err(e) => {
@@ -702,9 +939,133 @@ smooth_union(aero, shell, 12.0)
         self.is_processing = false;
     }
 
-    fn execute_script_from_text(&mut self) {
-        // Alias kept for call-sites that reference old name pattern
-        self.execute_script();
+    /// Cell-aware evaluation: runs each cell sequentially in a shared Rhai scope.
+    /// Updates `self.script_cells` statuses and, on success, renders as usual.
+    fn evaluate_and_render_cells(&mut self, script: &str) {
+        use std::time::Instant;
+        self.is_processing = true;
+
+        let start_eval = Instant::now();
+        let profiles_ref = Arc::clone(&self.profiles_shared);
+        let splines_ref = Arc::new(self.state.splines.clone());
+        let sf = self.fea_stress_field.clone();
+        let df = self.fea_displacement_field.clone();
+        let project_dir = self.current_file_path.as_deref().and_then(|p| p.parent()).map(|p| p.to_path_buf());
+        let library_sources = self.library_manager.as_ref()
+            .map(|m| m.module_sources())
+            .unwrap_or_default();
+
+        let result_opt = scripting::evaluate_script_cells(
+            script,
+            &mut self.script_cells,
+            Some(profiles_ref),
+            Some(splines_ref),
+            sf, df,
+            &self.state.dimensions,
+            project_dir.as_deref(),
+            Some(Arc::clone(&self.mesh_cache)),
+            &library_sources,
+        );
+
+        let eval_time = start_eval.elapsed().as_secs_f64() * 1000.0;
+
+        match result_opt {
+            Some(result) => {
+                let cg = result.center_of_gravity();
+                let mass_points = result.mass_points;
+                self.state.fea_setup    = result.fea_setup;
+                self.current_layups     = result.layups;
+                self.current_ref_points = result.reference_points;
+                let sdf = result.sdf;
+
+                let start_mesh = Instant::now();
+                let (bounds_min, bounds_max) = Self::auto_bounds(sdf.as_ref());
+
+                let sdf_grid = Arc::new(Self::compute_sdf_grid(
+                    sdf.as_ref(), bounds_min, bounds_max, self.resolution,
+                ));
+                let mesh_time = start_mesh.elapsed().as_secs_f64() * 1000.0;
+
+                let step = (bounds_max - bounds_min) / self.resolution as f32;
+                let voxel_vol = step.x * step.y * step.z;
+                let inside = sdf_grid.data.iter().filter(|&&d| d < 0.0).count();
+                self.mesh_volume_mm3 = Some(inside as f32 * voxel_vol);
+                self.cg = cg;
+                self.mass_points = mass_points;
+
+                let res = self.resolution as usize;
+                let mut tight_min = bounds_max;
+                let mut tight_max = bounds_min;
+                for iz in 0..res { for iy in 0..res { for ix in 0..res {
+                    if sdf_grid.data[ix + iy * res + iz * res * res] < 0.0 {
+                        let p = bounds_min + Vec3::new(
+                            (ix as f32 + 0.5) * step.x,
+                            (iy as f32 + 0.5) * step.y,
+                            (iz as f32 + 0.5) * step.z,
+                        );
+                        tight_min = tight_min.min(p);
+                        tight_max = tight_max.max(p);
+                    }
+                }}}
+                if tight_min.x <= tight_max.x {
+                    self.camera.frame_bounds(tight_min, tight_max);
+                } else {
+                    self.camera.frame_bounds(bounds_min, bounds_max);
+                }
+
+                if !self.state.fea_setup.is_empty() {
+                    self.fea_viz = Some(crate::fea::compute_fea_viz(
+                        &self.state.fea_setup, bounds_min, bounds_max,
+                    ));
+                } else {
+                    self.fea_viz = None;
+                }
+
+                self.current_sdf = Some(sdf);
+                self.current_mesh = None;
+                self.current_sdf_grid = Some(sdf_grid);
+                self.error_message = None;
+                self.eval_time_ms = Some(eval_time);
+                self.mesh_time_ms = Some(mesh_time);
+
+                if self.measurements.volume_mm3.is_some() {
+                    self.measurements_stale = true;
+                }
+                if self.print_analysis_result.is_some() {
+                    self.print_analysis_result       = None;
+                    self.print_overhang_overlay      = false;
+                    self.print_overhang_needs_upload = false;
+                }
+
+                let profile_names: Vec<String> = self.state.profiles.keys().cloned().collect();
+                self.project_tree.rebuild(
+                    &self.mass_points,
+                    &self.state.fea_setup,
+                    &profile_names,
+                    &self.state.splines,
+                    &self.current_ref_points,
+                );
+            }
+            None => {
+                // Build error message from failed cells.
+                let err_msg = self.script_cells.iter()
+                    .filter_map(|c| {
+                        if let scripting::CellStatus::Error { message, line } = &c.status {
+                            let line_info = line.map(|l| format!(" (line {})", l)).unwrap_or_default();
+                            Some(format!("[{}]{}: {}", c.name, line_info, message))
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<_>>()
+                    .join("\n");
+                self.error_message = Some(err_msg);
+                self.eval_time_ms = None;
+                self.mesh_time_ms = None;
+            }
+        }
+
+        self.is_processing = false;
     }
 
     fn save_project(&mut self) {
@@ -725,33 +1086,37 @@ smooth_union(aero, shell, 12.0)
     }
 
     fn save_project_to_path(&mut self, path: std::path::PathBuf) {
-        let profiles_opt = if self.profiles.is_empty() {
+        let profiles_opt = if self.state.profiles.is_empty() {
             None
         } else {
-            Some(self.profiles.clone())
+            Some(self.state.profiles.clone())
         };
-        let splines_opt = if self.splines == LongitudinalSplines::default() {
+        let splines_opt = if self.state.splines == LongitudinalSplines::default() {
             None
         } else {
-            Some(self.splines.clone())
+            Some(self.state.splines.clone())
         };
         let section_opt = Some(self.section_view.clone());
         let project = crate::project::Project::new(
-            self.script_text.clone(),
+            self.state.script_text.clone(),
             self.resolution,
             self.smooth_normals,
             self.show_wireframe,
             [self.camera.eye.x, self.camera.eye.y, self.camera.eye.z],
             [self.camera.target.x, self.camera.target.y, self.camera.target.z],
-            Some(self.node_graph.clone()),
-            Some(self.notebook.clone()),
             profiles_opt,
             splines_opt,
             section_opt,
             Some(self.fea_config.clone()),
+            self.state.dimensions.clone(),
+            Some(self.print_analysis_settings.clone()),
+            Some(self.tolerance_settings.clone()),
         );
 
-        match project.save(&path) {
+        let mut project_with_vc = project;
+        project_with_vc.version_control = Some(self.version_control.clone());
+
+        match project_with_vc.save(&path) {
             Ok(_) => {
                 self.current_file_path = Some(path.clone());
                 self.status_message = Some(format!("Saved to {}", path.display()));
@@ -771,7 +1136,7 @@ smooth_union(aero, shell, 12.0)
         {
             match crate::project::Project::load(&path) {
                 Ok(project) => {
-                    self.script_text = project.script;
+                    self.state.script_text = project.script;
                     self.resolution = project.resolution;
                     self.smooth_normals = project.smooth_normals;
                     self.show_wireframe = project.show_wireframe;
@@ -780,30 +1145,18 @@ smooth_union(aero, shell, 12.0)
                     self.camera.eye = Vec3::from_array(project.camera_position);
                     self.camera.target = Vec3::from_array(project.camera_target);
 
-                    // Restore node graph if present
-                    if let Some(ng) = project.node_graph {
-                        self.node_graph = ng.clone();
-                        self.node_graph_history = vec![ng];
-                        self.node_graph_history_index = 0;
-                    }
-
-                    // Restore notebook if present
-                    if let Some(nb) = project.notebook {
-                        self.notebook = nb;
-                    }
-
                     // Restore profiles if present (orphaned profiles are preserved
                     // by merging — existing profiles not in the file are kept).
                     if let Some(loaded_profiles) = project.profiles {
                         for (name, state) in loaded_profiles {
-                            self.profiles.insert(name, state);
+                            self.state.profiles.insert(name, state);
                         }
                         self.sync_profiles_shared();
                     }
 
                     // Restore spine constraints if present
                     if let Some(splines) = project.splines {
-                        self.splines = splines;
+                        self.state.splines = splines;
                     }
 
                     // Restore section view if present
@@ -816,8 +1169,38 @@ smooth_union(aero, shell, 12.0)
                         self.fea_config = fc;
                     }
 
+                    // Restore named dimensions
+                    if !project.dimensions.is_empty() {
+                        self.state.dimensions = project.dimensions;
+                    }
+
+                    // Restore print analysis settings if present
+                    if let Some(pa) = project.print_analysis_settings {
+                        self.print_analysis_settings = pa;
+                    }
+
+                    // Restore tolerance settings if present
+                    if let Some(ts) = project.tolerance_settings {
+                        self.tolerance_settings = ts;
+                    }
+
+                    // Restore version control state (or create fresh from loaded state)
+                    self.version_control = project.version_control.unwrap_or_else(|| {
+                        crate::version_control::VersionControlState::new_with_root(&self.state)
+                    });
+
                     self.current_file_path = Some(path.clone());
                     self.status_message = Some(format!("Loaded {}", path.display()));
+                    // Undo history is session-only — clear on load.
+                    self.undo_history.clear();
+
+                    // Initialize library manager for project lib/ dir
+                    if let Some(dir) = path.parent() {
+                        let lib_dir = dir.join("lib");
+                        let mut mgr = LibraryManager::new(lib_dir);
+                        mgr.scan();
+                        self.library_manager = Some(mgr);
+                    }
 
                     // Execute the loaded script
                     self.execute_script();
@@ -829,61 +1212,25 @@ smooth_union(aero, shell, 12.0)
         }
     }
 
-    fn push_history(&mut self) {
-        // If we're not at the end of history, truncate forward history
-        if self.history_index < self.history.len() - 1 {
-            self.history.truncate(self.history_index + 1);
-        }
+    // push_history replaced by undo_history.execute(ScriptTextCommand) at each change site.
 
-        // Add new state
-        self.history.push(self.script_text.clone());
-
-        // Limit history to 50 states
-        if self.history.len() > 50 {
-            self.history.remove(0);
-        } else {
-            self.history_index += 1;
+    fn undo_app(&mut self) {
+        // Split borrow: undo_history needs &mut AppState separately.
+        let state = &mut self.state;
+        self.undo_history.undo(state);
+        if let Some((msg, _)) = &self.undo_history.last_action {
+            self.undo_feedback = Some((msg.clone(), std::time::Instant::now()));
         }
+        self.dimensions_pending_eval = true;
     }
 
-    fn undo(&mut self) {
-        if self.history_index > 0 {
-            self.history_index -= 1;
-            self.script_text = self.history[self.history_index].clone();
+    fn redo_app(&mut self) {
+        let state = &mut self.state;
+        self.undo_history.redo(state);
+        if let Some((msg, _)) = &self.undo_history.last_action {
+            self.undo_feedback = Some((msg.clone(), std::time::Instant::now()));
         }
-    }
-
-    fn redo(&mut self) {
-        if self.history_index < self.history.len() - 1 {
-            self.history_index += 1;
-            self.script_text = self.history[self.history_index].clone();
-        }
-    }
-
-    fn push_graph_history(&mut self) {
-        if self.node_graph_history_index < self.node_graph_history.len() - 1 {
-            self.node_graph_history.truncate(self.node_graph_history_index + 1);
-        }
-        self.node_graph_history.push(self.node_graph.clone());
-        if self.node_graph_history.len() > 50 {
-            self.node_graph_history.remove(0);
-        } else {
-            self.node_graph_history_index += 1;
-        }
-    }
-
-    fn undo_graph(&mut self) {
-        if self.node_graph_history_index > 0 {
-            self.node_graph_history_index -= 1;
-            self.node_graph = self.node_graph_history[self.node_graph_history_index].clone();
-        }
-    }
-
-    fn redo_graph(&mut self) {
-        if self.node_graph_history_index < self.node_graph_history.len() - 1 {
-            self.node_graph_history_index += 1;
-            self.node_graph = self.node_graph_history[self.node_graph_history_index].clone();
-        }
+        self.dimensions_pending_eval = true;
     }
 
     /// Detect the SDF's spatial extent. Returns a tight asymmetric bounding box so that
@@ -1007,7 +1354,15 @@ smooth_union(aero, shell, 12.0)
         let Some(ref sdf) = self.current_sdf else { return };
         let Some(ref grid) = self.current_sdf_grid else { return };
 
-        let sdf = Arc::clone(sdf);
+        // Optionally wrap with tolerance compensation.
+        let sdf: Arc<dyn crate::sdf::Sdf> = if self.tolerance_on_export {
+            Arc::new(crate::sdf::print::ToleranceCompensated::new(
+                Arc::clone(sdf),
+                self.tolerance_settings.clone(),
+            ))
+        } else {
+            Arc::clone(sdf)
+        };
         let bounds_min = grid.bounds_min;
         let bounds_max = grid.bounds_max;
         let quality = self.mesh_quality;
@@ -1054,7 +1409,7 @@ smooth_union(aero, shell, 12.0)
 
     fn auto_save(&mut self) {
         let path = Self::get_auto_save_path();
-        if let Err(e) = std::fs::write(&path, &self.script_text) {
+        if let Err(e) = std::fs::write(&path, &self.state.script_text) {
             eprintln!("Auto-save failed: {}", e);
         }
         self.last_auto_save = std::time::Instant::now();
@@ -1065,9 +1420,8 @@ smooth_union(aero, shell, 12.0)
         if path.exists() {
             if let Ok(content) = std::fs::read_to_string(&path) {
                 if !content.is_empty() && content != Self::get_default_example() {
-                    self.script_text = content;
-                    self.history = vec![self.script_text.clone()];
-                    self.history_index = 0;
+                    self.state.script_text = content;
+                    self.undo_history.clear();
                     self.status_message = Some("Restored from auto-save".to_string());
                     return true;
                 }
@@ -1086,7 +1440,7 @@ smooth_union(aero, shell, 12.0)
     fn sync_profiles_shared(&self) {
         if let Ok(mut write) = self.profiles_shared.write() {
             write.clear();
-            for (name, state) in &self.profiles {
+            for (name, state) in &self.state.profiles {
                 write.insert(name.clone(), state.to_profile());
             }
         }
@@ -1100,15 +1454,11 @@ impl eframe::App for App {
             self.auto_save();
         }
 
-        // Notebook debounce: re-render 600 ms after the last keystroke
-        if let Some(t) = self.last_nb_edit {
-            let debounce = std::time::Duration::from_millis(600);
-            if t.elapsed() >= debounce {
-                self.last_nb_edit = None;
-                self.execute_notebook();
-            } else {
-                ctx.request_repaint_after(debounce - t.elapsed());
-            }
+        // Trigger re-eval when dimensions changed last frame.
+        if self.dimensions_pending_eval {
+            self.dimensions_pending_eval = false;
+            self.execute_script();
+            // execute_script calls update_vc_working_changes internally
         }
 
         // Request repaint for auto-save timer
@@ -1251,12 +1601,35 @@ impl eframe::App for App {
             ctx.request_repaint_after(std::time::Duration::from_millis(100));
         }
 
-        // Handle keyboard shortcuts
-        if ctx.input(|i| i.key_pressed(egui::Key::F5) || (i.modifiers.ctrl && i.key_pressed(egui::Key::R))) {
-            match self.editor_mode {
-                EditorMode::Notebook => self.execute_notebook(),
-                _ => self.execute_script(),
+        // Poll print analysis background thread
+        if self.print_analysis_running {
+            let mut done = false;
+            let mut result = None;
+            if let Some(ref rx) = self.print_analysis_receiver {
+                if let Ok(r) = rx.try_recv() {
+                    result = Some(r);
+                    done   = true;
+                }
             }
+            if done {
+                self.print_analysis_running  = false;
+                self.print_analysis_receiver = None;
+                if let Some(r) = result {
+                    self.print_analysis_result       = Some(r);
+                    self.print_overhang_needs_upload = true;
+                    self.print_overhang_overlay      = true;
+                }
+            }
+            ctx.request_repaint_after(std::time::Duration::from_millis(100));
+        }
+
+        // Handle keyboard shortcuts
+        if ctx.input(|i| i.key_pressed(egui::Key::F1)) {
+            self.help_panel_open = !self.help_panel_open;
+        }
+
+        if ctx.input(|i| i.key_pressed(egui::Key::F5) || (i.modifiers.ctrl && i.key_pressed(egui::Key::R))) {
+            self.execute_script();
         }
 
         // Save project (Ctrl+S)
@@ -1269,23 +1642,23 @@ impl eframe::App for App {
             self.load_project();
         }
 
-        // Undo (Ctrl+Z)
-        if ctx.input(|i| i.modifiers.ctrl && !i.modifiers.shift && i.key_pressed(egui::Key::Z)) {
-            if self.editor_mode == EditorMode::Graph {
-                self.undo_graph();
-            } else {
-                self.undo();
-            }
+        // Undo (Ctrl+Z) — consume key so egui TextEdit does NOT handle it.
+        let ctrl_z = ctx.input_mut(|i| {
+            i.consume_key(egui::Modifiers::CTRL, egui::Key::Z) &&
+            !i.modifiers.shift
+        });
+        if ctrl_z {
+            self.undo_app();
         }
 
         // Redo (Ctrl+Y or Ctrl+Shift+Z)
-        if ctx.input(|i| (i.modifiers.ctrl && i.key_pressed(egui::Key::Y)) ||
-                          (i.modifiers.ctrl && i.modifiers.shift && i.key_pressed(egui::Key::Z))) {
-            if self.editor_mode == EditorMode::Graph {
-                self.redo_graph();
-            } else {
-                self.redo();
-            }
+        let ctrl_y = ctx.input_mut(|i| {
+            i.consume_key(egui::Modifiers::CTRL, egui::Key::Y) ||
+            (i.modifiers.ctrl && i.modifiers.shift &&
+             i.consume_key(egui::Modifiers::CTRL | egui::Modifiers::SHIFT, egui::Key::Z))
+        });
+        if ctrl_y {
+            self.redo_app();
         }
 
         // Camera reset (Home key)
@@ -1312,11 +1685,12 @@ impl eframe::App for App {
                 // File menu
                 ui.menu_button("File", |ui| {
                     if ui.button("New").clicked() {
-                        self.script_text = Self::get_default_example();
+                        self.state.script_text = Self::get_default_example();
                         self.current_sdf = None;
                         self.current_mesh = None;
                         self.current_sdf_grid = None;
                         self.current_file_path = None;
+                        self.undo_history.clear();
                         ui.close_menu();
                     }
                     if ui.button("Open…  Ctrl+O").clicked() {
@@ -1334,6 +1708,41 @@ impl eframe::App for App {
                     }
                 });
 
+                // Edit menu
+                ui.menu_button("Edit", |ui| {
+                    let can_undo = self.undo_history.can_undo();
+                    let undo_label = match self.undo_history.undo_description() {
+                        Some(d) => format!("Undo: {}  Ctrl+Z", d),
+                        None    => "Nothing to undo".to_owned(),
+                    };
+                    if ui.add_enabled(can_undo, egui::Button::new(undo_label)).clicked() {
+                        self.undo_app();
+                        ui.close_menu();
+                    }
+                    let can_redo = self.undo_history.can_redo();
+                    let redo_label = match self.undo_history.redo_description() {
+                        Some(d) => format!("Redo: {}  Ctrl+Shift+Z", d),
+                        None    => "Nothing to redo".to_owned(),
+                    };
+                    if ui.add_enabled(can_redo, egui::Button::new(redo_label)).clicked() {
+                        self.redo_app();
+                        ui.close_menu();
+                    }
+                    ui.separator();
+                    ui.menu_button("Undo History…", |ui| {
+                        ui.set_min_width(280.0);
+                        let descs: Vec<&str> = self.undo_history.past_descriptions(20).collect();
+                        if descs.is_empty() {
+                            ui.label(egui::RichText::new("(empty)").color(egui::Color32::GRAY));
+                        }
+                        for (i, d) in descs.iter().enumerate() {
+                            let is_top = i == 0;
+                            let text = egui::RichText::new(format!("{}  {}", if is_top { "▶" } else { "  " }, d));
+                            ui.label(if is_top { text.strong() } else { text.color(egui::Color32::GRAY) });
+                        }
+                    });
+                });
+
                 // Export menu — generates mesh on-demand at the chosen quality
                 ui.menu_button("Export", |ui| {
                     ui.label("Quality:");
@@ -1341,6 +1750,12 @@ impl eframe::App for App {
                         if ui.selectable_label(self.mesh_quality == q, q.label()).clicked() {
                             self.mesh_quality = q;
                         }
+                    }
+                    ui.separator();
+                    ui.checkbox(&mut self.tolerance_on_export, "Apply tolerance compensation");
+                    if !self.tolerance_on_export {
+                        ui.colored_label(egui::Color32::from_rgb(200, 160, 40),
+                            "⚠ Tolerance compensation not applied");
                     }
                     ui.separator();
                     let has_sdf = self.current_sdf.is_some() && !self.export_in_progress;
@@ -1397,15 +1812,47 @@ impl eframe::App for App {
                     self.measure_open = !self.measure_open;
                 }
 
+                let pa_label = if self.print_analysis_open { "🖨 Print ✓" } else { "🖨 Print" };
+                if ui.button(pa_label).clicked() {
+                    self.print_analysis_open = !self.print_analysis_open;
+                }
+
+                let aero_label = if self.aero_panel_open { "✈ Aero ✓" } else { "✈ Aero" };
+                if ui.button(aero_label).clicked() {
+                    self.aero_panel_open = !self.aero_panel_open;
+                }
+
+                ui.separator();
+
+                // Version control indicator
+                let vc_label = if self.version_control.detached_head {
+                    egui::RichText::new("⚠ DETACHED HEAD")
+                        .color(egui::Color32::from_rgb(255, 150, 50))
+                } else if self.version_control.working_changes {
+                    egui::RichText::new(format!("⌥ {}*", self.version_control.current_branch))
+                        .color(egui::Color32::YELLOW)
+                } else {
+                    egui::RichText::new(format!("⌥ {}", self.version_control.current_branch))
+                        .color(egui::Color32::GRAY)
+                };
+                ui.label(vc_label);
+                if ui.small_button("VC").clicked() {
+                    self.vc_panel_open = !self.vc_panel_open;
+                }
+
+                ui.separator();
+
+                // Function reference help panel
+                if ui.button("?").on_hover_text("Function Reference (F1)").clicked() {
+                    self.help_panel_open = !self.help_panel_open;
+                }
+
                 ui.separator();
 
                 // Quick-access run button in menu bar
                 let run_label = if self.is_processing { "⏳ Running…" } else { "▶ Run  F5" };
                 if ui.button(run_label).clicked() && !self.is_processing {
-                    match self.editor_mode {
-                        EditorMode::Notebook => self.execute_notebook(),
-                        _ => self.execute_script(),
-                    }
+                    self.execute_script();
                 }
 
                 // Status / timing on right side
@@ -1462,9 +1909,10 @@ impl eframe::App for App {
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     let interaction = show_project_tree(ui, &mut self.project_tree);
 
+
                     // Jump to script definition on node click
                     if let Some(name) = interaction.jump_to_name {
-                        if let Some((offset, line)) = find_name_in_script(&self.script_text, &name) {
+                        if let Some((offset, line)) = find_name_in_script(&self.state.script_text, &name) {
                             self.pending_cursor_offset = Some(offset);
                             self.pending_scroll_line   = Some(line);
                         }
@@ -1472,7 +1920,7 @@ impl eframe::App for App {
 
                     // Start rename on right-click
                     if let Some((node_id, old_name)) = interaction.start_rename {
-                        let count = count_occurrences(&self.script_text, &old_name);
+                        let count = count_occurrences(&self.state.script_text, &old_name);
                         self.project_tree.rename = Some(crate::ui::project_tree::RenameState {
                             node_id,
                             old_name: old_name.clone(),
@@ -1484,12 +1932,118 @@ impl eframe::App for App {
 
                     // Apply confirmed rename immediately
                     if let Some((old_name, new_name)) = interaction.confirmed_rename {
-                        let new_script = rename_in_script(&self.script_text, &old_name, &new_name);
-                        if new_script != self.script_text {
-                            self.script_text = new_script;
-                            self.push_history();
+                        let new_script = rename_in_script(&self.state.script_text, &old_name, &new_name);
+                        if new_script != self.state.script_text {
+                            let cmd = Box::new(RenameCommand {
+                                old_name:      old_name.clone(),
+                                new_name:      new_name.clone(),
+                                script_before: self.state.script_text.clone(),
+                                script_after:  new_script.clone(),
+                            });
+                            self.state.script_text = new_script;
+                            // Update profiles key if needed.
+                            if let Some(profile) = self.state.profiles.remove(&old_name) {
+                                self.state.profiles.insert(new_name.clone(), profile);
+                            }
+                            if self.state.active_profile.as_deref() == Some(&old_name) {
+                                self.state.active_profile = Some(new_name);
+                            }
+                            self.undo_history.push_executed(cmd);
                             self.execute_script();
                         }
+                    }
+
+                    // ── Dimensions panel ─────────────────────────────────────
+                    let dims_changed = crate::ui::dimensions::show_dimensions_panel(
+                        ui,
+                        &mut self.state,
+                        &mut self.dimensions_state,
+                        &mut self.undo_history,
+                    );
+                    if dims_changed {
+                        self.dimensions_pending_eval = true;
+                    }
+
+                    // ── Imported meshes ───────────────────────────────────────
+                    let cache_guard = self.mesh_cache.lock().unwrap();
+                    if !cache_guard.is_empty() {
+                        ui.separator();
+                        ui.collapsing("📦 Meshes", |ui| {
+                            for (path, (_mtime, mesh)) in cache_guard.iter() {
+                                let filename = path.file_name()
+                                    .and_then(|n| n.to_str())
+                                    .unwrap_or("(unknown)");
+                                use crate::mesh::import::validate_mesh;
+                                let v = validate_mesh(mesh);
+                                let icon = if v.has_open_boundary { "🔴" }
+                                           else if v.has_non_manifold { "🟡" }
+                                           else { "🟢" };
+                                ui.label(format!(
+                                    "{} {} — {} tri",
+                                    icon, filename, mesh.triangle_count()
+                                ));
+                            }
+                        });
+                    }
+                    drop(cache_guard);
+
+                    // ── Composite layup summary ───────────────────────────────
+                    // ── Library panel ─────────────────────────────────────────
+                    if let Some(ref mut mgr) = self.library_manager {
+                        ui.separator();
+                        let result = show_library_panel(
+                            ui,
+                            ctx,
+                            &mut self.library_panel_state,
+                            mgr,
+                        );
+                        if let Some(action) = result {
+                            if action == "__NEW_COMPONENT__" {
+                                // Create new component with a default name
+                                match mgr.create_new_component("new_component") {
+                                    Ok(path) => {
+                                        self.library_panel_state.editing_library = Some(path);
+                                    }
+                                    Err(e) => {
+                                        self.error_message = Some(format!("Failed to create component: {}", e));
+                                    }
+                                }
+                            } else {
+                                // Insert snippet into script
+                                self.state.script_text.push_str(&action);
+                                self.execute_script();
+                            }
+                        }
+                    }
+
+                    if !self.current_layups.is_empty() {
+                        ui.separator();
+                        ui.collapsing("🧱 Layup Summary", |ui| {
+                            for (li, layup) in self.current_layups.iter().enumerate() {
+                                ui.strong(format!("Layup {}", li + 1));
+                                let total_t: f32 = layup.layers.iter().map(|l| l.thickness).sum();
+                                ui.label(format!(
+                                    "{} layers, {:.2} mm total wall",
+                                    layup.layers.len(), total_t
+                                ));
+                                egui::Grid::new(format!("layup_grid_{}", li))
+                                    .num_columns(3)
+                                    .striped(true)
+                                    .show(ui, |ui| {
+                                        ui.strong("Layer");
+                                        ui.strong("Material");
+                                        ui.strong("t (mm)");
+                                        ui.end_row();
+                                        for layer in &layup.layers {
+                                            let label = if layer.is_core { "⬛ core" } else { "▪" };
+                                            ui.label(format!("{} {}", label, &layer.name));
+                                            ui.label(&layer.material.name);
+                                            ui.label(format!("{:.2}", layer.thickness));
+                                            ui.end_row();
+                                        }
+                                    });
+                            }
+                        });
                     }
                 });
             });
@@ -1502,21 +2056,30 @@ impl eframe::App for App {
                 ui.heading("Implicit CAD");
 
                 // ── Spline editor mode ─────────────────────────────────────
-                if let Some(ref profile_name) = self.active_profile.clone() {
+                if let Some(ref profile_name) = self.state.active_profile.clone() {
                     ui.horizontal(|ui| {
                         ui.strong(format!("✏ Profile: {}", profile_name));
                         if ui.button("✕ Close").clicked() {
-                            self.active_profile = None;
+                            self.state.active_profile = None;
                             self.execute_script();
                         }
                     });
                     ui.separator();
 
-                    let state = self.profiles
+                    let state = self.state.profiles
                         .entry(profile_name.clone())
                         .or_insert_with(SplineEditorState::default);
+                    let spline_before = state.clone();
 
                     if show_spline_editor(ui, state, profile_name) {
+                        // Push undo command for the spline change.
+                        let after = state.clone();
+                        self.undo_history.push_executed(Box::new(SplineShapeResetCommand {
+                            profile_name: profile_name.clone(),
+                            before:       spline_before,
+                            after,
+                            desc:         "Edit profile".to_owned(),
+                        }));
                         // Profile changed — push to shared map and rebuild
                         self.sync_profiles_shared();
                         self.execute_script();
@@ -1539,35 +2102,25 @@ impl eframe::App for App {
                     });
                     ui.separator();
 
+                    let spines_before = self.state.splines.clone();
                     let mut editor_state = std::mem::take(&mut self.spine_editor_state);
                     let changed = show_spine_editor(
                         ui,
                         &mut editor_state,
-                        &mut self.splines,
+                        &mut self.state.splines,
                         self.spine_fuselage_length,
                     );
                     self.spine_editor_state = editor_state;
                     if changed {
+                        let spines_after = self.state.splines.clone();
+                        self.undo_history.push_executed(Box::new(
+                            LongitudinalSpineEditCommand::new(spines_before, spines_after)
+                        ));
                         self.execute_script();
                     }
                     return;
                 }
 
-                // ── Normal editor mode toggle ──────────────────────────────
-                ui.horizontal(|ui| {
-                    ui.selectable_value(&mut self.editor_mode, EditorMode::Script, "📝 Script");
-                    ui.selectable_value(&mut self.editor_mode, EditorMode::Notebook, "📓 Notebook");
-                });
-                ui.separator();
-
-                if self.editor_mode == EditorMode::Notebook {
-                    // ── Notebook Mode ────────────────────────────────────────
-                    let nb_changed = crate::notebook::show_notebook_panel(ui, &mut self.notebook);
-                    if nb_changed {
-                        // Debounce: don't re-render on every keystroke — fire 600ms after last change
-                        self.last_nb_edit = Some(std::time::Instant::now());
-                    }
-                } else {
                 // ── Script Mode ───────────────────────────────────────────────
 
                 // File operations
@@ -1594,53 +2147,120 @@ impl eframe::App for App {
                     self.spine_editor_open = true;
                 }
 
+                // ── Import Mesh button ─────────────────────────────────────
+                if ui.button("📂 Import Mesh…").clicked() {
+                    if let Some(path) = rfd::FileDialog::new()
+                        .add_filter("3D Mesh", &["stl", "obj"])
+                        .pick_file()
+                    {
+                        let path_str = path.to_string_lossy().replace('\\', "/");
+                        let snippet  = format!("import_mesh(\"{}\")", path_str);
+                        if !self.state.script_text.is_empty()
+                            && !self.state.script_text.ends_with('\n')
+                        {
+                            self.state.script_text.push('\n');
+                        }
+                        self.state.script_text.push_str(&snippet);
+                    }
+                }
+
                 // ── Spline profiles ────────────────────────────────────────
                 ui.collapsing("✏ Profiles", |ui| {
                     // List existing profiles
-                    let names: Vec<String> = self.profiles.keys().cloned().collect();
+                    let names: Vec<String> = self.state.profiles.keys().cloned().collect();
                     for name in &names {
                         ui.horizontal(|ui| {
                             if ui.button("Edit").clicked() {
-                                self.active_profile = Some(name.clone());
+                                self.state.active_profile = Some(name.clone());
                             }
                             if ui.label(name).secondary_clicked() {
                                 // Right-click label → delete (future: context menu)
                             }
                             if ui.small_button("✕").clicked() {
-                                self.profiles.remove(name);
+                                self.state.profiles.remove(name);
                                 self.sync_profiles_shared();
-                                if self.active_profile.as_deref() == Some(name.as_str()) {
-                                    self.active_profile = None;
+                                if self.state.active_profile.as_deref() == Some(name.as_str()) {
+                                    self.state.active_profile = None;
                                 }
                             }
                             if ui.small_button("Insert").clicked() {
                                 let snippet = format!("spline_section(\"{}\")", name);
-                                if !self.script_text.is_empty() && !self.script_text.ends_with('\n') {
-                                    self.script_text.push('\n');
+                                if !self.state.script_text.is_empty() && !self.state.script_text.ends_with('\n') {
+                                    self.state.script_text.push('\n');
                                 }
-                                self.script_text.push_str(&snippet);
+                                self.state.script_text.push_str(&snippet);
                             }
                         });
                     }
                     ui.separator();
                     if ui.button("+ New Profile").clicked() {
-                        let name = format!("profile{}", self.profiles.len() + 1);
-                        self.profiles.insert(name.clone(), SplineEditorState::default());
+                        let name = format!("profile{}", self.state.profiles.len() + 1);
+                        self.state.profiles.insert(name.clone(), SplineEditorState::default());
                         self.sync_profiles_shared();
-                        self.active_profile = Some(name);
+                        self.state.active_profile = Some(name);
                     }
                 });
 
                 // Examples and Insert dropdowns
                 ui.horizontal(|ui| {
                     ui.label("Examples:");
-                    egui::ComboBox::from_id_salt("examples")
-                        .selected_text("Load Example...")
+                    egui::ComboBox::from_id_salt("examples_browser")
+                        .selected_text("Browse Examples...")
+                        .width(200.0)
                         .show_ui(ui, |ui| {
-                            for (name, code) in Self::get_example_list() {
-                                if ui.selectable_label(false, name).clicked() {
-                                    self.script_text = code.to_string();
+                            ui.add(
+                                egui::TextEdit::singleline(&mut self.example_search)
+                                    .hint_text("Search...")
+                                    .desired_width(f32::INFINITY),
+                            );
+                            ui.separator();
+
+                            let search_lower = self.example_search.to_lowercase();
+                            let all_examples = examples::get_examples();
+
+                            for cat in examples::CATEGORIES {
+                                let cat_examples: Vec<(usize, &examples::ExampleScript)> = all_examples
+                                    .iter()
+                                    .enumerate()
+                                    .filter(|(_, e)| e.category == *cat)
+                                    .filter(|(_, e)| {
+                                        if search_lower.is_empty() { return true; }
+                                        e.title.to_lowercase().contains(&search_lower)
+                                            || e.description.to_lowercase().contains(&search_lower)
+                                            || e.tags.iter().any(|t| t.to_lowercase().contains(&search_lower))
+                                    })
+                                    .collect();
+
+                                if cat_examples.is_empty() { continue; }
+
+                                ui.label(
+                                    egui::RichText::new(*cat)
+                                        .strong()
+                                        .color(egui::Color32::from_rgb(150, 150, 200)),
+                                );
+
+                                for (idx, ex) in cat_examples {
+                                    let diff_color = match ex.difficulty {
+                                        examples::Difficulty::Beginner     => egui::Color32::from_rgb(80, 180, 80),
+                                        examples::Difficulty::Intermediate => egui::Color32::from_rgb(200, 180, 50),
+                                        examples::Difficulty::Advanced     => egui::Color32::from_rgb(200, 80, 80),
+                                    };
+                                    let already_open = self.open_example_tabs.contains(&idx);
+                                    ui.horizontal(|ui| {
+                                        ui.colored_label(diff_color, "●");
+                                        if ui.selectable_label(
+                                            already_open,
+                                            format!("{} — {}", ex.title, ex.description),
+                                        ).clicked() {
+                                            if !already_open {
+                                                self.open_example_tabs.push(idx);
+                                            }
+                                            self.active_example_tab = Some(idx);
+                                            ui.close_menu();
+                                        }
+                                    });
                                 }
+                                ui.separator();
                             }
                         });
 
@@ -1662,10 +2282,10 @@ impl eframe::App for App {
 
                                 if ui.selectable_label(false, name).clicked() {
                                     // Insert at end with newline
-                                    if !self.script_text.is_empty() && !self.script_text.ends_with('\n') {
-                                        self.script_text.push('\n');
+                                    if !self.state.script_text.is_empty() && !self.state.script_text.ends_with('\n') {
+                                        self.state.script_text.push('\n');
                                     }
-                                    self.script_text.push_str(code);
+                                    self.state.script_text.push_str(code);
                                 }
                             }
                         });
@@ -1702,15 +2322,278 @@ impl eframe::App for App {
                 if let Some(status) = &self.status_message {
                     ui.label(egui::RichText::new(status).color(egui::Color32::from_rgb(100, 200, 100)));
                 }
+                // Undo/redo feedback (shown 3 s after action).
+                if let Some((msg, when)) = &self.undo_feedback {
+                    if when.elapsed() < std::time::Duration::from_secs(3) {
+                        ui.label(egui::RichText::new(msg).italics()
+                            .color(egui::Color32::GRAY).size(12.0));
+                        ctx.request_repaint_after(std::time::Duration::from_millis(500));
+                    } else {
+                        self.undo_feedback = None;
+                    }
+                }
 
                 ui.separator();
 
+                // ── Example tab bar ──────────────────────────────────────────────
+                {
+                    // Handle pending copy-to-main from context menu (outside borrow).
+                    if let Some(copy_idx) = self.pending_copy_example.take() {
+                        if let Some(ex) = examples::get_examples().get(copy_idx) {
+                            self.state.script_text = ex.script.to_string();
+                            self.active_example_tab = None;
+                            self.status_message = Some("Example copied to main script".to_string());
+                        }
+                    }
+
+                    ui.horizontal(|ui| {
+                        // Main Script tab
+                        let main_active = self.active_example_tab.is_none();
+                        let main_label = egui::RichText::new("Main Script");
+                        let main_label = if main_active { main_label.strong() } else { main_label };
+                        if ui.selectable_label(main_active, main_label).clicked() {
+                            self.active_example_tab = None;
+                        }
+
+                        // Example tabs
+                        let mut to_close: Option<usize> = None;
+                        let mut to_activate: Option<usize> = None;
+                        let mut to_copy: Option<usize> = None;
+
+                        let tab_indices: Vec<usize> = self.open_example_tabs.clone();
+                        for tab_idx in tab_indices {
+                            let is_active = self.active_example_tab == Some(tab_idx);
+                            let title = examples::get_examples()
+                                .get(tab_idx)
+                                .map(|e| e.title)
+                                .unwrap_or("?");
+
+                            ui.separator();
+
+                            let tab_resp = ui.selectable_label(
+                                is_active,
+                                egui::RichText::new(title),
+                            );
+                            if tab_resp.clicked() {
+                                to_activate = Some(tab_idx);
+                            }
+
+                            // Right-click context menu
+                            tab_resp.context_menu(|ui| {
+                                if ui.button("Copy to Main Script").clicked() {
+                                    to_copy = Some(tab_idx);
+                                    ui.close_menu();
+                                }
+                                if ui.button("Close Tab").clicked() {
+                                    to_close = Some(tab_idx);
+                                    ui.close_menu();
+                                }
+                            });
+
+                            // × close button
+                            if ui.small_button("×").clicked() {
+                                to_close = Some(tab_idx);
+                            }
+                        }
+
+                        if let Some(idx) = to_activate {
+                            self.active_example_tab = Some(idx);
+                        }
+                        if let Some(idx) = to_copy {
+                            self.pending_copy_example = Some(idx);
+                        }
+                        if let Some(idx) = to_close {
+                            self.open_example_tabs.retain(|&i| i != idx);
+                            if self.active_example_tab == Some(idx) {
+                                self.active_example_tab = None;
+                            }
+                        }
+                    });
+                    ui.separator();
+                }
+
                 // Multiline text editor with stats
                 ui.label(egui::RichText::new(format!("Lines: {} | Characters: {}",
-                    self.script_text.lines().count(),
-                    self.script_text.len()))
+                    self.state.script_text.lines().count(),
+                    self.state.script_text.len()))
                     .size(11.0)
                     .color(egui::Color32::GRAY));
+
+                // ── Cell-based editor (when script has multiple delimited sections) ──
+                let use_cell_view = self.script_cells.len() > 1;
+
+                if use_cell_view {
+                    // Collect cell data for rendering (we must avoid borrowing self.script_cells
+                    // while also mutating self.state.script_text and self.script_cells).
+                    let cell_count = self.script_cells.len();
+                    let mut needs_eval = false;
+
+                    egui::ScrollArea::vertical().show(ui, |ui| {
+                        for cell_idx in 0..cell_count {
+                            let cell_id = self.script_cells[cell_idx].id.clone();
+                            let cell_name = self.script_cells[cell_idx].name.clone();
+                            let cell_start = self.script_cells[cell_idx].start_line;
+                            let cell_end   = self.script_cells[cell_idx].end_line;
+                            let cell_status = self.script_cells[cell_idx].status.clone();
+                            let is_skipped = cell_status == scripting::CellStatus::Skipped;
+
+                            // ── Header bar ──────────────────────────────────────
+                            ui.horizontal(|ui| {
+                                // Status dot.
+                                let (dot_color, dot_tip) = match &cell_status {
+                                    scripting::CellStatus::Ok      => (egui::Color32::from_rgb(80, 200, 80),  "OK"),
+                                    scripting::CellStatus::Error{..}=> (egui::Color32::from_rgb(220, 60, 60),  "Error"),
+                                    scripting::CellStatus::Skipped => (egui::Color32::GRAY,                   "Skipped"),
+                                    scripting::CellStatus::Pending => (egui::Color32::from_rgb(210, 150, 40), "Pending"),
+                                };
+                                ui.label(egui::RichText::new("●").color(dot_color))
+                                    .on_hover_text(dot_tip);
+
+                                // Editable cell name.
+                                let mut name_buf = cell_name.clone();
+                                let name_resp = ui.add(
+                                    egui::TextEdit::singleline(&mut name_buf)
+                                        .desired_width(160.0)
+                                        .font(egui::TextStyle::Monospace),
+                                );
+                                if name_resp.changed() && !name_buf.is_empty() {
+                                    // Rewrite delimiter line in script_text.
+                                    let new_delim = format!("# === {} ===", name_buf.trim());
+                                    let mut lines: Vec<String> = self.state.script_text
+                                        .lines().map(|l| l.to_string()).collect();
+                                    if cell_start < lines.len() {
+                                        lines[cell_start] = new_delim;
+                                    }
+                                    self.state.script_text = lines.join("\n");
+                                    // Re-parse cells (no re-eval).
+                                    self.script_cells = scripting::parse_cells(&self.state.script_text);
+                                }
+                            });
+
+                            // ── Code region ──────────────────────────────────────
+                            // Extract cell content lines (excluding delimiter).
+                            let lines: Vec<String> = self.state.script_text
+                                .lines().map(|l| l.to_string()).collect();
+
+                            // Content range: skip delimiter line.
+                            let content_start = if cell_start < lines.len()
+                                && scripting::is_delimiter_line(&lines[cell_start])
+                            {
+                                cell_start + 1
+                            } else {
+                                cell_start
+                            };
+                            let content_end_idx = cell_end.min(lines.len().saturating_sub(1));
+
+                            let mut cell_text = if content_start <= content_end_idx {
+                                lines[content_start..=content_end_idx].join("\n")
+                            } else {
+                                String::new()
+                            };
+
+                            let script_before = self.state.script_text.clone();
+                            ui.add_enabled_ui(!is_skipped, |ui| {
+                                let mut cell_layouter = |ui: &egui::Ui, text: &str, wrap_width: f32| {
+                                    let font_id = ui.style()
+                                        .text_styles[&egui::TextStyle::Monospace]
+                                        .clone();
+                                    let mut job = crate::ui::syntax::highlight_script(text, font_id);
+                                    job.wrap.max_width = wrap_width;
+                                    ui.fonts(|f| f.layout_job(job))
+                                };
+                                let resp = ui.add(
+                                    egui::TextEdit::multiline(&mut cell_text)
+                                        .id(egui::Id::new(format!("cell_editor_{}", cell_id)))
+                                        .desired_width(f32::INFINITY)
+                                        .desired_rows(4)
+                                        .code_editor()
+                                        .font(egui::TextStyle::Monospace)
+                                        .layouter(&mut cell_layouter),
+                                );
+                                if resp.changed() {
+                                    // Reconstruct full script_text.
+                                    let mut all_lines: Vec<String> = script_before
+                                        .lines().map(|l| l.to_string()).collect();
+                                    let new_cell_lines: Vec<String> = cell_text
+                                        .lines().map(|l| l.to_string()).collect();
+                                    // Replace lines content_start..=content_end_idx.
+                                    let before: Vec<String> = all_lines[..content_start].to_vec();
+                                    let after_start = (content_end_idx + 1).min(all_lines.len());
+                                    let after: Vec<String> = all_lines[after_start..].to_vec();
+                                    all_lines = before;
+                                    all_lines.extend(new_cell_lines);
+                                    all_lines.extend(after);
+                                    self.state.script_text = all_lines.join("\n");
+                                    self.script_cells = scripting::parse_cells(&self.state.script_text);
+                                    self.undo_history.push_executed(Box::new(
+                                        ScriptTextCommand::new(script_before.clone(), self.state.script_text.clone())
+                                    ));
+                                    needs_eval = true;
+                                }
+                            });
+
+                            // ── Error display ────────────────────────────────────
+                            if let scripting::CellStatus::Error { message, .. } = &cell_status {
+                                ui.colored_label(egui::Color32::from_rgb(220, 60, 60),
+                                    format!("⚠ {}", message));
+                            }
+
+                            // ── Add Section button ────────────────────────────────
+                            if ui.small_button("+ Add Section").clicked() {
+                                let mut all_lines: Vec<String> = self.state.script_text
+                                    .lines().map(|l| l.to_string()).collect();
+                                let insert_at = (cell_end + 1).min(all_lines.len());
+                                // Insert new delimiter after cell_end.
+                                all_lines.insert(insert_at, "# === New Section ===".to_string());
+                                self.state.script_text = all_lines.join("\n");
+                                self.script_cells = scripting::parse_cells(&self.state.script_text);
+                                needs_eval = true;
+                            }
+
+                            ui.separator();
+                        }
+                    });
+
+                    if needs_eval {
+                        self.execute_script();
+                    }
+                } else if let Some(ex_idx) = self.active_example_tab {
+                // ── Read-only example tab view ────────────────────────────────────
+                if let Some(ex) = examples::get_examples().get(ex_idx) {
+                    ui.label(
+                        egui::RichText::new("Read-only example — right-click tab to copy to main script")
+                            .color(egui::Color32::GRAY)
+                            .size(11.0),
+                    );
+                    // Related functions
+                    if !ex.related_functions.is_empty() {
+                        ui.horizontal_wrapped(|ui| {
+                            ui.label(egui::RichText::new("Functions:").size(10.0).color(egui::Color32::GRAY));
+                            for fn_name in ex.related_functions {
+                                if ui.small_button(*fn_name).clicked() {
+                                    self.help_state.query = fn_name.to_string();
+                                    self.help_state.update_results();
+                                    self.help_panel_open = true;
+                                }
+                            }
+                        });
+                    }
+                    let mut example_text = ex.script.to_string();
+                    egui::ScrollArea::vertical()
+                        .id_salt("example_editor")
+                        .show(ui, |ui| {
+                            ui.add(
+                                egui::TextEdit::multiline(&mut example_text)
+                                    .font(egui::TextStyle::Monospace)
+                                    .desired_rows(30)
+                                    .desired_width(f32::INFINITY)
+                                    .code_editor(),
+                            );
+                        });
+                }
+
+                } else {
+                // ── Single-cell / no-delimiter plain editor (existing code) ────
 
                 // Scroll to target line if a tree node was clicked.
                 let line_height = ui.text_style_height(&egui::TextStyle::Monospace);
@@ -1747,6 +2630,9 @@ impl eframe::App for App {
                     }
                 }
 
+                // Snapshot text before editing so we can push an undo command if it changes.
+                let script_before_edit = self.state.script_text.clone();
+
                 // Build syntax-highlighting layouter (no per-frame allocation in the common case:
                 // egui caches galleys internally keyed by LayoutJob content).
                 let mut layouter = |ui: &egui::Ui, text: &str, wrap_width: f32| {
@@ -1761,7 +2647,7 @@ impl eframe::App for App {
                 let editor_top = ui.cursor().min.y;
                 let scroll_out = scroll_area.show(ui, |ui| {
                     let response = ui.add(
-                        egui::TextEdit::multiline(&mut self.script_text)
+                        egui::TextEdit::multiline(&mut self.state.script_text)
                             .desired_width(f32::INFINITY)
                             .desired_rows(30)
                             .code_editor()
@@ -1779,24 +2665,35 @@ impl eframe::App for App {
                         response.request_focus();
                     }
 
-                    // Push to history when editor loses focus and text changed
-                    if response.lost_focus() && response.changed() {
-                        self.push_history();
+                    // Push undo command whenever text changes (coalesced within 800ms).
+                    if response.changed() {
+                        let after = self.state.script_text.clone();
+                        self.undo_history.push_executed(Box::new(
+                            ScriptTextCommand::new(script_before_edit.clone(), after)
+                        ));
+                        // Re-detect script variables immediately so sliders update while typing.
+                        self.dimensions_state.detected_variables =
+                            crate::ui::script_variable_detector::detect_script_variables(&self.state.script_text);
                     }
 
                     // Update autocomplete from cursor position.
                     if let Some(te_state) = egui::text_edit::TextEditState::load(ctx, response.id) {
                         if let Some(range) = te_state.cursor.char_range() {
                             let cursor_offset = range.primary.index;
+                            // cursor_offset is a CHARACTER index; convert to byte offset for string slicing.
+                            let cursor_byte = self.state.script_text.char_indices()
+                                .nth(cursor_offset)
+                                .map(|(b, _)| b)
+                                .unwrap_or(self.state.script_text.len());
 
                             // Apply confirmed autocomplete from previous frame.
                             if ac_confirm && self.autocomplete_state.visible {
                                 let sel_list_i = self.autocomplete_state.selected_index;
                                 if let Some(&global_i) = self.autocomplete_state.match_indices.get(sel_list_i) {
                                     let new_cursor = crate::ui::autocomplete::apply_completion(
-                                        &mut self.script_text,
+                                        &mut self.state.script_text,
                                         self.autocomplete_state.token_start,
-                                        cursor_offset,
+                                        cursor_byte,
                                         &crate::ui::autocomplete::ALL_COMPLETIONS[global_i],
                                     );
                                     // Move cursor to inside the parens.
@@ -1809,7 +2706,7 @@ impl eframe::App for App {
                                 }
                             } else {
                                 // Compute anchor position for autocomplete popup.
-                                let cursor_line = self.script_text[..cursor_offset.min(self.script_text.len())]
+                                let cursor_line = self.state.script_text[..cursor_byte]
                                     .chars().filter(|&c| c == '\n').count();
                                 let anchor = egui::pos2(
                                     response.rect.min.x + 20.0,
@@ -1818,14 +2715,14 @@ impl eframe::App for App {
                                 );
                                 crate::ui::autocomplete::update_completions(
                                     &mut self.autocomplete_state,
-                                    &self.script_text,
+                                    &self.state.script_text,
                                     cursor_offset,
                                     anchor,
                                 );
                             }
 
                             // Signature tooltip anchor (above cursor line).
-                            let cursor_line = self.script_text[..cursor_offset.min(self.script_text.len())]
+                            let cursor_line = self.state.script_text[..cursor_byte]
                                 .chars().filter(|&c| c == '\n').count();
                             let tip_anchor = egui::pos2(
                                 response.rect.min.x + 20.0,
@@ -1834,7 +2731,7 @@ impl eframe::App for App {
                             );
                             crate::ui::autocomplete::show_signature_tooltip(
                                 ctx,
-                                &self.script_text,
+                                &self.state.script_text,
                                 cursor_offset,
                                 tip_anchor,
                             );
@@ -1846,6 +2743,30 @@ impl eframe::App for App {
 
                 self.last_editor_scroll_y = scroll_out.state.offset.y;
 
+                // Phase 31 — draw margin indicator dots for detected script variables.
+                {
+                    const LINE_HEIGHT: f32 = 14.0;
+                    let scroll_y = self.last_editor_scroll_y;
+                    let editor_rect = scroll_out.inner_rect;
+                    // Only draw if the editor has been laid out (non-zero size).
+                    if editor_rect.width() > 1.0 && editor_rect.height() > 1.0 {
+                        let dot_x = editor_rect.min.x - 6.0;
+                        let painter = ui.painter();
+                        for var in &self.dimensions_state.detected_variables {
+                            let dot_y = editor_rect.min.y + (var.line as f32 + 0.5) * LINE_HEIGHT - scroll_y;
+                            if dot_y >= editor_rect.min.y && dot_y <= editor_rect.max.y {
+                                let color = match &var.detection_type {
+                                    crate::ui::DetectionType::LetBinding { .. } =>
+                                        egui::Color32::from_rgb(100, 150, 255),
+                                    crate::ui::DetectionType::InlineLiteral { .. } =>
+                                        egui::Color32::from_rgb(120, 120, 120),
+                                };
+                                painter.circle_filled(egui::pos2(dot_x, dot_y), 3.0, color);
+                            }
+                        }
+                    }
+                }
+
                 // Show autocomplete popup (outside scroll area so it floats freely).
                 let action = crate::ui::autocomplete::show_autocomplete(
                     ctx, &mut self.autocomplete_state,
@@ -1856,7 +2777,7 @@ impl eframe::App for App {
                     let cursor_approx = self.autocomplete_state.token_start
                         + self.autocomplete_state.token.len();
                     let new_cursor = crate::ui::autocomplete::apply_completion(
-                        &mut self.script_text,
+                        &mut self.state.script_text,
                         self.autocomplete_state.token_start,
                         cursor_approx,
                         &crate::ui::autocomplete::ALL_COMPLETIONS[global_i],
@@ -1865,6 +2786,8 @@ impl eframe::App for App {
                     self.pending_cursor_offset = Some(new_cursor);
                     self.autocomplete_state.visible = false;
                 }
+
+                } // end single-cell else branch
 
                 ui.separator();
 
@@ -1888,12 +2811,13 @@ impl eframe::App for App {
                         }
                     }
                     ui.checkbox(&mut self.show_wireframe, "Show Wireframe");
+                    ui.checkbox(&mut self.show_ref_points, "Ref Points");
+                    ui.checkbox(&mut self.show_dim_lines, "Dim Lines");
                 });
 
                 // Run button and status
                 ui.horizontal(|ui| {
                     if ui.button("Run (F5)").clicked() {
-                        self.push_history();
                         self.execute_script();
                     }
 
@@ -1927,6 +2851,9 @@ impl eframe::App for App {
                     ui.separator();
                     ui.horizontal(|ui| {
                         ui.colored_label(egui::Color32::RED, "❌ Error");
+                        if ui.button("Copy").on_hover_text("Copy error to clipboard").clicked() {
+                            ui.output_mut(|o| o.copied_text = error.clone());
+                        }
                         if ui.button("Clear").clicked() {
                             self.error_message = None;
                         }
@@ -2056,7 +2983,6 @@ impl eframe::App for App {
                         });
                 }
 
-                } // end EditorMode::Script
             });
 
         // Section View floating window
@@ -2097,6 +3023,63 @@ impl eframe::App for App {
                 });
             self.fea_open = open;
         }
+
+        // Print Analysis floating window
+        if self.print_analysis_open {
+            let mut open = true;
+            egui::Window::new("🖨 Print Analysis")
+                .open(&mut open)
+                .resizable(true)
+                .default_width(300.0)
+                .show(ctx, |ui| {
+                    self.render_print_analysis_panel(ui);
+                });
+            self.print_analysis_open = open;
+        }
+
+        // Aerodynamic analysis floating window
+        if self.aero_panel_open {
+            let mut open = true;
+            egui::Window::new("✈ Aero Analysis")
+                .open(&mut open)
+                .resizable(true)
+                .default_width(320.0)
+                .show(ctx, |ui| {
+                    self.render_aero_panel(ui);
+                });
+            self.aero_panel_open = open;
+        }
+
+        // Version control panel (floating window)
+        if self.vc_panel_open {
+            let mut needs_eval = false;
+            crate::ui::version_control_panel::show_vc_panel(
+                ctx,
+                &mut self.vc_panel_open,
+                &mut self.version_control,
+                &mut self.state,
+                &mut self.vc_panel_state,
+                &mut self.vc_commit_message,
+                &mut self.vc_new_branch_name,
+                &mut self.vc_new_branch_desc,
+                &mut self.vc_new_branch_dialog,
+                &mut self.vc_discard_confirm,
+                &mut needs_eval,
+            );
+            if needs_eval {
+                self.execute_script();
+            }
+        }
+
+        // Help / function reference panel (floating window)
+        crate::ui::help_panel::show_help_panel(
+            ctx,
+            &mut self.help_panel_open,
+            &mut self.help_state,
+            &mut self.state.script_text,
+            Some(self.script_cursor_byte),
+            false,
+        );
 
         // Center panel: 3D Viewport
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -2202,11 +3185,11 @@ impl App {
                     Ok(script) => {
                         // Ensure existing script's last expression ends with ';'
                         // so the component becomes the new return value
-                        self.script_text = Self::terminate_last_expression(self.script_text.clone());
-                        if !self.script_text.is_empty() && !self.script_text.ends_with('\n') {
-                            self.script_text.push('\n');
+                        self.state.script_text = Self::terminate_last_expression(self.state.script_text.clone());
+                        if !self.state.script_text.is_empty() && !self.state.script_text.ends_with('\n') {
+                            self.state.script_text.push('\n');
                         }
-                        self.script_text.push_str(&script);
+                        self.state.script_text.push_str(&script);
                         should_close = true;
                     }
                     Err(e) => {
@@ -2407,7 +3390,7 @@ impl App {
             category: self.save_component_category.clone(),
             description: self.save_component_description.clone(),
             parameters: HashMap::new(), // Empty for now - user can edit JSON to add params
-            script_template: self.script_text.clone(),
+            script_template: self.state.script_text.clone(),
         };
 
         // Serialize to JSON
@@ -2493,13 +3476,20 @@ impl App {
         let thickness = self.thickness_uniforms();
 
         // Pass thickness grid data if a new upload is pending.
-        let thickness_upload: Option<(Arc<Vec<f32>>, u32)> = if self.thickness_needs_upload {
+        // Overhang overlay takes priority when active.
+        let thickness_upload: Option<(Arc<Vec<f32>>, u32)> = if self.print_overhang_needs_upload && self.print_overhang_overlay {
+            self.print_analysis_result.as_ref().map(|r| {
+                (Arc::new(r.overhang.overhang_grid.clone()), r.overhang.resolution)
+            })
+        } else if self.thickness_needs_upload {
             self.thickness_result.as_ref().map(|r| (Arc::clone(&r.analysis_grid), r.resolution))
         } else {
             None
         };
+        if self.print_overhang_needs_upload { self.print_overhang_needs_upload = false; }
         if self.thickness_needs_upload { self.thickness_needs_upload = false; }
         let clear_thickness = !self.thickness_overlay_on && self.thickness_result.is_none()
+            && !self.print_overhang_overlay
             && self.fea_overlay_mode == FEAOverlayMode::None;
 
         // FEA overlay upload: stress or displacement data
@@ -2561,6 +3551,56 @@ impl App {
                 if let Some(cg) = self.cg {
                     if self.measurements.center_of_mass != Some(cg) {
                         Self::draw_cg_crosshair_color(&painter, cg, egui::Color32::from_rgb(255,200,0), &self.camera, rect);
+                    }
+                }
+            }
+
+            // Draw reference point overlays.
+            if self.show_ref_points && !self.current_ref_points.is_empty() {
+                let ref_pts: Vec<_> = self.current_ref_points.iter()
+                    .filter_map(|pt| {
+                        Self::project_to_screen(pt.position, &self.camera, rect)
+                            .map(|s| (pt, s))
+                    })
+                    .collect();
+
+                for (pt, screen) in &ref_pts {
+                    let color = egui::Color32::from_rgb(
+                        (pt.color[0] * 255.0) as u8,
+                        (pt.color[1] * 255.0) as u8,
+                        (pt.color[2] * 255.0) as u8,
+                    );
+                    painter.circle_filled(*screen, 5.0, color);
+                    painter.circle_stroke(*screen, 5.0, egui::Stroke::new(1.0, egui::Color32::WHITE));
+                    painter.text(
+                        *screen + egui::Vec2::new(8.0, -8.0),
+                        egui::Align2::LEFT_BOTTOM,
+                        &pt.name,
+                        egui::FontId::proportional(11.0),
+                        color,
+                    );
+                }
+
+                // Dimension lines between nearby pairs.
+                if self.show_dim_lines {
+                    for i in 0..ref_pts.len() {
+                        for j in (i + 1)..ref_pts.len() {
+                            let dist_mm = (ref_pts[i].0.position - ref_pts[j].0.position).length();
+                            if dist_mm < 200.0 {
+                                painter.line_segment(
+                                    [ref_pts[i].1, ref_pts[j].1],
+                                    egui::Stroke::new(1.0, egui::Color32::from_gray(140)),
+                                );
+                                let mid = (ref_pts[i].1.to_vec2() + ref_pts[j].1.to_vec2()) * 0.5;
+                                painter.text(
+                                    mid.to_pos2(),
+                                    egui::Align2::CENTER_CENTER,
+                                    format!("{:.1}mm", dist_mm),
+                                    egui::FontId::proportional(10.0),
+                                    egui::Color32::from_gray(180),
+                                );
+                            }
+                        }
                     }
                 }
             }
@@ -3298,7 +4338,7 @@ impl App {
     }
 
     fn thickness_uniforms(&self) -> ThicknessUniforms {
-        // FEA overlay takes priority over thickness overlay.
+        // FEA overlay takes priority over everything else.
         if self.fea_overlay_mode != FEAOverlayMode::None && self.fea_result.is_some() {
             let (max_val, invert) = match self.fea_overlay_mode {
                 FEAOverlayMode::Stress => (
@@ -3312,6 +4352,10 @@ impl App {
                 FEAOverlayMode::None => unreachable!(),
             };
             return ThicknessUniforms { enabled: true, min_display: 0.0, max_display: max_val, invert };
+        }
+        // Overhang overlay: values 1.0 (Good) … 4.0 (Critical).
+        if self.print_overhang_overlay && self.print_analysis_result.is_some() {
+            return ThicknessUniforms { enabled: true, min_display: 1.0, max_display: 4.0, invert: false };
         }
         ThicknessUniforms {
             enabled:     self.thickness_overlay_on && self.thickness_result.is_some(),
@@ -3443,6 +4487,431 @@ impl App {
         }
     }
 
+    fn render_print_analysis_panel(&mut self, ui: &mut egui::Ui) {
+        use crate::analysis::print_analysis::{PrinterPreset, IssueType, IssueSeverity};
+
+        ui.heading("Print Analysis");
+        ui.separator();
+
+        // --- Printer preset dropdown ---
+        ui.horizontal(|ui| {
+            ui.label("Printer:");
+            let current_preset = self.print_analysis_settings.preset.clone();
+            let preset_name = |p: &PrinterPreset| match p {
+                PrinterPreset::GenericFDM    => "Generic FDM (220×220×250)",
+                PrinterPreset::BambuX1C     => "Bambu X1C (256×256×256)",
+                PrinterPreset::PrusaMK4     => "Prusa MK4 (250×210×220)",
+                PrinterPreset::Voron24_300  => "Voron 2.4 300 (300×300×300)",
+                PrinterPreset::Custom       => "Custom",
+            };
+            egui::ComboBox::from_id_salt("printer_preset")
+                .selected_text(preset_name(&current_preset))
+                .show_ui(ui, |ui| {
+                    for p in [
+                        PrinterPreset::GenericFDM,
+                        PrinterPreset::BambuX1C,
+                        PrinterPreset::PrusaMK4,
+                        PrinterPreset::Voron24_300,
+                        PrinterPreset::Custom,
+                    ] {
+                        let label = preset_name(&p);
+                        if ui.selectable_label(current_preset == p, label).clicked() {
+                            self.print_analysis_settings.apply_preset(p);
+                        }
+                    }
+                });
+        });
+
+        ui.add_space(4.0);
+
+        // --- Settings ---
+        ui.collapsing("Settings", |ui| {
+            ui.add(egui::Slider::new(&mut self.print_analysis_settings.overhang_threshold_deg, 20.0..=70.0)
+                .text("Overhang threshold (°)"));
+            ui.add(egui::Slider::new(&mut self.print_analysis_settings.min_wall_thickness, 0.2..=5.0)
+                .text("Min wall (mm)"));
+            ui.add(egui::Slider::new(&mut self.print_analysis_settings.min_feature_size, 0.1..=2.0)
+                .text("Min feature (mm)"));
+            ui.add(egui::Slider::new(&mut self.print_analysis_settings.max_aspect_ratio, 2.0..=20.0)
+                .text("Max aspect ratio"));
+            let bv = &mut self.print_analysis_settings.build_volume;
+            ui.horizontal(|ui| {
+                ui.label("Build volume:");
+                ui.add(egui::DragValue::new(&mut bv.x).suffix("mm").speed(1.0));
+                ui.label("×");
+                ui.add(egui::DragValue::new(&mut bv.y).suffix("mm").speed(1.0));
+                ui.label("×");
+                ui.add(egui::DragValue::new(&mut bv.z).suffix("mm").speed(1.0));
+            });
+        });
+
+        ui.add_space(4.0);
+
+        // --- Run / Clear ---
+        let has_grid = self.current_sdf_grid.is_some();
+        let running  = self.print_analysis_running;
+        ui.horizontal(|ui| {
+            if ui.add_enabled(has_grid && !running, egui::Button::new("Run Print Analysis")).clicked() {
+                self.start_print_analysis();
+            }
+            if ui.add_enabled(self.print_analysis_result.is_some(), egui::Button::new("Clear")).clicked() {
+                self.print_analysis_result       = None;
+                self.print_overhang_overlay      = false;
+                self.print_overhang_needs_upload = false;
+            }
+        });
+
+        if running {
+            ui.horizontal(|ui| { ui.spinner(); ui.label("Analysing…"); });
+        }
+
+        if let Some(ref result) = self.print_analysis_result {
+            ui.add_space(6.0);
+            ui.separator();
+
+            // --- Overhang summary ---
+            ui.strong("Overhang");
+            let prev_overlay = self.print_overhang_overlay;
+            ui.checkbox(&mut self.print_overhang_overlay, "Show overhang overlay");
+            if self.print_overhang_overlay && !prev_overlay {
+                self.print_overhang_needs_upload = true;
+            }
+            ui.label(format!("Overhang area: {:.1} mm²", result.overhang.overhang_area_mm2));
+            ui.label(format!("Critical area:  {:.1} mm²", result.overhang.critical_overhang_area_mm2));
+            ui.label(format!("Support vol est: {:.0} mm³", result.overhang.support_volume_estimate_mm3));
+
+            ui.add_space(6.0);
+            ui.separator();
+
+            // --- Orientation advisor ---
+            ui.strong("Orientation Advisor");
+            let rec_idx = result.orientation.recommended;
+            for (i, cand) in result.orientation.candidates.iter().enumerate() {
+                let d = cand.build_direction;
+                let label = format!(
+                    "{}{} ({:.2},{:.2},{:.2})  score={:.2}",
+                    if i == rec_idx { "★ " } else { "  " },
+                    if cand.fits_build_volume { "✓" } else { "✗" },
+                    d.x, d.y, d.z,
+                    cand.score
+                );
+                let color = if i == rec_idx {
+                    egui::Color32::from_rgb(80, 200, 80)
+                } else {
+                    ui.style().visuals.text_color()
+                };
+                ui.horizontal(|ui| {
+                    ui.colored_label(color, &label);
+                    if ui.small_button("Apply").clicked() {
+                        self.print_analysis_settings.build_direction = cand.build_direction;
+                    }
+                });
+            }
+
+            ui.add_space(6.0);
+            ui.separator();
+
+            // --- Feature / printability issues ---
+            let issues = &result.features.issues;
+            let errors: usize   = issues.iter().filter(|i| matches!(i.severity, IssueSeverity::Error)).count();
+            let warnings: usize = issues.iter().filter(|i| matches!(i.severity, IssueSeverity::Warning)).count();
+            ui.horizontal(|ui| {
+                ui.strong("Printability Issues");
+                if errors > 0 {
+                    ui.colored_label(egui::Color32::from_rgb(220, 60, 60),
+                        format!("{} errors", errors));
+                }
+                if warnings > 0 {
+                    ui.colored_label(egui::Color32::from_rgb(220, 160, 40),
+                        format!("{} warnings", warnings));
+                }
+                if errors == 0 && warnings == 0 {
+                    ui.colored_label(egui::Color32::from_rgb(60, 200, 60), "✓ No issues");
+                }
+            });
+
+            egui::ScrollArea::vertical()
+                .max_height(200.0)
+                .id_salt("print_issues")
+                .show(ui, |ui| {
+                    for issue in issues.iter().take(50) {
+                        let (icon, color) = match issue.severity {
+                            IssueSeverity::Error   => ("✗", egui::Color32::from_rgb(220, 60, 60)),
+                            IssueSeverity::Warning => ("⚠", egui::Color32::from_rgb(220, 160, 40)),
+                        };
+                        let type_str = match issue.issue_type {
+                            IssueType::ThinWall           => "ThinWall",
+                            IssueType::TinyFeature        => "TinyFeature",
+                            IssueType::HighAspectRatio    => "HighAspectRatio",
+                            IssueType::BridgeSpan         => "BridgeSpan",
+                            IssueType::SharpInternalCorner => "SharpCorner",
+                        };
+                        ui.colored_label(color, format!("{} [{}] {}", icon, type_str, issue.description));
+                    }
+                    if issues.len() > 50 {
+                        ui.label(format!("… and {} more", issues.len() - 50));
+                    }
+                });
+        } else if !running {
+            ui.add_space(4.0);
+            ui.label("No analysis data. Press Run Print Analysis.");
+        }
+
+        // ── Tolerance Compensation section ────────────────────────────────────
+        ui.add_space(8.0);
+        ui.separator();
+        self.render_tolerance_section(ui);
+
+        // ── Split Body section (always available when there's a model) ────────
+        if self.current_sdf.is_some() {
+            ui.add_space(8.0);
+            ui.separator();
+            self.render_split_body_section(ui);
+        }
+    }
+
+    fn render_tolerance_section(&mut self, ui: &mut egui::Ui) {
+        use crate::sdf::print::TolerancePreset;
+
+        ui.collapsing("Tolerance Compensation", |ui| {
+            // Preset dropdown
+            ui.horizontal(|ui| {
+                ui.label("Preset:");
+                let cur = self.tolerance_preset.clone();
+                let label = match &cur {
+                    TolerancePreset::TightFit    => "Tight Fit (0.1 mm)",
+                    TolerancePreset::StandardFDM => "Standard FDM (0.15 mm)",
+                    TolerancePreset::LooseFit    => "Loose Fit (0.2 mm)",
+                    TolerancePreset::Custom      => "Custom",
+                };
+                egui::ComboBox::from_id_salt("tol_preset")
+                    .selected_text(label)
+                    .show_ui(ui, |ui| {
+                        for p in [
+                            TolerancePreset::TightFit,
+                            TolerancePreset::StandardFDM,
+                            TolerancePreset::LooseFit,
+                            TolerancePreset::Custom,
+                        ] {
+                            let lbl = match &p {
+                                TolerancePreset::TightFit    => "Tight Fit (0.1 mm)",
+                                TolerancePreset::StandardFDM => "Standard FDM (0.15 mm)",
+                                TolerancePreset::LooseFit    => "Loose Fit (0.2 mm)",
+                                TolerancePreset::Custom      => "Custom",
+                            };
+                            if ui.selectable_label(cur == p, lbl).clicked() {
+                                self.tolerance_settings.apply_preset(&p);
+                                self.tolerance_preset = p;
+                            }
+                        }
+                    });
+            });
+
+            ui.add_space(4.0);
+            ui.add(egui::Slider::new(&mut self.tolerance_settings.external_offset_mm, -0.5..=0.5)
+                .text("External offset (mm)").step_by(0.01));
+            ui.add(egui::Slider::new(&mut self.tolerance_settings.internal_offset_mm, -0.5..=0.5)
+                .text("Internal offset (mm)").step_by(0.01));
+            ui.add(egui::Slider::new(&mut self.tolerance_settings.min_hole_diameter_mm, 0.5..=10.0)
+                .text("Small hole threshold (mm)"));
+            ui.add(egui::Slider::new(&mut self.tolerance_settings.small_hole_bonus_mm, 0.0..=0.3)
+                .text("Small hole bonus (mm)").step_by(0.01));
+
+            ui.add_space(4.0);
+            ui.checkbox(&mut self.tolerance_on_export,
+                "Apply tolerance compensation on export");
+            if self.tolerance_on_export {
+                ui.colored_label(egui::Color32::from_rgb(100, 180, 100),
+                    "✓ Geometry will be wrapped with tolerance offsets at export time");
+            }
+        });
+    }
+
+    fn render_split_body_section(&mut self, ui: &mut egui::Ui) {
+        use crate::sdf::print::{SplitPlane, AlignmentFeature, split_body, verify_split_fit};
+        use std::sync::Arc;
+
+        ui.collapsing("Split Body", |ui| {
+            // --- Axis selector ---
+            ui.horizontal(|ui| {
+                ui.label("Axis:");
+                ui.selectable_value(&mut self.split_axis, SplitAxisUi::X, "X");
+                ui.selectable_value(&mut self.split_axis, SplitAxisUi::Y, "Y");
+                ui.selectable_value(&mut self.split_axis, SplitAxisUi::Z, "Z");
+            });
+
+            // --- Position slider ---
+            let range = if let Some(ref g) = self.current_sdf_grid {
+                let (lo, hi) = match self.split_axis {
+                    SplitAxisUi::X => (g.bounds_min.x, g.bounds_max.x),
+                    SplitAxisUi::Y => (g.bounds_min.y, g.bounds_max.y),
+                    SplitAxisUi::Z | SplitAxisUi::Arbitrary => (g.bounds_min.z, g.bounds_max.z),
+                };
+                (lo, hi)
+            } else {
+                (-100.0_f32, 100.0_f32)
+            };
+            ui.add(egui::Slider::new(&mut self.split_offset, range.0..=range.1).text("Position (mm)"));
+
+            // --- Alignment type ---
+            ui.horizontal(|ui| {
+                ui.label("Alignment:");
+                egui::ComboBox::from_id_salt("split_align")
+                    .selected_text(match self.split_align_type {
+                        SplitAlignUi::None     => "None",
+                        SplitAlignUi::Pins     => "Pins & Sockets",
+                        SplitAlignUi::Groove   => "Tongue & Groove",
+                        SplitAlignUi::Dovetail => "Dovetail",
+                        SplitAlignUi::BoltHoles => "Bolt Holes",
+                    })
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(&mut self.split_align_type, SplitAlignUi::None, "None");
+                        ui.selectable_value(&mut self.split_align_type, SplitAlignUi::Pins, "Pins & Sockets");
+                        ui.selectable_value(&mut self.split_align_type, SplitAlignUi::Groove, "Tongue & Groove");
+                        ui.selectable_value(&mut self.split_align_type, SplitAlignUi::Dovetail, "Dovetail");
+                        ui.selectable_value(&mut self.split_align_type, SplitAlignUi::BoltHoles, "Bolt Holes");
+                    });
+            });
+
+            // --- Alignment parameters ---
+            match self.split_align_type {
+                SplitAlignUi::None => {}
+                SplitAlignUi::Pins => {
+                    ui.add(egui::Slider::new(&mut self.split_pin_radius, 0.5..=5.0).text("Pin radius (mm)"));
+                    ui.add(egui::Slider::new(&mut self.split_pin_height, 1.0..=10.0).text("Pin height (mm)"));
+                    ui.add(egui::Slider::new(&mut self.split_pin_count, 2..=8).text("Count"));
+                    ui.add(egui::Slider::new(&mut self.split_pattern_r, 2.0..=50.0).text("Pattern radius (mm)"));
+                }
+                SplitAlignUi::Groove => {
+                    ui.add(egui::Slider::new(&mut self.split_groove_width, 2.0..=30.0).text("Width (mm)"));
+                    ui.add(egui::Slider::new(&mut self.split_groove_height, 1.0..=10.0).text("Height (mm)"));
+                }
+                SplitAlignUi::Dovetail => {
+                    ui.add(egui::Slider::new(&mut self.split_groove_width, 2.0..=30.0).text("Width (mm)"));
+                    ui.add(egui::Slider::new(&mut self.split_groove_height, 1.0..=10.0).text("Height (mm)"));
+                    ui.add(egui::Slider::new(&mut self.split_dovetail_angle, 5.0..=30.0).text("Angle (°)"));
+                }
+                SplitAlignUi::BoltHoles => {
+                    ui.add(egui::Slider::new(&mut self.split_bolt_radius, 0.5..=5.0).text("Bolt radius (mm)"));
+                    ui.add(egui::Slider::new(&mut self.split_boss_radius, 1.0..=10.0).text("Boss radius (mm)"));
+                    ui.add(egui::Slider::new(&mut self.split_bolt_count, 2..=8).text("Count"));
+                    ui.add(egui::Slider::new(&mut self.split_pattern_r, 2.0..=50.0).text("Pattern radius (mm)"));
+                }
+            }
+
+            ui.add_space(4.0);
+
+            // --- Build the SplitPlane and AlignmentFeature from current UI state ---
+            let plane = match self.split_axis {
+                SplitAxisUi::X => SplitPlane::X(self.split_offset),
+                SplitAxisUi::Y => SplitPlane::Y(self.split_offset),
+                SplitAxisUi::Z | SplitAxisUi::Arbitrary => SplitPlane::Z(self.split_offset),
+            };
+
+            let alignment: AlignmentFeature = match self.split_align_type {
+                SplitAlignUi::None => AlignmentFeature::None,
+                SplitAlignUi::Pins => AlignmentFeature::PinsAndSockets {
+                    pin_radius:       self.split_pin_radius,
+                    pin_height:       self.split_pin_height,
+                    socket_clearance: 0.15,
+                    count:            self.split_pin_count,
+                    pattern_radius:   self.split_pattern_r,
+                },
+                SplitAlignUi::Groove => AlignmentFeature::TongueAndGroove {
+                    tongue_width:    self.split_groove_width,
+                    tongue_height:   self.split_groove_height,
+                    groove_clearance: 0.15,
+                },
+                SplitAlignUi::Dovetail => AlignmentFeature::Dovetail {
+                    width:     self.split_groove_width,
+                    height:    self.split_groove_height,
+                    angle_deg: self.split_dovetail_angle,
+                    clearance: 0.15,
+                },
+                SplitAlignUi::BoltHoles => AlignmentFeature::BoltHoles {
+                    bolt_radius:    self.split_bolt_radius,
+                    boss_radius:    self.split_boss_radius,
+                    boss_height:    3.0,
+                    count:          self.split_bolt_count,
+                    pattern_radius: self.split_pattern_r,
+                    countersink:    false,
+                },
+            };
+
+            ui.horizontal(|ui| {
+                let has_sdf = self.current_sdf.is_some();
+                if ui.add_enabled(has_sdf, egui::Button::new("Preview Split")).clicked() {
+                    if let Some(ref sdf) = self.current_sdf {
+                        let result = split_body(Arc::clone(sdf), &plane, &alignment);
+                        self.split_preview = Some((result.part_a, result.part_b));
+                        self.split_fit_result = None;
+                    }
+                }
+                if self.split_preview.is_some() {
+                    if ui.button("Verify Fit").clicked() {
+                        if let Some(ref sdf) = self.current_sdf {
+                            let result = split_body(Arc::clone(sdf), &plane, &alignment);
+                            let half_size = self.current_sdf_grid.as_ref()
+                                .map(|g| (g.bounds_max - g.bounds_min).max_element() * 0.6)
+                                .unwrap_or(30.0);
+                            self.split_fit_result = Some(verify_split_fit(&result, half_size));
+                        }
+                    }
+                    if ui.button("Clear").clicked() {
+                        self.split_preview   = None;
+                        self.split_fit_result = None;
+                    }
+                }
+            });
+
+            // --- Fit result summary ---
+            if let Some(ref fit) = self.split_fit_result {
+                ui.add_space(4.0);
+                if fit.fits {
+                    ui.colored_label(egui::Color32::from_rgb(60, 200, 60), "✓ Fit OK");
+                } else {
+                    ui.colored_label(egui::Color32::from_rgb(220, 60, 60), "✗ Fit issues:");
+                    for w in &fit.warnings {
+                        ui.label(format!("  {}", w));
+                    }
+                }
+                ui.label(format!("Interference: {:.3} mm³   Gap: {:.3} mm³",
+                    fit.interference_volume_mm3, fit.gap_volume_mm3));
+            }
+
+            // --- Preview info ---
+            if let Some(ref _preview) = self.split_preview {
+                ui.add_space(4.0);
+                ui.colored_label(egui::Color32::from_rgb(100, 140, 220), "Part A (top/positive side)");
+                ui.colored_label(egui::Color32::from_rgb(220, 130, 60), "Part B (bottom/negative side)");
+                ui.label("Use split() in script to produce these as separate SdfHandles.");
+            }
+        });
+    }
+
+    fn start_print_analysis(&mut self) {
+        let Some(ref grid) = self.current_sdf_grid else { return };
+        let grid_clone    = Arc::clone(grid);
+        let settings      = self.print_analysis_settings.clone();
+        // Pass a thin-wall result if available for feature detection
+        let thickness_opt = self.thickness_result.clone();
+        let fea_stress: Option<Vec<f32>> = self.fea_result.as_ref().map(|r| r.von_mises.clone());
+
+        let (tx, rx) = std::sync::mpsc::channel();
+        self.print_analysis_receiver = Some(rx);
+        self.print_analysis_running  = true;
+
+        std::thread::spawn(move || {
+            let result = crate::analysis::print_analysis::compute_print_analysis(
+                &grid_clone,
+                &settings,
+                thickness_opt.as_ref(),
+                fea_stress.as_deref(),
+            );
+            let _ = tx.send(result);
+        });
+    }
+
     fn start_thickness_analysis(&mut self) {
         let Some(ref grid) = self.current_sdf_grid else { return };
         let grid_clone     = Arc::clone(grid);
@@ -3472,9 +4941,10 @@ impl App {
             sdf:          Arc::clone(sdf),
             bounds_min:   grid.bounds_min,
             bounds_max:   grid.bounds_max,
-            setup:        std::mem::take(&mut self.fea_setup),
+            setup:        std::mem::take(&mut self.state.fea_setup),
             config:       self.fea_config.clone(),
             ccx_override: self.settings.ccx_path.clone(),
+            layups:       self.current_layups.clone(),
         };
 
         let (tx, rx) = std::sync::mpsc::channel::<crate::fea::FEAMessage>();
@@ -3594,6 +5064,532 @@ impl App {
                 self.fea_displacement_field = None;
                 self.fea_needs_upload  = false;
             }
+        }
+    }
+
+    // ── Aerodynamic Analysis Panel ────────────────────────────────────────────
+
+    fn render_aero_panel(&mut self, ui: &mut egui::Ui) {
+        use crate::aero::{FlightCondition, PolarDatabase, solve_lifting_line};
+
+        ui.heading("Flight Conditions");
+        ui.separator();
+
+        egui::Grid::new("aero_fc_grid")
+            .num_columns(2)
+            .spacing([8.0, 4.0])
+            .show(ui, |ui| {
+                ui.label("Airspeed (m/s):");
+                ui.add(egui::DragValue::new(&mut self.aero_airspeed_ms)
+                    .range(1.0..=400.0).speed(0.5));
+                ui.end_row();
+
+                ui.label("Altitude (m):");
+                ui.add(egui::DragValue::new(&mut self.aero_altitude_m)
+                    .range(0.0..=20000.0).speed(10.0));
+                ui.end_row();
+
+                ui.label("AoA (deg):");
+                ui.add(egui::DragValue::new(&mut self.aero_aoa_deg)
+                    .range(-20.0..=25.0).speed(0.1));
+                ui.end_row();
+
+                // Density readout (computed from ISA).
+                let fc_preview = FlightCondition::new(
+                    self.aero_airspeed_ms, self.aero_altitude_m, self.aero_aoa_deg);
+                ui.label("Air density (kg/m³):");
+                ui.label(format!("{:.4}", fc_preview.air_density_kg_m3));
+                ui.end_row();
+                ui.label("Dyn. pressure (Pa):");
+                ui.label(format!("{:.1}", fc_preview.dynamic_pressure_pa));
+                ui.end_row();
+            });
+
+        ui.separator();
+
+        if ui.button("▶  Run Lifting Line").clicked() {
+            if let Some(sdf) = self.current_sdf.clone() {
+                let fc  = FlightCondition::new(
+                    self.aero_airspeed_ms, self.aero_altitude_m, self.aero_aoa_deg);
+                let db  = PolarDatabase::new();
+                let res = solve_lifting_line(&sdf, &db, &fc, 20);
+                self.current_flight_condition    = Some(fc);
+                self.current_lifting_line_result = Some(res);
+            } else {
+                ui.label("⚠ No SDF loaded — run script first.");
+            }
+        }
+
+        if let Some(ref res) = self.current_lifting_line_result {
+            ui.separator();
+            ui.heading("Lifting Line Results");
+
+            egui::Grid::new("aero_results_grid")
+                .num_columns(2)
+                .spacing([8.0, 4.0])
+                .show(ui, |ui| {
+                    ui.label("CL:");      ui.label(format!("{:.4}", res.cl_total));        ui.end_row();
+                    ui.label("CDi:");     ui.label(format!("{:.5}", res.cd_induced));      ui.end_row();
+                    ui.label("Oswald e:"); ui.label(format!("{:.4}", res.oswald_efficiency)); ui.end_row();
+                    ui.label("Lift (N):");  ui.label(format!("{:.2}", res.lift_total_n));  ui.end_row();
+                    ui.label("Di (N):");    ui.label(format!("{:.3}", res.induced_drag_total_n)); ui.end_row();
+                });
+
+            // Stall warnings.
+            if res.tip_stall_risk {
+                ui.colored_label(egui::Color32::from_rgb(220, 60, 60), "⚠ Tip stall risk!");
+            }
+            if !res.stall_stations.is_empty() {
+                let label = if res.root_stall_first {
+                    format!("⚠ Stall at {} stations (root first)", res.stall_stations.len())
+                } else {
+                    format!("⚠ Stall at {} stations", res.stall_stations.len())
+                };
+                ui.colored_label(egui::Color32::from_rgb(220, 140, 0), &label);
+            } else {
+                ui.colored_label(egui::Color32::from_rgb(60, 180, 60), "✓ No stall");
+            }
+
+            // Spanwise CL distribution.
+            ui.separator();
+            ui.label("Spanwise CL distribution:");
+            let n = res.span_stations.len();
+            if n > 0 {
+                let cl_max = res.local_cl.iter().cloned().fold(0.0_f32, f32::max).max(0.1);
+                let bar_w  = (ui.available_width() / n as f32).max(2.0);
+                let bar_h  = 60.0;
+                let (resp, painter) = ui.allocate_painter(
+                    egui::Vec2::new(ui.available_width(), bar_h),
+                    egui::Sense::hover(),
+                );
+                let rect = resp.rect;
+                for i in 0..n {
+                    let x_frac  = i as f32 / n as f32;
+                    let cl_frac = (res.local_cl[i] / cl_max).clamp(0.0, 1.0);
+                    let margin  = res.stall_margin[i];
+                    let color   = if margin < 0.0 {
+                        egui::Color32::from_rgb(200, 50, 50)
+                    } else if margin < 0.3 {
+                        egui::Color32::from_rgb(200, 160, 30)
+                    } else {
+                        egui::Color32::from_rgb(40, 160, 80)
+                    };
+                    let x0 = rect.left() + x_frac * rect.width();
+                    let x1 = x0 + bar_w;
+                    let y1 = rect.bottom();
+                    let y0 = y1 - cl_frac * bar_h;
+                    painter.rect_filled(egui::Rect::from_min_max(
+                        egui::Pos2::new(x0, y0), egui::Pos2::new(x1, y1)), 0.0, color);
+                }
+            }
+
+            if ui.button("Clear").clicked() {
+                self.current_lifting_line_result = None;
+                self.current_flight_condition    = None;
+            }
+        }
+
+        // ── Stability Analysis ─────────────────────────────────────────────────
+        ui.separator();
+        ui.heading("Stability Analysis");
+
+        egui::Grid::new("aero_stability_inputs")
+            .num_columns(2)
+            .spacing([8.0, 4.0])
+            .show(ui, |ui| {
+                ui.label("CG x (mm):");
+                ui.add(egui::DragValue::new(&mut self.aero_cg_x_mm)
+                    .range(-1000.0..=5000.0).speed(1.0));
+                ui.end_row();
+            });
+
+        if ui.button("▶  Run Stability Analysis").clicked() {
+            if let Some(sdf) = self.current_sdf.clone() {
+                use crate::aero::{PolarDatabase, compute_neutral_point, compute_static_margin};
+                use crate::sdf::query::bounding_points;
+                let fc   = FlightCondition::new(
+                    self.aero_airspeed_ms, self.aero_altitude_m, self.aero_aoa_deg);
+                let db   = PolarDatabase::new();
+                let np   = compute_neutral_point(&sdf, &sdf, &sdf, &db, &fc);
+                let bbox = bounding_points(sdf.as_ref());
+                let root_chord = bbox.size.x;
+                let mac  = (root_chord + root_chord * 0.5) * 0.5;
+                let cg   = glam::Vec3::new(self.aero_cg_x_mm, 0.0, 0.0);
+                let sm   = compute_static_margin(&np, cg, mac);
+                self.current_neutral_point = Some(np);
+                self.current_static_margin = Some(sm);
+                self.current_flight_condition = Some(fc);
+            } else {
+                ui.label("⚠ No SDF loaded — run script first.");
+            }
+        }
+
+        if let Some(ref np) = self.current_neutral_point.clone() {
+            if let Some(ref sm) = self.current_static_margin.clone() {
+                egui::Grid::new("aero_stability_results")
+                    .num_columns(2)
+                    .spacing([8.0, 4.0])
+                    .show(ui, |ui| {
+                        ui.label("NP x (mm):"); ui.label(format!("{:.1}", np.neutral_point_x_mm)); ui.end_row();
+                        ui.label("Wing AC (mm):"); ui.label(format!("{:.1}", np.wing_ac_x_mm)); ui.end_row();
+                        ui.label("Tail AC (mm):"); ui.label(format!("{:.1}", np.htail_ac_x_mm)); ui.end_row();
+                        ui.label("CG (mm):"); ui.label(format!("{:.1}", sm.cg_x_mm)); ui.end_row();
+                        ui.label("Static Margin:"); ui.label(format!("{:.1}% MAC", sm.static_margin_mac * 100.0)); ui.end_row();
+                        ui.label("CG Range:"); ui.label(format!("{:.1}–{:.1} mm ({:.1} mm)", sm.cg_forward_limit_mm, sm.cg_aft_limit_mm, sm.cg_range_mm)); ui.end_row();
+                    });
+
+                // Stability badge.
+                let (badge_color, badge_text) = match sm.stability_category {
+                    crate::aero::StabilityCategory::VeryStable => (egui::Color32::from_rgb(40, 160, 80),  "Very Stable"),
+                    crate::aero::StabilityCategory::Stable     => (egui::Color32::from_rgb(80, 200, 80),  "Stable"),
+                    crate::aero::StabilityCategory::Marginal   => (egui::Color32::from_rgb(200, 160, 30), "Marginal"),
+                    crate::aero::StabilityCategory::Neutral    => (egui::Color32::from_rgb(200, 100, 30), "Neutral"),
+                    crate::aero::StabilityCategory::Unstable   => (egui::Color32::from_rgb(200, 50, 50),  "Unstable"),
+                };
+                ui.colored_label(badge_color, badge_text);
+
+                // CG position bar (painter-based, no egui_plot needed).
+                let bar_w = ui.available_width();
+                let bar_h = 18.0;
+                let (resp, painter) = ui.allocate_painter(
+                    egui::Vec2::new(bar_w, bar_h), egui::Sense::hover());
+                let rect = resp.rect;
+                let x_min_vis = sm.cg_forward_limit_mm - 20.0;
+                let x_max_vis = np.htail_ac_x_mm + 20.0;
+                let x_range   = (x_max_vis - x_min_vis).max(1.0);
+                let to_screen  = |x: f32| rect.left() + (x - x_min_vis) / x_range * rect.width();
+
+                // Background bar.
+                painter.rect_filled(rect, 2.0, egui::Color32::from_gray(40));
+                // CG range (green zone).
+                let x0 = to_screen(sm.cg_forward_limit_mm).clamp(rect.left(), rect.right());
+                let x1 = to_screen(sm.cg_aft_limit_mm).clamp(rect.left(), rect.right());
+                painter.rect_filled(
+                    egui::Rect::from_min_max(egui::Pos2::new(x0, rect.top()), egui::Pos2::new(x1, rect.bottom())),
+                    0.0, egui::Color32::from_rgba_unmultiplied(80, 180, 80, 80));
+                // NP marker (blue line).
+                let xnp = to_screen(np.neutral_point_x_mm).clamp(rect.left(), rect.right());
+                painter.line_segment(
+                    [egui::Pos2::new(xnp, rect.top()), egui::Pos2::new(xnp, rect.bottom())],
+                    egui::Stroke::new(2.0, egui::Color32::from_rgb(100, 160, 255)));
+                // CG marker (orange triangle).
+                let xcg = to_screen(sm.cg_x_mm).clamp(rect.left(), rect.right());
+                let mid_y = rect.center().y;
+                painter.add(egui::Shape::convex_polygon(
+                    vec![
+                        egui::Pos2::new(xcg, mid_y - 6.0),
+                        egui::Pos2::new(xcg - 5.0, mid_y + 4.0),
+                        egui::Pos2::new(xcg + 5.0, mid_y + 4.0),
+                    ],
+                    egui::Color32::from_rgb(240, 140, 30),
+                    egui::Stroke::NONE,
+                ));
+            }
+        }
+
+        // ── Trim Analysis ──────────────────────────────────────────────────────
+        ui.separator();
+        ui.heading("Trim Analysis");
+
+        egui::Grid::new("aero_trim_inputs")
+            .num_columns(2)
+            .spacing([8.0, 4.0])
+            .show(ui, |ui| {
+                ui.label("Weight (N):");
+                ui.add(egui::DragValue::new(&mut self.aero_weight_n)
+                    .range(0.1..=10000.0).speed(0.1));
+                ui.end_row();
+            });
+
+        if ui.button("▶  Run Trim Analysis").clicked() {
+            if let Some(sdf) = self.current_sdf.clone() {
+                use crate::aero::{PolarDatabase, compute_neutral_point, compute_static_margin, compute_trim};
+                use crate::sdf::query::bounding_points;
+                let fc   = FlightCondition::new(
+                    self.aero_airspeed_ms, self.aero_altitude_m, self.aero_aoa_deg);
+                let db   = PolarDatabase::new();
+                let np   = compute_neutral_point(&sdf, &sdf, &sdf, &db, &fc);
+                let bbox = bounding_points(sdf.as_ref());
+                let root_chord = bbox.size.x;
+                let mac  = (root_chord + root_chord * 0.5) * 0.5;
+                let cg   = glam::Vec3::new(self.aero_cg_x_mm, 0.0, 0.0);
+                let sm   = compute_static_margin(&np, cg, mac);
+                let trim = compute_trim(&np, &sm, &sdf, &sdf, &sdf, &db, &fc, self.aero_weight_n);
+                self.current_neutral_point = Some(np);
+                self.current_static_margin = Some(sm);
+                self.current_trim_result   = Some(trim);
+                self.current_flight_condition = Some(fc);
+            } else {
+                ui.label("⚠ No SDF loaded — run script first.");
+            }
+        }
+
+        if let Some(ref trim) = self.current_trim_result.clone() {
+            egui::Grid::new("aero_trim_results")
+                .num_columns(2)
+                .spacing([8.0, 4.0])
+                .show(ui, |ui| {
+                    ui.label("Trim AoA:");  ui.label(format!("{:.1}°", trim.trim_aoa_deg)); ui.end_row();
+                    ui.label("Trim CL:");   ui.label(format!("{:.3}", trim.trim_cl)); ui.end_row();
+                    ui.label("Trim Speed:"); ui.label(format!("{:.1} m/s", trim.trim_airspeed_ms)); ui.end_row();
+                    ui.label("Stall Margin:"); ui.label(format!("{:.1}°", trim.trim_margin_deg)); ui.end_row();
+                });
+            if trim.is_trimmed {
+                ui.colored_label(egui::Color32::from_rgb(60, 180, 60), "✓ Trim found");
+            } else {
+                ui.colored_label(egui::Color32::from_rgb(200, 140, 30), "⚠ Approx trim (no zero crossing)");
+            }
+        }
+
+        // ── Drag Polar ──────────────────────────────────────────────────────────
+        ui.separator();
+        ui.heading("Drag Polar");
+
+        if ui.button("▶  Run Drag Polar").clicked() {
+            if let Some(sdf) = self.current_sdf.clone() {
+                use crate::aero::{PolarDatabase, compute_drag_polar};
+                let fc     = FlightCondition::new(
+                    self.aero_airspeed_ms, self.aero_altitude_m, self.aero_aoa_deg);
+                let db     = PolarDatabase::new();
+                let result = compute_drag_polar(&sdf, &sdf, &sdf, &sdf, &db, &fc, Some(self.aero_weight_n));
+                self.current_drag_polar = Some(result);
+                self.current_flight_condition = Some(fc);
+            } else {
+                ui.label("⚠ No SDF loaded — run script first.");
+            }
+        }
+
+        if let Some(ref dp) = self.current_drag_polar.clone() {
+            egui::Grid::new("aero_drag_results")
+                .num_columns(2)
+                .spacing([8.0, 4.0])
+                .show(ui, |ui| {
+                    ui.label("CD0:");       ui.label(format!("{:.4}", dp.cd0)); ui.end_row();
+                    ui.label("k:");         ui.label(format!("{:.4}", dp.k)); ui.end_row();
+                    ui.label("L/D max:");   ui.label(format!("{:.1}", dp.ld_max)); ui.end_row();
+                    ui.label("Best glide:"); ui.label(format!("{:.1} m/s", dp.best_glide_airspeed_ms)); ui.end_row();
+                    ui.label("  Wing:");    ui.label(format!("{:.4}", dp.cd0_breakdown.wing)); ui.end_row();
+                    ui.label("  Fuselage:"); ui.label(format!("{:.4}", dp.cd0_breakdown.fuselage)); ui.end_row();
+                    ui.label("  H-tail:");  ui.label(format!("{:.4}", dp.cd0_breakdown.h_tail)); ui.end_row();
+                    ui.label("  V-tail:");  ui.label(format!("{:.4}", dp.cd0_breakdown.v_tail)); ui.end_row();
+                });
+
+            // Simple text table of polar points (no egui_plot dependency).
+            ui.separator();
+            ui.label("CD vs CL polar:");
+            egui::ScrollArea::vertical()
+                .max_height(120.0)
+                .id_salt("drag_polar_scroll")
+                .show(ui, |ui| {
+                    for (cl, cd) in &dp.polar_points {
+                        ui.label(format!("CL={:.3}  CD={:.5}  L/D={:.1}",
+                            cl, cd, if *cd > 0.0 { *cl / *cd } else { 0.0 }));
+                    }
+                });
+        }
+
+        // ── Flight Envelope Summary ────────────────────────────────────────────
+        let all_done = self.current_static_margin.is_some()
+            && self.current_trim_result.is_some()
+            && self.current_drag_polar.is_some();
+
+        if all_done {
+            ui.separator();
+            ui.heading("Flight Envelope Summary");
+
+            let sm   = self.current_static_margin.as_ref().unwrap();
+            let trim = self.current_trim_result.as_ref().unwrap();
+            let dp   = self.current_drag_polar.as_ref().unwrap();
+
+            // Stall speed from CL_max.
+            let db = PolarDatabase::new();
+            if let Some(sdf) = self.current_sdf.clone() {
+                use crate::sdf::query::bounding_points;
+                let bbox = bounding_points(sdf.as_ref());
+                let root_chord = bbox.size.x;
+                let mac  = (root_chord + root_chord * 0.5) * 0.5;
+                let b_m  = bbox.size.y / 1000.0;
+                let s_m2 = b_m * mac / 1000.0;
+                let fc   = FlightCondition::new(self.aero_airspeed_ms, self.aero_altitude_m, 0.0);
+                let polar = db.get_interpolated("NACA 0012", fc.reynolds_for_chord(mac))
+                    .or_else(|| db.get_interpolated("NACA 0012", 500_000.0));
+                if let Some(ref p) = polar {
+                    let rho  = fc.air_density_kg_m3;
+                    let v_stall = if s_m2 > 1e-9 && p.cl_max > 0.0 {
+                        (2.0 * self.aero_weight_n / (rho * s_m2 * p.cl_max)).sqrt()
+                    } else {
+                        0.0
+                    };
+                    egui::Grid::new("aero_envelope_grid")
+                        .num_columns(2)
+                        .spacing([8.0, 4.0])
+                        .show(ui, |ui| {
+                            ui.label("Stall Speed:");
+                            ui.label(format!("{:.1} m/s  ({:.0} km/h)", v_stall, v_stall * 3.6));
+                            ui.end_row();
+                            ui.label("Best L/D:");
+                            ui.label(format!("{:.1} at {:.1} m/s", dp.ld_max, dp.best_glide_airspeed_ms));
+                            ui.end_row();
+                            ui.label("Static Margin:");
+                            let sm_pct = sm.static_margin_mac * 100.0;
+                            let sm_color = if sm.is_stable {
+                                egui::Color32::from_rgb(60, 180, 60)
+                            } else {
+                                egui::Color32::from_rgb(200, 50, 50)
+                            };
+                            ui.colored_label(sm_color, format!("{:.1}% MAC", sm_pct));
+                            ui.end_row();
+                            ui.label("Trim AoA:");
+                            ui.label(format!("{:.1}°", trim.trim_aoa_deg));
+                            ui.end_row();
+                            ui.label("CG Range:");
+                            ui.label(format!("{:.1}–{:.1} mm", sm.cg_forward_limit_mm, sm.cg_aft_limit_mm));
+                            ui.end_row();
+                        });
+                }
+            }
+        }
+
+        // ── CG Sensitivity (Phase 30) ────────────────────────────────────────
+        ui.separator();
+        ui.collapsing("CG Sensitivity", |ui| {
+            if let Some(ref result) = self.current_cg_sensitivity {
+                let env = &result.cg_envelope;
+                ui.label(format!(
+                    "CG: {:.1}mm  ({:.0}% through envelope)",
+                    env.current_x_mm, env.percent_through_envelope
+                ));
+                ui.label(format!(
+                    "Forward limit: {:.1}mm  |  Aft limit: {:.1}mm",
+                    env.forward_limit_x_mm, env.aft_limit_x_mm
+                ));
+                ui.label(format!(
+                    "Static margin: {:.2} MAC",
+                    result.baseline_static_margin_mac
+                ));
+
+                ui.separator();
+                ui.label("Component influence:");
+                for comp in &result.component_sensitivities {
+                    ui.horizontal(|ui| {
+                        let bar_w = (comp.influence_fraction * 160.0).max(4.0);
+                        let (rect, _) = ui.allocate_exact_size(
+                            egui::vec2(bar_w, 10.0),
+                            egui::Sense::hover(),
+                        );
+                        ui.painter().rect_filled(
+                            rect, 2.0, egui::Color32::from_rgb(100, 150, 220),
+                        );
+                        ui.label(format!(
+                            "{}: {:.0}%",
+                            comp.component_name,
+                            comp.influence_fraction * 100.0
+                        ));
+                    });
+                }
+
+                if !result.recommendations.is_empty() {
+                    ui.separator();
+                    ui.collapsing("Recommendations", |ui| {
+                        for rec in &result.recommendations {
+                            ui.label(format!("• {}", rec));
+                        }
+                    });
+                }
+
+                if ui.button("Clear CG Sensitivity").clicked() {
+                    self.current_cg_sensitivity = None;
+                }
+            } else {
+                if ui.button("Run CG Sensitivity").clicked() {
+                    let mp = self.mass_points.clone();
+                    if !mp.is_empty() {
+                        let comps: Vec<(String, glam::Vec3, f32)> = mp
+                            .iter()
+                            .map(|m| (m.name.clone(), m.position, m.mass_g))
+                            .collect();
+                        let np_x = self
+                            .current_neutral_point
+                            .as_ref()
+                            .map(|np| np.neutral_point_x_mm)
+                            .unwrap_or(100.0);
+                        let mac = 30.0_f32;
+                        let fwd = np_x - 0.25 * mac;
+                        let dims = indexmap::IndexMap::new();
+                        self.current_cg_sensitivity = Some(
+                            crate::analysis::compute_cg_sensitivity(&comps, &dims, np_x, mac, fwd),
+                        );
+                    } else {
+                        self.error_message = Some(
+                            "No mass points found. Use mass_point() in your script.".to_string(),
+                        );
+                    }
+                }
+                ui.label("Requires mass_point() calls in script.");
+            }
+        });
+
+        // ── Interference Check (Phase 30) ────────────────────────────────────
+        ui.separator();
+        ui.collapsing("Interference Check", |ui| {
+            if let Some(ref result) = self.current_interference_result {
+                if result.has_critical_interference {
+                    let crit_count = result
+                        .pairs
+                        .iter()
+                        .filter(|p| p.severity == crate::analysis::InterferenceSeverity::Critical)
+                        .count();
+                    ui.colored_label(
+                        egui::Color32::RED,
+                        format!("WARNING: {} critical interference(s)!", crit_count),
+                    );
+                } else if result.total_interference_count == 0 {
+                    ui.colored_label(egui::Color32::GREEN, "No interference detected");
+                } else {
+                    ui.colored_label(
+                        egui::Color32::YELLOW,
+                        format!("{} interference(s) found", result.total_interference_count),
+                    );
+                }
+
+                for pair in &result.pairs {
+                    let color = match pair.severity {
+                        crate::analysis::InterferenceSeverity::Critical  => egui::Color32::RED,
+                        crate::analysis::InterferenceSeverity::Moderate  => egui::Color32::from_rgb(220, 120, 0),
+                        crate::analysis::InterferenceSeverity::Minor     => egui::Color32::YELLOW,
+                        crate::analysis::InterferenceSeverity::Negligible => egui::Color32::GRAY,
+                    };
+                    ui.colored_label(color, &pair.description);
+                }
+
+                if !result.outside_parent.is_empty() {
+                    ui.separator();
+                    ui.label("Components outside parent structure:");
+                    for name in &result.outside_parent {
+                        ui.colored_label(egui::Color32::RED, format!("  WARNING: {}", name));
+                    }
+                }
+
+                if ui.button("Clear Interference Results").clicked() {
+                    self.current_interference_result = None;
+                }
+            } else {
+                ui.label("Interference check runs via script.");
+                ui.label("Call interference_check(names, keepouts, parent) in script.");
+                ui.label("Or interference_check_no_parent(names, keepouts).");
+            }
+        });
+
+        ui.separator();
+        if ui.button("Clear All Aero Results").clicked() {
+            self.current_lifting_line_result = None;
+            self.current_flight_condition    = None;
+            self.current_neutral_point       = None;
+            self.current_static_margin       = None;
+            self.current_trim_result         = None;
+            self.current_drag_polar          = None;
+            self.current_cg_sensitivity      = None;
+            self.current_interference_result = None;
         }
     }
 }

@@ -336,6 +336,158 @@ pub fn generate_mounts_sdf(
     result.unwrap_or_else(|| Arc::new(Sphere::new(-1.0)) as Arc<dyn Sdf>)
 }
 
+// ── Component-aware bulkhead generation ──────────────────────────────────────
+
+use rayon::prelude::*;
+
+/// Check whether a keepout volume intersects the bulkhead plane at `plane_x`
+/// on a 32×32 grid within [-fuse_r, fuse_r] in Y and Z.
+pub fn keepout_intersects_plane(
+    keepout: &Arc<dyn Sdf>,
+    plane_x: f32,
+    fuse_r: f32,
+) -> bool {
+    const RES: usize = 32;
+    (0..RES * RES).into_par_iter().any(|idx| {
+        let iy = idx / RES;
+        let iz = idx % RES;
+        let y = -fuse_r + (iy as f32 + 0.5) / RES as f32 * 2.0 * fuse_r;
+        let z = -fuse_r + (iz as f32 + 0.5) / RES as f32 * 2.0 * fuse_r;
+        keepout.distance(Vec3::new(plane_x, y, z)) < 0.0
+    })
+}
+
+/// Subtract an expanded keepout from a bulkhead, adding a pad ring if walls
+/// would be too thin.
+///
+/// * `bulkhead`  – bulkhead SDF
+/// * `keepout`   – component keepout volume
+/// * `margin`    – extra clearance around keepout (mm)
+/// * `min_wall`  – minimum acceptable wall thickness (mm), default 2.5
+pub fn subtract_keepout_with_pad(
+    bulkhead: Arc<dyn Sdf>,
+    keepout: Arc<dyn Sdf>,
+    margin: f32,
+    min_wall: f32,
+) -> Arc<dyn Sdf> {
+    // Expand keepout by margin
+    let expanded: Arc<dyn Sdf> = Arc::new(Offset::new(Arc::clone(&keepout), margin));
+
+    // Subtract expanded keepout
+    let raw: Arc<dyn Sdf> = Arc::new(Subtract::new(Arc::clone(&bulkhead), Arc::clone(&expanded)));
+
+    // Sample boundary points to check wall thickness
+    let thin_wall = check_wall_at_boundary(&*raw, &*expanded, min_wall);
+
+    if thin_wall {
+        // Add a pad ring: shell around the expanded keepout
+        let pad_thickness = min_wall + 1.0; // slightly generous
+        let pad: Arc<dyn Sdf> = Arc::new(Offset::new(Arc::clone(&expanded), pad_thickness));
+        // pad ring = offset(expanded, pad_thickness) - expanded
+        let pad_ring: Arc<dyn Sdf> = Arc::new(Subtract::new(pad, Arc::clone(&expanded)));
+        // Union pad into bulkhead first, then subtract expanded
+        let padded_bk: Arc<dyn Sdf> = Arc::new(Union::new(Arc::clone(&bulkhead), pad_ring));
+        Arc::new(Subtract::new(padded_bk, expanded))
+    } else {
+        raw
+    }
+}
+
+fn check_wall_at_boundary(result: &dyn Sdf, expanded_keepout: &dyn Sdf, min_wall: f32) -> bool {
+    const PROBES: usize = 16;
+    let step_size = 0.5_f32;
+    let max_steps = 20_usize;
+
+    let mut boundary_points = Vec::with_capacity(PROBES);
+    for i in 0..PROBES {
+        let angle = (i as f32 / PROBES as f32) * std::f32::consts::TAU;
+        let dir = Vec3::new(0.0, angle.cos(), angle.sin());
+        let mut t = 0.0_f32;
+        for _ in 0..60 {
+            let p = dir * t;
+            let d = expanded_keepout.distance(p);
+            if d > 0.0 && t > 0.1 {
+                boundary_points.push(p);
+                break;
+            }
+            t += step_size.max(d.abs().min(step_size));
+            if t > 500.0 {
+                break;
+            }
+        }
+    }
+
+    for bp in &boundary_points {
+        let dir = Vec3::new(0.0, bp.y, bp.z).normalize_or_zero();
+        if dir == Vec3::ZERO {
+            continue;
+        }
+        let mut thickness = 0.0_f32;
+        let mut inside = result.distance(*bp) < 0.0;
+        let mut entry = 0.0_f32;
+        for j in 1..=max_steps {
+            let t = j as f32 * step_size;
+            let p = *bp + dir * t;
+            let now = result.distance(p) < 0.0;
+            if inside && !now {
+                thickness = t - entry;
+                break;
+            }
+            if !inside && now {
+                entry = t;
+            }
+            inside = now;
+        }
+        if thickness > 0.01 && thickness < min_wall {
+            return true;
+        }
+    }
+    false
+}
+
+/// Create a bulkhead with component keepout volumes subtracted and pad-up applied.
+/// `keepouts` is a slice of (keepout SDF, margin) pairs.
+pub fn bulkhead_with_keepouts(
+    fuselage: Arc<dyn Sdf>,
+    position: f32,
+    thickness: f32,
+    keepouts: &[(Arc<dyn Sdf>, f32)],
+    min_wall: f32,
+) -> Arc<dyn Sdf> {
+    let mut bk = bulkhead_at_station(Arc::clone(&fuselage), position, thickness, 0, 0.0);
+
+    let fuse_r = estimate_radius_at(&fuselage, position);
+
+    // Sort keepouts by approximate size (more negative distance at plane centre = larger)
+    let mut sorted: Vec<_> = keepouts.iter().collect();
+    sorted.sort_by(|(a, _), (b, _)| {
+        let da = a.distance(Vec3::new(position, 0.0, 0.0));
+        let db = b.distance(Vec3::new(position, 0.0, 0.0));
+        da.partial_cmp(&db).unwrap_or(std::cmp::Ordering::Equal)
+    });
+
+    for (keepout, margin) in sorted {
+        if keepout_intersects_plane(keepout, position, fuse_r) {
+            bk = subtract_keepout_with_pad(bk, Arc::clone(keepout), *margin, min_wall);
+        }
+    }
+    bk
+}
+
+/// Add a cylindrical cable passage hole at a specific YZ position in the bulkhead plane.
+/// The hole is a cylinder along X subtracted from the bulkhead.
+pub fn cable_hole_at(
+    bulkhead: Arc<dyn Sdf>,
+    y: f32,
+    z: f32,
+    diameter: f32,
+    min_wall: f32,
+) -> Arc<dyn Sdf> {
+    let hole = cylinder_along_x(diameter * 0.5, 10_000.0);
+    let hole = Arc::new(Translate::new(hole, Vec3::new(0.0, y, z)));
+    subtract_keepout_with_pad(bulkhead, hole, 0.0, min_wall)
+}
+
 // ── Conformal lattice convenience wrappers ────────────────────────────────────
 
 use crate::sdf::lattice::ConformalGyroid;

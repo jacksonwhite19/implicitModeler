@@ -3,7 +3,6 @@
 // Run `FEAPipeline::run()` on a background thread.  Progress messages and the
 // final result are returned via std::sync::mpsc channels.
 
-use std::io::Write as IoWrite;
 use std::path::PathBuf;
 use std::sync::Arc;
 use glam::Vec3;
@@ -84,6 +83,8 @@ pub struct FEAPipeline {
     pub setup:           FEASetup,
     pub config:          FEAConfig,
     pub ccx_override:    Option<String>,
+    /// Optional composite layup for per-layer material assignment in the .inp file.
+    pub layups:          Vec<Arc<crate::sdf::aerospace::composite::CompositeLayup>>,
 }
 
 impl FEAPipeline {
@@ -128,7 +129,8 @@ impl FEAPipeline {
         let inp_path = tmp_dir.join(format!("{job_name}.inp"));
 
         log!("Writing CalculiX input file…");
-        let inp_content = match write_inp(&mesh, &self.setup, &self.config.material, job_name) {
+        let inp_content = match write_inp(&mesh, &self.setup, &self.config.material, job_name,
+                                          &self.layups) {
             Ok(s)  => s,
             Err(e) => bail!("Failed to write .inp: {e}"),
         };

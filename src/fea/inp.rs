@@ -6,16 +6,22 @@
 
 use std::collections::HashMap;
 use std::fmt::Write;
+use std::sync::Arc;
 use glam::Vec3;
 use crate::fea::meshing::TetMesh;
 use crate::fea::setup::{FEASetup, MaterialProperties};
 
 /// Write a CalculiX .inp file and return it as a String.
+///
+/// `layups` — if non-empty, the first layup is used to assign per-layer
+/// materials to element sets.  Elements whose centroid falls outside any layer
+/// get the global `material` fallback.
 pub fn write_inp(
     mesh:     &TetMesh,
     setup:    &FEASetup,
     material: &MaterialProperties,
     job_name: &str,
+    layups:   &[Arc<crate::sdf::aerospace::composite::CompositeLayup>],
 ) -> Result<String, String> {
     let mut s = String::new();
 
@@ -75,15 +81,83 @@ pub fn write_inp(
     }
 
     // ── Material ─────────────────────────────────────────────────────────────
-    writeln!(s, "*MATERIAL, NAME=MAT").ok();
-    writeln!(s, "*ELASTIC").ok();
-    writeln!(s, "{:.1}, {:.4}", material.youngs_modulus_mpa, material.poisson_ratio).ok();
-    writeln!(s, "*DENSITY").ok();
-    writeln!(s, "{:.4e}", material.density_tonne_per_mm3).ok();
-    writeln!(s).ok();
+    if !layups.is_empty() {
+        // Composite mode: assign elements to per-layer material groups.
+        let layup = &layups[0];
+        let n_layers = layup.layers.len();
 
-    writeln!(s, "*SOLID SECTION, ELSET=EALL, MATERIAL=MAT").ok();
-    writeln!(s).ok();
+        // Build element sets: for each element compute centroid, call layer_at().
+        let mut layer_elsets: Vec<Vec<usize>> = vec![Vec::new(); n_layers];
+        let mut fallback_elset: Vec<usize> = Vec::new();
+
+        for (ei, tet) in mesh.elements.iter().enumerate() {
+            let centroid = (mesh.nodes[tet[0]] + mesh.nodes[tet[1]]
+                           + mesh.nodes[tet[2]] + mesh.nodes[tet[3]]) / 4.0;
+            match layup.layer_at(centroid) {
+                Some(li) => layer_elsets[li].push(ei + 1),
+                None     => fallback_elset.push(ei + 1),
+            }
+        }
+
+        // Emit element sets.
+        for (li, els) in layer_elsets.iter().enumerate() {
+            if els.is_empty() { continue; }
+            writeln!(s, "*ELSET, ELSET=LAYER{}", li + 1).ok();
+            for chunk in els.chunks(16) {
+                writeln!(s, "{}", chunk.iter().map(|e| e.to_string())
+                    .collect::<Vec<_>>().join(", ")).ok();
+            }
+            writeln!(s).ok();
+        }
+        if !fallback_elset.is_empty() {
+            writeln!(s, "*ELSET, ELSET=LAYER_FB").ok();
+            for chunk in fallback_elset.chunks(16) {
+                writeln!(s, "{}", chunk.iter().map(|e| e.to_string())
+                    .collect::<Vec<_>>().join(", ")).ok();
+            }
+            writeln!(s).ok();
+        }
+
+        // Emit per-layer materials.
+        for (li, layer) in layup.layers.iter().enumerate() {
+            if layer_elsets[li].is_empty() { continue; }
+            let mat_name = format!("MAT_L{}", li + 1);
+            let m = &layer.material;
+            writeln!(s, "*MATERIAL, NAME={mat_name}").ok();
+            writeln!(s, "*ELASTIC").ok();
+            writeln!(s, "{:.1}, {:.4}", m.elastic_modulus_mpa, m.poisson_ratio).ok();
+            writeln!(s, "*DENSITY").ok();
+            // g/cm³ → tonne/mm³: ρ_t = ρ_g_cm3 × 1e-9 / 1e-6 = ρ × 1e-3 × 1e-6?
+            // g/cm³ = 1000 kg/m³. 1 tonne = 1000 kg. 1 m³ = 1e9 mm³.
+            // ρ_tonne_mm3 = ρ_g_cm3 × 1e-9
+            writeln!(s, "{:.4e}", m.density_g_cm3 as f64 * 1e-9).ok();
+            writeln!(s).ok();
+            writeln!(s, "*SOLID SECTION, ELSET=LAYER{}, MATERIAL={}", li + 1, mat_name).ok();
+            writeln!(s).ok();
+        }
+
+        // Fallback elements use the global material.
+        if !fallback_elset.is_empty() {
+            writeln!(s, "*MATERIAL, NAME=MAT").ok();
+            writeln!(s, "*ELASTIC").ok();
+            writeln!(s, "{:.1}, {:.4}", material.youngs_modulus_mpa, material.poisson_ratio).ok();
+            writeln!(s, "*DENSITY").ok();
+            writeln!(s, "{:.4e}", material.density_tonne_per_mm3).ok();
+            writeln!(s).ok();
+            writeln!(s, "*SOLID SECTION, ELSET=LAYER_FB, MATERIAL=MAT").ok();
+            writeln!(s).ok();
+        }
+    } else {
+        // Single-material mode (original behaviour).
+        writeln!(s, "*MATERIAL, NAME=MAT").ok();
+        writeln!(s, "*ELASTIC").ok();
+        writeln!(s, "{:.1}, {:.4}", material.youngs_modulus_mpa, material.poisson_ratio).ok();
+        writeln!(s, "*DENSITY").ok();
+        writeln!(s, "{:.4e}", material.density_tonne_per_mm3).ok();
+        writeln!(s).ok();
+        writeln!(s, "*SOLID SECTION, ELSET=EALL, MATERIAL=MAT").ok();
+        writeln!(s).ok();
+    }
 
     // ── Step ─────────────────────────────────────────────────────────────────
     writeln!(s, "*STEP").ok();
@@ -285,7 +359,7 @@ mod tests {
         let mesh  = make_mesh();
         let setup = FEASetup::default();
         let mat   = MaterialProperties::default();
-        let inp   = write_inp(&mesh, &setup, &mat, "test").unwrap();
+        let inp   = write_inp(&mesh, &setup, &mat, "test", &[]).unwrap();
 
         // Count *NODE section lines — skip blanks (the section ends with an empty line).
         let node_lines = inp.lines()
@@ -303,7 +377,7 @@ mod tests {
         let mesh  = make_mesh();
         let setup = FEASetup::default();
         let mat   = MaterialProperties::default();
-        let inp   = write_inp(&mesh, &setup, &mat, "test").unwrap();
+        let inp   = write_inp(&mesh, &setup, &mat, "test", &[]).unwrap();
 
         let elem_lines = inp.lines()
             .skip_while(|l| !l.starts_with("*ELEMENT"))
@@ -325,7 +399,7 @@ mod tests {
             sdf:  support_sdf,
         });
         let mat = MaterialProperties::default();
-        let inp = write_inp(&mesh, &setup, &mat, "test").unwrap();
+        let inp = write_inp(&mesh, &setup, &mat, "test", &[]).unwrap();
 
         assert!(inp.contains("base, ENCASTRE"),
             "ENCASTRE boundary condition must appear in .inp for fixed_support");
@@ -342,7 +416,7 @@ mod tests {
             force: Vec3::new(0.0, 0.0, -100.0),
         });
         let mat = MaterialProperties::default();
-        let inp = write_inp(&mesh, &setup, &mat, "test").unwrap();
+        let inp = write_inp(&mesh, &setup, &mat, "test", &[]).unwrap();
 
         // There must be at least one CLOAD line for DOF 3 (Z force).
         let has_cload_z = inp.lines()
@@ -355,7 +429,7 @@ mod tests {
         let mesh  = make_mesh();
         let setup = FEASetup::default();
         let mat   = MaterialProperties::default();
-        let inp   = write_inp(&mesh, &setup, &mat, "test").unwrap();
+        let inp   = write_inp(&mesh, &setup, &mat, "test", &[]).unwrap();
 
         assert!(inp.contains("*STEP"),        ".inp must contain *STEP");
         assert!(inp.contains("*STATIC"),      ".inp must contain *STATIC");

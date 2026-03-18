@@ -213,6 +213,7 @@ impl ConformalSchwarzP {
         Self { parent, cell_size, thickness, density_field: None, region_mask: None }
     }
 
+    #[allow(dead_code)] // Part of graded lattice construction API
     pub fn with_density_field(
         parent: Arc<dyn Sdf>, cell_size: f32, thickness: f32,
         density_field: Arc<dyn Field>,

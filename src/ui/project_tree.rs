@@ -79,8 +79,9 @@ impl ProjectTree {
         fea_setup:     &FEASetup,
         profile_names: &[String],
         splines:       &LongitudinalSplines,
+        ref_points:    &[crate::scripting::ReferencePoint],
     ) {
-        let new_nodes = build_tree(mass_points, fea_setup, profile_names, splines);
+        let new_nodes = build_tree(mass_points, fea_setup, profile_names, splines, ref_points);
         // Mark any new nodes as open by default
         mark_defaults(&new_nodes, &mut self.collapse);
         // Check if the previously selected node still exists
@@ -95,13 +96,15 @@ impl ProjectTree {
             || !profile_names.is_empty()
             || splines.spine.keel.is_some()
             || splines.spine.deck.is_some()
-            || splines.chine.chine_y.is_some();
+            || splines.chine.chine_y.is_some()
+            || !ref_points.is_empty();
         if populated {
             self.has_been_populated = true;
         }
     }
 
     /// Clear the tree (on script error or empty script, but keep populated flag).
+    #[allow(dead_code)] // Available for error recovery
     pub fn clear(&mut self) {
         self.nodes.clear();
         self.selected = None;
@@ -115,6 +118,7 @@ fn build_tree(
     fea_setup:     &FEASetup,
     profile_names: &[String],
     splines:       &LongitudinalSplines,
+    ref_points:    &[crate::scripting::ReferencePoint],
 ) -> Vec<TreeNode> {
     let mut roots: Vec<TreeNode> = Vec::new();
 
@@ -273,6 +277,31 @@ fn build_tree(
             label:    format!("FEA Conditions ({})", children.len()),
             icon:     "🔬",
             color:    Color32::from_rgb(200, 200, 200),
+            children,
+        });
+    }
+
+    // ── Reference points ─────────────────────────────────────────────────────
+    if !ref_points.is_empty() {
+        let children: Vec<TreeNode> = ref_points.iter().map(|rp| {
+            let color = Color32::from_rgb(
+                (rp.color[0] * 255.0) as u8,
+                (rp.color[1] * 255.0) as u8,
+                (rp.color[2] * 255.0) as u8,
+            );
+            TreeNode::Leaf {
+                id:          format!("refpt_{}", rp.name),
+                label:       format!("{} ({:.1}, {:.1}, {:.1})", rp.name, rp.position.x, rp.position.y, rp.position.z),
+                icon:        "◉",
+                color,
+                script_name: None,
+            }
+        }).collect();
+        roots.push(TreeNode::Group {
+            id:       "ref_points".to_string(),
+            label:    format!("Reference Points ({})", children.len()),
+            icon:     "◎",
+            color:    Color32::from_rgb(200, 180, 100),
             children,
         });
     }

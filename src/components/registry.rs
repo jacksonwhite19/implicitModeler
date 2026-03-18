@@ -85,6 +85,7 @@ impl ComponentRegistry {
     }
 
     /// Get a component by name
+    #[allow(dead_code)] // Used in generate_script_with_nesting
     pub fn get(&self, name: &str) -> Option<&ComponentDef> {
         self.components.get(name)
     }
@@ -108,6 +109,7 @@ impl ComponentRegistry {
     }
 
     /// Get total number of registered components
+    #[allow(dead_code)] // Available for status/stats display
     pub fn count(&self) -> usize {
         self.components.len()
     }

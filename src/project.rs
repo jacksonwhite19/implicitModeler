@@ -5,8 +5,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::io;
 use std::path::Path;
-use crate::node_graph::NodeGraph;
-use crate::notebook::Notebook;
+use indexmap::IndexMap;
 use crate::ui::spline_editor::SplineEditorState;
 use crate::sdf::spine::LongitudinalSplines;
 
@@ -55,10 +54,6 @@ pub struct Project {
     pub camera_target: [f32; 3],
     #[serde(skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub node_graph: Option<NodeGraph>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub notebook: Option<Notebook>,
     /// Named spline cross-section profiles edited via the spline editor.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub profiles: Option<HashMap<String, SplineEditorState>>,
@@ -71,6 +66,18 @@ pub struct Project {
     /// FEA solver configuration (material, resolution).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub fea_config: Option<crate::fea::FEAConfig>,
+    /// Named dimensions injected as Rhai constants.
+    #[serde(skip_serializing_if = "IndexMap::is_empty", default)]
+    pub dimensions: IndexMap<String, f64>,
+    /// Print analysis settings (build direction, printer preset, thresholds).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub print_analysis_settings: Option<crate::analysis::print_analysis::PrintAnalysisSettings>,
+    /// Tolerance compensation settings for FDM export.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tolerance_settings: Option<crate::sdf::print::ToleranceSettings>,
+    /// Version control state (optional for backward compatibility).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version_control: Option<crate::version_control::VersionControlState>,
 }
 
 impl Project {
@@ -82,12 +89,13 @@ impl Project {
         show_wireframe: bool,
         camera_position: [f32; 3],
         camera_target: [f32; 3],
-        node_graph: Option<NodeGraph>,
-        notebook: Option<Notebook>,
         profiles: Option<HashMap<String, SplineEditorState>>,
         splines: Option<LongitudinalSplines>,
         section_view: Option<SectionView>,
         fea_config: Option<crate::fea::FEAConfig>,
+        dimensions: IndexMap<String, f64>,
+        print_analysis_settings: Option<crate::analysis::print_analysis::PrintAnalysisSettings>,
+        tolerance_settings: Option<crate::sdf::print::ToleranceSettings>,
     ) -> Self {
         Self {
             version: env!("CARGO_PKG_VERSION").to_string(),
@@ -98,12 +106,14 @@ impl Project {
             camera_position,
             camera_target,
             timestamp: Some(chrono::Local::now().to_rfc3339()),
-            node_graph,
-            notebook,
             profiles,
             splines,
             section_view,
             fea_config,
+            dimensions,
+            print_analysis_settings,
+            tolerance_settings,
+            version_control: None,
         }
     }
 

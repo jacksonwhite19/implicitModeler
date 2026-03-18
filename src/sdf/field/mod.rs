@@ -13,6 +13,7 @@ pub trait Field: Send + Sync {
 
     /// Optional: Get approximate bounds for optimization
     /// Returns (min_value, max_value) or None if unbounded
+    #[allow(dead_code)] // Part of Field trait API for optimization
     fn bounds(&self) -> Option<(f32, f32)> {
         None
     }

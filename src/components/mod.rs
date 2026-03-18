@@ -3,7 +3,7 @@
 pub mod library;
 pub mod registry;
 
-pub use library::{ComponentDef, ParameterDef, ParamType, ParamValue};
+pub use library::{ComponentDef, ParamValue};
 pub use registry::ComponentRegistry;
 
 use std::collections::HashMap;
@@ -29,6 +29,7 @@ impl ComponentInstance {
     }
 
     /// Create a component instance with custom parameter values
+    #[allow(dead_code)] // Part of component instance API
     pub fn with_params(component_def: ComponentDef, param_values: HashMap<String, ParamValue>) -> Self {
         Self {
             component_def,
@@ -37,6 +38,7 @@ impl ComponentInstance {
     }
 
     /// Set a parameter value
+    #[allow(dead_code)] // Part of component instance API
     pub fn set_param(&mut self, name: String, value: ParamValue) {
         self.param_values.insert(name, value);
     }
@@ -75,6 +77,7 @@ impl ComponentInstance {
     }
 
     /// Generate script with nested component expansion (Step 8)
+    #[allow(dead_code)] // Part of component nesting API
     pub fn generate_script_with_nesting(&self, registry: &ComponentRegistry) -> Result<String, String> {
         // Validate first
         self.validate()?;

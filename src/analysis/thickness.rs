@@ -6,6 +6,7 @@ use glam::Vec3;
 use rayon::prelude::*;
 use crate::render::SdfGrid;
 
+#[derive(Clone)]
 pub struct ThicknessResult {
     pub min_thickness: f32,
     pub min_location:  Vec3,

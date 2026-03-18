@@ -718,6 +718,7 @@ dependencies = [
  "iana-time-zone",
  "js-sys",
  "num-traits",
+ "serde",
  "wasm-bindgen",
  "windows-link",
 ]
@@ -1842,6 +1843,7 @@ dependencies = [
  "clap",
  "eframe",
  "glam",
+ "indexmap",
  "lazy_static",
  "rayon",
  "rfd",

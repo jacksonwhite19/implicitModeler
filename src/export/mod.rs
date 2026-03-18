@@ -3,6 +3,7 @@
 use crate::mesh::Mesh;
 use std::fs::File;
 use std::io::{self, Write};
+use std::path::Path;
 
 /// Export mesh to binary STL format
 pub fn export_stl(mesh: &Mesh, path: &str) -> io::Result<()> {
@@ -101,4 +102,68 @@ pub fn export_obj(mesh: &Mesh, path: &str) -> io::Result<()> {
     }
 
     Ok(())
+}
+
+// ── Manufacturing package export ──────────────────────────────────────────────
+
+/// A bundled manufacturing output: STL files, BOM, and assembly notes.
+#[allow(dead_code)] // Part of manufacturing export API
+pub struct ManufacturingPackage {
+    pub stl_files: Vec<String>,
+    pub bom_csv: String,
+    pub assembly_notes: String,
+}
+
+/// Export a complete manufacturing package to `output_dir`.
+#[allow(dead_code)] // Part of manufacturing export API — not yet called from UI
+///
+/// Creates:
+/// - `main_body.stl` — binary STL mesh
+/// - `bom.csv` — bill of materials (CSV)
+/// - `bom.md` — bill of materials (Markdown)
+/// - `assembly_notes.md` — print settings and assembly guidance
+pub fn export_manufacturing_package(
+    mesh: &Mesh,
+    project_name: &str,
+    output_dir: &Path,
+) -> Result<ManufacturingPackage, String> {
+    std::fs::create_dir_all(output_dir).map_err(|e| e.to_string())?;
+
+    // Export main body STL
+    let stl_path = output_dir.join("main_body.stl");
+    export_stl(mesh, stl_path.to_str().ok_or("invalid path")?)
+        .map_err(|e| e.to_string())?;
+
+    let triangle_count = mesh.indices.len() / 3;
+
+    // BOM CSV
+    let bom_csv = format!(
+        "Part,Type,Quantity,Notes\nmain_body,Printed Part,1,{} triangles\n",
+        triangle_count
+    );
+    let bom_path = output_dir.join("bom.csv");
+    std::fs::write(&bom_path, &bom_csv).map_err(|e| e.to_string())?;
+
+    // BOM Markdown
+    let bom_md = format!(
+        "# Bill of Materials\n\n| Part | Type | Qty | Notes |\n|------|------|-----|-------|\n| main_body | Printed Part | 1 | {} triangles |\n",
+        triangle_count
+    );
+    let bom_md_path = output_dir.join("bom.md");
+    std::fs::write(&bom_md_path, &bom_md).map_err(|e| e.to_string())?;
+
+    // Assembly notes — use chrono for date
+    let date_str = chrono::Local::now().format("%Y-%m-%d").to_string();
+    let assembly_notes = format!(
+        "# Assembly Notes\n\n**Project:** {}\n**Date:** {}\n**Triangles:** {}\n\n## Print Settings\n\n- Layer height: 0.2mm\n- Infill: 20%\n- Material: PLA\n",
+        project_name, date_str, triangle_count
+    );
+    let notes_path = output_dir.join("assembly_notes.md");
+    std::fs::write(&notes_path, &assembly_notes).map_err(|e| e.to_string())?;
+
+    Ok(ManufacturingPackage {
+        stl_files: vec!["main_body.stl".to_string()],
+        bom_csv,
+        assembly_notes,
+    })
 }
