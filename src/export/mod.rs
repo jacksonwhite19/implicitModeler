@@ -1,9 +1,22 @@
 // Mesh export functionality
 
-use crate::mesh::Mesh;
+use crate::mesh::{Mesh, MeshQuality, adaptive_mc};
+use crate::sdf::Sdf;
 use std::fs::File;
 use std::io::{self, Write};
 use std::path::Path;
+use glam::Vec3;
+
+pub fn build_export_mesh(
+    sdf: &dyn Sdf,
+    bounds_min: Vec3,
+    bounds_max: Vec3,
+    quality: MeshQuality,
+    smooth_normals: bool,
+) -> Mesh {
+    let target_cell = quality.target_cell_size_mm().max(0.02);
+    adaptive_mc::extract_mesh_adaptive(sdf, bounds_min, bounds_max, target_cell, smooth_normals)
+}
 
 /// Export mesh to binary STL format
 pub fn export_stl(mesh: &Mesh, path: &str) -> io::Result<()> {
@@ -102,6 +115,14 @@ pub fn export_obj(mesh: &Mesh, path: &str) -> io::Result<()> {
     }
 
     Ok(())
+}
+
+pub fn export_by_format(mesh: &Mesh, path: &Path, format: &str) -> Result<(), String> {
+    match format.to_ascii_lowercase().as_str() {
+        "stl" => export_stl(mesh, path.to_str().ok_or("invalid output path")?).map_err(|e| e.to_string()),
+        "obj" => export_obj(mesh, path.to_str().ok_or("invalid output path")?).map_err(|e| e.to_string()),
+        other => Err(format!("Unknown format: {}. Use 'stl' or 'obj'.", other)),
+    }
 }
 
 // ── Manufacturing package export ──────────────────────────────────────────────

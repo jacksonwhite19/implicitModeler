@@ -2,6 +2,17 @@
 
 use glam::{Mat4, Vec3};
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StandardView {
+    Front,
+    Back,
+    Left,
+    Right,
+    Top,
+    Bottom,
+    Isometric,
+}
+
 #[derive(Clone)]
 pub struct Camera {
     pub eye: Vec3,
@@ -36,6 +47,35 @@ impl Camera {
 
     pub fn view_projection(&self) -> Mat4 {
         self.projection_matrix() * self.view_matrix()
+    }
+
+    pub fn distance_to_target(&self) -> f32 {
+        (self.eye - self.target).length().max(1.0)
+    }
+
+    pub fn snap_to_view(&mut self, view: StandardView) {
+        let distance = self.distance_to_target();
+        match view {
+            StandardView::Front => self.set_forward_view(Vec3::X, Vec3::Z, distance),
+            StandardView::Back => self.set_forward_view(-Vec3::X, Vec3::Z, distance),
+            StandardView::Left => self.set_forward_view(Vec3::Y, Vec3::Z, distance),
+            StandardView::Right => self.set_forward_view(-Vec3::Y, Vec3::Z, distance),
+            StandardView::Top => self.set_forward_view(-Vec3::Z, Vec3::Y, distance),
+            StandardView::Bottom => self.set_forward_view(Vec3::Z, -Vec3::Y, distance),
+            StandardView::Isometric => {
+                self.set_forward_view(Vec3::new(1.0, 1.0, -0.8), Vec3::Z, distance)
+            }
+        }
+    }
+
+    fn set_forward_view(&mut self, forward: Vec3, up: Vec3, distance: f32) {
+        let forward = forward.normalize_or_zero();
+        let up = up.normalize_or_zero();
+        if forward == Vec3::ZERO || up == Vec3::ZERO {
+            return;
+        }
+        self.eye = self.target - forward * distance;
+        self.up = up;
     }
 
     // Orbit around target
@@ -117,5 +157,19 @@ mod tests {
         assert!(view.is_finite());
         assert!(proj.is_finite());
         assert!(view_proj.is_finite());
+    }
+
+    #[test]
+    fn test_standard_views_preserve_distance() {
+        let mut camera = Camera::new(16.0 / 9.0);
+        let distance = camera.distance_to_target();
+
+        camera.snap_to_view(StandardView::Top);
+        assert!((camera.distance_to_target() - distance).abs() < 1e-4);
+        assert!((camera.eye.z - distance).abs() < 1e-4);
+
+        camera.snap_to_view(StandardView::Front);
+        assert!((camera.distance_to_target() - distance).abs() < 1e-4);
+        assert!((camera.eye.x + distance).abs() < 1e-4);
     }
 }

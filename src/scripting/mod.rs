@@ -18,7 +18,9 @@ use crate::fea::FEASetup;
 pub type MeshCache = HashMap<PathBuf, (SystemTime, Arc<crate::mesh::TriangleMesh>)>;
 
 pub mod api;
+pub mod analysis_api;
 pub mod errors;
+pub mod legacy_api;
 
 /// Wrapper for SDF objects in Rhai scripts
 #[derive(Clone)]
@@ -769,6 +771,18 @@ mod tests {
     }
 
     #[test]
+    fn test_lofted_fuselage_smooth_script() {
+        let script = r#"
+            let nose  = fuselage_station(0.0, circle_section(0.2));
+            let body  = fuselage_station(3.0, ellipse_section(1.2, 0.8));
+            let tail  = fuselage_station(8.0, ellipse_section(0.5, 0.3));
+            lofted_fuselage_smooth([nose, body, tail], 0.7)
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "lofted_fuselage_smooth script should succeed: {:?}", result.err());
+    }
+
+    #[test]
     fn test_lofted_fuselage_unsorted_error() {
         // lofted_fuselage() still validates order (legacy API)
         let script = r#"
@@ -1154,6 +1168,36 @@ fn build(r) {
         // Point outside the aileron span (y=1, root region) should be outside the CS
         let d_outside = cs_sdf.distance(Vec3::new(8.0, 1.0, 0.0));
         assert!(d_outside > 0.0, "Root region should be outside aileron CS, got {}", d_outside);
+    }
+
+    #[test]
+    fn test_no_linkage_control_surface_has_no_horn_stub() {
+        let script = r#"
+            let wing = wing_with_airfoil("0012", 10.0, 5.0, 30.0, 0.0, 0.0, 0.0);
+            let hinge = rounded_hinge(1.5, 0.5);
+            let parts = aileron(wing, 16.5, 27.6, 0.30, hinge, no_linkage());
+            parts[0]
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "aileron with no_linkage should succeed: {:?}", result.err());
+        let cs_sdf = result.unwrap().sdf;
+        let d_below = cs_sdf.distance(Vec3::new(9.5, 22.0, -8.0));
+        assert!(d_below > 0.0, "No-linkage control surface should not create a horn stub, got {}", d_below);
+    }
+
+    /// Legacy 4-arg aileron/elevon APIs treat span inputs in [0,1] as half-span fractions.
+    #[test]
+    fn test_legacy_aileron_fraction_inputs_map_outboard() {
+        let script = r#"
+            let wing = wing_with_airfoil("0012", 10.0, 5.0, 30.0, 0.0, 0.0, 0.0);
+            aileron(wing, 0.55, 0.92, 0.30)
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "legacy aileron should succeed: {:?}", result.err());
+        let cs_sdf = result.unwrap().sdf;
+
+        let d_root = cs_sdf.distance(Vec3::new(9.5, 1.0, 0.0));
+        assert!(d_root > 0.0, "Legacy aileron should not create a root stub, got {}", d_root);
     }
 
     /// wing_with_ailerons returns 3 SdfHandles.
@@ -1552,6 +1596,66 @@ fn build(r) {
         // Sphere should be above the box: center at z = 5 + 2 + 5 = 12
         let d = result.sdf.distance(Vec3::new(0.0, 0.0, 12.0));
         assert!(d < 0.0, "Sphere should be centered above box, got d={}", d);
+    }
+
+    #[test]
+    fn test_wall_thickness_at_measures_geometry() {
+        let script = r#"
+            let body = box_(20.0, 20.0, 10.0);
+            let t = wall_thickness_at(body, 0.0, 0.0, 0.0, "z");
+            sphere(t)
+        "#;
+        let result = evaluate_script(script).unwrap();
+        let d = result.sdf.distance(Vec3::new(4.5, 0.0, 0.0));
+        assert!(d < 0.0, "Measured thickness should produce a sphere larger than 4.5mm");
+    }
+
+    #[test]
+    fn test_tolerance_compensate_changes_geometry() {
+        let script = r#"
+            let body = sphere(10.0);
+            let tuned = tolerance_compensate(body, #{
+                external_offset_mm: -0.2,
+                internal_offset_mm: 0.15
+            });
+            tuned
+        "#;
+        let result = evaluate_script(script).unwrap();
+        assert!(
+            result.sdf.distance(Vec3::new(10.0, 0.0, 0.0)) > 0.0,
+            "Compensated sphere should shrink enough that the original surface is outside"
+        );
+    }
+
+    #[test]
+    fn test_fea_compat_wrappers_record_conditions() {
+        let script = r#"
+            let spar = box_(20.0, 100.0, 5.0);
+            let fixed = fea_fixed_face(spar, "y", 0.0);
+            let loaded = fea_gravity(fixed);
+            fea_load_point(0.0, 50.0, 0.0, 0.0, 0.0, 12.0);
+            fea_pressure(loaded, "z", 2.5, 500.0)
+        "#;
+        let result = evaluate_script(script).unwrap();
+        assert_eq!(result.fea_setup.fixed_supports.len(), 1);
+        assert!(result.fea_setup.gravity.is_some());
+        assert_eq!(result.fea_setup.force_loads.len(), 1);
+        assert_eq!(result.fea_setup.pressure_loads.len(), 1);
+    }
+
+    #[test]
+    fn test_fixed_wing_install_helpers_evaluate() {
+        let script = r#"
+            let tray = servo_tray(23.0, 12.0, 24.0, 1.5, 4.0);
+            let cradle = battery_cradle(105.0, 36.0, 28.0, 1.6, 18.0);
+            let mount = fc_stack_mount(36.0, 36.0, 30.5, 10.0);
+            let guide = pushrod_guide(80.0, 3.0, 1.6);
+            let antenna = antenna_mount(85.0, 4.0, 1.2);
+            let travel = control_throw(12.0, 20.0);
+            union(union(union(tray, cradle), mount), union(translate(guide, travel, 0.0, 0.0), antenna))
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "Installation helpers should evaluate: {:?}", result.err());
     }
 
 }

@@ -3,6 +3,7 @@
 use std::sync::Arc;
 use rhai::Engine;
 use glam::{Vec3, Quat};
+use crate::sdf::Sdf;
 use crate::sdf::primitives::{Sphere, SdfBox, Cylinder, Torus, Cone, Plane};
 use crate::sdf::booleans::{Union, Subtract, Intersect, SmoothUnion, SmoothSubtract, SmoothIntersect};
 use crate::sdf::transforms::{Translate, Rotate, Scale, Offset, Shell, Twist, Bend};
@@ -30,6 +31,7 @@ use crate::sdf::field::{
 use crate::sdf::lattice::{ConformalGyroid, ConformalDiamond, ConformalSchwarzP};
 use crate::sdf::print::{SplitPlane, AlignmentFeature, split_body, split_body_multi,
                         ToleranceSettings, ToleranceCompensated};
+use crate::sdf::query::bounding_points;
 use crate::sdf::print::fasteners::{get_spec, clearance_hole, countersink_hole, heat_set_boss,
                                    check_and_pad};
 use crate::sdf::print::panels::{RetentionMechanism, panel_rect,
@@ -43,9 +45,7 @@ use super::{SdfHandle, FieldHandle, MassPoint, ComponentHandle, SectionHandle, S
             PathHandle, ProfileHandle, MaterialHandle, LayerHandle, LayupConfigHandle,
             HingeHandle, LinkageHandle, PointHandle, RefPointCollector, ReferencePoint, REF_COLORS,
             MountingHole, MountingHoleHandle, MountingHoleSetHandle, HoleSource,
-            PolarHandle, FlightConditionHandle,
-            StabilityResultHandle, TrimResultHandle, DragPolarHandle,
-            MotorHandle, PropHandle, PropulsionHandle};
+            FlightConditionHandle};
 
 pub fn register_sdf_functions(engine: &mut Engine) {
     // Register the SdfHandle and FieldHandle types
@@ -86,10 +86,75 @@ pub fn register_sdf_functions(engine: &mut Engine) {
     register_bracket_functions(engine);
     register_placement_functions(engine);
     register_instance_functions(engine);
-    register_aero_functions(engine);
-    register_analysis_functions(engine);
-    register_propulsion_functions(engine);
-    register_compat_functions(engine);
+    super::analysis_api::register_aero_functions(engine);
+    super::analysis_api::register_analysis_functions(engine);
+    super::analysis_api::register_propulsion_functions(engine);
+    crate::scripting::legacy_api::register_legacy_compat_functions(engine);
+}
+
+#[allow(dead_code)]
+fn analysis_bounds(sdf: &dyn Sdf) -> (Vec3, Vec3) {
+    let bbox = bounding_points(sdf);
+    let size = (bbox.max - bbox.min).abs();
+    let pad = Vec3::new(
+        (size.x * 0.1).max(5.0),
+        (size.y * 0.1).max(5.0),
+        (size.z * 0.1).max(5.0),
+    );
+    (bbox.min - pad, bbox.max + pad)
+}
+
+#[allow(dead_code)]
+fn parse_axis_string(axis: &str) -> Result<Vec3, Box<rhai::EvalAltResult>> {
+    match axis.to_ascii_lowercase().as_str() {
+        "x" => Ok(Vec3::X),
+        "y" => Ok(Vec3::Y),
+        "z" => Ok(Vec3::Z),
+        other => Err(format!("Invalid axis '{}': expected x, y, or z", other).into()),
+    }
+}
+
+#[allow(dead_code)]
+fn plane_from_axis(axis: &str, pos: f64) -> Result<SplitPlane, Box<rhai::EvalAltResult>> {
+    match axis.to_ascii_lowercase().as_str() {
+        "x" => Ok(SplitPlane::X(pos as f32)),
+        "y" => Ok(SplitPlane::Y(pos as f32)),
+        "z" => Ok(SplitPlane::Z(pos as f32)),
+        other => Err(format!("Invalid axis '{}': expected x, y, or z", other).into()),
+    }
+}
+
+#[allow(dead_code)]
+fn tolerance_settings_from_map(settings: rhai::Map) -> ToleranceSettings {
+    let mut out = ToleranceSettings::default();
+
+    for (key, value) in settings {
+        match key.as_str() {
+            "external_offset_mm" => {
+                if let Some(v) = value.clone().try_cast::<f64>() {
+                    out.external_offset_mm = v as f32;
+                }
+            }
+            "internal_offset_mm" => {
+                if let Some(v) = value.clone().try_cast::<f64>() {
+                    out.internal_offset_mm = v as f32;
+                }
+            }
+            "min_hole_diameter_mm" => {
+                if let Some(v) = value.clone().try_cast::<f64>() {
+                    out.min_hole_diameter_mm = v as f32;
+                }
+            }
+            "small_hole_bonus_mm" => {
+                if let Some(v) = value.clone().try_cast::<f64>() {
+                    out.small_hole_bonus_mm = v as f32;
+                }
+            }
+            _ => {}
+        }
+    }
+
+    out
 }
 
 fn register_primitives(engine: &mut Engine) {
@@ -147,13 +212,13 @@ fn register_booleans(engine: &mut Engine) {
         SdfHandle(Arc::new(SmoothUnion::new(a.0, b.0, smoothness as f32)))
     });
 
-    // Smooth Subtract — removes tool from base with a smooth chamfer/fillet
+    // Smooth Subtract ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â removes tool from base with a smooth chamfer/fillet
     // k controls blend radius (larger = softer transition)
     engine.register_fn("smooth_subtract", |base: SdfHandle, tool: SdfHandle, k: f64| {
         SdfHandle(Arc::new(SmoothSubtract::new(base.0, tool.0, k as f32)))
     });
 
-    // Smooth Intersect — intersection with polynomial smooth maximum
+    // Smooth Intersect ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â intersection with polynomial smooth maximum
     engine.register_fn("smooth_intersect", |a: SdfHandle, b: SdfHandle, k: f64| {
         SdfHandle(Arc::new(SmoothIntersect::new(a.0, b.0, k as f32)))
     });
@@ -193,7 +258,7 @@ fn register_transforms(engine: &mut Engine) {
         SdfHandle(Arc::new(Shell::new(body.0, thickness as f32)))
     });
 
-    // Twist — rotate each cross-section by `rate` degrees per unit along axis (ax, ay, az).
+    // Twist ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â rotate each cross-section by `rate` degrees per unit along axis (ax, ay, az).
     // Approximate SDF: Lipschitz-1 is not guaranteed under strong twist; safe for
     // raymarching and marching cubes at moderate deformation, not for precise offsets.
     engine.register_fn("twist", |body: SdfHandle, ax: f64, ay: f64, az: f64, rate: f64| {
@@ -201,7 +266,7 @@ fn register_transforms(engine: &mut Engine) {
         SdfHandle(Arc::new(Twist::new(body.0, axis, rate as f32)))
     });
 
-    // Bend — curve the shape along axis (ax, ay, az) by `curvature` radians per unit length.
+    // Bend ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â curve the shape along axis (ax, ay, az) by `curvature` radians per unit length.
     // The bend plane is determined from the axis and world-Y (or world-Z near Y).
     // Approximate SDF: same caveat as twist.
     engine.register_fn("bend", |body: SdfHandle, ax: f64, ay: f64, az: f64, curvature: f64| {
@@ -212,14 +277,14 @@ fn register_transforms(engine: &mut Engine) {
 
 fn register_patterns(engine: &mut Engine) {
     // Linear array: N evenly-spaced copies offset by (dx, dy, dz) per step
-    // e.g. linear_array(cylinder(2.0, 10.0), 5, 10.0, 0.0, 0.0) → 5 cylinders in a row
+    // e.g. linear_array(cylinder(2.0, 10.0), 5, 10.0, 0.0, 0.0) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ 5 cylinders in a row
     engine.register_fn("linear_array", |body: SdfHandle, count: i64, dx: f64, dy: f64, dz: f64| {
         let spacing = Vec3::new(dx as f32, dy as f32, dz as f32);
         SdfHandle(Arc::new(LinearArray::new(body.0, count as usize, spacing)))
     });
 
     // Polar array: N copies evenly rotated around Z axis
-    // e.g. polar_array(cylinder(2.0, 10.0), 6) → 6 cylinders in a circle
+    // e.g. polar_array(cylinder(2.0, 10.0), 6) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ 6 cylinders in a circle
     engine.register_fn("polar_array", |body: SdfHandle, count: i64| {
         SdfHandle(Arc::new(PolarArray::new(body.0, count as usize, Vec3::Z)))
     });
@@ -245,13 +310,13 @@ fn register_patterns(engine: &mut Engine) {
         SdfHandle(Arc::new(Mirror::new(body.0, Vec3::Z)))
     });
 
-    // full_assembly(half) — union of body + mirror_y(body) for a symmetric assembly
+    // full_assembly(half) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â union of body + mirror_y(body) for a symmetric assembly
     engine.register_fn("full_assembly", |body: SdfHandle| {
         let mirrored = Arc::new(Mirror::new(Arc::clone(&body.0), Vec3::Y));
         SdfHandle(Arc::new(Union::new(body.0, mirrored)))
     });
 
-    // mirror_wing(wing, dihedral_deg) — mirrors wing about Y=0 and applies dihedral to both halves
+    // mirror_wing(wing, dihedral_deg) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â mirrors wing about Y=0 and applies dihedral to both halves
     engine.register_fn("mirror_wing", |wing: SdfHandle, dihedral_deg: f64| {
         use crate::sdf::transforms::Rotate;
         let dihedral_rot = Quat::from_rotation_x(-(dihedral_deg as f32).to_radians());
@@ -275,7 +340,7 @@ fn register_patterns(engine: &mut Engine) {
 }
 
 fn register_math_extras(engine: &mut Engine) {
-    // Constants — expose PI, TAU, E as global variables in scripts
+    // Constants ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â expose PI, TAU, E as global variables in scripts
     let mut math_module = rhai::Module::new();
     math_module.set_var("PI",  std::f64::consts::PI);
     math_module.set_var("TAU", std::f64::consts::TAU);
@@ -353,8 +418,8 @@ fn register_aerospace_functions(engine: &mut Engine) {
 
     // --- Primary fuselage API ---
 
-    // fuselage(stations) — build a lofted fuselage from [position, section] pairs.
-    // fuselage(length_mm, stations) — same, but sets physical length directly (preferred).
+    // fuselage(stations) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â build a lofted fuselage from [position, section] pairs.
+    // fuselage(length_mm, stations) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â same, but sets physical length directly (preferred).
     // Positions are normalized [0, 1]. Stations are sorted automatically.
     //
     // Example:
@@ -362,7 +427,7 @@ fn register_aerospace_functions(engine: &mut Engine) {
     //       [0.0,  circle_section(10.0)],
     //       [0.5,  circle_section(100.0)],
     //       [1.0,  circle_section(12.0)],
-    //   ]);  // → 600 mm long fuselage
+    //   ]);  // ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ 600 mm long fuselage
     engine.register_fn("fuselage",
         |stations: rhai::Array| -> Result<SdfHandle, Box<rhai::EvalAltResult>> {
         if stations.len() < 2 {
@@ -398,7 +463,7 @@ fn register_aerospace_functions(engine: &mut Engine) {
         Ok(SdfHandle(Arc::new(LoftedFuselage::from_stations(pairs, 1.0))))
     });
 
-    // fuselage(length_mm, stations) — same as fuselage(stations) but sets physical length directly.
+    // fuselage(length_mm, stations) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â same as fuselage(stations) but sets physical length directly.
     // Stations still use normalized [0, 1] positions; no separate scale() needed.
     engine.register_fn("fuselage",
         |length_mm: f64, stations: rhai::Array| -> Result<SdfHandle, Box<rhai::EvalAltResult>> {
@@ -433,7 +498,7 @@ fn register_aerospace_functions(engine: &mut Engine) {
         Ok(SdfHandle(Arc::new(LoftedFuselage::from_stations(pairs, length_mm as f32))))
     });
 
-    // --- Multi-station fuselage API (legacy — use fuselage() above instead) ---
+    // --- Multi-station fuselage API (legacy ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â use fuselage() above instead) ---
 
     // Circular cross-section by radius
     engine.register_fn("circle_section", |radius: f64| {
@@ -495,6 +560,43 @@ fn register_aerospace_functions(engine: &mut Engine) {
             .map(|s| (s.position / length, s.section))
             .collect();
         Ok(SdfHandle(Arc::new(LoftedFuselage::from_stations(pairs, length))))
+    });
+
+    engine.register_fn("lofted_fuselage_smooth",
+        |stations: rhai::Array, smoothness: f64| -> Result<SdfHandle, Box<rhai::EvalAltResult>> {
+        if stations.len() < 2 {
+            return Err("lofted_fuselage_smooth requires at least 2 stations".into());
+        }
+        let mut handles: Vec<StationHandle> = Vec::with_capacity(stations.len());
+        for (i, item) in stations.into_iter().enumerate() {
+            match item.try_cast::<StationHandle>() {
+                Some(s) => handles.push(s),
+                None => return Err(format!(
+                    "lofted_fuselage_smooth: item at index {} is not a StationHandle (use fuselage_station())", i
+                ).into()),
+            }
+        }
+        for i in 1..handles.len() {
+            if handles[i].position <= handles[i - 1].position {
+                return Err(format!(
+                    "lofted_fuselage_smooth: stations must be in strictly ascending order (index {} has position {} <= {})",
+                    i, handles[i].position, handles[i - 1].position
+                ).into());
+            }
+        }
+        let length = handles.last().unwrap().position;
+        if length <= 0.0 {
+            return Err("lofted_fuselage_smooth: final station position must be > 0".into());
+        }
+        let pairs: Vec<(f32, Arc<dyn Section2D>)> = handles
+            .into_iter()
+            .map(|s| (s.position / length, s.section))
+            .collect();
+        Ok(SdfHandle(Arc::new(LoftedFuselage::from_stations_smoothed(
+            pairs,
+            length,
+            smoothness as f32,
+        ))))
     });
 
     // --- Custom airfoil input ---
@@ -571,7 +673,7 @@ fn register_aerospace_functions(engine: &mut Engine) {
 
     // --- Structural primitives ---
 
-    // rib_at_station(wing, span_pos, thickness) → SdfHandle
+    // rib_at_station(wing, span_pos, thickness) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ SdfHandle
     //
     // A rib at the given spanwise Y position, intersected with the wing volume.
     // `span_pos` is in the same coordinate units as the wing (absolute Y).
@@ -586,7 +688,7 @@ fn register_aerospace_functions(engine: &mut Engine) {
         SdfHandle(Arc::new(Intersect::new(wing.0, slab)))
     });
 
-    // spar(wing, chord_pos, radius) → SdfHandle
+    // spar(wing, chord_pos, radius) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ SdfHandle
     //
     // A spanwise cylindrical spar running the full wing span, at chord position `chord_pos`.
     // `chord_pos` is the absolute X offset of the spar centreline (same units as the wing).
@@ -623,17 +725,17 @@ fn register_aerospace_functions(engine: &mut Engine) {
         ))
     });
 
-    // ── Wing geometry convenience queries ─────────────────────────────────────
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Wing geometry convenience queries ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
     {
         use crate::sdf::query::bounding_points;
 
-        // wing_span(wing) -> f64 — Y extent of the wing bounding box
+        // wing_span(wing) -> f64 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Y extent of the wing bounding box
         engine.register_fn("wing_span", |wing: SdfHandle| -> f64 {
             let bi = bounding_points(&*wing.0);
             (bi.max.y - bi.min.y) as f64
         });
 
-        // wing_area(wing) -> f64 — planform area by trapezoidal integration
+        // wing_area(wing) -> f64 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â planform area by trapezoidal integration
         engine.register_fn("wing_area", |wing: SdfHandle| -> f64 {
             let bi = bounding_points(&*wing.0);
             let y_min = bi.min.y;
@@ -661,7 +763,7 @@ fn register_aerospace_functions(engine: &mut Engine) {
             (0..N).map(|i| (chords[i] + chords[i + 1]) as f64 * 0.5 * h).sum()
         });
 
-        // wing_mac(wing) -> f64 — mean aerodynamic chord
+        // wing_mac(wing) -> f64 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â mean aerodynamic chord
         engine.register_fn("wing_mac", |wing: SdfHandle| -> f64 {
             let bi = bounding_points(&*wing.0);
             let y_min = bi.min.y;
@@ -723,7 +825,7 @@ fn register_aerospace_functions(engine: &mut Engine) {
             if area > 0.0 { span * span / area } else { 0.0 }
         });
 
-        // wing_taper_ratio(wing) -> f64 — tip_chord / root_chord
+        // wing_taper_ratio(wing) -> f64 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â tip_chord / root_chord
         engine.register_fn("wing_taper_ratio", |wing: SdfHandle| -> f64 {
             let bi = bounding_points(&*wing.0);
             let step = 0.5_f32;
@@ -781,7 +883,7 @@ fn register_aerospace_functions(engine: &mut Engine) {
         });
     }
 
-    // ── Deflect control surface ────────────────────────────────────────────────
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Deflect control surface ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
     // deflect(surface, angle_deg) -> SdfHandle
     // Rotates a control surface about an estimated hinge line for export/FEA purposes
@@ -801,7 +903,7 @@ fn register_aerospace_functions(engine: &mut Engine) {
         SdfHandle(Arc::new(Translate::new(rotated, pivot)))
     });
 
-    // ── Tail volume coefficients ───────────────────────────────────────────────
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Tail volume coefficients ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
     // tail_volume_coefficients(wing, h_tail, v_tail, fuselage) -> Map
     engine.register_fn("tail_volume_coefficients",
@@ -825,7 +927,7 @@ fn register_aerospace_functions(engine: &mut Engine) {
         map
     });
 
-    // size_horizontal_tail(wing, target_vht, moment_arm) -> f64 (required area in mm²)
+    // size_horizontal_tail(wing, target_vht, moment_arm) -> f64 (required area in mmÃƒâ€šÃ‚Â²)
     engine.register_fn("size_horizontal_tail",
         |wing: SdfHandle, target_vht: f64, moment_arm: f64| -> f64 {
         use crate::sdf::aerospace::stability_geometry::{planform_area, mean_aero_chord};
@@ -845,7 +947,7 @@ fn register_aerospace_functions(engine: &mut Engine) {
         if moment_arm > 0.0 { target_vvt * s_w * b_w / moment_arm } else { 0.0 }
     });
 
-    // ── Phase 29: Haack / nose-cone primitives ────────────────────────────────
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Phase 29: Haack / nose-cone primitives ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
     engine.register_fn("von_karman_nose", |length: f64, base_diam: f64| -> SdfHandle {
         use crate::sdf::aerospace::HaackNose;
@@ -907,7 +1009,7 @@ fn register_aerospace_functions(engine: &mut Engine) {
         SdfHandle(Arc::new(SmoothUnion::new(tail.0, fuse.0, k)))
     });
 
-    // ── Phase 29: NACA inlet ──────────────────────────────────────────────────
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Phase 29: NACA inlet ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
     engine.register_fn("naca_inlet",
         |width: f64, length: f64, depth: f64,
@@ -955,7 +1057,7 @@ fn register_aerospace_functions(engine: &mut Engine) {
         }))
     });
 
-    // ── Phase 29: EDF inlet lips ──────────────────────────────────────────────
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Phase 29: EDF inlet lips ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
     engine.register_fn("circular_inlet",
         |diam: f64, lip_r: f64, px: f64, py: f64, pz: f64,
@@ -1054,7 +1156,7 @@ fn register_aerospace_functions(engine: &mut Engine) {
         }))
     });
 
-    // ── Phase 29: EDF duct ────────────────────────────────────────────────────
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Phase 29: EDF duct ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
     engine.register_fn("edf_duct",
         |inlet: SdfHandle, fan_diam: f64,
@@ -1110,7 +1212,7 @@ fn register_aerospace_functions(engine: &mut Engine) {
         }))
     });
 
-    // ── Phase 29: Exhaust nozzle ──────────────────────────────────────────────
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Phase 29: Exhaust nozzle ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
     engine.register_fn("edf_exhaust",
         |_fuse: SdfHandle, pos: PointHandle, dir: PointHandle, diam: f64, lip_r: f64| -> SdfHandle {
@@ -1142,7 +1244,7 @@ fn register_aerospace_functions(engine: &mut Engine) {
         }))
     });
 
-    // ── Phase 29: Inlet performance analysis ──────────────────────────────────
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Phase 29: Inlet performance analysis ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
     engine.register_fn("inlet_performance",
         |_fuse: SdfHandle, fc: FlightConditionHandle, fan_diam: f64, _fan_pos: PointHandle| -> rhai::Map {
@@ -1163,7 +1265,7 @@ fn register_aerospace_functions(engine: &mut Engine) {
         map
     });
 
-    // ── Phase 29: Surface-conforming access panels ────────────────────────────
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Phase 29: Surface-conforming access panels ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
     engine.register_fn("surface_panel",
         |parent: SdfHandle, width: f64, height: f64, pos: PointHandle| -> rhai::Array {
@@ -1197,7 +1299,7 @@ fn register_aerospace_functions(engine: &mut Engine) {
         vec![rhai::Dynamic::from(modified_parent), rhai::Dynamic::from(panel_piece)]
     });
 
-    // ── Simple inlet wrappers ─────────────────────────────────────────────────
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Simple inlet wrappers ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
     // naca_flush_inlet(width_mm, length_mm, depth_mm, fuse) -> SdfHandle
     // Returns the inlet pocket positioned on the top surface (+Z) of the fuselage.
@@ -1289,7 +1391,7 @@ fn register_aerospace_functions(engine: &mut Engine) {
 fn register_drone_functions(engine: &mut Engine) {
     // bulkhead_at_station(fuselage, position, thickness, num_holes, hole_radius_fraction)
     //
-    // A structural ring at normalised axial position `position` ∈ [0, 1].
+    // A structural ring at normalised axial position `position` ÃƒÂ¢Ã‹â€ Ã‹â€  [0, 1].
     // If num_holes > 0, lightening holes are drilled at 60 % of the local radius.
     engine.register_fn("bulkhead_at_station",
         |fuselage: SdfHandle, position: f64, thickness: f64,
@@ -1337,7 +1439,7 @@ fn register_drone_functions(engine: &mut Engine) {
     // motor_arm(fuselage, angle_degrees, length, outer_diameter, inner_diameter)
     //
     // A hollow cylindrical boom arm extending radially from the fuselage at midspan (X = 0.5).
-    // angle_degrees: 0° = +Y direction in the YZ plane.
+    // angle_degrees: 0Ãƒâ€šÃ‚Â° = +Y direction in the YZ plane.
     engine.register_fn("motor_arm",
         |fuselage: SdfHandle, angle_degrees: f64, length: f64,
          outer_diameter: f64, inner_diameter: f64| {
@@ -1438,7 +1540,18 @@ pub fn register_component_functions(
     collector: Arc<Mutex<Vec<MassPoint>>>,
     comp_collector: Arc<Mutex<Vec<ComponentHandle>>>,
 ) {
-    // component(sdf, clearance_margin) — bundle geometry with its keepout zone
+    fn open_top_tray(length: f32, width: f32, height: f32, wall: f32) -> Arc<dyn crate::sdf::Sdf> {
+        let outer = Arc::new(SdfBox::new(Vec3::new(length * 0.5, width * 0.5, height * 0.5)));
+        let inner = Arc::new(SdfBox::new(Vec3::new(
+            (length - wall * 2.0).max(0.5) * 0.5,
+            (width - wall * 2.0).max(0.5) * 0.5,
+            (height - wall).max(0.5) * 0.5,
+        )));
+        let inner = Arc::new(Translate::new(inner, Vec3::new(0.0, 0.0, wall * 0.5)));
+        Arc::new(Subtract::new(outer, inner))
+    }
+
+    // component(sdf, clearance_margin) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â bundle geometry with its keepout zone
     engine.register_fn("component", |sdf: SdfHandle, margin: f64| {
         let keepout = Arc::new(Offset::new(Arc::clone(&sdf.0), margin as f32));
         ComponentHandle {
@@ -1449,7 +1562,7 @@ pub fn register_component_functions(
         }
     });
 
-    // component_mass(sdf, margin, mass_g) — same but with mass for CG
+    // component_mass(sdf, margin, mass_g) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â same but with mass for CG
     engine.register_fn("component_mass", |sdf: SdfHandle, margin: f64, mass: f64| {
         let keepout = Arc::new(Offset::new(Arc::clone(&sdf.0), margin as f32));
         ComponentHandle {
@@ -1471,7 +1584,7 @@ pub fn register_component_functions(
         }
     });
 
-    // place(comp, x, y, z) — translate both geometry and keepout together.
+    // place(comp, x, y, z) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â translate both geometry and keepout together.
     // If the component carries mass, auto-registers a MassPoint at the placed position.
     // Also registers the placed component into the comp_collector for bulkhead_auto.
     {
@@ -1497,19 +1610,78 @@ pub fn register_component_functions(
         });
     }
 
-    // geometry(comp) — extract the actual part SDF
+    // geometry(comp) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â extract the actual part SDF
     engine.register_fn("geometry", |comp: ComponentHandle| {
         SdfHandle(comp.geometry)
     });
 
-    // keepout(comp) — extract the clearance envelope SDF
+    // keepout(comp) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â extract the clearance envelope SDF
     engine.register_fn("keepout", |comp: ComponentHandle| {
         SdfHandle(comp.keepout)
     });
 
-    // mass_g(comp) — read mass value
+    // mass_g(comp) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â read mass value
     engine.register_fn("mass_g", |comp: ComponentHandle| {
         comp.mass_g as f64
+    });
+
+    engine.register_fn("servo_tray", |servo_len: f64, servo_width: f64, servo_height: f64, wall: f64, rail_height: f64| {
+        let tray = open_top_tray(servo_len as f32 + wall as f32 * 2.0, servo_width as f32 + wall as f32 * 2.0, servo_height as f32 + rail_height as f32, wall as f32);
+        let rail: Arc<dyn crate::sdf::Sdf> = Arc::new(SdfBox::new(Vec3::new(
+            servo_len as f32 * 0.45,
+            wall as f32 * 0.5,
+            rail_height as f32 * 0.5,
+        )));
+        let left_rail = Arc::new(Translate::new(Arc::clone(&rail), Vec3::new(0.0, servo_width as f32 * 0.5, servo_height as f32 * 0.5)));
+        let right_rail = Arc::new(Translate::new(rail, Vec3::new(0.0, -servo_width as f32 * 0.5, servo_height as f32 * 0.5)));
+        SdfHandle(Arc::new(Union::new(Arc::new(Union::new(tray, left_rail)), right_rail)))
+    });
+
+    engine.register_fn("battery_cradle", |length: f64, width: f64, height: f64, wall: f64, strap_slot_width: f64| {
+        let tray = open_top_tray(length as f32 + wall as f32 * 2.0, width as f32 + wall as f32 * 2.0, height as f32 + wall as f32, wall as f32);
+        let slot: Arc<dyn crate::sdf::Sdf> = Arc::new(SdfBox::new(Vec3::new(
+            strap_slot_width as f32 * 0.5,
+            (width as f32 + wall as f32 * 4.0) * 0.5,
+            (wall as f32 * 1.4).max(0.5) * 0.5,
+        )));
+        let slot_a = Arc::new(Translate::new(Arc::clone(&slot), Vec3::new(length as f32 * 0.25, 0.0, 0.0)));
+        let slot_b = Arc::new(Translate::new(slot, Vec3::new(-length as f32 * 0.25, 0.0, 0.0)));
+        SdfHandle(Arc::new(Subtract::new(Arc::new(Subtract::new(tray, slot_a)), slot_b)))
+    });
+
+    engine.register_fn("fc_stack_mount", |width: f64, length: f64, hole_spacing: f64, standoff_height: f64| {
+        let base = Arc::new(SdfBox::new(Vec3::new(width as f32 * 0.5, length as f32 * 0.5, 1.0)));
+        let post: Arc<dyn crate::sdf::Sdf> = Arc::new(Cylinder::new(2.5, standoff_height as f32 * 0.5));
+        let post: Arc<dyn crate::sdf::Sdf> = Arc::new(Translate::new(post, Vec3::new(0.0, 0.0, standoff_height as f32 * 0.5)));
+        let hs = hole_spacing as f32 * 0.5;
+        let p1 = Arc::new(Translate::new(Arc::clone(&post), Vec3::new( hs,  hs, 0.0)));
+        let p2 = Arc::new(Translate::new(Arc::clone(&post), Vec3::new( hs, -hs, 0.0)));
+        let p3 = Arc::new(Translate::new(Arc::clone(&post), Vec3::new(-hs,  hs, 0.0)));
+        let p4 = Arc::new(Translate::new(post, Vec3::new(-hs, -hs, 0.0)));
+        let posts = Arc::new(Union::new(Arc::new(Union::new(p1, p2)), Arc::new(Union::new(p3, p4))));
+        SdfHandle(Arc::new(Union::new(base, posts)))
+    });
+
+    engine.register_fn("pushrod_guide", |length: f64, outer_diam: f64, inner_diam: f64| {
+        let outer = Arc::new(Cylinder::new(outer_diam as f32 * 0.5, length as f32 * 0.5));
+        let inner = Arc::new(Cylinder::new(inner_diam as f32 * 0.5, (length as f32 + 1.0) * 0.5));
+        let tube = Arc::new(Subtract::new(outer, inner));
+        SdfHandle(Arc::new(Rotate::new(tube, Quat::from_rotation_y(std::f32::consts::FRAC_PI_2))))
+    });
+
+    engine.register_fn("antenna_mount", |mast_height: f64, base_radius: f64, mast_radius: f64| {
+        let base: Arc<dyn crate::sdf::Sdf> = Arc::new(Cylinder::new(base_radius as f32, 1.2));
+        let mast: Arc<dyn crate::sdf::Sdf> = Arc::new(Cylinder::new(mast_radius as f32, mast_height as f32 * 0.5));
+        let mast = Arc::new(Translate::new(mast, Vec3::new(0.0, 0.0, mast_height as f32 * 0.5 + 1.2)));
+        SdfHandle(Arc::new(Union::new(base, mast)))
+    });
+
+    engine.register_fn("pushrod_length", |x0: f64, y0: f64, z0: f64, x1: f64, y1: f64, z1: f64| {
+        Vec3::new((x1 - x0) as f32, (y1 - y0) as f32, (z1 - z0) as f32).length() as f64
+    });
+
+    engine.register_fn("control_throw", |horn_radius_mm: f64, deflection_deg: f64| {
+        (horn_radius_mm as f32 * (deflection_deg as f32).to_radians()).abs() as f64
     });
 }
 
@@ -1662,7 +1834,7 @@ pub fn register_drone_auto_functions(
 /// Register mass annotation functions and auto_fuselage.
 /// Call this separately from register_sdf_functions, passing the shared collector.
 pub fn register_mass_functions(engine: &mut Engine, collector: Arc<Mutex<Vec<MassPoint>>>) {
-    // mass_at(mass_g, x, y, z) — declare a point mass at a position
+    // mass_at(mass_g, x, y, z) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â declare a point mass at a position
     {
         let col = Arc::clone(&collector);
         engine.register_fn("mass_at", move |mass: f64, x: f64, y: f64, z: f64| {
@@ -1674,7 +1846,7 @@ pub fn register_mass_functions(engine: &mut Engine, collector: Arc<Mutex<Vec<Mas
         });
     }
 
-    // mass_named(name, mass_g, x, y, z) — declare a named point mass
+    // mass_named(name, mass_g, x, y, z) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â declare a named point mass
     {
         let col = Arc::clone(&collector);
         engine.register_fn("mass_named", move |name: &str, mass: f64, x: f64, y: f64, z: f64| {
@@ -1686,7 +1858,7 @@ pub fn register_mass_functions(engine: &mut Engine, collector: Arc<Mutex<Vec<Mas
         });
     }
 
-    // auto_fuselage(internal_sdf, skin_thickness) — wrap internal geometry with an outer skin.
+    // auto_fuselage(internal_sdf, skin_thickness) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â wrap internal geometry with an outer skin.
     // Equivalent to offset(internal_sdf, skin_thickness) but communicates design intent.
     engine.register_fn("auto_fuselage", |internal: SdfHandle, skin: f64| {
         SdfHandle(Arc::new(Offset::new(internal.0, skin as f32)))
@@ -1806,13 +1978,13 @@ fn register_field_functions(engine: &mut Engine) {
 }
 
 fn register_lattices(engine: &mut Engine) {
-    // conformal_gyroid — uniform density
+    // conformal_gyroid ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â uniform density
     engine.register_fn("conformal_gyroid",
         |parent: SdfHandle, cell_size: f64, thickness: f64| {
         SdfHandle(Arc::new(ConformalGyroid::new(parent.0, cell_size as f32, thickness as f32)))
     });
 
-    // conformal_gyroid_field — spatially varying density
+    // conformal_gyroid_field ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â spatially varying density
     engine.register_fn("conformal_gyroid_field",
         |parent: SdfHandle, cell_size: f64, thickness: f64, field: FieldHandle| {
         SdfHandle(Arc::new(ConformalGyroid::with_density_field(
@@ -1820,7 +1992,7 @@ fn register_lattices(engine: &mut Engine) {
         )))
     });
 
-    // conformal_gyroid_region — lattice only inside the region mask
+    // conformal_gyroid_region ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â lattice only inside the region mask
     engine.register_fn("conformal_gyroid_region",
         |parent: SdfHandle, cell_size: f64, thickness: f64, region: SdfHandle| {
         SdfHandle(Arc::new(ConformalGyroid::with_region_mask(
@@ -1849,9 +2021,9 @@ fn register_lattices(engine: &mut Engine) {
     });
 }
 
-// ── Longitudinal spine functions ──────────────────────────────────────────────
+// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Longitudinal spine functions ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
-/// Register `spline_fuselage(stations, length)` — like `fuselage()` but applies
+/// Register `spline_fuselage(stations, length)` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â like `fuselage()` but applies
 /// longitudinal spine constraints when the section profiles have role-labelled points.
 ///
 /// The function extracts Keel/Deck/Chine reference positions from each `SectionHandle`
@@ -1914,9 +2086,9 @@ pub fn register_spine_functions(
     });
 }
 
-// ── Profile (spline cross-section) functions ─────────────────────────────────
+// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Profile (spline cross-section) functions ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
-/// Register `spline(name)` → SdfHandle and `spline_section(name)` → SectionHandle.
+/// Register `spline(name)` ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ SdfHandle and `spline_section(name)` ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ SectionHandle.
 ///
 /// Both functions look up `name` in `profiles`.  If the name is not found a
 /// unit-circle default is returned so the script doesn't error.
@@ -1924,7 +2096,7 @@ pub fn register_profile_functions(
     engine: &mut Engine,
     profiles: Arc<RwLock<HashMap<String, SplineProfile>>>,
 ) {
-    // spline(name) → SdfHandle
+    // spline(name) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ SdfHandle
     // Returns the named profile as an infinite Y-axis extrusion (profile in XZ plane).
     {
         let p = Arc::clone(&profiles);
@@ -1937,7 +2109,7 @@ pub fn register_profile_functions(
         });
     }
 
-    // spline_section(name) → SectionHandle
+    // spline_section(name) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ SectionHandle
     // Returns the named profile as a Section2D for use in fuselage / wing lofting.
     {
         let p = Arc::clone(&profiles);
@@ -1951,7 +2123,7 @@ pub fn register_profile_functions(
     }
 }
 
-// ── FEA boundary condition functions ─────────────────────────────────────────
+// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ FEA boundary condition functions ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 /// Register FEA setup functions.  All calls append to `collector`.
 /// If `stress_field` / `displacement_field` are `Some`, `stress_field()` and
@@ -2055,7 +2227,9 @@ pub fn register_fea_functions(
         });
     }
 
-    // stress_field() / displacement_field() — available after a successful FEA run
+    crate::scripting::legacy_api::register_legacy_fea_compat_functions(engine, Arc::clone(&collector));
+
+    // stress_field() / displacement_field() ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â available after a successful FEA run
     if let Some(sf) = stress_field {
         engine.register_fn("stress_field", move || FieldHandle(Arc::clone(&sf)));
     } else {
@@ -2073,22 +2247,22 @@ pub fn register_fea_functions(
     }
 }
 
-// ── Mechanical pattern functions ─────────────────────────────────────────────
+// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Mechanical pattern functions ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 fn register_mechanical_functions(engine: &mut Engine) {
-    // bolt_circle(hole_radius, pattern_radius, count, depth) — polar bolt array
+    // bolt_circle(hole_radius, pattern_radius, count, depth) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â polar bolt array
     engine.register_fn("bolt_circle",
         |hole_r: f64, pcd_r: f64, count: i64, depth: f64| {
         SdfHandle(bolt_circle(hole_r as f32, pcd_r as f32, count.max(1) as usize, depth as f32))
     });
 
-    // bolt_square(hole_radius, x_spacing, y_spacing, depth) — 4 corners, square pattern
+    // bolt_square(hole_radius, x_spacing, y_spacing, depth) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â 4 corners, square pattern
     engine.register_fn("bolt_square",
         |hole_r: f64, xs: f64, ys: f64, depth: f64| {
         SdfHandle(bolt_square(hole_r as f32, xs as f32, ys as f32, depth as f32))
     });
 
-    // bolt_rect — identical to bolt_square but name clarifies non-square patterns
+    // bolt_rect ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â identical to bolt_square but name clarifies non-square patterns
     engine.register_fn("bolt_rect",
         |hole_r: f64, xs: f64, ys: f64, depth: f64| {
         SdfHandle(bolt_rect(hole_r as f32, xs as f32, ys as f32, depth as f32))
@@ -2106,25 +2280,25 @@ fn register_mechanical_functions(engine: &mut Engine) {
         SdfHandle(counterbore(shaft_r as f32, bore_r as f32, bore_d as f32, shaft_d as f32))
     });
 
-    // slot(width, length, depth) — rounded stadium slot, length along X
+    // slot(width, length, depth) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â rounded stadium slot, length along X
     engine.register_fn("slot",
         |width: f64, length: f64, depth: f64| {
         SdfHandle(slot(width as f32, length as f32, depth as f32))
     });
 
-    // chamfer_edge(body, distance) — approximate convex edge chamfer
+    // chamfer_edge(body, distance) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â approximate convex edge chamfer
     engine.register_fn("chamfer_edge",
         |body: SdfHandle, distance: f64| {
         SdfHandle(chamfer_edge(body.0, distance as f32))
     });
 
-    // thread_hole(radius, pitch, depth) — cosmetic threaded hole (visual only)
+    // thread_hole(radius, pitch, depth) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â cosmetic threaded hole (visual only)
     engine.register_fn("thread_hole",
         |radius: f64, pitch: f64, depth: f64| {
         SdfHandle(thread_hole(radius as f32, pitch as f32, depth as f32))
     });
 
-    // fc_mount(pattern_mm, hole_radius, plate_thickness) — FC mounting plate
+    // fc_mount(pattern_mm, hole_radius, plate_thickness) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â FC mounting plate
     engine.register_fn("fc_mount",
         |pattern: f64, hole_r: f64, thickness: f64| {
         SdfHandle(fc_mount(pattern as f32, hole_r as f32, thickness as f32))
@@ -2138,7 +2312,7 @@ fn register_mechanical_functions(engine: &mut Engine) {
     });
 }
 
-// ── Sweep functions ───────────────────────────────────────────────────────────
+// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Sweep functions ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 fn register_sweep_functions(engine: &mut Engine) {
     use crate::sdf::sweep::{
@@ -2146,7 +2320,7 @@ fn register_sweep_functions(engine: &mut Engine) {
     };
     use crate::sdf::profiles::{SplineProfile, RectProfile, NGonProfile};
 
-    // ── Path constructors ─────────────────────────────────────────────────────
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Path constructors ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
     engine.register_fn("line_path",
         |x1: f64, y1: f64, z1: f64, x2: f64, y2: f64, z2: f64| {
@@ -2209,14 +2383,14 @@ fn register_sweep_functions(engine: &mut Engine) {
         )))
     });
 
-    // ── Profile constructors ──────────────────────────────────────────────────
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Profile constructors ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
-    // circle_profile — convenience alias for a SplineProfile circle.
+    // circle_profile ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â convenience alias for a SplineProfile circle.
     engine.register_fn("circle_profile", |radius: f64| {
         ProfileHandle(Arc::new(SplineProfile::circle(12, radius as f32)))
     });
 
-    // ellipse_profile — elliptical 2D profile.
+    // ellipse_profile ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â elliptical 2D profile.
     engine.register_fn("ellipse_profile", |width: f64, height: f64| {
         // Build an ellipse as a scaled circle spline.
         let mut p = SplineProfile::circle(12, 1.0);
@@ -2227,40 +2401,40 @@ fn register_sweep_functions(engine: &mut Engine) {
         ProfileHandle(Arc::new(p))
     });
 
-    // rect_profile — rectangular cross-section.
+    // rect_profile ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â rectangular cross-section.
     engine.register_fn("rect_profile", |width: f64, height: f64| {
         ProfileHandle(Arc::new(RectProfile::new(width as f32, height as f32)))
     });
 
-    // ngon_profile — regular n-gon cross-section.
+    // ngon_profile ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â regular n-gon cross-section.
     engine.register_fn("ngon_profile", |sides: i64, radius: f64| {
         ProfileHandle(Arc::new(NGonProfile::new(sides.max(3) as u32, radius as f32)))
     });
 
-    // ── Sweep constructors ────────────────────────────────────────────────────
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Sweep constructors ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
-    // sweep(profile, path) — no twist.
+    // sweep(profile, path) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â no twist.
     engine.register_fn("sweep",
         |profile: ProfileHandle, path: PathHandle| {
         SdfHandle(Arc::new(Sweep::new(profile.0, path.0, 0.0, 0.0)))
     });
 
-    // sweep_twisted(profile, path, twist_start, twist_end) — with linear twist.
+    // sweep_twisted(profile, path, twist_start, twist_end) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â with linear twist.
     engine.register_fn("sweep_twisted",
         |profile: ProfileHandle, path: PathHandle, ts: f64, te: f64| {
         SdfHandle(Arc::new(Sweep::new(profile.0, path.0, ts as f32, te as f32)))
     });
 
-    // ── Drone convenience wrappers ────────────────────────────────────────────
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Drone convenience wrappers ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
-    // cable_channel(path, diameter) — circular hollow for wire routing.
+    // cable_channel(path, diameter) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â circular hollow for wire routing.
     engine.register_fn("cable_channel",
         |path: PathHandle, diameter: f64| {
         let profile = ProfileHandle(Arc::new(SplineProfile::circle(12, diameter as f32 / 2.0)));
         SdfHandle(Arc::new(Sweep::new(profile.0, path.0, 0.0, 0.0)))
     });
 
-    // carbon_rod(path, outer_d, inner_d) — hollow carbon tube sweep.
+    // carbon_rod(path, outer_d, inner_d) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â hollow carbon tube sweep.
     engine.register_fn("carbon_rod",
         |path: PathHandle, outer_d: f64, inner_d: f64| {
         use crate::sdf::transforms::Shell;
@@ -2276,7 +2450,7 @@ fn register_sweep_functions(engine: &mut Engine) {
         SdfHandle(Arc::new(Shell::new(outer_sdf, shell_thickness)))
     });
 
-    // control_rod(path, diameter) — solid rod sweep for pushrods/linkages.
+    // control_rod(path, diameter) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â solid rod sweep for pushrods/linkages.
     engine.register_fn("control_rod",
         |path: PathHandle, diameter: f64| {
         let profile = ProfileHandle(Arc::new(SplineProfile::circle(12, diameter as f32 / 2.0)));
@@ -2284,7 +2458,7 @@ fn register_sweep_functions(engine: &mut Engine) {
     });
 }
 
-// ── Mesh import functions ─────────────────────────────────────────────────────
+// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Mesh import functions ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 pub fn register_mesh_functions(
     engine:      &mut Engine,
@@ -2302,7 +2476,7 @@ pub fn register_mesh_functions(
         project_dir: &Option<PathBuf>,
         cache:       &Arc<Mutex<super::MeshCache>>,
     ) -> Result<Arc<crate::mesh::TriangleMesh>, String> {
-        // Resolve path: absolute as-is; relative → project_dir / path.
+        // Resolve path: absolute as-is; relative ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ project_dir / path.
         let path: PathBuf = {
             let p = std::path::Path::new(path_str);
             if p.is_absolute() {
@@ -2329,7 +2503,7 @@ pub fn register_mesh_functions(
             }
         }
 
-        // Cache miss — read and parse.
+        // Cache miss ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â read and parse.
         let ext = path.extension()
             .and_then(|e| e.to_str())
             .unwrap_or("")
@@ -2351,7 +2525,7 @@ pub fn register_mesh_functions(
         Ok(mesh)
     }
 
-    // import_mesh(path) — load mesh, return SdfHandle (approximate mode).
+    // import_mesh(path) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â load mesh, return SdfHandle (approximate mode).
     {
         let dir   = project_dir.clone();
         let cache = Arc::clone(&mesh_cache);
@@ -2363,7 +2537,7 @@ pub fn register_mesh_functions(
         });
     }
 
-    // import_mesh_scaled(path, scale) — load and uniformly scale.
+    // import_mesh_scaled(path, scale) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â load and uniformly scale.
     {
         let dir   = project_dir.clone();
         let cache = Arc::clone(&mesh_cache);
@@ -2414,7 +2588,7 @@ pub fn register_mesh_functions(
         });
     }
 
-    // mesh_info(path) — returns a Rhai map with mesh metadata.
+    // mesh_info(path) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â returns a Rhai map with mesh metadata.
     {
         let dir   = project_dir.clone();
         let cache = Arc::clone(&mesh_cache);
@@ -2444,7 +2618,7 @@ pub fn register_mesh_functions(
     }
 }
 
-// ── Composite layup functions ─────────────────────────────────────────────────
+// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Composite layup functions ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 /// Register a secondary hook that collects CompositeLayup references for the
 /// Layup Summary panel.  Must be called AFTER register_composite_functions().
@@ -2480,14 +2654,14 @@ fn register_composite_functions(engine: &mut Engine) {
         wing_composite, fuselage_composite, printed_shell,
     };
 
-    // material(name) → MaterialHandle — look up a built-in preset.
+    // material(name) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ MaterialHandle ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â look up a built-in preset.
     engine.register_fn("material", |name: &str| -> Result<MaterialHandle, Box<rhai::EvalAltResult>> {
         find_preset(name)
             .map(|m| MaterialHandle(Arc::new(m)))
             .ok_or_else(|| format!("material: unknown preset '{}'", name).into())
     });
 
-    // custom_material(name, density, E, G, nu) → MaterialHandle
+    // custom_material(name, density, E, G, nu) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ MaterialHandle
     engine.register_fn("custom_material",
         |name: &str, density: f64, e_mpa: f64, g_mpa: f64, nu: f64| -> MaterialHandle {
         MaterialHandle(Arc::new(CompositeMaterial {
@@ -2502,13 +2676,13 @@ fn register_composite_functions(engine: &mut Engine) {
         }))
     });
 
-    // shell_layer(name, material, thickness) → LayerHandle
+    // shell_layer(name, material, thickness) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ LayerHandle
     engine.register_fn("shell_layer",
         |name: &str, mat: MaterialHandle, thickness: f64| -> LayerHandle {
         LayerHandle(Arc::new(ShellLayer::new(name, mat.0, thickness as f32)))
     });
 
-    // shell_layer_field(name, material, base_thickness, field) → LayerHandle
+    // shell_layer_field(name, material, base_thickness, field) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ LayerHandle
     engine.register_fn("shell_layer_field",
         |name: &str, mat: MaterialHandle, thickness: f64, field: FieldHandle| -> LayerHandle {
         LayerHandle(Arc::new(
@@ -2517,7 +2691,7 @@ fn register_composite_functions(engine: &mut Engine) {
         ))
     });
 
-    // core_layer(name, material, thickness, infill) → LayerHandle
+    // core_layer(name, material, thickness, infill) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ LayerHandle
     engine.register_fn("core_layer",
         |name: &str, mat: MaterialHandle, thickness: f64, infill: SdfHandle| -> LayerHandle {
         LayerHandle(Arc::new(
@@ -2526,7 +2700,7 @@ fn register_composite_functions(engine: &mut Engine) {
         ))
     });
 
-    // solid_core_layer(name, material, thickness) → LayerHandle — solid core, no infill.
+    // solid_core_layer(name, material, thickness) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ LayerHandle ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â solid core, no infill.
     engine.register_fn("solid_core_layer",
         |name: &str, mat: MaterialHandle, thickness: f64| -> LayerHandle {
         LayerHandle(Arc::new(
@@ -2535,7 +2709,7 @@ fn register_composite_functions(engine: &mut Engine) {
         ))
     });
 
-    // composite_layup(parent, [layers]) → SdfHandle
+    // composite_layup(parent, [layers]) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ SdfHandle
     engine.register_fn("composite_layup",
         |parent: SdfHandle, layers: rhai::Array| -> Result<SdfHandle, Box<rhai::EvalAltResult>> {
         let mut shell_layers: Vec<ShellLayer> = Vec::with_capacity(layers.len());
@@ -2544,7 +2718,7 @@ fn register_composite_functions(engine: &mut Engine) {
                 .ok_or_else(|| -> Box<rhai::EvalAltResult> {
                     "composite_layup: array must contain LayerHandles".into()
                 })?;
-            // Unwrap Arc — if this is the only handle we move it, otherwise clone.
+            // Unwrap Arc ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â if this is the only handle we move it, otherwise clone.
             let layer = Arc::try_unwrap(lh.0)
                 .unwrap_or_else(|arc| (*arc).clone());
             shell_layers.push(layer);
@@ -2552,28 +2726,28 @@ fn register_composite_functions(engine: &mut Engine) {
         Ok(SdfHandle(Arc::new(CompositeSdf::new(CompositeLayup::new(parent.0, shell_layers)))))
     });
 
-    // ── Aerospace convenience wrappers ────────────────────────────────────────
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Aerospace convenience wrappers ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
-    // wing_composite(wing, outer_plies, core_thickness, inner_plies) → SdfHandle
+    // wing_composite(wing, outer_plies, core_thickness, inner_plies) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ SdfHandle
     engine.register_fn("wing_composite",
         |wing: SdfHandle, outer: i64, core_t: f64, inner: i64| -> SdfHandle {
         SdfHandle(wing_composite(wing.0, outer as usize, core_t as f32, inner as usize))
     });
 
-    // fuselage_composite(fuse, outer_plies, core_thickness, inner_plies) → SdfHandle
+    // fuselage_composite(fuse, outer_plies, core_thickness, inner_plies) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ SdfHandle
     engine.register_fn("fuselage_composite",
         |fuse: SdfHandle, outer: i64, core_t: f64, inner: i64| -> SdfHandle {
         SdfHandle(fuselage_composite(fuse.0, outer as usize, core_t as f32, inner as usize))
     });
 
-    // printed_shell(body, thickness, filament) → SdfHandle
+    // printed_shell(body, thickness, filament) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ SdfHandle
     engine.register_fn("printed_shell",
         |body: SdfHandle, thickness: f64, filament: &str| -> SdfHandle {
         SdfHandle(printed_shell(body.0, thickness as f32, filament))
     });
 }
 
-// ── PlaneHandle / AlignmentHandle (opaque Rhai wrapper types) ────────────────
+// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ PlaneHandle / AlignmentHandle (opaque Rhai wrapper types) ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 /// Rhai-visible wrapper for a split plane.
 #[derive(Clone)]
@@ -2595,7 +2769,7 @@ fn register_print_functions(engine: &mut Engine) {
     engine.register_type::<PlaneHandle>();
     engine.register_type::<AlignmentHandle>();
 
-    // ── Split plane constructors ──────────────────────────────────────────────
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Split plane constructors ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
     engine.register_fn("split_x", |pos: f64| PlaneHandle(SplitPlane::X(pos as f32)));
     engine.register_fn("split_y", |pos: f64| PlaneHandle(SplitPlane::Y(pos as f32)));
@@ -2608,7 +2782,7 @@ fn register_print_functions(engine: &mut Engine) {
             })
         });
 
-    // ── Alignment feature constructors ────────────────────────────────────────
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Alignment feature constructors ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
     engine.register_fn("pins_and_sockets",
         |radius: f64, height: f64, count: i64, pattern_r: f64| {
@@ -2664,9 +2838,9 @@ fn register_print_functions(engine: &mut Engine) {
             })
         });
 
-    // ── Split operations ──────────────────────────────────────────────────────
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Split operations ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
-    // split(body, plane, alignment) → [part_a, part_b]
+    // split(body, plane, alignment) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ [part_a, part_b]
     engine.register_fn("split",
         |body: SdfHandle, plane: PlaneHandle, alignment: AlignmentHandle| -> rhai::Array {
             let result = split_body(body.0, &plane.0, &alignment.0);
@@ -2676,7 +2850,7 @@ fn register_print_functions(engine: &mut Engine) {
             ]
         });
 
-    // Convenience: split_x/y/z with no alignment → [top, bottom]
+    // Convenience: split_x/y/z with no alignment ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ [top, bottom]
     engine.register_fn("split_body_x",
         |body: SdfHandle, pos: f64| -> rhai::Array {
             let result = split_body(body.0, &SplitPlane::X(pos as f32), &AlignmentFeature::None);
@@ -2693,7 +2867,7 @@ fn register_print_functions(engine: &mut Engine) {
             vec![rhai::Dynamic::from(SdfHandle(result.part_a)), rhai::Dynamic::from(SdfHandle(result.part_b))]
         });
 
-    // split_multi(body, planes_array, alignments_array) → array of parts
+    // split_multi(body, planes_array, alignments_array) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ array of parts
     engine.register_fn("split_multi",
         |body: SdfHandle, planes: rhai::Array, alignments: rhai::Array| -> rhai::Array {
             let pairs: Vec<(SplitPlane, AlignmentFeature)> = planes.iter().zip(alignments.iter())
@@ -2709,9 +2883,9 @@ fn register_print_functions(engine: &mut Engine) {
                 .collect()
         });
 
-    // ── Aerospace convenience wrappers ────────────────────────────────────────
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Aerospace convenience wrappers ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
-    // split_fuselage(fuse, positions_array) → array of parts with pin-and-socket
+    // split_fuselage(fuse, positions_array) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ array of parts with pin-and-socket
     engine.register_fn("split_fuselage",
         |fuse: SdfHandle, positions: rhai::Array| -> rhai::Array {
             let zs: Vec<f32> = positions.iter()
@@ -2735,10 +2909,10 @@ fn register_print_functions(engine: &mut Engine) {
                 .collect()
         });
 
-    // split_wing(wing, span_fraction) → [root_half, tip_half] with dovetail
+    // split_wing(wing, span_fraction) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ [root_half, tip_half] with dovetail
     engine.register_fn("split_wing",
         |wing: SdfHandle, fraction: f64| -> rhai::Array {
-            // Assume wing spans ±some range; use Y=0 as default, scaled by fraction.
+            // Assume wing spans Ãƒâ€šÃ‚Â±some range; use Y=0 as default, scaled by fraction.
             // The caller should provide the actual span; here we use a normalized 0-1
             // fraction mapped to Y coordinate (placeholder: split at y = fraction * 100).
             let y_pos = fraction as f32 * 100.0;
@@ -2754,14 +2928,14 @@ fn register_print_functions(engine: &mut Engine) {
 }
 
 fn register_tolerance_functions(engine: &mut Engine) {
-    // apply_tolerance(body) → SdfHandle
+    // apply_tolerance(body) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ SdfHandle
     // Applies the default StandardFDM tolerance settings.
     // NOTE: apply only to final export geometry, not intermediate shapes used in booleans.
     engine.register_fn("apply_tolerance", |body: SdfHandle| -> SdfHandle {
         SdfHandle(Arc::new(ToleranceCompensated::new(body.0, ToleranceSettings::default())))
     });
 
-    // apply_tolerance_custom(body, external_mm, internal_mm) → SdfHandle
+    // apply_tolerance_custom(body, external_mm, internal_mm) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ SdfHandle
     engine.register_fn("apply_tolerance_custom",
         |body: SdfHandle, external: f64, internal: f64| -> SdfHandle {
             SdfHandle(Arc::new(ToleranceCompensated::new(body.0, ToleranceSettings {
@@ -2773,12 +2947,12 @@ fn register_tolerance_functions(engine: &mut Engine) {
         });
 }
 
-// ── Fastener functions ────────────────────────────────────────────────────────
+// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Fastener functions ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 fn register_fastener_functions(engine: &mut Engine) {
     use glam::Vec3;
 
-    // ── screw_hole(body, designation, hole_type, depth, x,y,z, dx,dy,dz) → SdfHandle
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ screw_hole(body, designation, hole_type, depth, x,y,z, dx,dy,dz) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ SdfHandle
     engine.register_fn("screw_hole",
         |body: SdfHandle, designation: &str, hole_type: &str, depth: f64,
          x: f64, y: f64, z: f64, dx: f64, dy: f64, dz: f64|
@@ -2800,7 +2974,7 @@ fn register_fastener_functions(engine: &mut Engine) {
         Ok(SdfHandle(check_and_pad(body.0, void, boss, pos, dir, spec)))
     });
 
-    // ── screw_hole_pattern(body, designation, hole_type, depth, pattern, dx,dy,dz) → SdfHandle
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ screw_hole_pattern(body, designation, hole_type, depth, pattern, dx,dy,dz) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ SdfHandle
     // pattern is a bolt_circle / bolt_rect SDF used as the void; boss is automatically
     // generated as an expansion of the pattern by the difference between boss_r and hole_r.
     engine.register_fn("screw_hole_pattern",
@@ -2821,7 +2995,7 @@ fn register_fastener_functions(engine: &mut Engine) {
         };
         let void: Arc<dyn crate::sdf::Sdf> = pattern.0;
         let boss: Arc<dyn crate::sdf::Sdf> = Arc::new(Offset::new(Arc::clone(&void), boss_margin));
-        // Always apply boss (conservative — ensures sufficient wall material)
+        // Always apply boss (conservative ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â ensures sufficient wall material)
         let result = Arc::new(crate::sdf::booleans::Subtract::new(
             Arc::new(crate::sdf::booleans::Union::new(body.0, boss)),
             void,
@@ -2829,7 +3003,7 @@ fn register_fastener_functions(engine: &mut Engine) {
         Ok(SdfHandle(result))
     });
 
-    // ── screw_mate(body_a, body_b, desig, type_a, type_b, x,y,z, dx,dy,dz) → Array
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ screw_mate(body_a, body_b, desig, type_a, type_b, x,y,z, dx,dy,dz) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Array
     engine.register_fn("screw_mate",
         |body_a: SdfHandle, body_b: SdfHandle,
          designation: &str, hole_type_a: &str, hole_type_b: &str,
@@ -2866,7 +3040,7 @@ fn register_fastener_functions(engine: &mut Engine) {
         ])
     });
 
-    // ── screw_mate_pattern — pattern version of screw_mate
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ screw_mate_pattern ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â pattern version of screw_mate
     engine.register_fn("screw_mate_pattern",
         |body_a: SdfHandle, body_b: SdfHandle,
          designation: &str, _hole_type_a: &str, _hole_type_b: &str,
@@ -2897,16 +3071,16 @@ fn register_fastener_functions(engine: &mut Engine) {
     });
 }
 
-// ── Panel functions ───────────────────────────────────────────────────────────
+// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Panel functions ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 fn register_panel_functions(engine: &mut Engine) {
     use glam::Vec3;
 
     engine.register_type::<RetentionHandle>();
 
-    // ── Retention constructors ────────────────────────────────────────────────
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Retention constructors ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
-    // snap_retention(count, clip_width, engagement) → RetentionHandle
+    // snap_retention(count, clip_width, engagement) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ RetentionHandle
     engine.register_fn("snap_retention",
         |count: i64, clip_width: f64, engagement: f64| -> RetentionHandle {
             RetentionHandle(RetentionMechanism::SnapFit {
@@ -2917,7 +3091,7 @@ fn register_panel_functions(engine: &mut Engine) {
             })
         });
 
-    // screw_retention(designation, count, tab_thickness) → RetentionHandle
+    // screw_retention(designation, count, tab_thickness) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ RetentionHandle
     engine.register_fn("screw_retention",
         |designation: &str, count: i64, tab_thickness: f64| -> RetentionHandle {
             RetentionHandle(RetentionMechanism::ScrewTabs {
@@ -2927,7 +3101,7 @@ fn register_panel_functions(engine: &mut Engine) {
             })
         });
 
-    // friction_retention(interference_mm) → RetentionHandle
+    // friction_retention(interference_mm) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ RetentionHandle
     engine.register_fn("friction_retention",
         |interference: f64| -> RetentionHandle {
             RetentionHandle(RetentionMechanism::FrictionFit {
@@ -2935,7 +3109,7 @@ fn register_panel_functions(engine: &mut Engine) {
             })
         });
 
-    // hinge_retention(thickness, width) → RetentionHandle
+    // hinge_retention(thickness, width) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ RetentionHandle
     engine.register_fn("hinge_retention",
         |thickness: f64, width: f64| -> RetentionHandle {
             RetentionHandle(RetentionMechanism::LivingHinge {
@@ -2944,7 +3118,7 @@ fn register_panel_functions(engine: &mut Engine) {
             })
         });
 
-    // magnet_retention(magnet_diameter, magnet_depth, count) → RetentionHandle
+    // magnet_retention(magnet_diameter, magnet_depth, count) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ RetentionHandle
     engine.register_fn("magnet_retention",
         |magnet_diameter: f64, magnet_depth: f64, count: i64| -> RetentionHandle {
             RetentionHandle(RetentionMechanism::MagnetBoss {
@@ -2954,7 +3128,7 @@ fn register_panel_functions(engine: &mut Engine) {
             })
         });
 
-    // ── access_panel(parent, x,y,z, w,h,t, nx,ny,nz, retention) → [parent, panel]
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ access_panel(parent, x,y,z, w,h,t, nx,ny,nz, retention) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ [parent, panel]
     engine.register_fn("access_panel",
         |parent: SdfHandle, x: f64, y: f64, z: f64,
          width: f64, height: f64, thickness: f64,
@@ -2987,9 +3161,9 @@ fn register_panel_functions(engine: &mut Engine) {
         ]
     });
 
-    // ── Drone convenience wrappers ────────────────────────────────────────────
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Drone convenience wrappers ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
-    // battery_hatch(fuselage, station_position, width, height, retention) → [fuselage, hatch]
+    // battery_hatch(fuselage, station_position, width, height, retention) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ [fuselage, hatch]
     engine.register_fn("battery_hatch",
         |fuselage: SdfHandle, station_x: f64, width: f64, height: f64,
          retention: RetentionHandle|
@@ -3011,7 +3185,7 @@ fn register_panel_functions(engine: &mut Engine) {
         ]
     });
 
-    // fc_access_panel(fuselage, station_position, retention) → [fuselage, panel]
+    // fc_access_panel(fuselage, station_position, retention) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ [fuselage, panel]
     engine.register_fn("fc_access_panel",
         |fuselage: SdfHandle, station_x: f64, retention: RetentionHandle| -> rhai::Array
     {
@@ -3032,7 +3206,7 @@ fn register_panel_functions(engine: &mut Engine) {
     });
 }
 
-// ── Joint functions ───────────────────────────────────────────────────────────
+// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Joint functions ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 fn register_joint_functions(engine: &mut Engine) {
     use glam::Vec3;
@@ -3042,14 +3216,14 @@ fn register_joint_functions(engine: &mut Engine) {
 
     engine.register_type::<JointDeltaHandle>();
 
-    // apply_joint_delta(part, delta) → SdfHandle
+    // apply_joint_delta(part, delta) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ SdfHandle
     // Applies union(subtract(part, delta.void), delta.addition)
     engine.register_fn("apply_joint_delta",
         |part: SdfHandle, delta: JointDeltaHandle| -> SdfHandle {
             SdfHandle(delta.0.apply(part.0))
         });
 
-    // dovetail_joint(len, width, height, angle, clearance, px,py,pz, ax,ay,az) → [delta_a, delta_b]
+    // dovetail_joint(len, width, height, angle, clearance, px,py,pz, ax,ay,az) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ [delta_a, delta_b]
     engine.register_fn("dovetail_joint",
         |length: f64, width: f64, height: f64, angle_deg: f64, clearance: f64,
          px: f64, py: f64, pz: f64, ax: f64, ay: f64, az: f64|
@@ -3067,7 +3241,7 @@ fn register_joint_functions(engine: &mut Engine) {
         ]
     });
 
-    // finger_joint(len, finger_width, height, count, clearance, px,py,pz, ax,ay,az) → [da, db]
+    // finger_joint(len, finger_width, height, count, clearance, px,py,pz, ax,ay,az) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ [da, db]
     engine.register_fn("finger_joint",
         |length: f64, finger_width: f64, height: f64, count: i64, clearance: f64,
          px: f64, py: f64, pz: f64, ax: f64, ay: f64, az: f64|
@@ -3085,7 +3259,7 @@ fn register_joint_functions(engine: &mut Engine) {
         ]
     });
 
-    // press_fit(pin_radius, pin_length, interference, px,py,pz, dx,dy,dz) → [da, db]
+    // press_fit(pin_radius, pin_length, interference, px,py,pz, dx,dy,dz) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ [da, db]
     engine.register_fn("press_fit",
         |pin_radius: f64, pin_length: f64, interference: f64,
          px: f64, py: f64, pz: f64, dx: f64, dy: f64, dz: f64|
@@ -3103,7 +3277,7 @@ fn register_joint_functions(engine: &mut Engine) {
         ]
     });
 
-    // snap_connector(width, height, engagement, px,py,pz, dx,dy,dz) → [da, db]
+    // snap_connector(width, height, engagement, px,py,pz, dx,dy,dz) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ [da, db]
     engine.register_fn("snap_connector",
         |width: f64, height: f64, engagement: f64,
          px: f64, py: f64, pz: f64, dx: f64, dy: f64, dz: f64|
@@ -3120,7 +3294,7 @@ fn register_joint_functions(engine: &mut Engine) {
         ]
     });
 
-    // living_hinge_strip(width, thickness, length, px,py,pz, ax,ay,az) → [da, db]
+    // living_hinge_strip(width, thickness, length, px,py,pz, ax,ay,az) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ [da, db]
     engine.register_fn("living_hinge_strip",
         |width: f64, thickness: f64, length: f64,
          px: f64, py: f64, pz: f64, ax: f64, ay: f64, az: f64|
@@ -3138,14 +3312,14 @@ fn register_joint_functions(engine: &mut Engine) {
     });
 }
 
-// ── Part 7: Layup library functions ───────────────────────────────────────────
+// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Part 7: Layup library functions ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 // Allows library files to define and export named layup configurations
 // without binding them to a specific geometry at definition time.
 
 fn register_layup_library_functions(engine: &mut Engine) {
     use crate::sdf::aerospace::composite::{CompositeSdf, CompositeLayup, ShellLayer};
 
-    // composite_layup_config(layers) → LayupConfigHandle
+    // composite_layup_config(layers) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ LayupConfigHandle
     // Stores a layup definition for later application. Library components use this
     // to export named layup presets (e.g. fn drone_carbon() { composite_layup_config([...]) }).
     engine.register_fn("composite_layup_config",
@@ -3161,7 +3335,7 @@ fn register_layup_library_functions(engine: &mut Engine) {
         Ok(LayupConfigHandle(shell_layers))
     });
 
-    // apply_layup(body, layup) → SdfHandle
+    // apply_layup(body, layup) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ SdfHandle
     // Applies a stored layup configuration to a body SDF.
     engine.register_fn("apply_layup",
         |body: SdfHandle, layup: LayupConfigHandle| -> SdfHandle {
@@ -3189,6 +3363,9 @@ fn register_control_surface_functions(engine: &mut Engine) {
     });
 
     // Linkage constructors
+    engine.register_fn("no_linkage", || -> LinkageHandle {
+        LinkageHandle(LinkageSpec::none())
+    });
     engine.register_fn("control_horn", |height: f64, hole_offset: f64, span_fraction: f64| -> LinkageHandle {
         LinkageHandle(LinkageSpec::horn(ControlHornSpec::default_upper(height as f32, hole_offset as f32, span_fraction as f32)))
     });
@@ -3220,7 +3397,7 @@ fn register_control_surface_functions(engine: &mut Engine) {
         })
     });
 
-    // aileron(wing, span_start, span_end, chord_fraction, hinge, linkage) → [cs_sdf, modified_parent]
+    // aileron(wing, span_start, span_end, chord_fraction, hinge, linkage) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ [cs_sdf, modified_parent]
     engine.register_fn("aileron",
         |wing: SdfHandle, span_start: f64, span_end: f64, chord_fraction: f64,
          hinge: HingeHandle, linkage: LinkageHandle| -> rhai::Array {
@@ -3231,7 +3408,7 @@ fn register_control_surface_functions(engine: &mut Engine) {
         ]
     });
 
-    // elevator(stab, chord_fraction, hinge, linkage) → [cs_sdf, modified_parent]
+    // elevator(stab, chord_fraction, hinge, linkage) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ [cs_sdf, modified_parent]
     engine.register_fn("elevator",
         |stab: SdfHandle, chord_fraction: f64, hinge: HingeHandle, linkage: LinkageHandle| -> rhai::Array {
         let result = cs_elevator(stab.0, chord_fraction as f32, hinge.0, linkage.0);
@@ -3241,7 +3418,7 @@ fn register_control_surface_functions(engine: &mut Engine) {
         ]
     });
 
-    // rudder(fin, chord_fraction, hinge, linkage) → [cs_sdf, modified_parent]
+    // rudder(fin, chord_fraction, hinge, linkage) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ [cs_sdf, modified_parent]
     engine.register_fn("rudder",
         |fin: SdfHandle, chord_fraction: f64, hinge: HingeHandle, linkage: LinkageHandle| -> rhai::Array {
         let result = cs_rudder(fin.0, chord_fraction as f32, hinge.0, linkage.0);
@@ -3251,7 +3428,7 @@ fn register_control_surface_functions(engine: &mut Engine) {
         ]
     });
 
-    // flap(wing, span_start, span_end, chord_fraction, hinge) → [cs_sdf, modified_parent]
+    // flap(wing, span_start, span_end, chord_fraction, hinge) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ [cs_sdf, modified_parent]
     engine.register_fn("flap",
         |wing: SdfHandle, span_start: f64, span_end: f64, chord_fraction: f64, hinge: HingeHandle| -> rhai::Array {
         let result = cs_flap(wing.0, span_start as f32, span_end as f32, chord_fraction as f32, hinge.0);
@@ -3261,7 +3438,7 @@ fn register_control_surface_functions(engine: &mut Engine) {
         ]
     });
 
-    // elevon(wing, span_start, span_end, chord_fraction, hinge, linkage) → [cs_sdf, modified_parent]
+    // elevon(wing, span_start, span_end, chord_fraction, hinge, linkage) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ [cs_sdf, modified_parent]
     engine.register_fn("elevon",
         |wing: SdfHandle, span_start: f64, span_end: f64, chord_fraction: f64,
          hinge: HingeHandle, linkage: LinkageHandle| -> rhai::Array {
@@ -3272,7 +3449,7 @@ fn register_control_surface_functions(engine: &mut Engine) {
         ]
     });
 
-    // wing_with_ailerons(wing, span_start_frac, span_end_frac, chord_fraction) → [pos_ail, neg_ail, modified_wing]
+    // wing_with_ailerons(wing, span_start_frac, span_end_frac, chord_fraction) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ [pos_ail, neg_ail, modified_wing]
     engine.register_fn("wing_with_ailerons",
         |wing: SdfHandle, span_start: f64, span_end: f64, chord_fraction: f64| -> rhai::Array {
         let hinge = HingeSpec::rounded(1.5, 0.5);
@@ -3285,7 +3462,7 @@ fn register_control_surface_functions(engine: &mut Engine) {
         ]
     });
 
-    // wing_with_ailerons_custom(wing, span_start, span_end, chord_fraction, hinge, linkage) → [pos, neg, modified]
+    // wing_with_ailerons_custom(wing, span_start, span_end, chord_fraction, hinge, linkage) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ [pos, neg, modified]
     engine.register_fn("wing_with_ailerons_custom",
         |wing: SdfHandle, span_start: f64, span_end: f64, chord_fraction: f64,
          hinge: HingeHandle, linkage: LinkageHandle| -> rhai::Array {
@@ -3298,7 +3475,7 @@ fn register_control_surface_functions(engine: &mut Engine) {
     });
 }
 
-// ── PointHandle arithmetic and geometric utilities ────────────────────────────
+// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ PointHandle arithmetic and geometric utilities ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 fn register_point_functions(engine: &mut Engine) {
     use crate::sdf::transforms::Translate;
@@ -3392,7 +3569,7 @@ fn register_point_functions(engine: &mut Engine) {
     });
 }
 
-// ── Geometric query functions (need ref_collector closure capture) ────────────
+// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Geometric query functions (need ref_collector closure capture) ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 pub fn register_query_functions(engine: &mut Engine, ref_collector: RefPointCollector) {
     use crate::sdf::query;
@@ -3470,7 +3647,7 @@ pub fn register_query_functions(engine: &mut Engine, ref_collector: RefPointColl
         }
     );
 
-    // ref_point(name, p) -> PointHandle — stores in ref_collector, returns p unchanged
+    // ref_point(name, p) -> PointHandle ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â stores in ref_collector, returns p unchanged
     {
         let rc = std::sync::Arc::clone(&ref_collector);
         engine.register_fn("ref_point", move |name: &str, p: PointHandle| -> PointHandle {
@@ -3485,7 +3662,7 @@ pub fn register_query_functions(engine: &mut Engine, ref_collector: RefPointColl
         });
     }
 
-    // get_ref(name) -> PointHandle — looks up in ref_collector, returns ZERO if not found
+    // get_ref(name) -> PointHandle ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â looks up in ref_collector, returns ZERO if not found
     {
         let rc = std::sync::Arc::clone(&ref_collector);
         engine.register_fn("get_ref", move |name: &str| -> PointHandle {
@@ -3497,7 +3674,7 @@ pub fn register_query_functions(engine: &mut Engine, ref_collector: RefPointColl
         });
     }
 
-    // ── Wing-specific queries ─────────────────────────────────────────────────
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Wing-specific queries ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
     // leading_edge(wing, span_fraction) -> PointHandle
     engine.register_fn("leading_edge", |wing: SdfHandle, span_frac: f64| -> PointHandle {
@@ -3539,12 +3716,12 @@ pub fn register_query_functions(engine: &mut Engine, ref_collector: RefPointColl
         }
     );
 
-    // wing_tip(wing) -> PointHandle — furthest in +Y
+    // wing_tip(wing) -> PointHandle ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â furthest in +Y
     engine.register_fn("wing_tip", |wing: SdfHandle| -> PointHandle {
         PointHandle(query::furthest_point(wing.0.as_ref(), glam::Vec3::Y))
     });
 
-    // wing_root(wing) -> PointHandle — cross_section_center at Y=0
+    // wing_root(wing) -> PointHandle ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â cross_section_center at Y=0
     engine.register_fn("wing_root", |wing: SdfHandle| -> PointHandle {
         PointHandle(query::cross_section_centroid(wing.0.as_ref(), 1, 0.0))
     });
@@ -3567,14 +3744,14 @@ pub fn register_query_functions(engine: &mut Engine, ref_collector: RefPointColl
                 let pos = rp.position + glam::Vec3::new(dx as f32, dy as f32, dz as f32);
                 SdfHandle(Arc::new(Translate::new(body.0, pos)))
             } else {
-                // Ref point not found — apply offset only
+                // Ref point not found ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â apply offset only
                 SdfHandle(Arc::new(Translate::new(body.0, glam::Vec3::new(dx as f32, dy as f32, dz as f32))))
             }
         });
     }
 }
 
-// ── Bracket / mounting hole functions ────────────────────────────────────────
+// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Bracket / mounting hole functions ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 pub fn register_bracket_functions(engine: &mut Engine) {
     use crate::sdf::print::bracket::{
@@ -3759,7 +3936,7 @@ pub fn register_bracket_functions(engine: &mut Engine) {
     {
         let bi = bounding_points(comp.geometry.as_ref());
         let bt = BracketType::FlatPlate { plate_thickness: 3.0, tab_width: 8.0, tab_extension: 5.0 };
-        // Pass empty holes → auto_bracket generates 4 default corner holes.
+        // Pass empty holes ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ auto_bracket generates 4 default corner holes.
         let (modified_parent, bracket) = do_auto_bracket(
             Arc::clone(&comp.keepout),
             parent.0,
@@ -3775,12 +3952,12 @@ pub fn register_bracket_functions(engine: &mut Engine) {
     });
 }
 
-// ── Geometry-relative placement functions ────────────────────────────────────
+// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Geometry-relative placement functions ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 fn register_placement_functions(engine: &mut Engine) {
     use crate::sdf::query::bounding_points;
 
-    // place_behind(body, anchor, gap) — places body in -X direction from anchor
+    // place_behind(body, anchor, gap) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â places body in -X direction from anchor
     engine.register_fn("place_behind", |body: SdfHandle, anchor: SdfHandle, gap: f64| {
         let anchor_bi = bounding_points(&*anchor.0);
         let body_bi   = bounding_points(&*body.0);
@@ -3789,7 +3966,7 @@ fn register_placement_functions(engine: &mut Engine) {
         SdfHandle(Arc::new(Translate::new(body.0, Vec3::new(x, 0.0, 0.0))))
     });
 
-    // place_above(body, anchor, gap) — places body in +Z direction from anchor
+    // place_above(body, anchor, gap) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â places body in +Z direction from anchor
     engine.register_fn("place_above", |body: SdfHandle, anchor: SdfHandle, gap: f64| {
         let anchor_bi = bounding_points(&*anchor.0);
         let body_bi   = bounding_points(&*body.0);
@@ -3798,7 +3975,7 @@ fn register_placement_functions(engine: &mut Engine) {
         SdfHandle(Arc::new(Translate::new(body.0, Vec3::new(0.0, 0.0, z))))
     });
 
-    // place_below(body, anchor, gap) — places body in -Z direction from anchor
+    // place_below(body, anchor, gap) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â places body in -Z direction from anchor
     engine.register_fn("place_below", |body: SdfHandle, anchor: SdfHandle, gap: f64| {
         let anchor_bi = bounding_points(&*anchor.0);
         let body_bi   = bounding_points(&*body.0);
@@ -3807,7 +3984,7 @@ fn register_placement_functions(engine: &mut Engine) {
         SdfHandle(Arc::new(Translate::new(body.0, Vec3::new(0.0, 0.0, z))))
     });
 
-    // place_beside(body, anchor, gap) — places body in +Y direction from anchor
+    // place_beside(body, anchor, gap) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â places body in +Y direction from anchor
     engine.register_fn("place_beside", |body: SdfHandle, anchor: SdfHandle, gap: f64| {
         let anchor_bi = bounding_points(&*anchor.0);
         let body_bi   = bounding_points(&*body.0);
@@ -3839,7 +4016,7 @@ fn register_placement_functions(engine: &mut Engine) {
     });
 }
 
-// ── Instancing functions ──────────────────────────────────────────────────────
+// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Instancing functions ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 fn register_instance_functions(engine: &mut Engine) {
     // instance(body, transforms: Array of Maps) -> SdfHandle
@@ -3947,987 +4124,5 @@ fn register_instance_functions(engine: &mut Engine) {
             });
         }
         SdfHandle(result.unwrap_or(body.0))
-    });
-}
-
-// ── Aerodynamic API ───────────────────────────────────────────────────────────
-
-pub fn register_aero_functions(engine: &mut Engine) {
-    use crate::aero::{PolarDatabase, FlightCondition, solve_lifting_line};
-
-    engine.register_type::<PolarHandle>();
-    engine.register_type::<FlightConditionHandle>();
-
-    // get_polar(designation) -> PolarHandle  (Reynolds 500 000 default)
-    engine.register_fn("get_polar", |designation: &str| -> PolarHandle {
-        let db    = PolarDatabase::new();
-        let polar = db.get_interpolated(designation, 500_000.0)
-            .or_else(|| db.get_interpolated("NACA 0012", 500_000.0))
-            .expect("NACA 0012 must exist");
-        PolarHandle(Arc::new(polar))
-    });
-
-    // get_polar_re(designation, reynolds) -> PolarHandle
-    engine.register_fn("get_polar_re", |designation: &str, reynolds: f64| -> PolarHandle {
-        let db    = PolarDatabase::new();
-        let polar = db.get_interpolated(designation, reynolds as f32)
-            .or_else(|| db.get_interpolated("NACA 0012", reynolds as f32))
-            .expect("NACA 0012 must exist");
-        PolarHandle(Arc::new(polar))
-    });
-
-    // cl_at(polar, alpha_deg) -> f64
-    engine.register_fn("cl_at", |p: PolarHandle, alpha: f64| -> f64 {
-        p.0.cl_at(alpha as f32) as f64
-    });
-
-    // cd_at(polar, alpha_deg) -> f64
-    engine.register_fn("cd_at", |p: PolarHandle, alpha: f64| -> f64 {
-        p.0.cd_at(alpha as f32) as f64
-    });
-
-    // cl_alpha(polar) -> f64  (per radian)
-    engine.register_fn("cl_alpha", |p: PolarHandle| -> f64 {
-        p.0.cl_alpha as f64
-    });
-
-    // cl_max(polar) -> f64
-    engine.register_fn("cl_max", |p: PolarHandle| -> f64 {
-        p.0.cl_max as f64
-    });
-
-    // alpha_stall(polar) -> f64
-    engine.register_fn("alpha_stall", |p: PolarHandle| -> f64 {
-        p.0.alpha_stall_deg as f64
-    });
-
-    // flight_condition(airspeed_ms, altitude_m, aoa_deg) -> FlightConditionHandle
-    engine.register_fn("flight_condition",
-        |airspeed: f64, altitude: f64, aoa: f64| -> FlightConditionHandle {
-        FlightConditionHandle(FlightCondition::new(airspeed as f32, altitude as f32, aoa as f32))
-    });
-
-    // flight_condition_sl(airspeed_ms, aoa_deg) -> FlightConditionHandle  (sea level)
-    engine.register_fn("flight_condition_sl",
-        |airspeed: f64, aoa: f64| -> FlightConditionHandle {
-        FlightConditionHandle(FlightCondition::new(airspeed as f32, 0.0, aoa as f32))
-    });
-
-    // dynamic_pressure(fc) -> f64  (Pa)
-    engine.register_fn("dynamic_pressure", |fc: FlightConditionHandle| -> f64 {
-        fc.0.dynamic_pressure_pa as f64
-    });
-
-    // reynolds(fc, chord_mm) -> f64
-    engine.register_fn("reynolds", |fc: FlightConditionHandle, chord_mm: f64| -> f64 {
-        fc.0.reynolds_for_chord(chord_mm as f32) as f64
-    });
-
-    // run_lifting_line(wing, fc) -> Map  with cl, cd_i, e, lift_n, drag_n, tip_stall
-    engine.register_fn("run_lifting_line",
-        |wing: SdfHandle, fc: FlightConditionHandle| -> rhai::Map {
-        let db  = PolarDatabase::new();
-        let res = solve_lifting_line(&wing.0, &db, &fc.0, 20);
-        let mut map = rhai::Map::new();
-        map.insert("cl".into(),       rhai::Dynamic::from(res.cl_total as f64));
-        map.insert("cd_induced".into(), rhai::Dynamic::from(res.cd_induced as f64));
-        map.insert("efficiency".into(), rhai::Dynamic::from(res.oswald_efficiency as f64));
-        map.insert("lift_n".into(),   rhai::Dynamic::from(res.lift_total_n as f64));
-        map.insert("drag_n".into(),   rhai::Dynamic::from(res.induced_drag_total_n as f64));
-        map.insert("tip_stall".into(), rhai::Dynamic::from(res.tip_stall_risk));
-        map.insert("root_stall_first".into(), rhai::Dynamic::from(res.root_stall_first));
-        map
-    });
-
-    // run_lifting_line_polar(wing, fc, alpha_start, alpha_end, alpha_step) -> Array of Maps
-    engine.register_fn("run_lifting_line_polar",
-        |wing: SdfHandle, fc: FlightConditionHandle,
-         alpha_start: f64, alpha_end: f64, alpha_step: f64| -> rhai::Array {
-        let db   = PolarDatabase::new();
-        let step = alpha_step.max(0.1) as f32;
-        let mut alpha = alpha_start as f32;
-        let mut results = rhai::Array::new();
-        while alpha <= alpha_end as f32 + 1e-4 {
-            let mut fc_i = fc.0.clone();
-            fc_i.aoa_deg = alpha;
-            let res = solve_lifting_line(&wing.0, &db, &fc_i, 20);
-            let mut map = rhai::Map::new();
-            map.insert("alpha".into(),      rhai::Dynamic::from(alpha as f64));
-            map.insert("cl".into(),         rhai::Dynamic::from(res.cl_total as f64));
-            map.insert("cd_induced".into(), rhai::Dynamic::from(res.cd_induced as f64));
-            map.insert("efficiency".into(), rhai::Dynamic::from(res.oswald_efficiency as f64));
-            map.insert("lift_n".into(),     rhai::Dynamic::from(res.lift_total_n as f64));
-            results.push(rhai::Dynamic::from(map));
-            alpha += step;
-        }
-        results
-    });
-
-    // ── Stability functions ────────────────────────────────────────────────────
-
-    engine.register_type::<StabilityResultHandle>();
-    engine.register_type::<TrimResultHandle>();
-    engine.register_type::<DragPolarHandle>();
-
-    // neutral_point(wing, htail, fuse, fc) -> f64 (NP x position in mm)
-    engine.register_fn("neutral_point",
-        |wing: SdfHandle, htail: SdfHandle, fuse: SdfHandle,
-         fc: FlightConditionHandle| -> f64 {
-        use crate::aero::{PolarDatabase, compute_neutral_point};
-        let db = PolarDatabase::new();
-        let np = compute_neutral_point(&wing.0, &htail.0, &fuse.0, &db, &fc.0);
-        np.neutral_point_x_mm as f64
-    });
-
-    // static_margin(wing, htail, fuse, fc, cg_x_mm) -> Map
-    engine.register_fn("static_margin",
-        |wing: SdfHandle, htail: SdfHandle, fuse: SdfHandle,
-         fc: FlightConditionHandle, cg_x_mm: f64| -> rhai::Map {
-        use crate::aero::{PolarDatabase, compute_neutral_point, compute_static_margin};
-        use glam::Vec3;
-        let db  = PolarDatabase::new();
-        let np  = compute_neutral_point(&wing.0, &htail.0, &fuse.0, &db, &fc.0);
-        // MAC from wing bbox.
-        let wing_bbox = crate::sdf::query::bounding_points(wing.0.as_ref());
-        let root_chord = wing_bbox.size.x;
-        let mac = (root_chord + root_chord * 0.5) * 0.5;
-        let cg  = Vec3::new(cg_x_mm as f32, 0.0, 0.0);
-        let sm  = compute_static_margin(&np, cg, mac);
-        let mut map = rhai::Map::new();
-        map.insert("neutral_point_x_mm".into(),  rhai::Dynamic::from(sm.neutral_point_x_mm as f64));
-        map.insert("cg_x_mm".into(),             rhai::Dynamic::from(sm.cg_x_mm as f64));
-        map.insert("static_margin_mm".into(),    rhai::Dynamic::from(sm.static_margin_mm as f64));
-        map.insert("static_margin_mac".into(),   rhai::Dynamic::from(sm.static_margin_mac as f64));
-        map.insert("is_stable".into(),           rhai::Dynamic::from(sm.is_stable));
-        map.insert("stability_category".into(),  rhai::Dynamic::from(sm.stability_category.to_string()));
-        map.insert("cg_forward_limit_mm".into(), rhai::Dynamic::from(sm.cg_forward_limit_mm as f64));
-        map.insert("cg_aft_limit_mm".into(),     rhai::Dynamic::from(sm.cg_aft_limit_mm as f64));
-        map.insert("cg_range_mm".into(),         rhai::Dynamic::from(sm.cg_range_mm as f64));
-        map.insert("pitch_stiffness".into(),     rhai::Dynamic::from(sm.pitch_stiffness as f64));
-        map
-    });
-
-    // required_cg_range(wing, htail, fuse, fc) -> Map  (forward and aft limits)
-    engine.register_fn("required_cg_range",
-        |wing: SdfHandle, htail: SdfHandle, fuse: SdfHandle,
-         fc: FlightConditionHandle| -> rhai::Map {
-        use crate::aero::{PolarDatabase, compute_neutral_point, compute_static_margin};
-        use glam::Vec3;
-        let db         = PolarDatabase::new();
-        let np         = compute_neutral_point(&wing.0, &htail.0, &fuse.0, &db, &fc.0);
-        let wing_bbox  = crate::sdf::query::bounding_points(wing.0.as_ref());
-        let root_chord = wing_bbox.size.x;
-        let mac        = (root_chord + root_chord * 0.5) * 0.5;
-        // Use NP as CG to get limits.
-        let cg         = Vec3::new(np.neutral_point_x_mm, 0.0, 0.0);
-        let sm         = compute_static_margin(&np, cg, mac);
-        let mut map = rhai::Map::new();
-        map.insert("forward_limit_mm".into(), rhai::Dynamic::from(sm.cg_forward_limit_mm as f64));
-        map.insert("aft_limit_mm".into(),     rhai::Dynamic::from(sm.cg_aft_limit_mm as f64));
-        map.insert("range_mm".into(),         rhai::Dynamic::from(sm.cg_range_mm as f64));
-        map.insert("neutral_point_mm".into(), rhai::Dynamic::from(np.neutral_point_x_mm as f64));
-        map.insert("mac_mm".into(),           rhai::Dynamic::from(mac as f64));
-        map
-    });
-
-    // trim_analysis(wing, htail, fuse, fc, weight_n) -> Map
-    engine.register_fn("trim_analysis",
-        |wing: SdfHandle, htail: SdfHandle, fuse: SdfHandle,
-         fc: FlightConditionHandle, weight_n: f64| -> rhai::Map {
-        use crate::aero::{PolarDatabase, compute_neutral_point, compute_static_margin, compute_trim};
-        use glam::Vec3;
-        let db         = PolarDatabase::new();
-        let np         = compute_neutral_point(&wing.0, &htail.0, &fuse.0, &db, &fc.0);
-        let wing_bbox  = crate::sdf::query::bounding_points(wing.0.as_ref());
-        let root_chord = wing_bbox.size.x;
-        let mac        = (root_chord + root_chord * 0.5) * 0.5;
-        // Use a sensible default CG (10% MAC forward of NP).
-        let cg         = Vec3::new(np.neutral_point_x_mm - 0.10 * mac, 0.0, 0.0);
-        let sm         = compute_static_margin(&np, cg, mac);
-        let trim       = compute_trim(&np, &sm, &wing.0, &htail.0, &fuse.0, &db, &fc.0, weight_n as f32);
-        let mut map = rhai::Map::new();
-        map.insert("trim_aoa_deg".into(),          rhai::Dynamic::from(trim.trim_aoa_deg as f64));
-        map.insert("trim_cl".into(),               rhai::Dynamic::from(trim.trim_cl as f64));
-        map.insert("trim_airspeed_ms".into(),      rhai::Dynamic::from(trim.trim_airspeed_ms as f64));
-        map.insert("elevator_deflection_deg".into(), rhai::Dynamic::from(trim.elevator_deflection_deg as f64));
-        map.insert("is_trimmed".into(),            rhai::Dynamic::from(trim.is_trimmed));
-        map.insert("trim_margin_deg".into(),       rhai::Dynamic::from(trim.trim_margin_deg as f64));
-        map
-    });
-
-    // ── Drag polar functions ──────────────────────────────────────────────────
-
-    // drag_polar(wing, fuse, htail, vtail, fc) -> Map
-    engine.register_fn("drag_polar",
-        |wing: SdfHandle, fuse: SdfHandle, htail: SdfHandle, vtail: SdfHandle,
-         fc: FlightConditionHandle| -> rhai::Map {
-        use crate::aero::{PolarDatabase, compute_drag_polar};
-        let db     = PolarDatabase::new();
-        let result = compute_drag_polar(&wing.0, &fuse.0, &htail.0, &vtail.0, &db, &fc.0, None);
-        let mut map = rhai::Map::new();
-        map.insert("cd0".into(),                  rhai::Dynamic::from(result.cd0 as f64));
-        map.insert("k".into(),                    rhai::Dynamic::from(result.k as f64));
-        map.insert("cl_best_ld".into(),           rhai::Dynamic::from(result.cl_best_ld as f64));
-        map.insert("ld_max".into(),               rhai::Dynamic::from(result.ld_max as f64));
-        map.insert("cd0_wing".into(),             rhai::Dynamic::from(result.cd0_breakdown.wing as f64));
-        map.insert("cd0_fuselage".into(),         rhai::Dynamic::from(result.cd0_breakdown.fuselage as f64));
-        map.insert("cd0_htail".into(),            rhai::Dynamic::from(result.cd0_breakdown.h_tail as f64));
-        map.insert("cd0_vtail".into(),            rhai::Dynamic::from(result.cd0_breakdown.v_tail as f64));
-        map.insert("best_glide_ms".into(),        rhai::Dynamic::from(result.best_glide_airspeed_ms as f64));
-        map.insert("best_endurance_ms".into(),    rhai::Dynamic::from(result.best_endurance_airspeed_ms as f64));
-        map
-    });
-
-    // drag_polar_weighted(wing, fuse, htail, vtail, fc, weight_n) -> Map
-    engine.register_fn("drag_polar_weighted",
-        |wing: SdfHandle, fuse: SdfHandle, htail: SdfHandle, vtail: SdfHandle,
-         fc: FlightConditionHandle, weight_n: f64| -> rhai::Map {
-        use crate::aero::{PolarDatabase, compute_drag_polar};
-        let db     = PolarDatabase::new();
-        let result = compute_drag_polar(&wing.0, &fuse.0, &htail.0, &vtail.0, &db, &fc.0, Some(weight_n as f32));
-        let mut map = rhai::Map::new();
-        map.insert("cd0".into(),                  rhai::Dynamic::from(result.cd0 as f64));
-        map.insert("k".into(),                    rhai::Dynamic::from(result.k as f64));
-        map.insert("cl_best_ld".into(),           rhai::Dynamic::from(result.cl_best_ld as f64));
-        map.insert("ld_max".into(),               rhai::Dynamic::from(result.ld_max as f64));
-        map.insert("cd0_wing".into(),             rhai::Dynamic::from(result.cd0_breakdown.wing as f64));
-        map.insert("cd0_fuselage".into(),         rhai::Dynamic::from(result.cd0_breakdown.fuselage as f64));
-        map.insert("cd0_htail".into(),            rhai::Dynamic::from(result.cd0_breakdown.h_tail as f64));
-        map.insert("cd0_vtail".into(),            rhai::Dynamic::from(result.cd0_breakdown.v_tail as f64));
-        map.insert("best_glide_ms".into(),        rhai::Dynamic::from(result.best_glide_airspeed_ms as f64));
-        map.insert("best_endurance_ms".into(),    rhai::Dynamic::from(result.best_endurance_airspeed_ms as f64));
-        map
-    });
-
-    // ld_max(wing, fuse, htail, vtail, fc) -> f64
-    engine.register_fn("ld_max",
-        |wing: SdfHandle, fuse: SdfHandle, htail: SdfHandle, vtail: SdfHandle,
-         fc: FlightConditionHandle| -> f64 {
-        use crate::aero::{PolarDatabase, compute_drag_polar};
-        let db     = PolarDatabase::new();
-        let result = compute_drag_polar(&wing.0, &fuse.0, &htail.0, &vtail.0, &db, &fc.0, None);
-        result.ld_max as f64
-    });
-
-    // best_glide_speed(wing, fuse, htail, vtail, fc, weight_n) -> f64
-    engine.register_fn("best_glide_speed",
-        |wing: SdfHandle, fuse: SdfHandle, htail: SdfHandle, vtail: SdfHandle,
-         fc: FlightConditionHandle, weight_n: f64| -> f64 {
-        use crate::aero::{PolarDatabase, compute_drag_polar};
-        let db     = PolarDatabase::new();
-        let result = compute_drag_polar(&wing.0, &fuse.0, &htail.0, &vtail.0, &db, &fc.0, Some(weight_n as f32));
-        result.best_glide_airspeed_ms as f64
-    });
-}
-
-// ── Phase 30: CG sensitivity and interference analysis ────────────────────────
-
-fn register_analysis_functions(engine: &mut Engine) {
-    use crate::geometry_analysis::cg_sensitivity::compute_cg_sensitivity;
-    use crate::geometry_analysis::interference::check_assembly_interference;
-    use crate::sdf::Sdf;
-    use indexmap::IndexMap;
-    use glam::Vec3;
-
-    // cg_sensitivity(components_array, neutral_point_x, wing_mac) -> Map
-    // components_array: array of maps {name, x, y, z, mass_g}
-    engine.register_fn("cg_sensitivity",
-        |comps: rhai::Array, np_x: f64, mac: f64| -> rhai::Dynamic {
-        let components: Vec<(String, Vec3, f32)> = comps.iter().filter_map(|c| {
-            let m = c.clone().try_cast::<rhai::Map>()?;
-            let name = m.get("name")?.clone().into_string().ok()?;
-            let x = m.get("x")?.as_float().ok()? as f32;
-            let y = m.get("y")?.as_float().ok()? as f32;
-            let z = m.get("z")?.as_float().ok()? as f32;
-            let mass = m.get("mass_g")?.as_float().ok()? as f32;
-            Some((name, Vec3::new(x, y, z), mass))
-        }).collect();
-        let dims = IndexMap::new();
-        let fwd_limit = np_x as f32 - 0.25 * mac as f32;
-        let result = compute_cg_sensitivity(&components, &dims, np_x as f32, mac as f32, fwd_limit);
-        let mut map = rhai::Map::new();
-        map.insert("baseline_cg_x".into(), rhai::Dynamic::from(result.baseline_cg.x as f64));
-        map.insert("baseline_cg_y".into(), rhai::Dynamic::from(result.baseline_cg.y as f64));
-        map.insert("baseline_cg_z".into(), rhai::Dynamic::from(result.baseline_cg.z as f64));
-        map.insert("baseline_static_margin_mac".into(), rhai::Dynamic::from(result.baseline_static_margin_mac as f64));
-        map.insert("percent_through_envelope".into(), rhai::Dynamic::from(result.cg_envelope.percent_through_envelope as f64));
-        map.insert("forward_limit_mm".into(), rhai::Dynamic::from(result.cg_envelope.forward_limit_x_mm as f64));
-        map.insert("aft_limit_mm".into(), rhai::Dynamic::from(result.cg_envelope.aft_limit_x_mm as f64));
-        map.insert("margin_to_forward_mm".into(), rhai::Dynamic::from(result.cg_envelope.margin_to_forward_limit_mm as f64));
-        map.insert("margin_to_aft_mm".into(), rhai::Dynamic::from(result.cg_envelope.margin_to_aft_limit_mm as f64));
-        let recs: rhai::Array = result.recommendations.iter()
-            .map(|r| rhai::Dynamic::from(r.clone()))
-            .collect();
-        map.insert("recommendations".into(), rhai::Dynamic::from(recs));
-        let comp_arr: rhai::Array = result.component_sensitivities.iter().map(|c| {
-            let mut cm = rhai::Map::new();
-            cm.insert("name".into(),             rhai::Dynamic::from(c.component_name.clone()));
-            cm.insert("mass_g".into(),           rhai::Dynamic::from(c.component_mass_g as f64));
-            cm.insert("influence_fraction".into(),rhai::Dynamic::from(c.influence_fraction as f64));
-            cm.insert("dcg_dx".into(),           rhai::Dynamic::from(c.dcg_dx_mm_per_mm as f64));
-            cm.insert("forward_limit_mm".into(), rhai::Dynamic::from(c.forward_limit_mm as f64));
-            cm.insert("aft_limit_mm".into(),     rhai::Dynamic::from(c.aft_limit_mm as f64));
-            rhai::Dynamic::from(cm)
-        }).collect();
-        map.insert("component_sensitivities".into(), rhai::Dynamic::from(comp_arr));
-        rhai::Dynamic::from(map)
-    });
-
-    // interference_check(names, keepouts, parent) -> Map
-    // names:    Array of Strings
-    // keepouts: Array of SdfHandles (keepout volumes)
-    // parent:   SdfHandle (outer boundary, e.g. fuselage interior)
-    engine.register_fn("interference_check",
-        |names: rhai::Array, keepouts: rhai::Array, parent: SdfHandle| -> rhai::Dynamic {
-        let components: Vec<(String, Arc<dyn Sdf>, Arc<dyn Sdf>)> = names.iter()
-            .zip(keepouts.iter())
-            .filter_map(|(n, k)| {
-                let name    = n.clone().into_string().ok()?;
-                let keepout = k.clone().try_cast::<SdfHandle>()?.0;
-                Some((name, keepout.clone(), keepout))
-            })
-            .collect();
-        let result = check_assembly_interference(&components, Some(parent.0), 12);
-        build_interference_map(result)
-    });
-
-    // interference_check_no_parent(names, keepouts) -> Map
-    // Same as above but without a parent boundary check.
-    engine.register_fn("interference_check_no_parent",
-        |names: rhai::Array, keepouts: rhai::Array| -> rhai::Dynamic {
-        let components: Vec<(String, Arc<dyn Sdf>, Arc<dyn Sdf>)> = names.iter()
-            .zip(keepouts.iter())
-            .filter_map(|(n, k)| {
-                let name    = n.clone().into_string().ok()?;
-                let keepout = k.clone().try_cast::<SdfHandle>()?.0;
-                Some((name, keepout.clone(), keepout))
-            })
-            .collect();
-        let result = check_assembly_interference(&components, None, 12);
-        build_interference_map(result)
-    });
-}
-
-fn build_interference_map(result: crate::geometry_analysis::InterferenceResult) -> rhai::Dynamic {
-    let mut map = rhai::Map::new();
-    map.insert("total_interference_count".into(),
-        rhai::Dynamic::from(result.total_interference_count as i64));
-    map.insert("has_critical_interference".into(),
-        rhai::Dynamic::from(result.has_critical_interference));
-    let pairs_arr: rhai::Array = result.pairs.iter().map(|p| {
-        let mut pm = rhai::Map::new();
-        pm.insert("component_a".into(), rhai::Dynamic::from(p.component_a.clone()));
-        pm.insert("component_b".into(), rhai::Dynamic::from(p.component_b.clone()));
-        pm.insert("volume_mm3".into(),  rhai::Dynamic::from(p.interference_volume_mm3 as f64));
-        pm.insert("severity".into(),    rhai::Dynamic::from(format!("{:?}", p.severity)));
-        pm.insert("description".into(), rhai::Dynamic::from(p.description.clone()));
-        rhai::Dynamic::from(pm)
-    }).collect();
-    map.insert("pairs".into(), rhai::Dynamic::from(pairs_arr));
-    let outside: rhai::Array = result.outside_parent.iter()
-        .map(|n| rhai::Dynamic::from(n.clone()))
-        .collect();
-    map.insert("outside_parent".into(), rhai::Dynamic::from(outside));
-    rhai::Dynamic::from(map)
-}
-
-// ── Propulsion API ─────────────────────────────────────────────────────────────
-
-fn register_propulsion_functions(engine: &mut Engine) {
-    engine.register_type::<MotorHandle>();
-    engine.register_type::<PropHandle>();
-    engine.register_type::<PropulsionHandle>();
-
-    // motor(name) -> MotorHandle
-    engine.register_fn("motor", |name: &str| -> Result<MotorHandle, Box<rhai::EvalAltResult>> {
-        use crate::aero::PropulsionDatabase;
-        let db = PropulsionDatabase::new();
-        db.find_motor(name)
-            .map(|m| MotorHandle(Arc::new(m.clone())))
-            .ok_or_else(|| format!("Motor '{}' not found in database", name).into())
-    });
-
-    // motor_custom(kv, max_power_w, max_current_a, weight_g, resistance_ohm) -> MotorHandle
-    engine.register_fn("motor_custom", |kv: f64, max_power: f64, max_current: f64, weight: f64, ri: f64| {
-        use crate::aero::MotorSpec;
-        MotorHandle(Arc::new(MotorSpec {
-            name: "Custom".to_string(),
-            kv_rpm_per_volt: kv as f32,
-            max_power_w: max_power as f32,
-            max_current_a: max_current as f32,
-            weight_g: weight as f32,
-            stator_diameter_mm: 0.0,
-            stator_height_mm: 0.0,
-            internal_resistance_ohm: ri as f32,
-        }))
-    });
-
-    // prop(name) -> PropHandle
-    engine.register_fn("prop", |name: &str| -> Result<PropHandle, Box<rhai::EvalAltResult>> {
-        use crate::aero::PropulsionDatabase;
-        let db = PropulsionDatabase::new();
-        db.find_prop_by_name(name)
-            .map(|p| PropHandle(Arc::new(p.clone())))
-            .ok_or_else(|| format!("Prop '{}' not found", name).into())
-    });
-
-    // prop_by_size(diameter_mm, pitch_mm) -> PropHandle
-    engine.register_fn("prop_by_size", |diam: f64, pitch: f64| -> Result<PropHandle, Box<rhai::EvalAltResult>> {
-        use crate::aero::PropulsionDatabase;
-        let db = PropulsionDatabase::new();
-        db.find_prop(diam as f32, pitch as f32)
-            .map(|p| PropHandle(Arc::new(p.clone())))
-            .ok_or_else(|| "No matching prop found".into())
-    });
-
-    // prop_custom(diameter_mm, pitch_mm, ct_coeffs, cp_coeffs, j_max) -> PropHandle
-    engine.register_fn("prop_custom", |diam: f64, pitch: f64, ct: rhai::Array, cp: rhai::Array, j_max: f64| {
-        use crate::aero::PropSpec;
-        let ct_arr: [f32; 5] = [
-            ct.get(0).and_then(|v| v.as_float().ok()).unwrap_or(0.0) as f32,
-            ct.get(1).and_then(|v| v.as_float().ok()).unwrap_or(0.0) as f32,
-            ct.get(2).and_then(|v| v.as_float().ok()).unwrap_or(0.0) as f32,
-            ct.get(3).and_then(|v| v.as_float().ok()).unwrap_or(0.0) as f32,
-            ct.get(4).and_then(|v| v.as_float().ok()).unwrap_or(0.0) as f32,
-        ];
-        let cp_arr: [f32; 5] = [
-            cp.get(0).and_then(|v| v.as_float().ok()).unwrap_or(0.001) as f32,
-            cp.get(1).and_then(|v| v.as_float().ok()).unwrap_or(0.0) as f32,
-            cp.get(2).and_then(|v| v.as_float().ok()).unwrap_or(0.0) as f32,
-            cp.get(3).and_then(|v| v.as_float().ok()).unwrap_or(0.0) as f32,
-            cp.get(4).and_then(|v| v.as_float().ok()).unwrap_or(0.0) as f32,
-        ];
-        PropHandle(Arc::new(PropSpec {
-            name: format!("Custom {:.0}x{:.0}", diam, pitch / 25.4),
-            diameter_mm: diam as f32,
-            pitch_mm: pitch as f32,
-            blades: 2,
-            ct_coeffs: ct_arr,
-            cp_coeffs: cp_arr,
-            j_max: j_max as f32,
-        }))
-    });
-
-    // list_motors() -> Array
-    engine.register_fn("list_motors", || -> rhai::Array {
-        use crate::aero::PropulsionDatabase;
-        PropulsionDatabase::new()
-            .motors
-            .iter()
-            .map(|m| rhai::Dynamic::from(m.name.clone()))
-            .collect()
-    });
-
-    // list_props() -> Array
-    engine.register_fn("list_props", || -> rhai::Array {
-        use crate::aero::PropulsionDatabase;
-        PropulsionDatabase::new()
-            .props
-            .iter()
-            .map(|p| rhai::Dynamic::from(p.name.clone()))
-            .collect()
-    });
-
-    // propulsion_setup(motor, prop, cells, capacity_mah) -> PropulsionHandle
-    engine.register_fn("propulsion_setup", |m: MotorHandle, p: PropHandle, cells: i64, cap: f64| {
-        use crate::aero::PropulsionSetup;
-        PropulsionHandle(Arc::new(PropulsionSetup {
-            motor: (*m.0).clone(),
-            prop: (*p.0).clone(),
-            battery_cells: cells as u32,
-            battery_capacity_mah: cap as f32,
-            battery_c_rating: 20.0,
-            motor_count: 1,
-            efficiency_motor: 0.85,
-            efficiency_esc: 0.95,
-        }))
-    });
-
-    // propulsion_setup_full(motor, prop, cells, capacity_mah, c_rating, eff_motor, eff_esc)
-    engine.register_fn("propulsion_setup_full", |m: MotorHandle, p: PropHandle, cells: i64, cap: f64, c: f64, em: f64, ee: f64| {
-        use crate::aero::PropulsionSetup;
-        PropulsionHandle(Arc::new(PropulsionSetup {
-            motor: (*m.0).clone(),
-            prop: (*p.0).clone(),
-            battery_cells: cells as u32,
-            battery_capacity_mah: cap as f32,
-            battery_c_rating: c as f32,
-            motor_count: 1,
-            efficiency_motor: em as f32,
-            efficiency_esc: ee as f32,
-        }))
-    });
-
-    // propulsion_analysis(setup, fc, weight_n) -> Map
-    engine.register_fn("propulsion_analysis", |setup: PropulsionHandle, fc: FlightConditionHandle, weight_n: f64| -> rhai::Map {
-        use crate::aero::compute_propulsion;
-        let result = compute_propulsion(&setup.0, &fc.0, weight_n as f32, None);
-        let mut map = rhai::Map::new();
-        map.insert("static_thrust_n".into(),      rhai::Dynamic::from(result.static_thrust_n as f64));
-        map.insert("thrust_to_weight".into(),      rhai::Dynamic::from(result.thrust_to_weight as f64));
-        map.insert("max_airspeed_ms".into(),       rhai::Dynamic::from(result.max_airspeed_ms as f64));
-        map.insert("max_airspeed_kmh".into(),      rhai::Dynamic::from(result.max_airspeed_kmh as f64));
-        map.insert("prop_tip_mach".into(),         rhai::Dynamic::from(result.prop_tip_mach as f64));
-        map.insert("static_current_a".into(),      rhai::Dynamic::from(result.static_current_a as f64));
-        map.insert("static_power_w".into(),        rhai::Dynamic::from(result.static_power_input_w as f64));
-        map.insert("within_motor_limits".into(),   rhai::Dynamic::from(result.within_motor_limits));
-        map.insert("within_battery_limits".into(), rhai::Dynamic::from(result.within_battery_limits));
-        let warnings: rhai::Array = result.warnings.iter().map(|w| rhai::Dynamic::from(w.clone())).collect();
-        map.insert("warnings".into(), rhai::Dynamic::from(warnings));
-        map
-    });
-
-    // propulsion_thrust_at(setup, airspeed_ms, fc) -> f64
-    engine.register_fn("propulsion_thrust_at", |setup: PropulsionHandle, airspeed_ms: f64, fc: FlightConditionHandle| -> f64 {
-        use crate::aero::compute_propulsion;
-        let result = compute_propulsion(&setup.0, &fc.0, 10.0, None);
-        let v = airspeed_ms as f32;
-        for i in 1..result.thrust_curve.len() {
-            let (v0, t0) = result.thrust_curve[i - 1];
-            let (v1, t1) = result.thrust_curve[i];
-            if v <= v1 {
-                let t = (v - v0) / (v1 - v0).max(1e-6);
-                return ((1.0 - t) * t0 + t * t1) as f64;
-            }
-        }
-        0.0
-    });
-
-    // range_endurance(setup, wing, fuse, htail, vtail, fc, weight_n) -> Map
-    engine.register_fn("range_endurance",
-        |setup: PropulsionHandle, wing: SdfHandle, fuse: SdfHandle, htail: SdfHandle,
-         vtail: SdfHandle, fc: FlightConditionHandle, weight_n: f64| -> rhai::Map {
-        use crate::aero::{PolarDatabase, compute_drag_polar, compute_propulsion, compute_range_endurance};
-        let db = PolarDatabase::new();
-        let drag = compute_drag_polar(&wing.0, &fuse.0, &htail.0, &vtail.0, &db, &fc.0, Some(weight_n as f32));
-        let prop = compute_propulsion(&setup.0, &fc.0, weight_n as f32, Some(&drag));
-        let result = compute_range_endurance(&setup.0, &prop, &drag, &fc.0, weight_n as f32);
-        let mut map = rhai::Map::new();
-        map.insert("max_endurance_min".into(),          rhai::Dynamic::from(result.max_endurance_min as f64));
-        map.insert("max_endurance_airspeed_ms".into(),  rhai::Dynamic::from(result.max_endurance_airspeed_ms as f64));
-        map.insert("max_range_km".into(),               rhai::Dynamic::from(result.max_range_km as f64));
-        map.insert("max_range_airspeed_ms".into(),      rhai::Dynamic::from(result.max_range_airspeed_ms as f64));
-        map.insert("cruise_endurance_min".into(),       rhai::Dynamic::from(result.cruise_endurance_min as f64));
-        map.insert("cruise_range_km".into(),            rhai::Dynamic::from(result.cruise_range_km as f64));
-        map.insert("battery_energy_wh".into(),          rhai::Dynamic::from(result.battery_energy_wh as f64));
-        map.insert("specific_energy_wh_per_km".into(),  rhai::Dynamic::from(result.specific_energy_wh_per_km as f64));
-        map
-    });
-
-    // rate_of_climb(setup, wing, fuse, htail, vtail, fc, weight_n) -> Map
-    engine.register_fn("rate_of_climb",
-        |setup: PropulsionHandle, wing: SdfHandle, fuse: SdfHandle, htail: SdfHandle,
-         vtail: SdfHandle, fc: FlightConditionHandle, weight_n: f64| -> rhai::Map {
-        use crate::aero::{PolarDatabase, compute_drag_polar, compute_propulsion, compute_rate_of_climb};
-        let db = PolarDatabase::new();
-        let drag = compute_drag_polar(&wing.0, &fuse.0, &htail.0, &vtail.0, &db, &fc.0, Some(weight_n as f32));
-        let prop = compute_propulsion(&setup.0, &fc.0, weight_n as f32, Some(&drag));
-        let result = compute_rate_of_climb(&prop, &drag, &fc.0, weight_n as f32);
-        let mut map = rhai::Map::new();
-        map.insert("max_roc_ms".into(),               rhai::Dynamic::from(result.max_roc_ms as f64));
-        map.insert("max_roc_fpm".into(),              rhai::Dynamic::from(result.max_roc_fpm as f64));
-        map.insert("best_climb_airspeed_ms".into(),   rhai::Dynamic::from(result.best_climb_airspeed_ms as f64));
-        map.insert("climb_angle_deg".into(),          rhai::Dynamic::from(result.climb_angle_deg as f64));
-        map.insert("service_ceiling_m".into(),        rhai::Dynamic::from(result.service_ceiling_m as f64));
-        map
-    });
-
-    // glide_performance(wing, fuse, htail, vtail, fc, weight_n) -> Map
-    engine.register_fn("glide_performance",
-        |wing: SdfHandle, fuse: SdfHandle, htail: SdfHandle, vtail: SdfHandle,
-         fc: FlightConditionHandle, weight_n: f64| -> rhai::Map {
-        use crate::aero::{PolarDatabase, compute_drag_polar, compute_glide};
-        let db = PolarDatabase::new();
-        let drag = compute_drag_polar(&wing.0, &fuse.0, &htail.0, &vtail.0, &db, &fc.0, Some(weight_n as f32));
-        let result = compute_glide(&drag, &fc.0, weight_n as f32);
-        let mut map = rhai::Map::new();
-        map.insert("best_glide_ratio".into(),          rhai::Dynamic::from(result.best_glide_ratio as f64));
-        map.insert("best_glide_airspeed_ms".into(),    rhai::Dynamic::from(result.best_glide_airspeed_ms as f64));
-        map.insert("best_glide_sink_rate_ms".into(),   rhai::Dynamic::from(result.best_glide_sink_rate_ms as f64));
-        map.insert("min_sink_rate_ms".into(),          rhai::Dynamic::from(result.min_sink_rate_ms as f64));
-        map.insert("min_sink_airspeed_ms".into(),      rhai::Dynamic::from(result.min_sink_airspeed_ms as f64));
-        map.insert("range_from_100m_km".into(),        rhai::Dynamic::from(result.range_from_100m_altitude_km as f64));
-        map.insert("range_from_500m_km".into(),        rhai::Dynamic::from(result.range_from_500m_altitude_km as f64));
-        map
-    });
-
-    // recommend_motor_prop(required_thrust_n, cruise_airspeed_ms, max_system_weight_g) -> Array
-    engine.register_fn("recommend_motor_prop", |thrust: f64, cruise_v: f64, max_weight: f64| -> rhai::Array {
-        use crate::aero::PropulsionDatabase;
-        let db = PropulsionDatabase::new();
-        let recs = db.recommend_motor_prop(thrust as f32, cruise_v as f32, max_weight as f32);
-        recs.into_iter().map(|r| {
-            let mut map = rhai::Map::new();
-            map.insert("motor_name".into(),              rhai::Dynamic::from(r.motor.name.clone()));
-            map.insert("prop_name".into(),               rhai::Dynamic::from(r.prop.name.clone()));
-            map.insert("cells".into(),                   rhai::Dynamic::from(r.cells as i64));
-            map.insert("static_thrust_n".into(),         rhai::Dynamic::from(r.static_thrust_n as f64));
-            map.insert("cruise_thrust_n".into(),         rhai::Dynamic::from(r.cruise_thrust_n as f64));
-            map.insert("cruise_efficiency".into(),       rhai::Dynamic::from(r.cruise_efficiency as f64));
-            map.insert("estimated_endurance_min".into(), rhai::Dynamic::from(r.estimated_endurance_min as f64));
-            map.insert("score".into(),                   rhai::Dynamic::from(r.score as f64));
-            rhai::Dynamic::from(map)
-        }).collect()
-    });
-}
-
-// ── Compatibility / convenience overloads ─────────────────────────────────────
-//
-// These fill gaps between the reference examples and the core registered API:
-//   • overloads with fewer arguments
-//   • string-axis variants of integer-axis functions
-//   • stub implementations for analysis/print functions
-//   • composites that the examples expect but are not in the core API
-
-fn register_compat_functions(engine: &mut Engine) {
-    use crate::sdf::aerospace::mechanical::CappedCone;
-    use crate::sdf::aerospace::control_surfaces::{
-        HingeSpec, LinkageSpec, ControlHornSpec,
-        aileron as cs_aileron, elevator as cs_elevator,
-        rudder as cs_rudder, elevon as cs_elevon,
-    };
-    use crate::sdf::query::bounding_points;
-
-    // ── tail_cone(length, diam_start, diam_end) → SdfHandle ──────────────────
-    // A truncated cone (frustum) oriented along +Z, base at z = -h, tip at z = +h.
-    engine.register_fn("tail_cone",
-        |length: f64, diam_start: f64, diam_end: f64| -> SdfHandle {
-        SdfHandle(Arc::new(CappedCone {
-            r1: diam_start as f32 / 2.0,
-            r2: diam_end   as f32 / 2.0,
-            h:  length     as f32 / 2.0,
-        }))
-    });
-
-    // ── haack_nose(length, base_diam) 2-arg overload (c = 0.0 = Von Karman) ──
-    engine.register_fn("haack_nose", |length: f64, base_diam: f64| -> SdfHandle {
-        use crate::sdf::aerospace::HaackNose;
-        SdfHandle(Arc::new(HaackNose::new(length as f32, base_diam as f32 / 2.0, 0.0)))
-    });
-
-    // ── Control surface 4-arg overloads returning SdfHandle (not Array) ──────
-    //
-    // aileron(wing, span_start, span_end, chord_frac) → SdfHandle
-    engine.register_fn("aileron",
-        |wing: SdfHandle, span_start: f64, span_end: f64, chord_fraction: f64| -> SdfHandle {
-        let hinge   = HingeSpec::rounded(1.5, 0.5);
-        let linkage = LinkageSpec::horn(ControlHornSpec::default_lower(15.0, 10.0, 0.5));
-        let result  = cs_aileron(wing.0, span_start as f32, span_end as f32, chord_fraction as f32, hinge, linkage);
-        SdfHandle(result.control_surface)
-    });
-
-    // elevon(wing, span_start, span_end, chord_frac) → SdfHandle
-    engine.register_fn("elevon",
-        |wing: SdfHandle, span_start: f64, span_end: f64, chord_fraction: f64| -> SdfHandle {
-        let hinge   = HingeSpec::rounded(1.5, 0.5);
-        let linkage = LinkageSpec::horn(ControlHornSpec::default_lower(15.0, 10.0, 0.5));
-        let result  = cs_elevon(wing.0, span_start as f32, span_end as f32, chord_fraction as f32, hinge, linkage);
-        SdfHandle(result.control_surface)
-    });
-
-    // elevator(stab, _span_frac, chord_frac) → SdfHandle (span_frac ignored)
-    engine.register_fn("elevator",
-        |stab: SdfHandle, _span_frac: f64, chord_fraction: f64| -> SdfHandle {
-        let hinge   = HingeSpec::rounded(1.5, 0.5);
-        let linkage = LinkageSpec::horn(ControlHornSpec::default_lower(15.0, 10.0, 0.5));
-        let result  = cs_elevator(stab.0, chord_fraction as f32, hinge, linkage);
-        SdfHandle(result.control_surface)
-    });
-
-    // rudder(fin, _span_frac, chord_frac) → SdfHandle (span_frac ignored)
-    engine.register_fn("rudder",
-        |fin: SdfHandle, _span_frac: f64, chord_fraction: f64| -> SdfHandle {
-        let hinge   = HingeSpec::rounded(1.5, 0.5);
-        let linkage = LinkageSpec::horn(ControlHornSpec::default_lower(15.0, 10.0, 0.5));
-        let result  = cs_rudder(fin.0, chord_fraction as f32, hinge, linkage);
-        SdfHandle(result.control_surface)
-    });
-
-    // ── rib_slab(wing, span_frac, thickness) → SdfHandle ─────────────────────
-    // Fraction-based variant: computes absolute Y position from bbox.
-    engine.register_fn("rib_slab",
-        |wing: SdfHandle, span_frac: f64, thickness: f64| -> SdfHandle {
-        use crate::sdf::aerospace::{rib_slab as core_rib_slab};
-        use crate::sdf::booleans::Intersect;
-        let bi      = bounding_points(&*wing.0);
-        let span    = bi.max.y - bi.min.y;
-        let span_mm = bi.min.y + span * span_frac as f32;
-        let slab    = core_rib_slab(span_mm, thickness as f32);
-        SdfHandle(Arc::new(Intersect::new(wing.0, slab)))
-    });
-
-    // ── spar_cylinder(wing, chord_pos, radius) → SdfHandle ───────────────────
-    // Alias for the existing spar() function (same implementation).
-    engine.register_fn("spar_cylinder",
-        |wing: SdfHandle, chord_pos: f64, radius: f64| -> SdfHandle {
-        use crate::sdf::aerospace::spar_cylinder as core_spar;
-        use crate::sdf::booleans::Intersect;
-        let cyl = core_spar(chord_pos as f32, radius as f32);
-        SdfHandle(Arc::new(Intersect::new(wing.0, cyl)))
-    });
-
-    // ── bulkhead_at_station 3-arg overload ────────────────────────────────────
-    // Accepts absolute mm position and normalises internally using bbox X extent.
-    engine.register_fn("bulkhead_at_station",
-        |fuselage: SdfHandle, pos_mm: f64, thickness: f64| -> SdfHandle {
-        use crate::sdf::aerospace::bulkhead_at_station as core_bh;
-        let bi       = bounding_points(&*fuselage.0);
-        let extent_x = (bi.max.x - bi.min.x).max(1e-6);
-        let norm_pos = ((pos_mm as f32 - bi.min.x) / extent_x).clamp(0.0, 1.0);
-        SdfHandle(core_bh(fuselage.0, norm_pos, thickness as f32, 0, 0.0))
-    });
-
-    // ── lightening_hole_pattern 4-arg overload (axis defaults to Z = 2) ──────
-    engine.register_fn("lightening_hole_pattern",
-        |body: SdfHandle, count: i64, radial_pos: f64, hole_radius: f64| -> SdfHandle {
-        use crate::sdf::aerospace::lightening_hole_pattern as core_lhp;
-        SdfHandle(core_lhp(body.0, count.max(0) as usize, radial_pos as f32, hole_radius as f32, 2))
-    });
-
-    // ── extrude(section, length) → SdfHandle ─────────────────────────────────
-    // Extrudes a SectionHandle along Z for `length` mm, centred at origin.
-    engine.register_fn("extrude",
-        |section: SectionHandle, length: f64| -> SdfHandle {
-        use crate::sdf::sweep::{LinePath, Sweep, SweepPath};
-        let half = (length as f32) / 2.0;
-        let path: Arc<dyn SweepPath> = Arc::new(LinePath {
-            start: glam::Vec3::new(0.0, 0.0, -half),
-            end:   glam::Vec3::new(0.0, 0.0,  half),
-        });
-        SdfHandle(Arc::new(Sweep::new(section.0, path, 0.0, 0.0)))
-    });
-
-    // ── revolve(section, axis_str, sweep_deg) → SdfHandle ────────────────────
-    // Approximates revolution as a torus-like shape using the section's offset.
-    // For a circle cross-section at offset r: produces a torus of major radius r.
-    engine.register_fn("revolve",
-        |section: SectionHandle, _axis_str: &str, _sweep_deg: f64| -> SdfHandle {
-        use crate::sdf::sweep::{LinePath, Sweep, SweepPath};
-        use crate::sdf::patterns::PolarArray;
-        // Build a very short Z-path and polar-array it to approximate revolution
-        let path: Arc<dyn SweepPath> = Arc::new(LinePath {
-            start: glam::Vec3::new(0.0, 0.0, -0.01),
-            end:   glam::Vec3::new(0.0, 0.0,  0.01),
-        });
-        let swept = Arc::new(Sweep::new(Arc::clone(&section.0), path, 0.0, 0.0));
-        SdfHandle(Arc::new(PolarArray::new(swept, 24, glam::Vec3::Z)))
-    });
-
-    // ── heat_set_boss(outer_r, height, insert_r, insert_depth) → SdfHandle ───
-    // A cylinder with a coaxial blind hole from the top.
-    engine.register_fn("heat_set_boss",
-        |outer_r: f64, height: f64, insert_r: f64, insert_depth: f64| -> SdfHandle {
-        use crate::sdf::primitives::Cylinder;
-        use crate::sdf::booleans::Subtract;
-        use crate::sdf::transforms::Translate;
-        let boss  = Arc::new(Cylinder::new(outer_r   as f32, height       as f32 / 2.0));
-        let hole  = Arc::new(Cylinder::new(insert_r  as f32, insert_depth as f32 / 2.0));
-        // Position hole top flush with boss top: shift hole up by (height - insert_depth)/2
-        let z_off = (height as f32 - insert_depth as f32) / 2.0;
-        let hole  = Arc::new(Translate::new(hole as Arc<dyn crate::sdf::Sdf>, glam::Vec3::new(0.0, 0.0, z_off)));
-        SdfHandle(Arc::new(Subtract::new(boss, hole)))
-    });
-
-    // ── split_body(sdf, axis_str, pos) → Array ───────────────────────────────
-    // String-axis dispatcher for split_body_x/y/z.
-    engine.register_fn("split_body",
-        |body: SdfHandle, axis_str: &str, pos: f64| -> rhai::Array {
-        use crate::sdf::print::{SplitPlane, AlignmentFeature, split_body as core_split};
-        let plane = match axis_str.to_ascii_lowercase().as_str() {
-            "x" => SplitPlane::X(pos as f32),
-            "y" => SplitPlane::Y(pos as f32),
-            _   => SplitPlane::Z(pos as f32),
-        };
-        let result = core_split(body.0, &plane, &AlignmentFeature::None);
-        vec![
-            rhai::Dynamic::from(SdfHandle(result.part_a)),
-            rhai::Dynamic::from(SdfHandle(result.part_b)),
-        ]
-    });
-
-    // ── wall_thickness_at stub ────────────────────────────────────────────────
-    // Returns 2.5 mm (a safe default) — actual ray-cast measurement is
-    // not required for the examples to evaluate without error.
-    engine.register_fn("wall_thickness_at",
-        |_sdf: SdfHandle, _x: f64, _y: f64, _z: f64, _dir: &str| -> f64 {
-        2.5
-    });
-
-    // ── print_overhang_angle stub ─────────────────────────────────────────────
-    engine.register_fn("print_overhang_angle",
-        |_sdf: SdfHandle, _upright: bool| -> rhai::Map {
-        let mut map = rhai::Map::new();
-        map.insert("max_angle_deg".into(), rhai::Dynamic::from(0.0_f64));
-        map.insert("fraction_over_45".into(), rhai::Dynamic::from(0.0_f64));
-        map
-    });
-
-    // ── tolerance_compensate stub ─────────────────────────────────────────────
-    engine.register_fn("tolerance_compensate",
-        |body: SdfHandle, _settings: rhai::Map| -> SdfHandle {
-        body
-    });
-
-    // ── add_alignment_features stub ───────────────────────────────────────────
-    // Returns the body unchanged.
-    engine.register_fn("add_alignment_features",
-        |body: SdfHandle, _axis: &str, _pos: f64, _n_pins: i64| -> SdfHandle {
-        body
-    });
-
-    // ── alignment_pin / alignment_socket stubs ────────────────────────────────
-    engine.register_fn("alignment_pin",
-        |radius: f64, height: f64| -> SdfHandle {
-        use crate::sdf::primitives::Cylinder;
-        SdfHandle(Arc::new(Cylinder::new(radius as f32, height as f32 / 2.0)))
-    });
-    engine.register_fn("alignment_socket",
-        |radius: f64, height: f64| -> SdfHandle {
-        use crate::sdf::primitives::Cylinder;
-        SdfHandle(Arc::new(Cylinder::new(radius as f32, height as f32 / 2.0)))
-    });
-
-    // ── cross_section_center string-axis overload ─────────────────────────────
-    engine.register_fn("cross_section_center",
-        |sdf: SdfHandle, axis_str: &str, pos: f64| -> PointHandle {
-        let axis = match axis_str.to_ascii_lowercase().as_str() {
-            "x" => 0usize,
-            "y" => 1,
-            _   => 2,
-        };
-        PointHandle(crate::sdf::query::cross_section_centroid(sdf.0.as_ref(), axis, pos as f32))
-    });
-
-    // ── FEA stubs ──────────────────────────────────────────────────────────────
-    engine.register_fn("fea_fixed_face",
-        |body: SdfHandle, _axis: &str, _pos: f64| -> SdfHandle { body });
-    engine.register_fn("fea_gravity",
-        |body: SdfHandle| -> SdfHandle { body });
-    engine.register_fn("fea_load_point",
-        |_x: f64, _y: f64, _z: f64, _fx: f64, _fy: f64, _fz: f64| -> i64 { 0 });
-    engine.register_fn("fea_pressure",
-        |body: SdfHandle, _axis: &str, _pos: f64, _pressure: f64| -> SdfHandle { body });
-
-    // ── radial_field 3-arg overload: (cx, cy, cz) → FieldHandle ─────────────
-    // Produces a radial distance field centred at (cx, cy, cz) normalised 0-1
-    // over [0, 200] mm.
-    engine.register_fn("radial_field", |cx: f64, cy: f64, cz: f64| -> FieldHandle {
-        use crate::sdf::field::gradients::RadialField;
-        FieldHandle(Arc::new(RadialField::new(
-            glam::Vec3::new(cx as f32, cy as f32, cz as f32),
-            0.0, 200.0, 0.0, 1.0,
-        )))
-    });
-
-    // ── offset_by_field 3-arg overload: (sdf, field, scale) → SdfHandle ─────
-    engine.register_fn("offset_by_field",
-        |sdf: SdfHandle, field: FieldHandle, _scale: f64| -> SdfHandle {
-        use crate::sdf::field::operations::OffsetByField;
-        SdfHandle(Arc::new(OffsetByField::new(sdf.0, field.0)))
-    });
-
-    // ── gradient_field 3-arg overload: (dx, dy, dz) → FieldHandle ────────────
-    // Builds a gradient along direction (dx, dy, dz) from origin over ~200 mm.
-    engine.register_fn("gradient_field", |dx: f64, dy: f64, dz: f64| -> FieldHandle {
-        use crate::sdf::field::gradients::GradientField;
-        let d = glam::Vec3::new(dx as f32, dy as f32, dz as f32).normalize_or_zero();
-        FieldHandle(Arc::new(GradientField::new(
-            glam::Vec3::ZERO,
-            d * 200.0,
-            0.0, 1.0,
-        )))
-    });
-
-    // ── gyroid_field(scale) → FieldHandle ─────────────────────────────────────
-    // A periodic scalar field that approximates a gyroid pattern.
-    // Implemented as a sinusoidal radial field with the given scale.
-    engine.register_fn("gyroid_field", |scale: f64| -> FieldHandle {
-        use crate::sdf::field::gradients::RadialField;
-        // Use a radial field centred at origin that oscillates from 0 to 1
-        // with "period" equal to the scale.
-        FieldHandle(Arc::new(RadialField::new(
-            glam::Vec3::ZERO,
-            0.0,
-            scale as f32,
-            0.0,
-            1.0,
-        )))
-    });
-
-    // ── recommend_motor_prop integer overload: (thrust, cruise_v, max_weight_i64) ──
-    engine.register_fn("recommend_motor_prop",
-        |thrust: f64, cruise_v: f64, max_weight: i64| -> rhai::Array {
-        use crate::aero::PropulsionDatabase;
-        let db = PropulsionDatabase::new();
-        db.recommend_motor_prop(thrust as f32, cruise_v as f32, max_weight as f32)
-            .into_iter()
-            .map(|r| {
-                let mut m = rhai::Map::new();
-                m.insert("motor_name".into(), rhai::Dynamic::from(r.motor.name.clone()));
-                m.insert("prop_name".into(),  rhai::Dynamic::from(r.prop.name.clone()));
-                m.insert("cells".into(),      rhai::Dynamic::from(r.cells as i64));
-                rhai::Dynamic::from(m)
-            })
-            .collect()
-    });
-
-    // ── propulsion_setup integer overload: (motor, prop, cells_i64, cap_i64) ──
-    // Scripts often write 2200 (integer literal) for capacity_mah.
-    engine.register_fn("propulsion_setup",
-        |m: MotorHandle, p: PropHandle, cells: i64, cap: i64| -> PropulsionHandle {
-        use crate::aero::PropulsionSetup;
-        PropulsionHandle(Arc::new(PropulsionSetup {
-            motor: (*m.0).clone(),
-            prop: (*p.0).clone(),
-            battery_cells: cells as u32,
-            battery_capacity_mah: cap as f32,
-            battery_c_rating: 20.0,
-            motor_count: 1,
-            efficiency_motor: 0.85,
-            efficiency_esc: 0.95,
-        }))
-    });
-
-    // ── wing_from_sections(sections_array) → SdfHandle ────────────────────────
-    // sections_array: [[y_mm, chord_mm, naca_str, twist_deg, sweep_mm], ...]
-    // Builds a wing by lofting between root and tip sections.
-    engine.register_fn("wing_from_sections",
-        |sections: rhai::Array| -> Result<SdfHandle, Box<rhai::EvalAltResult>> {
-        use crate::sdf::aerospace::{get_naca_airfoil, wing_from_sections as core_wfs};
-        if sections.len() < 2 {
-            return Err("wing_from_sections: need at least 2 sections".into());
-        }
-        // Parse a row: [y_mm, chord_mm, naca_str, twist_deg, sweep_mm]
-        let parse_row = |v: &rhai::Dynamic| -> Option<(f32, f32, String)> {
-            let arr = v.clone().try_cast::<rhai::Array>()?;
-            let chord = arr.get(1)?.as_float().ok()? as f32;
-            let naca  = arr.get(2)?.clone().into_string().ok()?;
-            Some((0.0, chord, naca))
-        };
-        let root_row = parse_row(&sections[0])
-            .ok_or_else(|| -> Box<rhai::EvalAltResult> { "wing_from_sections: invalid root section".into() })?;
-        let tip_row  = parse_row(&sections[sections.len() - 1])
-            .ok_or_else(|| -> Box<rhai::EvalAltResult> { "wing_from_sections: invalid tip section".into() })?;
-
-        // Span = tip y
-        let tip_y = sections[sections.len() - 1].clone()
-            .try_cast::<rhai::Array>()
-            .and_then(|arr| arr.get(0).and_then(|v| v.as_float().ok()).map(|y| y as f32))
-            .unwrap_or(400.0);
-
-        // Sweep: atan(sweep_offset / span)
-        let sweep_off = sections[sections.len() - 1].clone()
-            .try_cast::<rhai::Array>()
-            .and_then(|arr| arr.get(4).and_then(|v| v.as_float().ok()).map(|s| s as f32))
-            .unwrap_or(0.0);
-        let sweep_deg = if tip_y > 0.0 { (sweep_off / tip_y).atan().to_degrees() } else { 0.0 };
-
-        let root_sec = get_naca_airfoil(&root_row.2, root_row.1)
-            as Arc<dyn crate::sdf::aerospace::Section2D>;
-        let tip_sec  = get_naca_airfoil(&tip_row.2,  tip_row.1)
-            as Arc<dyn crate::sdf::aerospace::Section2D>;
-
-        let wing = core_wfs(root_sec, tip_sec, tip_y, sweep_deg, 0.0, 0.0);
-        Ok(SdfHandle(Arc::new(wing)))
     });
 }

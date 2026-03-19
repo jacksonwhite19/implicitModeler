@@ -43,7 +43,6 @@ pub fn spar_cylinder(chord_pos: f32, radius: f32) -> Arc<dyn Sdf> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sdf::Sdf;
 
     #[test]
     fn test_rib_slab_inside() {

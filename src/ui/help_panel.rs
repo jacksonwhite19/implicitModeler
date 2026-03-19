@@ -1,7 +1,7 @@
 // In-app function reference panel.
 
 use eframe::egui::{self, Context, RichText, ScrollArea, TextEdit, Frame, Color32, Stroke};
-use crate::ui::help_data::{FUNCTION_DOCS, CATEGORIES};
+use crate::ui::help_data::{FUNCTION_DOCS, CATEGORIES, FunctionStatus, function_status};
 use crate::ui::help_search::HelpSearchState;
 
 /// Map category name to a display color.
@@ -36,6 +36,14 @@ pub fn category_color(category: &str) -> Color32 {
         "Instancing"            => Color32::from_rgb(255, 228, 196),
         "Propulsion"            => Color32::from_rgb(255, 215,   0),
         _                       => Color32::from_rgb(150, 150, 150),
+    }
+}
+
+fn status_color(status: FunctionStatus) -> Color32 {
+    match status {
+        FunctionStatus::Stable => Color32::from_rgb(70, 160, 90),
+        FunctionStatus::Experimental => Color32::from_rgb(210, 150, 60),
+        FunctionStatus::Legacy => Color32::from_rgb(170, 95, 95),
     }
 }
 
@@ -181,8 +189,10 @@ pub fn show_help_panel(
                     let results = state.results.clone();
                     for (list_idx, &doc_idx) in results.iter().enumerate() {
                         let doc = &FUNCTION_DOCS[doc_idx];
+                        let status = function_status(doc);
                         let is_expanded = state.selected_function == Some(doc_idx);
                         let col = category_color(doc.category);
+                        let status_col = status_color(status);
 
                         let row_resp = Frame::none()
                             .stroke(if is_expanded {
@@ -198,6 +208,11 @@ pub fn show_help_panel(
                                         .monospace()
                                         .strong()
                                         .color(col));
+                                    ui.label(
+                                        RichText::new(format!("[{}]", status.label()))
+                                            .small()
+                                            .color(status_col),
+                                    );
                                     ui.with_layout(
                                         egui::Layout::right_to_left(egui::Align::Center),
                                         |ui| {
@@ -241,6 +256,12 @@ pub fn show_help_panel(
                                             RichText::new(doc.returns).monospace().small(),
                                         );
                                     });
+                                    ui.horizontal(|ui| {
+                                        ui.label(RichText::new("Status:").strong().small());
+                                        ui.label(
+                                            RichText::new(status.label()).small().color(status_col),
+                                        );
+                                    });
 
                                     // Example block
                                     ui.add_space(4.0);
@@ -268,6 +289,19 @@ pub fn show_help_panel(
                                                     ui.label("i");
                                                     ui.label(RichText::new(notes).small());
                                                 });
+                                            });
+                                    }
+                                    if let Some(status_note) = status.note() {
+                                        ui.add_space(4.0);
+                                        Frame::none()
+                                            .fill(Color32::from_rgb(45, 40, 28))
+                                            .inner_margin(6.0)
+                                            .show(ui, |ui| {
+                                                ui.label(
+                                                    RichText::new(status_note)
+                                                        .small()
+                                                        .color(status_col),
+                                                );
                                             });
                                     }
 

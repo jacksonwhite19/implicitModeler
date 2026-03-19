@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "volume_mm3": 6931079.5,
+  "surface_area_mm2": 328899.16,
+  "bounding_box": {
+    "min": [
+      -7.048046,
+      -337.22668,
+      -84.30667
+    ],
+    "max": [
+      703.9305,
+      337.22668,
+      89.02868
+    ],
+    "size": [
+      710.9785,
+      674.45337,
+      173.33536
+    ]
+  },
+  "center_of_mass": [
+    370.411,
+    0.019260027,
+    0.2693107
+  ],
+  "estimated_mass_g": 8317.296,
+  "min_wall_thickness_mm": 0.020120533,
+  "min_wall_location": [
+    515.07684,
+    -284.535,
+    -0.3473587
+  ],
+  "component_masses": {},
+  "component_positions": {},
+  "script_cg": null,
+  "geometric_cg": [
+    370.411,
+    0.019260027,
+    0.2693107
+  ],
+  "evaluation_time_ms": 3,
+  "grid_resolution": 32,
+  "dimensions_used": {}
+}

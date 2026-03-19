@@ -1,0 +1,101 @@
+{
+  "version": "0.1.0",
+  "script": "// Scratchpad plane from scratchpad.md\n// Coordinate convention:\n//   X = longitudinal (nose to tail)\n//   Y = spanwise\n//   Z = vertical\n\n// ---------------------------------------------------------------------------\n// Top-level dimensions\n// Edit these directly or expose them in the Dimensions panel.\n// ---------------------------------------------------------------------------\n\nlet fuselage_length = 700.0;\nlet fuselage_width = 175.0;\nlet fuselage_height = 100.0;\nlet nose_length = 130.0;\nlet fuselage_smoothness = 0.60;   // 0 = rigid frame match, 1 = stronger fairing\n\nlet wing_span = 700.0;\nlet wing_root_chord = 175.0;\nlet wing_tip_chord = 65.0;\nlet wing_sweep_deg = 24.0;\nlet wing_le_x = 200.0;\nlet wing_root_blend_k = 17.0;\n\nlet htail_span = 320.0;\nlet htail_root_chord = 98.0;\nlet htail_tip_chord = 80.0;\nlet htail_le_x = 500.0;\nlet tail_z = 18.0;\nlet tail_blend_k = 12.5;\n\nlet vtail_span = 240.0;\nlet vtail_root_chord = 95.0;\nlet vtail_tip_chord = 45.0;\nlet vtail_sweep_deg = 30.0;\nlet vtail_le_x = 500.0;\n\n// ---------------------------------------------------------------------------\n// Fuselage\n// 700 mm long, elliptical 175 mm wide x 100 mm tall.\n// The built-in nose cones are axisymmetric, so use a dense elliptical loft nose\n// here to preserve both width and height correctly.\n// ---------------------------------------------------------------------------\n\nlet fuse_rx = fuselage_width * 0.5;\nlet fuse_rz = fuselage_height * 0.5;\n\nlet stations = [\n    fuselage_station(0.0,                    ellipse_section(fuse_rx * 0.03, fuse_rz * 0.02)),\n    fuselage_station(nose_length * 0.10,    ellipse_section(fuse_rx * 0.14, fuse_rz * 0.10)),\n    fuselage_station(nose_length * 0.20,    ellipse_section(fuse_rx * 0.28, fuse_rz * 0.20)),\n    fuselage_station(nose_length * 0.32,    ellipse_section(fuse_rx * 0.44, fuse_rz * 0.34)),\n    fuselage_station(nose_length * 0.46,    ellipse_section(fuse_rx * 0.60, fuse_rz * 0.50)),\n    fuselage_station(nose_length * 0.60,    ellipse_section(fuse_rx * 0.74, fuse_rz * 0.66)),\n    fuselage_station(nose_length * 0.74,    ellipse_section(fuse_rx * 0.86, fuse_rz * 0.80)),\n    fuselage_station(nose_length * 0.86,    ellipse_section(fuse_rx * 0.94, fuse_rz * 0.90)),\n    fuselage_station(nose_length * 0.96,    ellipse_section(fuse_rx * 0.98, fuse_rz * 0.96)),\n    fuselage_station(nose_length + 0.0,     ellipse_section(fuse_rx,        fuse_rz)),\n    fuselage_station(nose_length + 40.0,    ellipse_section(fuse_rx,        fuse_rz)),\n    fuselage_station(nose_length + 105.0,   ellipse_section(fuse_rx,        fuse_rz)),\n    fuselage_station(nose_length + 190.0,   ellipse_section(fuse_rx,        fuse_rz * 0.99)),\n    fuselage_station(nose_length + 285.0,   ellipse_section(fuse_rx * 0.99, fuse_rz * 0.98)),\n    fuselage_station(nose_length + 370.0,   ellipse_section(fuse_rx * 0.96, fuse_rz * 0.95)),\n    fuselage_station(nose_length + 445.0,   ellipse_section(fuse_rx * 0.90, fuse_rz * 0.90)),\n    fuselage_station(nose_length + 500.0,   ellipse_section(fuse_rx * 0.80, fuse_rz * 0.82)),\n    fuselage_station(nose_length + 540.0,   ellipse_section(fuse_rx * 0.64, fuse_rz * 0.66)),\n    fuselage_station(nose_length + 555.0,   ellipse_section(fuse_rx * 0.46, fuse_rz * 0.48)),\n    fuselage_station(fuselage_length - 2.0, ellipse_section(fuse_rx * 0.26, fuse_rz * 0.30)),\n];\nlet fuselage = lofted_fuselage_smooth(stations, fuselage_smoothness);\n\n// ---------------------------------------------------------------------------\n// Wing\n// 700 mm span, 15 deg sweep, 80 mm root chord, 65 mm tip chord\n// LE at x = 375 mm\n// ---------------------------------------------------------------------------\n\nlet wing = translate(\n    wing_with_airfoil(\"2412\", wing_root_chord, wing_tip_chord, wing_span, wing_sweep_deg, 0.0, 0.0),\n    wing_le_x, 0.0, 0.0\n);\n\nlet body = smooth_union(fuselage, wing, wing_root_blend_k);\n\n// ---------------------------------------------------------------------------\n// Tail\n// Conventional tail, no control surfaces\n// H-tail: 325 mm span, 65/65 chord, no sweep, LE at x = 500 mm\n// V-tail: 200 mm total span, 60/30 chord, 30 deg sweep, centered on h-tail\n// ---------------------------------------------------------------------------\n\n// wing_with_airfoil already returns a full-span surface.\nlet htail = translate(\n    wing_with_airfoil(\"0009\", htail_root_chord, htail_tip_chord, htail_span, 0.0, 0.0, 0.0),\n    htail_le_x, 0.0, 0.0\n);\n\n// Build the fin from the same wing primitive, rotate it upright, then clip away\n// the lower half so the root sits on the fuselage centerplane without a hacky cant.\nlet vtail_raw = rotate(\n    wing_with_airfoil(\"0009\", vtail_root_chord, vtail_tip_chord, vtail_span, vtail_sweep_deg, 0.0, 0.0),\n    90.0, 0.0, 0.0\n);\nlet vtail_upper_only = intersect(\n    vtail_raw,\n    translate(box_(1200.0, 1200.0, 1200.0), 0.0, 0.0, 600.0)\n);\nlet vtail = translate(vtail_upper_only, vtail_le_x, 0.0, tail_z);\n\n// Final solid assembly\nlet body = smooth_union(body, htail, tail_blend_k);\nsmooth_union(body, vtail, tail_blend_k)\n",
+  "resolution": 160,
+  "smooth_normals": true,
+  "show_wireframe": false,
+  "camera_position": [
+    1322.9338,
+    424.6809,
+    1037.9867
+  ],
+  "camera_target": [
+    355.0,
+    0.0,
+    -0.46041298
+  ],
+  "timestamp": "2026-03-19T10:03:23.215303400-05:00",
+  "section_view": {
+    "plane_a": {
+      "axis": "X",
+      "position": 0.0,
+      "enabled": false,
+      "flip": false
+    },
+    "plane_b": null
+  },
+  "fea_config": {
+    "material": {
+      "preset": "PLA",
+      "youngs_modulus_mpa": 2100.0,
+      "poisson_ratio": 0.35,
+      "density_tonne_per_mm3": 1.24e-9,
+      "yield_strength_mpa": 50.0
+    },
+    "mesh_resolution": 32,
+    "show_conditions": true
+  },
+  "print_analysis_settings": {
+    "build_direction": [
+      0.0,
+      0.0,
+      1.0
+    ],
+    "overhang_threshold_deg": 45.0,
+    "min_wall_thickness": 1.2,
+    "min_feature_size": 0.4,
+    "max_aspect_ratio": 8.0,
+    "build_volume": [
+      220.0,
+      220.0,
+      250.0
+    ],
+    "preset": "GenericFDM"
+  },
+  "tolerance_settings": {
+    "external_offset_mm": -0.1,
+    "internal_offset_mm": 0.15,
+    "min_hole_diameter_mm": 3.0,
+    "small_hole_bonus_mm": 0.05
+  },
+  "version_control": {
+    "commits": {
+      "850a3a4b663c9b22": {
+        "id": "850a3a4b663c9b22",
+        "parent_ids": [],
+        "author": "User",
+        "timestamp": "2026-03-19T14:57:46.344921800Z",
+        "message": "Initial commit",
+        "state": {
+          "script_text": "// Simple sphere\nlet s = sphere(10.0);\ns",
+          "profiles": {},
+          "dimensions": {},
+          "longitudinal_splines": {
+            "spine": {
+              "keel": null,
+              "deck": null
+            },
+            "chine": {
+              "chine_z": null,
+              "chine_y": null
+            }
+          }
+        },
+        "thumbnail": null
+      }
+    },
+    "branches": {
+      "main": {
+        "name": "main",
+        "head_commit_id": "850a3a4b663c9b22",
+        "created_from": "850a3a4b663c9b22",
+        "created_at": "2026-03-19T14:57:46.344921800Z",
+        "description": "Main development branch"
+      }
+    },
+    "current_branch": "main",
+    "head_commit_id": "850a3a4b663c9b22",
+    "detached_head": false,
+    "working_changes": true
+  }
+}

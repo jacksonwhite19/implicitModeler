@@ -8,6 +8,7 @@ mod scripting;
 mod export;
 mod project;
 mod headless;
+mod pipeline;
 mod components;
 mod ui;
 mod analysis;
@@ -37,7 +38,7 @@ struct Args {
     #[arg(long, value_name = "FILE")]
     output: Option<PathBuf>,
 
-    /// Export format: stl or obj (headless mode)
+    /// Export format: stl, obj, or package (headless mode)
     #[arg(long, value_name = "FORMAT", default_value = "stl")]
     format: String,
 
@@ -70,12 +71,31 @@ struct Args {
     mesh_quality: String,
 }
 
+fn mesh_quality_resolution(mesh_quality: &str) -> Result<u32, String> {
+    match mesh_quality.to_ascii_lowercase().as_str() {
+        "draft" => Ok(24),
+        "normal" => Ok(32),
+        "fine" => Ok(48),
+        "ultra" => Ok(64),
+        other => Err(format!(
+            "Unknown mesh quality '{}'. Use draft, normal, fine, or ultra.",
+            other
+        )),
+    }
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Verify CalculiX binary at startup (logs a warning if not found).
     let startup_settings = settings::AppSettings::load();
     fea::calculix::verify_calculix(startup_settings.ccx_path.as_deref());
 
     let args = Args::parse();
+    let mesh_quality_resolution = mesh_quality_resolution(&args.mesh_quality)?;
+    let resolution = if args.resolution == 32 {
+        mesh_quality_resolution
+    } else {
+        args.resolution
+    };
 
     if args.headless {
         // Parse dimension overrides
@@ -89,14 +109,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Headless mode
         if let Some(batch_dir) = args.batch {
             let output_dir = args.batch_output.unwrap_or_else(|| PathBuf::from("./output"));
-            headless::execute_batch(&batch_dir, &output_dir, &args.format, args.resolution, args.smooth_normals)?;
+            headless::execute_batch(&batch_dir, &output_dir, &args.format, resolution, args.smooth_normals)?;
             Ok(())
         } else if let Some(script_path) = args.script {
             headless::execute_script_headless_extended(
                 &script_path,
                 args.output.as_deref(),
                 &args.format,
-                args.resolution,
+                resolution,
                 args.smooth_normals,
                 &dim_overrides,
                 args.output_metrics.as_deref(),

@@ -342,7 +342,6 @@ pub fn living_hinge_strip(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sdf::primitives::SdfBox;
 
     #[test]
     fn dovetail_male_protrudes() {

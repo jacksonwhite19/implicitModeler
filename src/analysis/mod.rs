@@ -1,6 +1,7 @@
 pub mod thickness;
 pub mod measurements;
 pub mod print_analysis;
+pub mod workflow_summary;
 pub mod hole_detection;
 pub mod aero;
 pub use measurements::{MeasurementResults, CrossSectionMeasurement, PointDistanceMeasurement,

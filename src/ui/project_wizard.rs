@@ -3,7 +3,7 @@
 
 use eframe::egui;
 use std::collections::HashMap;
-use super::templates::{get_templates, instantiate};
+use super::templates::{get_templates, instantiate_project, TemplateInstance};
 
 pub struct WizardState {
     pub open:         bool,
@@ -34,7 +34,7 @@ impl Default for WizardState {
 pub fn show_wizard(
     ui_ctx: &egui::Context,
     state: &mut WizardState,
-) -> Option<(String, String, String)> {
+) -> Option<(TemplateInstance, String, String)> {
     if !state.open {
         return None;
     }
@@ -176,9 +176,9 @@ pub fn show_wizard(
                         }
                         if ui.button("✓ Create Project").clicked() {
                             let templates = get_templates();
-                            let script = instantiate(&templates[state.selected], &state.params);
+                            let instance = instantiate_project(&templates[state.selected], &state.params);
                             result = Some((
-                                script,
+                                instance,
                                 state.project_name.clone(),
                                 state.project_path.clone(),
                             ));

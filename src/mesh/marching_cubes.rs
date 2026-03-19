@@ -317,11 +317,13 @@ pub(crate) const EDGE_VERTICES: [[usize; 2]; 12] = [
 ];
 
 // Helper function for grid indexing
+#[allow(dead_code)]
 fn grid_index(x: u32, y: u32, z: u32, res_plus_1: u32) -> usize {
     (z * res_plus_1 * res_plus_1 + y * res_plus_1 + x) as usize
 }
 
 /// Pre-compute normals at all grid vertices for interpolation
+#[allow(dead_code)]
 fn compute_normal_grid(
     sdf: &dyn Sdf,
     bounds_min: Vec3,
@@ -363,6 +365,7 @@ fn compute_normal_grid(
         .collect()
 }
 
+#[allow(dead_code)]
 pub fn extract_mesh(
     sdf: &dyn Sdf,
     bounds_min: Vec3,
@@ -587,6 +590,7 @@ pub fn extract_mesh(
 }
 
 /// Average normals at vertices that share the same position
+#[allow(dead_code)]
 fn apply_smooth_normals(vertices: &mut [crate::mesh::Vertex]) {
     use std::collections::HashMap;
 

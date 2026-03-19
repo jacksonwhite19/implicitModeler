@@ -12,6 +12,47 @@ pub struct FunctionDoc {
     pub tags: &'static [&'static str],
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum FunctionStatus {
+    Stable,
+    Experimental,
+    Legacy,
+}
+
+impl FunctionStatus {
+    pub fn label(self) -> &'static str {
+        match self {
+            FunctionStatus::Stable => "Stable",
+            FunctionStatus::Experimental => "Experimental",
+            FunctionStatus::Legacy => "Legacy",
+        }
+    }
+
+    pub fn note(self) -> Option<&'static str> {
+        match self {
+            FunctionStatus::Stable => None,
+            FunctionStatus::Experimental => Some("Experimental functions are implemented, but their behavior and output contracts may still change."),
+            FunctionStatus::Legacy => Some("Legacy functions remain for older scripts and examples. Prefer the newer canonical API when starting new work."),
+        }
+    }
+}
+
+pub fn function_status(doc: &FunctionDoc) -> FunctionStatus {
+    match doc.name {
+        "fea_fixed_face" | "fea_load_point" | "fea_gravity" | "fea_pressure"
+        | "tail_cone" | "wall_thickness_at" | "print_overhang_angle"
+        | "tolerance_compensate" | "add_alignment_features" => FunctionStatus::Legacy,
+        "cg_sensitivity" | "propulsion_analysis" | "rate_of_climb" | "glide_performance"
+        | "static_margin" | "neutral_point" | "trim_analysis" | "range_endurance" => FunctionStatus::Experimental,
+        "servo_tray" | "battery_cradle" | "fc_stack_mount" | "antenna_mount"
+        | "battery_hatch" | "fc_access_panel" | "attach_to_fuselage_station"
+        | "attach_to_trailing_edge" | "control_throw" | "pushrod_guide"
+        | "pushrod_length" => FunctionStatus::Stable,
+        _ if matches!(doc.category, "Aerodynamic Analysis" | "Geometry Analysis") => FunctionStatus::Experimental,
+        _ => FunctionStatus::Stable,
+    }
+}
+
 pub static CATEGORIES: &[&str] = &[
     "Primitives", "Booleans", "Transforms", "Assembly", "Math",
     "Wing and Airfoil", "Wing Measurements", "Control Surfaces", "Nose and Tail",
@@ -604,51 +645,51 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
     FunctionDoc {
         name: "aileron",
         category: "Control Surfaces",
-        signature: "aileron(wing: SdfHandle, span_start: f64, span_end: f64, chord_frac: f64) -> SdfHandle",
-        description: "Cuts aileron from wing between span_start and span_end fractions.",
-        example: "let ail = aileron(wing, 0.6, 0.95, 0.25);",
-        returns: "SdfHandle",
-        notes: None,
+        signature: "aileron(wing: SdfHandle, span_start: f64, span_end: f64, chord_frac: f64, hinge: HingeHandle, linkage: LinkageHandle) -> [SdfHandle, SdfHandle]",
+        description: "Builds an aileron control surface over the absolute span range in mm and returns [control_surface, modified_parent].",
+        example: "let parts = aileron(wing, 220.0, 368.0, 0.25, rounded_hinge(1.5, 0.5), no_linkage());",
+        returns: "[control_surface, modified_parent]",
+        notes: Some("For a 400 mm half-span wing, 55%-92% corresponds to 220-368 mm. Legacy 4-argument usage accepts fraction-style inputs and returns only the isolated surface."),
         tags: &["aileron", "control surface", "wing", "cut"],
     },
     FunctionDoc {
         name: "elevator",
         category: "Control Surfaces",
-        signature: "elevator(htail: SdfHandle, chord_frac: f64) -> SdfHandle",
-        description: "Cuts elevator from horizontal tail.",
-        example: "let elev = elevator(htail, 0.35);",
-        returns: "SdfHandle",
-        notes: None,
+        signature: "elevator(htail: SdfHandle, chord_frac: f64, hinge: HingeHandle, linkage: LinkageHandle) -> [SdfHandle, SdfHandle]",
+        description: "Builds an elevator control surface and returns [control_surface, modified_parent].",
+        example: "let parts = elevator(htail, 0.35, rounded_hinge(1.5, 0.5), control_horn_lower(12.0, 8.0, 0.5));",
+        returns: "[control_surface, modified_parent]",
+        notes: Some("Legacy simpler signatures still exist for compatibility only."),
         tags: &["elevator", "control surface", "tail"],
     },
     FunctionDoc {
         name: "rudder",
         category: "Control Surfaces",
-        signature: "rudder(vtail: SdfHandle, chord_frac: f64) -> SdfHandle",
-        description: "Cuts rudder from vertical tail.",
-        example: "let rudd = rudder(vtail, 0.40);",
-        returns: "SdfHandle",
-        notes: None,
+        signature: "rudder(vtail: SdfHandle, chord_frac: f64, hinge: HingeHandle, linkage: LinkageHandle) -> [SdfHandle, SdfHandle]",
+        description: "Builds a rudder control surface and returns [control_surface, modified_parent].",
+        example: "let parts = rudder(vtail, 0.40, rounded_hinge(1.5, 0.5), control_horn_lower(12.0, 8.0, 0.5));",
+        returns: "[control_surface, modified_parent]",
+        notes: Some("Legacy simpler signatures still exist for compatibility only."),
         tags: &["rudder", "control surface", "tail"],
     },
     FunctionDoc {
         name: "flap",
         category: "Control Surfaces",
-        signature: "flap(wing: SdfHandle, span_start: f64, span_end: f64, chord_frac: f64) -> SdfHandle",
-        description: "Cuts inboard trailing-edge flap.",
-        example: "let flap = flap(wing, 0.05, 0.55, 0.30);",
-        returns: "SdfHandle",
+        signature: "flap(wing: SdfHandle, span_start: f64, span_end: f64, chord_frac: f64, hinge: HingeHandle) -> [SdfHandle, SdfHandle]",
+        description: "Builds an inboard trailing-edge flap over the absolute span range in mm and returns [control_surface, modified_parent].",
+        example: "let parts = flap(wing, 40.0, 200.0, 0.30, rounded_hinge(1.5, 0.5));",
+        returns: "[control_surface, modified_parent]",
         notes: None,
         tags: &["flap", "control surface", "wing", "high-lift"],
     },
     FunctionDoc {
         name: "elevon",
         category: "Control Surfaces",
-        signature: "elevon(wing: SdfHandle, span_start: f64, span_end: f64, chord_frac: f64) -> SdfHandle",
-        description: "Combined elevator+aileron for flying-wing layouts.",
-        example: "let ev = elevon(wing, 0.55, 0.92, 0.28);",
-        returns: "SdfHandle",
-        notes: None,
+        signature: "elevon(wing: SdfHandle, span_start: f64, span_end: f64, chord_frac: f64, hinge: HingeHandle, linkage: LinkageHandle) -> [SdfHandle, SdfHandle]",
+        description: "Builds an elevon over the absolute span range in mm and returns [control_surface, modified_parent].",
+        example: "let parts = elevon(wing, 220.0, 368.0, 0.28, rounded_hinge(1.5, 0.5), no_linkage());",
+        returns: "[control_surface, modified_parent]",
+        notes: Some("Legacy 4-argument usage returns only the isolated surface."),
         tags: &["elevon", "flying wing", "control surface"],
     },
     FunctionDoc {
@@ -1236,6 +1277,16 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         returns: "SdfHandle",
         notes: None,
         tags: &["fuselage", "loft", "stations", "body"],
+    },
+    FunctionDoc {
+        name: "lofted_fuselage_smooth",
+        category: "Fuselage and Sections",
+        signature: "lofted_fuselage_smooth(stations: Array, smoothness: f64) -> SdfHandle",
+        description: "Lofts a fuselage through positioned stations while optionally fairing section sizes toward a smoother body.",
+        example: "let fuse = lofted_fuselage_smooth([s0, s1, s2, s3], 0.65);",
+        returns: "SdfHandle",
+        notes: Some("`smoothness=0` keeps frame stations rigid. Higher values increasingly smooth section sizes while preserving station positions."),
+        tags: &["fuselage", "loft", "stations", "body", "smooth", "fairing"],
     },
     FunctionDoc {
         name: "airfoil_from_points",
@@ -3018,3 +3069,27 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         tags: &["recommend", "motor", "prop", "selection", "optimization"],
     },
 ];
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn workflow_functions_have_expected_statuses() {
+        let make = |name: &'static str, category: &'static str| FunctionDoc {
+            name,
+            category,
+            signature: "",
+            description: "",
+            example: "",
+            returns: "",
+            notes: None,
+            tags: &[],
+        };
+        assert_eq!(function_status(&make("servo_tray", "Components")), FunctionStatus::Stable);
+        assert_eq!(function_status(&make("battery_hatch", "Joints and Panels")), FunctionStatus::Stable);
+        assert_eq!(function_status(&make("glide_performance", "Aerodynamic Analysis")), FunctionStatus::Experimental);
+        assert_eq!(function_status(&make("cg_sensitivity", "Geometry Analysis")), FunctionStatus::Experimental);
+        assert_eq!(function_status(&make("tolerance_compensate", "Print and Split")), FunctionStatus::Legacy);
+    }
+}

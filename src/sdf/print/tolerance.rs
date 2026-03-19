@@ -177,7 +177,6 @@ mod tests {
     use super::*;
     use crate::sdf::primitives::{Sphere, SdfBox};
     use crate::sdf::booleans::Subtract;
-    use crate::sdf::transforms::Translate;
 
     fn default_settings() -> ToleranceSettings {
         ToleranceSettings::default()

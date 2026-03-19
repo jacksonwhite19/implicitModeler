@@ -133,7 +133,7 @@ fn test_nested_component_expansion_syntax() {
 
     // Create a test component with nested reference
     use std::collections::HashMap;
-    use implicit_cad::components::{ComponentDef, ParamValue};
+    use implicit_cad::components::ComponentDef;
 
     let test_component = ComponentDef {
         name: "test_nested".to_string(),

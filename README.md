@@ -6,14 +6,22 @@ A code-first CAD modeler using signed distance fields (SDFs). Write scripts to c
 
 ## Features
 
+### Feature Status
+- `Stable` features are the core geometry, transforms, export, project, and most fabrication tools.
+- `Experimental` features are analysis-oriented helpers where outputs are useful but should still be validated independently for production decisions.
+- `Legacy` features are compatibility shorthands kept for older example scripts; prefer the newer explicit APIs when available.
+
 ### Core Capabilities
 - **Script-Based Modeling**: Define geometry using the Rhai scripting language
 - **Real-Time Preview**: Instant 3D visualization with orbit/pan/zoom controls
 - **SDF-Based Geometry**: Smooth, mathematically precise models
-- **Mesh Export**: Export to STL and OBJ formats for 3D printing and rendering
+- **Mesh Export**: Export to STL, OBJ, and manufacturing package outputs
 - **Project Management**: Save/load projects with full state preservation
 - **Batch Processing**: Headless mode for automation and CI/CD integration
 - **Undo/Redo**: Full edit history for productive workflows
+- **Aircraft Workflow**: Template-driven fixed-wing project setup with manufacturing presets
+- **Workflow Constraints and Variants**: Project-level assembly rules and saved design variants for dimension-driven iteration
+- **Workflow Summaries**: Consolidated manufacturing and flight checks in the project workflow panel
 
 ### Geometry Primitives
 - Sphere, Box, Cylinder
@@ -36,7 +44,7 @@ A code-first CAD modeler using signed distance fields (SDFs). Write scripts to c
 - **Automatic Blending**: Smooth component integration with filleting
 
 ### UI Features
-- **Script Examples**: 10 built-in example scripts
+- **Script Examples**: 40+ built-in example scripts with stable / experimental / legacy maturity labels
 - **Quick Insert Menu**: 18 code snippets across 4 categories (primitives, operations, transforms, patterns)
 - **Smooth Normals**: Toggle for better organic shapes
 - **Wireframe Overlay**: Toggle mesh edge visualization
@@ -80,7 +88,7 @@ s
    - Scroll to zoom
    - Home key to reset
 
-5. **Export** your model using the STL or OBJ buttons
+5. **Export** your model using the STL, OBJ, or package export actions
 
 6. **Save** your project with Ctrl+S for later editing
 
@@ -92,24 +100,60 @@ Process scripts without GUI for automation:
 # Single file
 implicit-cad --headless --script input.rhai --output result.stl
 
+# Project file
+implicit-cad --headless --script aircraft.icad --output result.stl
+
 # Batch directory
 implicit-cad --headless --batch ./scripts --batch-output ./models --format obj
 
-# With custom resolution
-implicit-cad --headless --script input.rhai --output result.stl --resolution 64 --smooth-normals
+# With custom quality and metrics
+implicit-cad --headless --script input.rhai --output result.stl --mesh-quality fine --output-metrics metrics.json
+
+# Manufacturing package from a project
+implicit-cad --headless --script aircraft.icad --output ./package --format package
 ```
 
 **CLI Options**:
 - `--headless` - Run without GUI
-- `--script <file>` - Input script path
+- `--script <file>` - Input `.rhai` or `.icad` file
 - `--output <file>` - Output mesh path
 - `--batch <dir>` - Process all .rhai files in directory
 - `--batch-output <dir>` - Output directory for batch mode
-- `--format <stl|obj>` - Export format (default: stl)
+- `--format <stl|obj|package>` - Export format (default: stl)
 - `--resolution <num>` - Mesh grid resolution (default: 32)
+- `--mesh-quality <draft|normal|fine|ultra>` - Quality preset mapped to export resolution
 - `--smooth-normals` - Enable smooth normal averaging
+- `--dim <NAME=VALUE>` - Override named dimensions in headless mode
+- `--output-metrics <file>` - Write metrics JSON for the evaluated model
 
 ## Scripting API
+
+Status note: the scripting surface mixes stable APIs with some compatibility aliases. Prefer the primary geometry, print, and analysis functions shown in the help panel over older shorthand wrappers when both exist.
+
+## Fixed-Wing Workflow
+
+Use `File -> New Project...` and choose the fixed-wing template to start from the canonical aircraft workflow. That template now includes:
+
+- top-level project dimensions for the airframe and internals
+- project-level assembly constraints for keeping major internals aligned to reference stations
+- manufacturing presets for foamboard, LW-PLA shell, carbon tube spar, balsa hybrid, and molded shell
+- integrated internal installation helpers for battery, FC, servo, and antenna hardware
+- service access geometry for battery and FC hatches
+- saved design variants for switching between dimension sets
+- workflow summaries for manufacturability and flight metrics
+- shared GUI/headless export behavior
+
+The in-app example browser now exposes three maturity levels that match the help panel:
+
+- `Stable`: examples built on the canonical, supported API surface
+- `Experimental`: examples that rely on analysis-oriented features whose behavior may still evolve
+- `Legacy`: compatibility examples kept for older scripting patterns
+
+Gold-standard complete-aircraft examples currently include:
+
+- `Gold Standard: Conventional Trainer`
+- `Gold Standard: Flying Wing UAV`
+- `Gold Standard: Twin-Boom Pusher`
 
 ### Primitives
 

@@ -7,7 +7,7 @@ pub mod axes;
 pub mod wireframe;
 pub mod raymarch;
 
-pub use camera::Camera;
+pub use camera::{Camera, StandardView};
 pub use pipeline::RenderState;
 pub use grid::GridRenderer;
 pub use axes::AxesRenderer;

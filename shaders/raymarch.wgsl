@@ -70,6 +70,13 @@ fn sample_sdf(p: vec3<f32>) -> f32 {
     return sample_3d(sdf_tex, p);
 }
 
+// Preview raymarching should err on the side of showing thin surfaces rather than
+// dropping them when the uniform viewport grid undersamples a clipped or upright part.
+// This keeps the preview conservative without affecting exported geometry.
+fn preview_hit_epsilon() -> f32 {
+    return max(uni.voxel_size * 0.45, 0.75);
+}
+
 fn calc_normal(p: vec3<f32>) -> vec3<f32> {
     let e = uni.voxel_size * 0.5;
     return normalize(vec3<f32>(
@@ -215,7 +222,8 @@ fn fs_main(@builtin(position) frag_coord: vec4<f32>) -> @location(0) vec4<f32> {
 
     if tmax < 0.0 || tmin > tmax { return vec4<f32>(0.0, 0.0, 0.0, 0.0); }
 
-    let min_step = uni.voxel_size * 0.1;
+    let min_step = uni.voxel_size * 0.01;
+    let hit_eps = preview_hit_epsilon();
 
     // Sphere trace. Start at march_from (which is inside the kept region and
     // has SDF >= 0). march_anchor is a confirmed-outside point for bisection.
@@ -224,7 +232,7 @@ fn fs_main(@builtin(position) frag_coord: vec4<f32>) -> @location(0) vec4<f32> {
     var hit    = false;
     for (var i = 0; i < 256; i++) {
         let d = sample_sdf(ro + rd * t);
-        if d < 0.0 { hit = true; break; }
+        if d < hit_eps { hit = true; break; }
         t_prev = t;
         t += max(d, min_step);
         if t > tmax + min_step { break; }
@@ -244,7 +252,7 @@ fn fs_main(@builtin(position) frag_coord: vec4<f32>) -> @location(0) vec4<f32> {
     var t_hi = t;
     for (var b = 0; b < 8; b++) {
         let t_mid = (t_lo + t_hi) * 0.5;
-        if sample_sdf(ro + rd * t_mid) < 0.0 { t_hi = t_mid; } else { t_lo = t_mid; }
+        if sample_sdf(ro + rd * t_mid) < hit_eps { t_hi = t_mid; } else { t_lo = t_mid; }
     }
     t = t_hi;
 

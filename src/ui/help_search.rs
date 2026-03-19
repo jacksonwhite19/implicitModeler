@@ -1,6 +1,6 @@
 // Help panel search state and filtering logic.
 
-use crate::ui::help_data::{FUNCTION_DOCS, FunctionDoc};
+use crate::ui::help_data::{FUNCTION_DOCS, FunctionDoc, function_status};
 
 pub struct HelpSearchState {
     pub query: String,
@@ -61,6 +61,7 @@ impl HelpSearchState {
 
                 let name_lower = doc.name.to_lowercase();
                 let desc_lower = doc.description.to_lowercase();
+                let status_lower = function_status(doc).label().to_lowercase();
 
                 let mut score = 0i32;
 
@@ -81,6 +82,9 @@ impl HelpSearchState {
 
                 if desc_lower.contains(&q) {
                     score = score.max(50);
+                }
+                if status_lower.contains(&q) {
+                    score = score.max(30);
                 }
 
                 if score > 0 { Some((i, score)) } else { None }

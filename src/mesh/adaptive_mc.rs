@@ -35,22 +35,30 @@ impl Default for MeshQuality {
 }
 
 impl MeshQuality {
-    /// Returns the target leaf-cell side length in scene units.
-    pub fn target_cell_size(self) -> f32 {
-        match self {
-            Self::Draft  => 0.5,
-            Self::Normal => 0.15,
-            Self::Fine   => 0.05,
-            Self::Ultra  => 0.02,
-        }
-    }
-
     pub fn label(self) -> &'static str {
         match self {
             Self::Draft  => "Draft",
             Self::Normal => "Normal",
             Self::Fine   => "Fine",
             Self::Ultra  => "Ultra",
+        }
+    }
+
+    pub fn to_resolution(self) -> u32 {
+        match self {
+            Self::Draft => 24,
+            Self::Normal => 32,
+            Self::Fine => 48,
+            Self::Ultra => 64,
+        }
+    }
+
+    pub fn target_cell_size_mm(self) -> f32 {
+        match self {
+            Self::Draft => 2.0,
+            Self::Normal => 1.0,
+            Self::Fine => 0.5,
+            Self::Ultra => 0.25,
         }
     }
 

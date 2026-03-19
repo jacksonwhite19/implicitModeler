@@ -594,7 +594,7 @@ mod tests {
         let mut vc = VersionControlState::new_with_root(&app);
         let initial_head = vc.head_commit_id.clone().unwrap();
 
-        let mut app2 = make_app("box_(5.0, 5.0, 5.0)");
+        let app2 = make_app("box_(5.0, 5.0, 5.0)");
         let new_id = commit(&mut vc, &app2, "Add box".to_string(), "Test".to_string());
 
         assert_ne!(new_id, initial_head);
@@ -737,7 +737,7 @@ mod tests {
 
         assert!(!has_working_changes(&app, &head_state));
 
-        let mut modified = make_app("box_(5.0, 5.0, 5.0)");
+        let modified = make_app("box_(5.0, 5.0, 5.0)");
         assert!(has_working_changes(&modified, &head_state));
     }
 
@@ -746,7 +746,7 @@ mod tests {
         let app = make_app("sphere(10.0)");
         let mut vc = VersionControlState::new_with_root(&app);
 
-        let mut app2 = make_app("box_(5.0, 5.0, 5.0)");
+        let app2 = make_app("box_(5.0, 5.0, 5.0)");
         commit(&mut vc, &app2, "Second commit".to_string(), "User".to_string());
 
         let graph = get_commit_graph(&vc);

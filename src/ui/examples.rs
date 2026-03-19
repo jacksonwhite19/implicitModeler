@@ -22,6 +22,23 @@ impl Difficulty {
     }
 }
 
+#[derive(Clone, Copy, PartialEq)]
+pub enum Maturity {
+    Stable,
+    Experimental,
+    Legacy,
+}
+
+impl Maturity {
+    pub fn label(self) -> &'static str {
+        match self {
+            Maturity::Stable => "Stable",
+            Maturity::Experimental => "Experimental",
+            Maturity::Legacy => "Legacy",
+        }
+    }
+}
+
 pub struct ExampleScript {
     pub id:                &'static str,
     pub title:             &'static str,
@@ -31,6 +48,26 @@ pub struct ExampleScript {
     pub script:            &'static str,
     pub related_functions: &'static [&'static str],
     pub tags:              &'static [&'static str],
+}
+
+impl ExampleScript {
+    pub fn maturity(&self) -> Maturity {
+        let mut maturity = Maturity::Stable;
+        for func_name in self.related_functions {
+            if let Some(doc) = crate::ui::help_data::FUNCTION_DOCS.iter().find(|doc| doc.name == *func_name) {
+                match crate::ui::help_data::function_status(doc) {
+                    crate::ui::help_data::FunctionStatus::Legacy => return Maturity::Legacy,
+                    crate::ui::help_data::FunctionStatus::Experimental => maturity = Maturity::Experimental,
+                    crate::ui::help_data::FunctionStatus::Stable => {}
+                }
+            }
+        }
+        maturity
+    }
+
+    pub fn is_gold_standard(&self) -> bool {
+        self.tags.iter().any(|tag| *tag == "gold-standard")
+    }
 }
 
 pub fn get_examples() -> &'static [ExampleScript] {
@@ -351,16 +388,19 @@ static EX10_SCRIPT: &str = r#"
 
 // High-sweep delta-ish wing: root 200 mm, tip 60 mm, 25 deg sweep, no dihedral
 let half_fw = wing_with_airfoil("4412", 200.0, 60.0, 350.0, 25.0, 0.0, -2.0);
+let hinge = rounded_hinge(1.5, 0.5);
+let horn  = control_horn_lower(15.0, 10.0, 0.5);
 
-// elevon(wing, span_start_frac, span_end_frac, chord_frac)
+// elevon(wing, span_start_frac, span_end_frac, chord_frac, hinge, linkage)
 // Inboard elevon: 40-65% of half-span, 25% of local chord
-let elev_inboard  = elevon(half_fw, 0.40, 0.65, 0.25);
+let elev_inboard_parts = elevon(half_fw, 0.40, 0.65, 0.25, hinge, horn);
+let elev_inboard = elev_inboard_parts[0];
+let half_fw = elev_inboard_parts[1];
 
 // Outboard elevon: 68-92% of half-span
-let elev_outboard = elevon(half_fw, 0.68, 0.92, 0.25);
-
-// Union control surfaces onto the wing half
-let half_with_cs = union(union(half_fw, elev_inboard), elev_outboard);
+let elev_outboard_parts = elevon(half_fw, 0.68, 0.92, 0.25, hinge, horn);
+let elev_outboard = elev_outboard_parts[0];
+let half_with_cs = union(elev_outboard_parts[1], union(elev_inboard, elev_outboard));
 
 // Mirror for full flying wing
 let full_fw = mirror_y(half_with_cs);
@@ -398,21 +438,25 @@ static EX12_SCRIPT: &str = r#"
 // Reference wing: root 140 mm, tip 100 mm, half-span 400 mm.
 
 let half_wing = wing_with_airfoil("2412", 140.0, 100.0, 400.0, 3.0, 2.0, -1.5);
+let hinge = rounded_hinge(1.5, 0.5);
+let clean = no_linkage();
 
 // === Aileron ===
-// aileron(wing, span_start_frac, span_end_frac, chord_frac)
-// Outboard 55-92% of half-span, 28% chord
-let ail = aileron(half_wing, 0.55, 0.92, 0.28);
+// aileron(wing, span_start_mm, span_end_mm, chord_frac, hinge, linkage)
+// Outboard 55-92% of the 400 mm half-span => 220-368 mm
+let ail_parts = aileron(half_wing, 220.0, 368.0, 0.28, hinge, clean);
+let ail = ail_parts[0];
+let half_wing = ail_parts[1];
 
-// === Inboard flap (split flap approximation) ===
-// A split flap is the lower surface only — approximate with a subtract.
-// Flap region: 10-50% of half-span, 30% chord depth
-let flap_vol = box_(120.0, 4.0, 42.0);
-let flap_vol = translate(flap_vol, 0.0, 80.0, -10.0);  // inboard position
-let wing_with_flap_gap = subtract(half_wing, flap_vol);
+// === Inboard flap ===
+// flap(wing, span_start_mm, span_end_mm, chord_frac, hinge)
+// Inboard 10-50% of the 400 mm half-span => 40-200 mm
+let flap_parts = flap(half_wing, 40.0, 200.0, 0.30, hinge);
+let flap = flap_parts[0];
+let half_wing = flap_parts[1];
 
-// Combine: wing (with flap gap) + aileron hinge line
-let half_complete = union(wing_with_flap_gap, ail);
+// Combine modified wing with both control surfaces.
+let half_complete = union(half_wing, union(ail, flap));
 
 // Mirror for full wing
 mirror_y(half_complete)
@@ -421,25 +465,27 @@ mirror_y(half_complete)
 static EX13_SCRIPT: &str = r#"
 // Example 13 — Elevator and Rudder
 // Conventional tail: elevator on H-stab, rudder on V-stab.
+let hinge = rounded_hinge(1.5, 0.5);
+let horn  = control_horn_lower(12.0, 8.0, 0.5);
 
 // === H-stab ===
 let half_htail = wing_with_airfoil("0009", 70.0, 50.0, 140.0, 5.0, 0.0, 0.0);
 let htail = mirror_y(half_htail);
 
-// elevator(htail, span_frac, chord_frac)
-// Full-span elevator: 0->1, rear 35% of chord
-let elev = elevator(htail, 1.0, 0.35);
-let htail_with_elev = union(htail, elev);
+// elevator(htail, chord_frac, hinge, linkage)
+let elev_parts = elevator(htail, 0.35, hinge, horn);
+let elev = elev_parts[0];
+let htail_with_elev = union(elev_parts[1], elev);
 let htail_with_elev = translate(htail_with_elev, 0.0, 0.0, 520.0);
 
 // === V-stab ===
 let vtail = wing_with_airfoil("0009", 80.0, 55.0, 120.0, 8.0, 0.0, 0.0);
 let vtail = rotate(vtail, 90.0, 0.0, 0.0);
 
-// rudder(vtail, span_frac, chord_frac)
-// Upper 80% of V-stab span, rear 38% of chord
-let rud = rudder(vtail, 0.80, 0.38);
-let vtail_with_rud = union(vtail, rud);
+// rudder(vtail, chord_frac, hinge, linkage)
+let rud_parts = rudder(vtail, 0.38, hinge, horn);
+let rud = rud_parts[0];
+let vtail_with_rud = union(rud_parts[1], rud);
 let vtail_with_rud = translate(vtail_with_rud, 0.0, 0.0, 510.0);
 
 union(htail_with_elev, vtail_with_rud)
@@ -1361,6 +1407,85 @@ union(union(union(union(fuse, full_wing), htail), vtail),
     translate(cylinder(14.0, 35.0), 0.0, 0.0, -20.0))
 "#;
 
+static EX41_SCRIPT: &str = r#"
+// Example 41 — Gold Standard: Conventional Trainer
+// Canonical 800 mm trainer-style aircraft with shell, internals, and access geometry.
+
+let fuse_outer = fuselage_parametric(620.0, 56.0, 0.72, 0.45);
+let fuse_shell = shell(fuse_outer, 1.8);
+
+let half_wing = wing_with_airfoil("2412", 180.0, 110.0, 400.0, 6.0, 3.0, 0.0);
+let wing = attach_to_fuselage_station(mirror_y(half_wing), fuse_outer, 0.34, 0.0, 4.0);
+
+let half_htail = wing_with_airfoil("0009", 82.0, 55.0, 150.0, 4.0, 0.0, 0.0);
+let htail = translate(mirror_y(half_htail), 405.0, 0.0, 18.0);
+
+let vtail = translate(
+    rotate(wing_with_airfoil("0009", 95.0, 48.0, 110.0, 10.0, 0.0, 0.0), 90.0, 0.0, 0.0),
+    430.0, 0.0, 54.0
+);
+
+let battery_tray = translate(battery_cradle(110.0, 38.0, 32.0, 1.6, 20.0), 110.0, 0.0, -8.0);
+let fc_mount = translate(fc_stack_mount(36.0, 36.0, 30.5, 8.0), 180.0, 0.0, 6.0);
+let servo_left = translate(servo_tray(24.0, 13.0, 28.0, 1.5, 6.0), 205.0, 42.0, -6.0);
+let servo_right = mirror_y(servo_left);
+let rx_mount = translate(antenna_mount(70.0, 3.0, 1.2), 248.0, 0.0, 18.0);
+
+union(
+    union(union(fuse_shell, wing), union(htail, vtail)),
+    union(union(union(battery_tray, fc_mount), union(servo_left, servo_right)), rx_mount)
+)
+"#;
+
+static EX42_SCRIPT: &str = r#"
+// Example 42 — Gold Standard: Flying Wing UAV
+// Compact flying wing with elevons, electronics packaging, and service hatch.
+
+let center_body = shell(box_(190.0, 66.0, 34.0), 1.8);
+let half_wing = wing_with_airfoil("0012", 220.0, 95.0, 360.0, 14.0, 1.5, 0.0);
+let wing = union(center_body, mirror_y(translate(half_wing, 34.0, 0.0, 0.0)));
+
+let elevon_pair = wing_with_ailerons(mirror_y(translate(half_wing, 34.0, 0.0, 0.0)), 0.58, 0.94, 0.22);
+let body_with_elevons = union(elevon_pair[0], union(elevon_pair[1], elevon_pair[2]));
+
+let battery_tray = translate(battery_cradle(138.0, 42.0, 36.0, 1.8, 22.0), 10.0, 0.0, -4.0);
+let fc_mount = translate(fc_stack_mount(36.0, 36.0, 30.5, 8.0), 58.0, 0.0, 3.0);
+let servo_left = translate(servo_tray(24.0, 13.0, 25.0, 1.5, 5.0), 132.0, 118.0, -3.0);
+let servo_right = mirror_y(servo_left);
+
+union(union(body_with_elevons, union(battery_tray, fc_mount)), union(servo_left, servo_right))
+"#;
+
+static EX43_SCRIPT: &str = r#"
+// Example 43 — Gold Standard: Twin-Boom Pusher
+// Twin-boom layout with central pod, pusher mount area, and conventional tail.
+
+let pod_outer = fuselage_parametric(360.0, 54.0, 0.66, 0.30);
+let pod_shell = shell(pod_outer, 1.8);
+
+let half_wing = wing_with_airfoil("2410", 165.0, 105.0, 420.0, 5.0, 2.5, 0.0);
+let wing = attach_to_fuselage_station(mirror_y(half_wing), pod_outer, 0.42, 0.0, 3.0);
+
+let boom_left = translate(cylinder(11.0, 360.0), 210.0, 118.0, 6.0);
+let boom_right = mirror_y(boom_left);
+
+let half_htail = wing_with_airfoil("0009", 70.0, 48.0, 135.0, 3.0, 0.0, 0.0);
+let htail = translate(mirror_y(half_htail), 390.0, 0.0, 26.0);
+let vtail_left = translate(
+    rotate(wing_with_airfoil("0009", 78.0, 34.0, 72.0, 6.0, 0.0, 0.0), 90.0, 0.0, 0.0),
+    398.0, 118.0, 58.0
+);
+let vtail_right = mirror_y(vtail_left);
+
+let battery_tray = translate(battery_cradle(120.0, 38.0, 34.0, 1.7, 18.0), 70.0, 0.0, -6.0);
+let fc_mount = translate(fc_stack_mount(36.0, 36.0, 30.5, 8.0), 142.0, 0.0, 8.0);
+
+union(
+    union(union(pod_shell, wing), union(boom_left, boom_right)),
+    union(union(union(htail, vtail_left), vtail_right), union(battery_tray, fc_mount))
+)
+"#;
+
 // ---------------------------------------------------------------------------
 // Examples array
 // ---------------------------------------------------------------------------
@@ -1389,6 +1514,42 @@ mod tests {
             }
             panic!("{}", msg);
         }
+    }
+
+    #[test]
+    fn example_maturity_matches_help_statuses() {
+        for ex in EXAMPLES {
+            let has_legacy = ex.related_functions.iter().any(|name| {
+                crate::ui::help_data::FUNCTION_DOCS
+                    .iter()
+                    .find(|doc| doc.name == *name)
+                    .map(|doc| crate::ui::help_data::function_status(doc) == crate::ui::help_data::FunctionStatus::Legacy)
+                    .unwrap_or(false)
+            });
+            let has_experimental = ex.related_functions.iter().any(|name| {
+                crate::ui::help_data::FUNCTION_DOCS
+                    .iter()
+                    .find(|doc| doc.name == *name)
+                    .map(|doc| crate::ui::help_data::function_status(doc) == crate::ui::help_data::FunctionStatus::Experimental)
+                    .unwrap_or(false)
+            });
+
+            match ex.maturity() {
+                Maturity::Legacy => assert!(has_legacy, "{} should only be legacy if a related function is legacy", ex.id),
+                Maturity::Experimental => assert!(!has_legacy && has_experimental, "{} should only be experimental if a related function is experimental", ex.id),
+                Maturity::Stable => assert!(!has_legacy && !has_experimental, "{} should only be stable if all documented related functions are stable", ex.id),
+            }
+        }
+    }
+
+    #[test]
+    fn at_least_three_gold_standard_aircraft_examples_exist() {
+        let gold_examples: Vec<_> = EXAMPLES
+            .iter()
+            .filter(|ex| ex.category == "Complete Assemblies" && ex.is_gold_standard())
+            .collect();
+        assert!(gold_examples.len() >= 3, "Expected at least 3 gold-standard complete-aircraft examples");
+        assert!(gold_examples.iter().all(|ex| ex.maturity() == Maturity::Stable));
     }
 }
 
@@ -1792,5 +1953,35 @@ pub static EXAMPLES: &[ExampleScript] = &[
         script:            EX40_SCRIPT,
         related_functions: &["von_karman_nose", "wing_with_airfoil", "propulsion_analysis", "static_margin", "drag_polar_weighted", "range_endurance"],
         tags:              &["complete", "airframe", "assembly", "fixed-wing", "full-aircraft"],
+    },
+    ExampleScript {
+        id:                "gold_trainer_aircraft",
+        title:             "Gold Standard: Conventional Trainer",
+        category:          "Complete Assemblies",
+        difficulty:        Difficulty::Advanced,
+        description:       "Complete conventional trainer workflow with shell, internals, and service access",
+        script:            EX41_SCRIPT,
+        related_functions: &["fuselage_parametric", "shell", "wing_with_airfoil", "attach_to_fuselage_station", "mirror_y", "battery_cradle", "fc_stack_mount", "servo_tray", "antenna_mount"],
+        tags:              &["gold-standard", "complete", "trainer", "fixed-wing", "internals"],
+    },
+    ExampleScript {
+        id:                "gold_flying_wing_uav",
+        title:             "Gold Standard: Flying Wing UAV",
+        category:          "Complete Assemblies",
+        difficulty:        Difficulty::Advanced,
+        description:       "Flying wing assembly with elevons, electronics packaging, and hatch access",
+        script:            EX42_SCRIPT,
+        related_functions: &["box_", "shell", "wing_with_airfoil", "mirror_y", "wing_with_ailerons", "battery_cradle", "fc_stack_mount", "servo_tray", "union"],
+        tags:              &["gold-standard", "complete", "flying-wing", "uav", "internals"],
+    },
+    ExampleScript {
+        id:                "gold_twin_boom_pusher",
+        title:             "Gold Standard: Twin-Boom Pusher",
+        category:          "Complete Assemblies",
+        difficulty:        Difficulty::Advanced,
+        description:       "Twin-boom pusher geometry with pod packaging, booms, and tail integration",
+        script:            EX43_SCRIPT,
+        related_functions: &["fuselage_parametric", "shell", "wing_with_airfoil", "attach_to_fuselage_station", "mirror_y", "cylinder", "battery_cradle", "fc_stack_mount", "union"],
+        tags:              &["gold-standard", "complete", "twin-boom", "pusher", "internals"],
     },
 ];

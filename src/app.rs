@@ -7,11 +7,10 @@ use glam::Vec3;
 use crate::sdf::Sdf;
 use crate::sdf::profiles::SplineProfile;
 use crate::scripting;
-use crate::mesh::{Mesh, adaptive_mc, MeshQuality};
-use crate::render::{Camera, RenderState, GridRenderer, AxesRenderer, WireframeRenderer, RaymarchRenderer, SdfGrid, SectionUniforms, ThicknessUniforms};
+use crate::mesh::{Mesh, MeshQuality};
+use crate::render::{Camera, StandardView, RenderState, GridRenderer, AxesRenderer, WireframeRenderer, RaymarchRenderer, SdfGrid, SectionUniforms, ThicknessUniforms};
 use crate::analysis::thickness::{compute_thickness, ThicknessResult};
 use crate::project::{SectionView, SectionPlane, Axis};
-use rayon::prelude::*;
 use crate::components::{ComponentRegistry, ComponentInstance};
 use crate::scripting::MassPoint;
 use crate::ui::spline_editor::{SplineEditorState, show_spline_editor};
@@ -25,6 +24,7 @@ use crate::settings::AppSettings;
 use crate::library::LibraryManager;
 use crate::ui::library_panel::{LibraryPanelState, show_library_panel};
 use crate::ui::examples;
+use crate::ui::project_wizard::{show_wizard, WizardState};
 
 #[derive(Clone, Copy, PartialEq, Default)]
 pub enum FEAOverlayMode { #[default] None, Stress, Displacement }
@@ -70,6 +70,11 @@ pub struct App {
     // Project management
     current_file_path: Option<std::path::PathBuf>,
     status_message: Option<String>,
+    workflow_config: Option<crate::project::WorkflowConfig>,
+    workflow_auto_apply_constraints: bool,
+    workflow_variant_name: String,
+    workflow_variant_description: String,
+    project_wizard: WizardState,
 
     // (script text undo is managed by self.undo_history / AppState)
 
@@ -320,6 +325,11 @@ impl App {
             show_wireframe: false,
             current_file_path: None,
             status_message: None,
+            workflow_config: None,
+            workflow_auto_apply_constraints: true,
+            workflow_variant_name: "New Variant".to_string(),
+            workflow_variant_description: String::new(),
+            project_wizard: WizardState::default(),
             export_in_progress: false,
             export_progress: String::new(),
             export_receiver: None,
@@ -840,6 +850,7 @@ smooth_union(aero, shell, 12.0)
             &library_sources,
         ) {
             Ok(result) => {
+                let should_frame_camera = self.current_sdf_grid.is_none();
                 let eval_time = start_eval.elapsed().as_secs_f64() * 1000.0;
 
                 // Extract CG/mass data before moving sdf out of result
@@ -852,42 +863,33 @@ smooth_union(aero, shell, 12.0)
 
                 // Compute bounds once, reuse for both SDF grid and mesh.
                 let start_mesh = Instant::now();
-                let (bounds_min, bounds_max) = Self::auto_bounds(sdf.as_ref());
+                let (bounds_min, bounds_max) = crate::pipeline::auto_bounds(sdf.as_ref());
+                let viewport_resolution = self.resolution.clamp(48, 256);
 
-                // Build SDF grid for sphere-tracing viewport (resolution³, parallel).
-                let sdf_grid = Arc::new(Self::compute_sdf_grid(
-                    sdf.as_ref(), bounds_min, bounds_max, self.resolution,
+                let sdf_grid = Arc::new(crate::pipeline::compute_sdf_grid(
+                    sdf.as_ref(), bounds_min, bounds_max, viewport_resolution,
                 ));
                 let mesh_time = start_mesh.elapsed().as_secs_f64() * 1000.0;
 
                 // Estimate volume from negative voxel count (no marching cubes needed).
-                let step = (bounds_max - bounds_min) / self.resolution as f32;
+                let step = (bounds_max - bounds_min) / viewport_resolution as f32;
                 let voxel_vol = step.x * step.y * step.z;
                 let inside = sdf_grid.data.iter().filter(|&&d| d < 0.0).count();
                 let vol = inside as f32 * voxel_vol;
                 self.mesh_volume_mm3 = Some(vol);
                 self.cg = cg;
                 self.mass_points = mass_points;
+                if let Some(cg) = self.cg {
+                    self.aero_cg_x_mm = cg.x;
+                }
 
                 // Frame camera on tight bounds of negative (interior) voxels.
-                let res = self.resolution as usize;
-                let mut tight_min = bounds_max;
-                let mut tight_max = bounds_min;
-                for iz in 0..res { for iy in 0..res { for ix in 0..res {
-                    if sdf_grid.data[ix + iy * res + iz * res * res] < 0.0 {
-                        let p = bounds_min + Vec3::new(
-                            (ix as f32 + 0.5) * step.x,
-                            (iy as f32 + 0.5) * step.y,
-                            (iz as f32 + 0.5) * step.z,
-                        );
-                        tight_min = tight_min.min(p);
-                        tight_max = tight_max.max(p);
+                if should_frame_camera {
+                    if let Some((tight_min, tight_max)) = crate::pipeline::tight_bounds_from_grid(&sdf_grid) {
+                        self.camera.frame_bounds(tight_min, tight_max);
+                    } else {
+                        self.camera.frame_bounds(bounds_min, bounds_max);
                     }
-                }}}
-                if tight_min.x <= tight_max.x {
-                    self.camera.frame_bounds(tight_min, tight_max);
-                } else {
-                    self.camera.frame_bounds(bounds_min, bounds_max);
                 }
 
                 // Pre-compute FEA BC visualization geometry (cheap 20³ sample).
@@ -900,7 +902,7 @@ smooth_union(aero, shell, 12.0)
                 }
 
                 self.current_sdf = Some(sdf);
-                self.current_mesh = None; // mesh generated on export only
+                self.current_mesh = None;
                 self.current_sdf_grid = Some(sdf_grid);
                 self.error_message = None;
                 self.eval_time_ms = Some(eval_time);
@@ -971,6 +973,7 @@ smooth_union(aero, shell, 12.0)
 
         match result_opt {
             Some(result) => {
+                let should_frame_camera = self.current_sdf_grid.is_none();
                 let cg = result.center_of_gravity();
                 let mass_points = result.mass_points;
                 self.state.fea_setup    = result.fea_setup;
@@ -979,38 +982,30 @@ smooth_union(aero, shell, 12.0)
                 let sdf = result.sdf;
 
                 let start_mesh = Instant::now();
-                let (bounds_min, bounds_max) = Self::auto_bounds(sdf.as_ref());
+                let (bounds_min, bounds_max) = crate::pipeline::auto_bounds(sdf.as_ref());
+                let viewport_resolution = self.resolution.clamp(48, 256);
 
-                let sdf_grid = Arc::new(Self::compute_sdf_grid(
-                    sdf.as_ref(), bounds_min, bounds_max, self.resolution,
+                let sdf_grid = Arc::new(crate::pipeline::compute_sdf_grid(
+                    sdf.as_ref(), bounds_min, bounds_max, viewport_resolution,
                 ));
                 let mesh_time = start_mesh.elapsed().as_secs_f64() * 1000.0;
 
-                let step = (bounds_max - bounds_min) / self.resolution as f32;
+                let step = (bounds_max - bounds_min) / viewport_resolution as f32;
                 let voxel_vol = step.x * step.y * step.z;
                 let inside = sdf_grid.data.iter().filter(|&&d| d < 0.0).count();
                 self.mesh_volume_mm3 = Some(inside as f32 * voxel_vol);
                 self.cg = cg;
                 self.mass_points = mass_points;
+                if let Some(cg) = self.cg {
+                    self.aero_cg_x_mm = cg.x;
+                }
 
-                let res = self.resolution as usize;
-                let mut tight_min = bounds_max;
-                let mut tight_max = bounds_min;
-                for iz in 0..res { for iy in 0..res { for ix in 0..res {
-                    if sdf_grid.data[ix + iy * res + iz * res * res] < 0.0 {
-                        let p = bounds_min + Vec3::new(
-                            (ix as f32 + 0.5) * step.x,
-                            (iy as f32 + 0.5) * step.y,
-                            (iz as f32 + 0.5) * step.z,
-                        );
-                        tight_min = tight_min.min(p);
-                        tight_max = tight_max.max(p);
+                if should_frame_camera {
+                    if let Some((tight_min, tight_max)) = crate::pipeline::tight_bounds_from_grid(&sdf_grid) {
+                        self.camera.frame_bounds(tight_min, tight_max);
+                    } else {
+                        self.camera.frame_bounds(bounds_min, bounds_max);
                     }
-                }}}
-                if tight_min.x <= tight_max.x {
-                    self.camera.frame_bounds(tight_min, tight_max);
-                } else {
-                    self.camera.frame_bounds(bounds_min, bounds_max);
                 }
 
                 if !self.state.fea_setup.is_empty() {
@@ -1068,6 +1063,64 @@ smooth_union(aero, shell, 12.0)
         self.is_processing = false;
     }
 
+    fn apply_workflow_constraints(&mut self) -> usize {
+        let applied = self.workflow_config.as_ref()
+            .map(|cfg| crate::project::apply_assembly_constraints(
+                &mut self.state.dimensions,
+                &cfg.assembly_constraints,
+            ))
+            .unwrap_or(0);
+        if applied > 0 {
+            self.dimensions_pending_eval = true;
+        }
+        applied
+    }
+
+    fn run_workflow_flight_analysis(&mut self) {
+        let Some(sdf) = self.current_sdf.clone() else {
+            self.error_message = Some("Run the script first to generate geometry.".into());
+            return;
+        };
+
+        use crate::aero::{compute_drag_polar, compute_neutral_point, compute_static_margin, compute_trim, FlightCondition, PolarDatabase};
+        use crate::sdf::query::bounding_points;
+
+        let fc = FlightCondition::new(self.aero_airspeed_ms, self.aero_altitude_m, self.aero_aoa_deg);
+        let db = PolarDatabase::new();
+        let np = compute_neutral_point(&sdf, &sdf, &sdf, &db, &fc);
+        let bbox = bounding_points(sdf.as_ref());
+        let root_chord = bbox.size.x.max(1.0);
+        let mac = (root_chord + root_chord * 0.5) * 0.5;
+        let cg_x = self.cg.map(|cg| cg.x).unwrap_or(self.aero_cg_x_mm);
+        let cg = glam::Vec3::new(cg_x, 0.0, 0.0);
+        let sm = compute_static_margin(&np, cg, mac);
+        let trim = compute_trim(&np, &sm, &sdf, &sdf, &sdf, &db, &fc, self.aero_weight_n);
+        let drag = compute_drag_polar(&sdf, &sdf, &sdf, &sdf, &db, &fc, Some(self.aero_weight_n));
+
+        self.current_neutral_point = Some(np.clone());
+        self.current_static_margin = Some(sm.clone());
+        self.current_trim_result = Some(trim);
+        self.current_drag_polar = Some(drag);
+        self.current_flight_condition = Some(fc);
+
+        if !self.mass_points.is_empty() {
+            let comps: Vec<(String, glam::Vec3, f32)> = self.mass_points
+                .iter()
+                .map(|m| (m.name.clone(), m.position, m.mass_g))
+                .collect();
+            let fwd = np.neutral_point_x_mm - 0.25 * mac;
+            self.current_cg_sensitivity = Some(
+                crate::analysis::compute_cg_sensitivity(
+                    &comps,
+                    &self.state.dimensions,
+                    np.neutral_point_x_mm,
+                    mac,
+                    fwd,
+                )
+            );
+        }
+    }
+
     fn save_project(&mut self) {
         if let Some(path) = &self.current_file_path {
             self.save_project_to_path(path.clone());
@@ -1111,6 +1164,7 @@ smooth_union(aero, shell, 12.0)
             self.state.dimensions.clone(),
             Some(self.print_analysis_settings.clone()),
             Some(self.tolerance_settings.clone()),
+            self.workflow_config.clone(),
         );
 
         let mut project_with_vc = project;
@@ -1183,6 +1237,7 @@ smooth_union(aero, shell, 12.0)
                     if let Some(ts) = project.tolerance_settings {
                         self.tolerance_settings = ts;
                     }
+                    self.workflow_config = project.workflow_config;
 
                     // Restore version control state (or create fresh from loaded state)
                     self.version_control = project.version_control.unwrap_or_else(|| {
@@ -1235,121 +1290,6 @@ smooth_union(aero, shell, 12.0)
 
     /// Detect the SDF's spatial extent. Returns a tight asymmetric bounding box so that
     /// marching-cubes voxels are distributed proportionally across each axis.
-    fn auto_bounds(sdf: &dyn Sdf) -> (Vec3, Vec3) {
-        // Fine-Z scan: coarse XY (step=10, ±150) but fine Z (step=1, ±80).
-        // This reliably catches thin airfoil cross-sections (thickness ~1.8 units)
-        // at any spanwise position, including swept/dihedraled wings where the
-        // airfoil centerline drifts in Z. Parallelized over all sample points.
-        let nx = 31i32; // -150 to +150, step=10
-        let ny = 31i32;
-        let nz = 161i32; // -80 to +80, step=1
-        let total = (nx * ny * nz) as usize;
-
-        let (lo, hi) = (0..total).into_par_iter().map(|idx| {
-            let iz = (idx / (nx * ny) as usize) as i32;
-            let iy = ((idx / nx as usize) % ny as usize) as i32;
-            let ix = (idx % nx as usize) as i32;
-            let p = Vec3::new(
-                -150.0 + ix as f32 * 10.0,
-                -150.0 + iy as f32 * 10.0,
-                -80.0  + iz as f32 * 1.0,
-            );
-            if sdf.distance(p) < 0.0 { (p, p) }
-            else { (Vec3::splat(f32::MAX), Vec3::splat(f32::MIN)) }
-        }).reduce(
-            || (Vec3::splat(f32::MAX), Vec3::splat(f32::MIN)),
-            |(lo1, hi1), (lo2, hi2)| (lo1.min(lo2), hi1.max(hi2)),
-        );
-
-        let mut bb_min = lo;
-        let mut bb_max = hi;
-
-        // Coarse fallback for geometry outside ±150 XY or ±80 Z range
-        if bb_min.x == f32::MAX {
-            let n = 20i32;
-            let total2 = ((n + 1) * (n + 1) * (n + 1)) as usize;
-            let (lo2, hi2) = (0..total2).into_par_iter().map(|idx| {
-                let iz = (idx / ((n+1)*(n+1)) as usize) as i32;
-                let iy = ((idx / (n+1) as usize) % (n+1) as usize) as i32;
-                let ix = (idx % (n+1) as usize) as i32;
-                let p = Vec3::new(
-                    -300.0 + ix as f32 * 30.0,
-                    -300.0 + iy as f32 * 30.0,
-                    -300.0 + iz as f32 * 30.0,
-                );
-                if sdf.distance(p) < 0.0 { (p, p) }
-                else { (Vec3::splat(f32::MAX), Vec3::splat(f32::MIN)) }
-            }).reduce(
-                || (Vec3::splat(f32::MAX), Vec3::splat(f32::MIN)),
-                |(lo1, hi1), (lo2, hi2)| (lo1.min(lo2), hi1.max(hi2)),
-            );
-            bb_min = lo2;
-            bb_max = hi2;
-        }
-
-        if bb_min.x == f32::MAX {
-            return (Vec3::splat(-100.0), Vec3::splat(100.0));
-        }
-
-        // Probe all 6 directions from the centroid for exact extents.
-        let center = (bb_min + bb_max) * 0.5;
-        let seed = if sdf.distance(center) < 0.0 {
-            center
-        } else {
-            // Find nearest known interior point (the scan min corner is inside)
-            bb_min
-        };
-
-        if sdf.distance(seed) < 0.0 {
-            for &dir in &[Vec3::X, Vec3::NEG_X, Vec3::Y, Vec3::NEG_Y, Vec3::Z, Vec3::NEG_Z] {
-                let mut last_inside = seed;
-                let mut r = 0.05f32;
-                while r < 600.0 {
-                    let p = seed + dir * r;
-                    if sdf.distance(p) < 0.0 { last_inside = p; }
-                    r *= 1.15;
-                }
-                bb_min = bb_min.min(last_inside);
-                bb_max = bb_max.max(last_inside);
-            }
-        }
-
-        // Pad 10% each side so the surface isn't flush with the grid boundary.
-        let span = (bb_max - bb_min).max(Vec3::splat(1.0));
-        let pad  = span * 0.10 + Vec3::splat(0.5);
-        let lo = (bb_min - pad).max(Vec3::splat(-600.0));
-        let hi = (bb_max + pad).min(Vec3::splat( 600.0));
-        (lo, hi)
-    }
-
-    fn compute_sdf_grid(
-        sdf:        &dyn Sdf,
-        bounds_min: Vec3,
-        bounds_max: Vec3,
-        res:        u32,
-    ) -> SdfGrid {
-        let step = (bounds_max - bounds_min) / res as f32;
-        let total = (res * res * res) as usize;
-
-        // Evaluate in parallel; index layout: x + y*res + z*res² (X fastest for wgpu 3D texture).
-        let data: Vec<f32> = (0..total)
-            .into_par_iter()
-            .map(|idx| {
-                let x = (idx % res as usize) as u32;
-                let y = ((idx / res as usize) % res as usize) as u32;
-                let z = (idx / (res * res) as usize) as u32;
-                let p = bounds_min + Vec3::new(
-                    (x as f32 + 0.5) * step.x,
-                    (y as f32 + 0.5) * step.y,
-                    (z as f32 + 0.5) * step.z,
-                );
-                sdf.distance(p)
-            })
-            .collect();
-
-        SdfGrid { data, resolution: res, bounds_min, bounds_max }
-    }
-
     fn start_export_async(&mut self, path: String, is_obj: bool) {
         let Some(ref sdf) = self.current_sdf else { return };
         let Some(ref grid) = self.current_sdf_grid else { return };
@@ -1365,8 +1305,8 @@ smooth_union(aero, shell, 12.0)
         };
         let bounds_min = grid.bounds_min;
         let bounds_max = grid.bounds_max;
-        let quality = self.mesh_quality;
         let smooth = self.smooth_normals;
+        let quality = self.mesh_quality;
 
         let (tx, rx) = std::sync::mpsc::channel::<String>();
         self.export_receiver = Some(rx);
@@ -1374,13 +1314,9 @@ smooth_union(aero, shell, 12.0)
         self.export_progress = format!("Building mesh at {} quality…", quality.label());
 
         std::thread::spawn(move || {
-            tx.send(format!("Building {} mesh (cell size {:.3} units)…",
-                quality.label(), quality.target_cell_size())).ok();
+            tx.send(format!("Building {} mesh ({:.2} mm cells)…", quality.label(), quality.target_cell_size_mm())).ok();
 
-            let mesh = adaptive_mc::extract_mesh_adaptive(
-                sdf.as_ref(), bounds_min, bounds_max,
-                quality.target_cell_size(), smooth,
-            );
+            let mesh = crate::export::build_export_mesh(sdf.as_ref(), bounds_min, bounds_max, quality, smooth);
             let tri_count = mesh.indices.len() / 3;
 
             tx.send(format!("Writing {} ({} triangles)…",
@@ -1398,6 +1334,48 @@ smooth_union(aero, shell, 12.0)
                 Ok(_) => tx.send(format!("✓ Saved {} — {} triangles", path, tri_count)).ok(),
                 Err(e) => tx.send(format!("✗ Export failed: {}", e)).ok(),
             };
+        });
+    }
+
+    fn start_export_package_async(&mut self, output_dir: String) {
+        let Some(ref sdf) = self.current_sdf else { return };
+        let Some(ref grid) = self.current_sdf_grid else { return };
+
+        let sdf: Arc<dyn crate::sdf::Sdf> = if self.tolerance_on_export {
+            Arc::new(crate::sdf::print::ToleranceCompensated::new(
+                Arc::clone(sdf),
+                self.tolerance_settings.clone(),
+            ))
+        } else {
+            Arc::clone(sdf)
+        };
+
+        let bounds_min = grid.bounds_min;
+        let bounds_max = grid.bounds_max;
+        let smooth = self.smooth_normals;
+        let quality = self.mesh_quality;
+        let project_name = self.current_file_path.as_ref()
+            .and_then(|p| p.file_stem())
+            .and_then(|s| s.to_str())
+            .unwrap_or("implicit_cad_project")
+            .to_string();
+
+        let (tx, rx) = std::sync::mpsc::channel::<String>();
+        self.export_receiver = Some(rx);
+        self.export_in_progress = true;
+        self.export_progress = "Building manufacturing package…".to_string();
+
+        std::thread::spawn(move || {
+            tx.send(format!("Building package mesh ({:.2} mm cells)…", quality.target_cell_size_mm())).ok();
+            let mesh = crate::export::build_export_mesh(sdf.as_ref(), bounds_min, bounds_max, quality, smooth);
+            match crate::export::export_manufacturing_package(&mesh, &project_name, std::path::Path::new(&output_dir)) {
+                Ok(pkg) => {
+                    tx.send(format!("✓ Package saved to {} ({} STL file(s))", output_dir, pkg.stl_files.len())).ok();
+                }
+                Err(e) => {
+                    tx.send(format!("✗ Package export failed: {}", e)).ok();
+                }
+            }
         });
     }
 
@@ -1684,12 +1662,18 @@ impl eframe::App for App {
             egui::menu::bar(ui, |ui| {
                 // File menu
                 ui.menu_button("File", |ui| {
+                    if ui.button("New Project…").clicked() {
+                        self.project_wizard.open = true;
+                        ui.close_menu();
+                    }
+                    ui.separator();
                     if ui.button("New").clicked() {
                         self.state.script_text = Self::get_default_example();
                         self.current_sdf = None;
                         self.current_mesh = None;
                         self.current_sdf_grid = None;
                         self.current_file_path = None;
+                        self.workflow_config = None;
                         self.undo_history.clear();
                         ui.close_menu();
                     }
@@ -1779,6 +1763,12 @@ impl eframe::App for App {
                         }
                         ui.close_menu();
                     }
+                    if ui.add_enabled(has_sdf, egui::Button::new("Export Package…")).clicked() {
+                        if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                            self.start_export_package_async(path.to_string_lossy().to_string());
+                        }
+                        ui.close_menu();
+                    }
                 });
 
                 // View menu
@@ -1786,8 +1776,27 @@ impl eframe::App for App {
                     ui.checkbox(&mut self.smooth_normals, "Smooth Normals");
                     ui.checkbox(&mut self.show_wireframe, "Wireframe");
                     ui.separator();
+                    for (label, view) in [
+                        ("Front", StandardView::Front),
+                        ("Back", StandardView::Back),
+                        ("Left", StandardView::Left),
+                        ("Right", StandardView::Right),
+                        ("Top", StandardView::Top),
+                        ("Bottom", StandardView::Bottom),
+                        ("Isometric", StandardView::Isometric),
+                    ] {
+                        if ui.button(label).clicked() {
+                            self.snap_camera_to_view(view);
+                            ui.close_menu();
+                        }
+                    }
+                    if ui.button("Frame Geometry").clicked() {
+                        self.frame_current_geometry();
+                        ui.close_menu();
+                    }
                     if ui.button("Reset Camera  Home").clicked() {
                         self.camera.reset();
+                        self.status_message = Some("Reset viewport camera".into());
                         ui.close_menu();
                     }
                 });
@@ -1795,6 +1804,29 @@ impl eframe::App for App {
                 if ui.button("Settings").clicked() {
                     self.settings_open = true;
                 }
+
+                ui.separator();
+
+                ui.label("Viewport");
+                if ui.add(
+                    egui::Slider::new(&mut self.resolution, 16..=256)
+                        .logarithmic(true)
+                        .text("Res")
+                ).changed() && self.current_sdf.is_some() {
+                    self.execute_script();
+                }
+
+                ui.separator();
+
+                egui::ComboBox::from_id_salt("menu_mesh_quality")
+                    .selected_text(format!("Mesh {}", self.mesh_quality.label()))
+                    .show_ui(ui, |ui| {
+                        for &q in MeshQuality::all() {
+                            if ui.selectable_label(self.mesh_quality == q, q.label()).clicked() {
+                                self.mesh_quality = q;
+                            }
+                        }
+                    });
 
                 ui.separator();
 
@@ -1898,6 +1930,35 @@ impl eframe::App for App {
             });
         });
 
+        if let Some((instance, project_name, project_path)) = show_wizard(ctx, &mut self.project_wizard) {
+            self.state.script_text = instance.script;
+            self.state.dimensions = instance.dimensions;
+            self.workflow_config = instance.workflow_config;
+            if let Some(settings) = instance.print_analysis_settings {
+                self.print_analysis_settings = settings;
+            }
+            if let Some(tol) = instance.tolerance_settings {
+                self.tolerance_settings = tol;
+                self.tolerance_preset = crate::sdf::print::TolerancePreset::StandardFDM;
+            }
+            self.current_file_path = None;
+            self.current_sdf = None;
+            self.current_mesh = None;
+            self.current_sdf_grid = None;
+            self.undo_history.clear();
+            self.status_message = Some(format!("Initialized project '{}'", project_name));
+            self.execute_script();
+
+            if !project_path.trim().is_empty() {
+                let save_dir = std::path::PathBuf::from(project_path.trim());
+                let filename = format!(
+                    "{}.icad",
+                    project_name.replace(['\\', '/', ':', '*', '?', '\"', '<', '>', '|'], "_")
+                );
+                self.save_project_to_path(save_dir.join(filename));
+            }
+        }
+
         // Project tree panel (leftmost)
         egui::SidePanel::left("project_tree_panel")
             .default_width(220.0)
@@ -1961,7 +2022,237 @@ impl eframe::App for App {
                         &mut self.undo_history,
                     );
                     if dims_changed {
+                        if self.workflow_auto_apply_constraints {
+                            self.apply_workflow_constraints();
+                        }
                         self.dimensions_pending_eval = true;
+                    }
+
+                    let mut workflow_apply_constraints = false;
+                    let mut workflow_run_checks = false;
+                    let mut workflow_run_flight = false;
+                    let mut variant_to_apply: Option<usize> = None;
+                    let mut variant_to_delete: Option<usize> = None;
+                    let mut save_variant = false;
+                    let mut workflow_status_message: Option<String> = None;
+                    if let Some(cfg) = &mut self.workflow_config {
+                        ui.separator();
+                        ui.collapsing("Workflow Config", |ui| {
+                            ui.label(format!("Template: {}", cfg.template_id));
+                            ui.label(format!("Vehicle: {}", cfg.vehicle_type));
+                            ui.checkbox(&mut self.workflow_auto_apply_constraints, "Auto-apply assembly constraints");
+
+                            let mut selected = cfg.manufacturing_preset.clone();
+                            egui::ComboBox::from_id_salt("workflow_manufacturing_preset")
+                                .selected_text(selected.label())
+                                .show_ui(ui, |ui| {
+                                    for preset in [
+                                        crate::project::ManufacturingPreset::Foamboard,
+                                        crate::project::ManufacturingPreset::LwPlaShell,
+                                        crate::project::ManufacturingPreset::CarbonTubeSpar,
+                                        crate::project::ManufacturingPreset::BalsaHybrid,
+                                        crate::project::ManufacturingPreset::MoldedShell,
+                                    ] {
+                                        ui.selectable_value(&mut selected, preset.clone(), preset.label());
+                                    }
+                                });
+
+                            if selected != cfg.manufacturing_preset {
+                                cfg.manufacturing_preset = selected.clone();
+                                for (name, value) in crate::ui::templates::preset_dimension_defaults(&selected) {
+                                    self.state.dimensions.insert(name, value);
+                                }
+                                self.print_analysis_settings = crate::ui::templates::preset_print_analysis_settings(&selected);
+                                self.tolerance_settings = crate::ui::templates::preset_tolerance_settings(&selected);
+                                self.tolerance_preset = crate::sdf::print::TolerancePreset::StandardFDM;
+                                workflow_apply_constraints = true;
+                                self.dimensions_pending_eval = true;
+                            }
+
+                            if !cfg.parameter_groups.is_empty() {
+                                ui.separator();
+                                for (group, names) in &cfg.parameter_groups {
+                                    ui.label(egui::RichText::new(group).small().strong());
+                                    ui.label(
+                                        egui::RichText::new(names.join(", "))
+                                            .small()
+                                            .color(egui::Color32::GRAY),
+                                    );
+                                }
+                            }
+
+                            if !cfg.assembly_constraints.is_empty() {
+                                ui.separator();
+                                ui.collapsing("Assembly Constraints", |ui| {
+                                    if ui.button("Apply Constraints").clicked() {
+                                        workflow_apply_constraints = true;
+                                    }
+                                    for constraint in &mut cfg.assembly_constraints {
+                                        ui.horizontal(|ui| {
+                                            ui.checkbox(&mut constraint.enabled, "");
+                                            ui.label(&constraint.label);
+                                            ui.label(
+                                                egui::RichText::new(format!("-> {}", constraint.driven))
+                                                    .small()
+                                                    .color(egui::Color32::GRAY),
+                                            );
+                                        });
+                                    }
+                                });
+                            }
+
+                            ui.separator();
+                            ui.collapsing("Workflow Checks", |ui| {
+                                ui.horizontal(|ui| {
+                                    if ui.button("Run Manufacturing Checks").clicked() {
+                                        workflow_run_checks = true;
+                                    }
+                                    if ui.button("Run Flight Summary").clicked() {
+                                        workflow_run_flight = true;
+                                    }
+                                });
+
+                                let mfg = crate::analysis::workflow_summary::summarize_manufacturing(
+                                    self.thickness_result.as_ref(),
+                                    self.print_analysis_result.as_ref(),
+                                    &self.print_analysis_settings,
+                                );
+                                let flight = crate::analysis::workflow_summary::summarize_flight(
+                                    &self.mass_points,
+                                    self.cg.map(|cg| cg.x),
+                                    self.current_static_margin.as_ref(),
+                                    self.current_trim_result.as_ref(),
+                                    self.current_drag_polar.as_ref(),
+                                    self.current_cg_sensitivity.as_ref(),
+                                );
+                                let status_color = |status| match status {
+                                    crate::analysis::workflow_summary::SummaryStatus::Pass => egui::Color32::from_rgb(60, 180, 90),
+                                    crate::analysis::workflow_summary::SummaryStatus::Warning => egui::Color32::from_rgb(220, 170, 60),
+                                    crate::analysis::workflow_summary::SummaryStatus::Fail => egui::Color32::from_rgb(210, 70, 70),
+                                };
+
+                                ui.colored_label(status_color(mfg.status), format!("Manufacturing: {}", mfg.status.label()));
+                                if let Some(min_wall) = mfg.min_wall_mm {
+                                    ui.label(format!("Min wall: {:.2} mm", min_wall));
+                                }
+                                if let Some(area) = mfg.overhang_area_mm2 {
+                                    ui.label(format!("Overhang area: {:.0} mm²", area));
+                                }
+                                if let Some(critical_area) = mfg.critical_overhang_area_mm2 {
+                                    ui.label(format!("Critical overhang area: {:.0} mm²", critical_area));
+                                }
+                                if mfg.issue_errors > 0 || mfg.issue_warnings > 0 {
+                                    ui.label(format!("Issues: {} errors, {} warnings", mfg.issue_errors, mfg.issue_warnings));
+                                }
+                                for note in mfg.notes.iter().take(2) {
+                                    ui.label(note);
+                                }
+
+                                ui.separator();
+                                ui.colored_label(status_color(flight.status), format!("Flight: {}", flight.status.label()));
+                                ui.label(format!("Total component mass: {:.1} g", flight.total_mass_g));
+                                if let Some(cg_x) = flight.cg_x_mm {
+                                    ui.label(format!("CG x: {:.1} mm", cg_x));
+                                }
+                                if let Some(sm) = flight.static_margin_mac {
+                                    ui.label(format!("Static margin: {:.1}% MAC", sm * 100.0));
+                                }
+                                if let Some(ld) = flight.best_glide_ratio {
+                                    ui.label(format!("Best L/D: {:.1}", ld));
+                                }
+                                if let Some(speed) = flight.best_glide_speed_ms {
+                                    ui.label(format!("Best glide speed: {:.1} m/s", speed));
+                                }
+                                if let Some(trim_aoa) = flight.trim_aoa_deg {
+                                    ui.label(format!("Trim AoA: {:.1}°", trim_aoa));
+                                }
+                                for note in flight.notes.iter().take(2) {
+                                    ui.label(note);
+                                }
+                            });
+
+                            ui.separator();
+                            ui.collapsing("Design Variants", |ui| {
+                                ui.horizontal(|ui| {
+                                    ui.label("Name");
+                                    ui.text_edit_singleline(&mut self.workflow_variant_name);
+                                });
+                                ui.text_edit_singleline(&mut self.workflow_variant_description);
+                                if ui.button("Save Current as Variant").clicked() {
+                                    save_variant = true;
+                                }
+                                for (idx, variant) in cfg.variants.iter().enumerate() {
+                                    ui.horizontal(|ui| {
+                                        ui.label(&variant.name);
+                                        if !variant.description.is_empty() {
+                                            ui.label(
+                                                egui::RichText::new(&variant.description)
+                                                    .small()
+                                                    .color(egui::Color32::GRAY),
+                                            );
+                                        }
+                                        if ui.small_button("Apply").clicked() {
+                                            variant_to_apply = Some(idx);
+                                        }
+                                        if ui.small_button("Delete").clicked() {
+                                            variant_to_delete = Some(idx);
+                                        }
+                                    });
+                                }
+                            });
+                        });
+                    }
+                    if workflow_apply_constraints {
+                        let applied = self.apply_workflow_constraints();
+                        workflow_status_message = Some(format!("Applied {} assembly constraints", applied));
+                    }
+                    if workflow_run_checks {
+                        if self.thickness_result.is_none() {
+                            self.start_thickness_analysis();
+                        }
+                        self.start_print_analysis();
+                        workflow_status_message = Some("Started manufacturing checks".into());
+                    }
+                    if workflow_run_flight {
+                        self.run_workflow_flight_analysis();
+                        workflow_status_message = Some("Updated workflow flight summary".into());
+                    }
+                    if let Some(idx) = variant_to_apply {
+                        let selected_variant = self.workflow_config.as_ref()
+                            .and_then(|cfg| cfg.variants.get(idx).cloned());
+                        if let Some(variant) = selected_variant {
+                            self.state.dimensions = variant.dimensions.clone();
+                            if self.workflow_auto_apply_constraints {
+                                self.apply_workflow_constraints();
+                            }
+                            self.dimensions_pending_eval = true;
+                            workflow_status_message = Some(format!("Applied variant '{}'", variant.name));
+                        }
+                    }
+                    if save_variant {
+                        if let Some(cfg) = &mut self.workflow_config {
+                            let name = self.workflow_variant_name.trim();
+                            if !name.is_empty() {
+                                cfg.variants.retain(|v| v.name != name);
+                                cfg.variants.push(crate::project::DesignVariant {
+                                    name: name.to_string(),
+                                    description: self.workflow_variant_description.trim().to_string(),
+                                    dimensions: self.state.dimensions.clone(),
+                                });
+                                workflow_status_message = Some(format!("Saved variant '{}'", name));
+                            }
+                        }
+                    }
+                    if let Some(idx) = variant_to_delete {
+                        if let Some(cfg) = &mut self.workflow_config {
+                            if idx < cfg.variants.len() {
+                                let removed = cfg.variants.remove(idx);
+                                workflow_status_message = Some(format!("Deleted variant '{}'", removed.name));
+                            }
+                        }
+                    }
+                    if let Some(msg) = workflow_status_message {
+                        self.status_message = Some(msg);
                     }
 
                     // ── Imported meshes ───────────────────────────────────────
@@ -2245,9 +2536,16 @@ impl eframe::App for App {
                                         examples::Difficulty::Intermediate => egui::Color32::from_rgb(200, 180, 50),
                                         examples::Difficulty::Advanced     => egui::Color32::from_rgb(200, 80, 80),
                                     };
+                                    let maturity = ex.maturity();
+                                    let maturity_color = match maturity {
+                                        examples::Maturity::Stable => egui::Color32::from_rgb(90, 160, 220),
+                                        examples::Maturity::Experimental => egui::Color32::from_rgb(220, 150, 60),
+                                        examples::Maturity::Legacy => egui::Color32::from_rgb(150, 150, 150),
+                                    };
                                     let already_open = self.open_example_tabs.contains(&idx);
                                     ui.horizontal(|ui| {
                                         ui.colored_label(diff_color, "●");
+                                        ui.colored_label(maturity_color, format!("[{}]", maturity.label()));
                                         if ui.selectable_label(
                                             already_open,
                                             format!("{} — {}", ex.title, ex.description),
@@ -2560,10 +2858,20 @@ impl eframe::App for App {
                 } else if let Some(ex_idx) = self.active_example_tab {
                 // ── Read-only example tab view ────────────────────────────────────
                 if let Some(ex) = examples::get_examples().get(ex_idx) {
+                    let maturity = ex.maturity();
+                    let maturity_color = match maturity {
+                        examples::Maturity::Stable => egui::Color32::from_rgb(90, 160, 220),
+                        examples::Maturity::Experimental => egui::Color32::from_rgb(220, 150, 60),
+                        examples::Maturity::Legacy => egui::Color32::from_rgb(150, 150, 150),
+                    };
                     ui.label(
                         egui::RichText::new("Read-only example — right-click tab to copy to main script")
                             .color(egui::Color32::GRAY)
                             .size(11.0),
+                    );
+                    ui.colored_label(
+                        maturity_color,
+                        format!("Feature status: {}", maturity.label()),
                     );
                     // Related functions
                     if !ex.related_functions.is_empty() {
@@ -2791,21 +3099,9 @@ impl eframe::App for App {
 
                 ui.separator();
 
-                // Resolution slider
-                ui.horizontal(|ui| {
-                    ui.label("Resolution:");
-                    if ui.add(egui::Slider::new(&mut self.resolution, 16..=256).logarithmic(true)).changed() {
-                        // Re-mesh if we have a current SDF
-                        if self.current_sdf.is_some() {
-                            self.execute_script();
-                        }
-                    }
-                });
-
                 // Rendering options
                 ui.horizontal(|ui| {
                     if ui.checkbox(&mut self.smooth_normals, "Smooth Normals").changed() {
-                        // Re-mesh if we have a current SDF
                         if self.current_sdf.is_some() {
                             self.execute_script();
                         }
@@ -3412,6 +3708,10 @@ impl App {
         );
         self.last_viewport_rect = rect;
 
+        response.context_menu(|ui| {
+            self.show_viewport_view_menu(ui);
+        });
+
         // Handle camera controls
         if response.dragged_by(egui::PointerButton::Primary) {
             if let Some(last_pos) = self.last_mouse_pos {
@@ -3555,6 +3855,8 @@ impl App {
                 }
             }
 
+            self.draw_view_cube(ui, rect);
+
             // Draw reference point overlays.
             if self.show_ref_points && !self.current_ref_points.is_empty() {
                 let ref_pts: Vec<_> = self.current_ref_points.iter()
@@ -3605,6 +3907,322 @@ impl App {
                 }
             }
         }
+    }
+
+    fn show_viewport_view_menu(&mut self, ui: &mut egui::Ui) {
+        ui.label("Viewport Views");
+        ui.separator();
+
+        for (label, view) in [
+            ("Front", StandardView::Front),
+            ("Back", StandardView::Back),
+            ("Left", StandardView::Left),
+            ("Right", StandardView::Right),
+            ("Top", StandardView::Top),
+            ("Bottom", StandardView::Bottom),
+            ("Isometric", StandardView::Isometric),
+        ] {
+            if ui.button(label).clicked() {
+                self.snap_camera_to_view(view);
+                ui.close_menu();
+            }
+        }
+
+        ui.separator();
+        if ui.button("Frame Selection").clicked() {
+            self.frame_current_geometry();
+            ui.close_menu();
+        }
+        if ui.button("Reset Camera").clicked() {
+            self.camera.reset();
+            self.status_message = Some("Reset viewport camera".into());
+            ui.close_menu();
+        }
+    }
+
+    fn draw_view_cube(&mut self, ui: &mut egui::Ui, viewport_rect: egui::Rect) {
+        let panel_size = egui::vec2(124.0, 136.0);
+        let panel_rect = egui::Rect::from_min_size(
+            egui::pos2(viewport_rect.left() + 14.0, viewport_rect.bottom() - panel_size.y - 14.0),
+            panel_size,
+        );
+        let painter = ui.painter().with_clip_rect(viewport_rect);
+
+        painter.rect_filled(
+            panel_rect,
+            10.0,
+            egui::Color32::from_rgba_unmultiplied(18, 22, 28, 180),
+        );
+        painter.rect_stroke(
+            panel_rect,
+            10.0,
+            egui::Stroke::new(1.0, egui::Color32::from_rgba_unmultiplied(255, 255, 255, 48)),
+        );
+        let cube_rect = egui::Rect::from_min_max(
+            panel_rect.min + egui::vec2(10.0, 8.0),
+            panel_rect.min + egui::vec2(panel_rect.width() - 10.0, 94.0),
+        );
+        self.draw_projected_view_cube(ui, cube_rect);
+
+        let iso_rect = egui::Rect::from_min_size(
+            egui::pos2(panel_rect.left() + 12.0, panel_rect.bottom() - 28.0),
+            egui::vec2(46.0, 18.0),
+        );
+        let frame_rect = egui::Rect::from_min_size(
+            egui::pos2(panel_rect.left() + 64.0, panel_rect.bottom() - 28.0),
+            egui::vec2(46.0, 18.0),
+        );
+        for (label, rect, action) in [
+            ("Iso", iso_rect, Some(StandardView::Isometric)),
+            ("Fit", frame_rect, None),
+        ] {
+            let id = ui.make_persistent_id(("viewport_view_cube_action", label));
+            let resp = ui.interact(rect, id, egui::Sense::click());
+            let fill = if resp.hovered() {
+                egui::Color32::from_rgb(120, 86, 40)
+            } else {
+                egui::Color32::from_rgb(72, 54, 28)
+            };
+            painter.rect_filled(rect, 6.0, fill);
+            painter.rect_stroke(
+                rect,
+                6.0,
+                egui::Stroke::new(1.0, egui::Color32::from_rgba_unmultiplied(255, 255, 255, 80)),
+            );
+            painter.text(
+                rect.center(),
+                egui::Align2::CENTER_CENTER,
+                label,
+                egui::FontId::proportional(10.0),
+                egui::Color32::WHITE,
+            );
+            if resp.clicked() {
+                if let Some(view) = action {
+                    self.snap_camera_to_view(view);
+                } else {
+                    self.frame_current_geometry();
+                }
+            }
+        }
+    }
+
+    fn draw_projected_view_cube(&mut self, ui: &mut egui::Ui, cube_rect: egui::Rect) {
+        let painter = ui.painter().with_clip_rect(cube_rect.expand(8.0));
+        let center = cube_rect.center();
+        let scale = cube_rect.width().min(cube_rect.height()) * 0.24;
+        let forward = (self.camera.target - self.camera.eye).normalize_or_zero();
+        let mut right = forward.cross(self.camera.up).normalize_or_zero();
+        if right.length_squared() < 1e-6 {
+            right = Vec3::X;
+        }
+        let mut up = right.cross(forward).normalize_or_zero();
+        if up.length_squared() < 1e-6 {
+            up = Vec3::Z;
+        }
+
+        let vertices = [
+            Vec3::new(-1.0, -1.0, -1.0),
+            Vec3::new( 1.0, -1.0, -1.0),
+            Vec3::new( 1.0,  1.0, -1.0),
+            Vec3::new(-1.0,  1.0, -1.0),
+            Vec3::new(-1.0, -1.0,  1.0),
+            Vec3::new( 1.0, -1.0,  1.0),
+            Vec3::new( 1.0,  1.0,  1.0),
+            Vec3::new(-1.0,  1.0,  1.0),
+        ];
+
+        let projected: Vec<(egui::Pos2, f32)> = vertices.iter().map(|v| {
+            let x = v.dot(right) * scale;
+            let y = -v.dot(up) * scale;
+            let z = v.dot(forward);
+            (egui::pos2(center.x + x, center.y + y), z)
+        }).collect();
+
+        struct CubeFace {
+            label: &'static str,
+            view: StandardView,
+            normal: Vec3,
+            indices: [usize; 4],
+            base: egui::Color32,
+        }
+
+        let faces = [
+            CubeFace {
+                label: "Front",
+                view: StandardView::Front,
+                normal: Vec3::X,
+                indices: [1, 2, 6, 5],
+                base: egui::Color32::from_rgb(86, 112, 170),
+            },
+            CubeFace {
+                label: "Back",
+                view: StandardView::Back,
+                normal: -Vec3::X,
+                indices: [0, 4, 7, 3],
+                base: egui::Color32::from_rgb(63, 78, 110),
+            },
+            CubeFace {
+                label: "Left",
+                view: StandardView::Left,
+                normal: Vec3::Y,
+                indices: [2, 3, 7, 6],
+                base: egui::Color32::from_rgb(74, 138, 174),
+            },
+            CubeFace {
+                label: "Right",
+                view: StandardView::Right,
+                normal: -Vec3::Y,
+                indices: [0, 1, 5, 4],
+                base: egui::Color32::from_rgb(64, 116, 146),
+            },
+            CubeFace {
+                label: "Top",
+                view: StandardView::Top,
+                normal: Vec3::Z,
+                indices: [4, 5, 6, 7],
+                base: egui::Color32::from_rgb(156, 122, 76),
+            },
+            CubeFace {
+                label: "Bottom",
+                view: StandardView::Bottom,
+                normal: -Vec3::Z,
+                indices: [0, 3, 2, 1],
+                base: egui::Color32::from_rgb(108, 78, 50),
+            },
+        ];
+
+        let pointer_pos = ui.input(|i| i.pointer.interact_pos());
+        let pointer_clicked = ui.input(|i| i.pointer.primary_clicked());
+        let mut hovered_view = None;
+        let mut clicked_view = None;
+
+        let mut visible_faces: Vec<(f32, &CubeFace, Vec<egui::Pos2>)> = faces.iter()
+            .filter_map(|face| {
+                let facing = face.normal.dot(forward);
+                if facing <= 0.0 {
+                    return None;
+                }
+                let poly: Vec<egui::Pos2> = face.indices.iter().map(|&idx| projected[idx].0).collect();
+                let depth = face.indices.iter().map(|&idx| projected[idx].1).sum::<f32>() / 4.0;
+                Some((depth, face, poly))
+            })
+            .collect();
+        visible_faces.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
+
+        painter.rect_filled(cube_rect, 8.0, egui::Color32::from_rgba_unmultiplied(255, 255, 255, 10));
+
+        for (_, face, poly) in &visible_faces {
+            let hovered = pointer_pos.map(|p| Self::point_in_polygon(p, poly)).unwrap_or(false);
+            if hovered {
+                hovered_view = Some(face.view);
+                if pointer_clicked {
+                    clicked_view = Some(face.view);
+                }
+            }
+        }
+
+        for (_, face, poly) in &visible_faces {
+            let fill = if hovered_view == Some(face.view) {
+                face.base.gamma_multiply(1.35)
+            } else {
+                face.base
+            };
+            painter.add(egui::Shape::convex_polygon(
+                poly.clone(),
+                fill,
+                egui::Stroke::new(1.2, egui::Color32::from_rgba_unmultiplied(255, 255, 255, 120)),
+            ));
+            let center = Self::polygon_center(poly);
+            painter.text(
+                center,
+                egui::Align2::CENTER_CENTER,
+                face.label,
+                egui::FontId::proportional(11.0),
+                egui::Color32::WHITE,
+            );
+        }
+
+        let edges = [
+            (0usize, 1usize), (1, 2), (2, 3), (3, 0),
+            (4, 5), (5, 6), (6, 7), (7, 4),
+            (0, 4), (1, 5), (2, 6), (3, 7),
+        ];
+        for (a, b) in edges {
+            painter.line_segment(
+                [projected[a].0, projected[b].0],
+                egui::Stroke::new(1.0, egui::Color32::from_rgba_unmultiplied(255, 255, 255, 70)),
+            );
+        }
+
+        if let Some(view) = clicked_view {
+            self.snap_camera_to_view(view);
+        }
+    }
+
+    fn snap_camera_to_view(&mut self, view: StandardView) {
+        self.camera.snap_to_view(view);
+        let label = match view {
+            StandardView::Front => "Front",
+            StandardView::Back => "Back",
+            StandardView::Left => "Left",
+            StandardView::Right => "Right",
+            StandardView::Top => "Top",
+            StandardView::Bottom => "Bottom",
+            StandardView::Isometric => "Isometric",
+        };
+        self.status_message = Some(format!("Snapped viewport to {} view", label));
+    }
+
+    fn frame_current_geometry(&mut self) {
+        if let Some(mesh) = &self.current_mesh {
+            if let Some((mesh_min, mesh_max)) = Self::mesh_bounds(mesh) {
+                self.camera.frame_bounds(mesh_min, mesh_max);
+                self.status_message = Some("Framed current geometry".into());
+                return;
+            }
+        }
+
+        if let Some(grid) = &self.current_sdf_grid {
+            self.camera.frame_bounds(grid.bounds_min, grid.bounds_max);
+            self.status_message = Some("Framed current geometry".into());
+        }
+    }
+
+    fn mesh_bounds(mesh: &Mesh) -> Option<(Vec3, Vec3)> {
+        let first = mesh.vertices.first()?;
+        let mut min = Vec3::from_array(first.position);
+        let mut max = min;
+        for vertex in &mesh.vertices[1..] {
+            let p = Vec3::from_array(vertex.position);
+            min = min.min(p);
+            max = max.max(p);
+        }
+        Some((min, max))
+    }
+
+    fn point_in_polygon(point: egui::Pos2, polygon: &[egui::Pos2]) -> bool {
+        let mut inside = false;
+        let mut j = polygon.len().saturating_sub(1);
+        for i in 0..polygon.len() {
+            let pi = polygon[i];
+            let pj = polygon[j];
+            let intersects = ((pi.y > point.y) != (pj.y > point.y))
+                && (point.x < (pj.x - pi.x) * (point.y - pi.y) / ((pj.y - pi.y).abs().max(1e-6)) + pi.x);
+            if intersects {
+                inside = !inside;
+            }
+            j = i;
+        }
+        inside
+    }
+
+    fn polygon_center(polygon: &[egui::Pos2]) -> egui::Pos2 {
+        let mut sum = egui::Vec2::ZERO;
+        for p in polygon {
+            sum += p.to_vec2();
+        }
+        let avg = sum / polygon.len().max(1) as f32;
+        egui::pos2(avg.x, avg.y)
     }
 
     /// Project a world-space point onto the egui viewport rect.

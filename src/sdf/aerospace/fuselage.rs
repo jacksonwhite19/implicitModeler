@@ -56,6 +56,25 @@ impl CrossSection {
             }
         }
     }
+
+    fn half_extents(&self) -> (f32, f32) {
+        match self {
+            CrossSection::Circle { radius } => (*radius, *radius),
+            CrossSection::Ellipse { width, height } => (*width, *height),
+            CrossSection::Rect { width, height } => (*width * 0.5, *height * 0.5),
+        }
+    }
+
+    fn from_half_extents_like(template: &CrossSection, width: f32, height: f32) -> CrossSection {
+        match template {
+            CrossSection::Circle { .. } => CrossSection::Ellipse { width, height },
+            CrossSection::Ellipse { .. } => CrossSection::Ellipse { width, height },
+            CrossSection::Rect { .. } => CrossSection::Rect {
+                width: width * 2.0,
+                height: height * 2.0,
+            },
+        }
+    }
 }
 
 impl Section2D for CrossSection {
@@ -133,6 +152,88 @@ impl LoftedFuselage {
                 ref_chine_y: None,
             })
             .collect();
+        Self { sections, length, splines: None }
+    }
+
+    /// Build a lofted fuselage, but relax section sizes toward a fairer profile.
+    /// `smoothness=0` keeps the original frame sizes; `smoothness=1` fully applies
+    /// the local fairing pass.
+    pub fn from_stations_smoothed(
+        mut stations: Vec<(f32, Arc<dyn Section2D>)>,
+        length: f32,
+        smoothness: f32,
+    ) -> Self {
+        stations.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
+        if stations.len() < 3 || smoothness <= 0.0 {
+            return Self::from_stations(stations, length);
+        }
+
+        let smoothness = smoothness.clamp(0.0, 1.0);
+        let positions: Vec<f32> = stations.iter().map(|(pos, _)| *pos).collect();
+        let templates: Vec<Option<CrossSection>> = stations.iter()
+            .map(|(_, section)| section.as_any().downcast_ref::<CrossSection>().cloned())
+            .collect();
+        let widths: Vec<f32> = templates.iter()
+            .map(|cs| cs.as_ref().map(|c| c.half_extents().0).unwrap_or(0.0))
+            .collect();
+        let heights: Vec<f32> = templates.iter()
+            .map(|cs| cs.as_ref().map(|c| c.half_extents().1).unwrap_or(0.0))
+            .collect();
+
+        let fair_series = |values: &[f32], idx: usize| -> f32 {
+            let x_prev = positions[idx - 1];
+            let x_curr = positions[idx];
+            let x_next = positions[idx + 1];
+            let span = (x_next - x_prev).max(1e-6);
+            let t = ((x_curr - x_prev) / span).clamp(0.0, 1.0);
+            let local = values[idx - 1] + (values[idx + 1] - values[idx - 1]) * t;
+
+            let wide = if idx >= 2 && idx + 2 < values.len() {
+                let x_wide_prev = positions[idx - 2];
+                let x_wide_next = positions[idx + 2];
+                let wide_span = (x_wide_next - x_wide_prev).max(1e-6);
+                let t_wide = ((x_curr - x_wide_prev) / wide_span).clamp(0.0, 1.0);
+                values[idx - 2] + (values[idx + 2] - values[idx - 2]) * t_wide
+            } else {
+                local
+            };
+
+            // Blend local and wide baselines. This respects station spacing and reduces
+            // abrupt bulges without snapping hard to a simple moving average.
+            let fair_target = local * 0.75 + wide * 0.25;
+
+            // Preserve stronger intentional curvature slightly more than shallow noise.
+            let curvature = (values[idx] - local).abs();
+            let scale = values[idx].abs().max(1e-3);
+            let curvature_guard = (1.0 - (curvature / (scale * 0.6)).clamp(0.0, 0.65)).clamp(0.35, 1.0);
+
+            values[idx] + (fair_target - values[idx]) * smoothness * curvature_guard
+        };
+
+        let mut sections = Vec::with_capacity(stations.len());
+
+        for i in 0..stations.len() {
+            let (pos, section) = &stations[i];
+            let smoothed_section = if i == 0 || i + 1 == stations.len() {
+                Arc::clone(section)
+            } else if let Some(curr) = templates[i].as_ref() {
+                let fair_w = fair_series(&widths, i);
+                let fair_h = fair_series(&heights, i);
+                Arc::new(CrossSection::from_half_extents_like(curr, fair_w.max(1e-4), fair_h.max(1e-4))) as Arc<dyn Section2D>
+            } else {
+                Arc::clone(section)
+            };
+
+            sections.push(FuselageSection {
+                cross_section: smoothed_section,
+                position: *pos,
+                center_offset: Vec2::ZERO,
+                ref_keel_z: None,
+                ref_deck_z: None,
+                ref_chine_y: None,
+            });
+        }
+
         Self { sections, length, splines: None }
     }
 
@@ -332,5 +433,31 @@ mod tests {
 
         let dist_beyond = fuselage.distance(Vec3::new(150.0, 0.0, 0.0));
         assert!(dist_beyond > 0.0, "Point beyond fuselage should be positive");
+    }
+
+    #[test]
+    fn test_smoothed_stations_zero_is_rigid() {
+        let stations = vec![
+            (0.0, Arc::new(CrossSection::Ellipse { width: 1.0, height: 1.0 }) as Arc<dyn Section2D>),
+            (0.5, Arc::new(CrossSection::Ellipse { width: 4.0, height: 2.0 }) as Arc<dyn Section2D>),
+            (1.0, Arc::new(CrossSection::Ellipse { width: 1.0, height: 1.0 }) as Arc<dyn Section2D>),
+        ];
+        let rigid = LoftedFuselage::from_stations_smoothed(stations.clone(), 100.0, 0.0);
+        let plain = LoftedFuselage::from_stations(stations, 100.0);
+        let p = Vec3::new(50.0, 1.8, 0.0);
+        assert!((rigid.distance(p) - plain.distance(p)).abs() < 1e-5);
+    }
+
+    #[test]
+    fn test_smoothed_stations_relaxes_middle_section() {
+        let stations = vec![
+            (0.0, Arc::new(CrossSection::Ellipse { width: 1.0, height: 1.0 }) as Arc<dyn Section2D>),
+            (0.5, Arc::new(CrossSection::Ellipse { width: 6.0, height: 3.0 }) as Arc<dyn Section2D>),
+            (1.0, Arc::new(CrossSection::Ellipse { width: 1.0, height: 1.0 }) as Arc<dyn Section2D>),
+        ];
+        let rigid = LoftedFuselage::from_stations(stations.clone(), 100.0);
+        let smoothed = LoftedFuselage::from_stations_smoothed(stations, 100.0, 1.0);
+        let p = Vec3::new(50.0, 2.4, 0.0);
+        assert!(rigid.distance(p) < smoothed.distance(p), "smoothed center section should be less bulged");
     }
 }

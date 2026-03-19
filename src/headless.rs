@@ -9,7 +9,7 @@ use indexmap::IndexMap;
 use crate::sdf::Sdf;
 use crate::scripting;
 use crate::scripting::ScriptResult;
-use crate::mesh::{Mesh, marching_cubes};
+use crate::mesh::{Mesh, MeshQuality};
 
 // ── Metrics structs ───────────────────────────────────────────────────────────
 
@@ -37,6 +37,15 @@ pub struct MetricsOutput {
     pub evaluation_time_ms:    u64,
     pub grid_resolution:       u32,
     pub dimensions_used:       HashMap<String, f64>,
+}
+
+fn quality_from_resolution(resolution: u32) -> MeshQuality {
+    match resolution {
+        0..=24 => MeshQuality::Draft,
+        25..=40 => MeshQuality::Normal,
+        41..=56 => MeshQuality::Fine,
+        _ => MeshQuality::Ultra,
+    }
 }
 
 // ── Mesh geometry helpers ─────────────────────────────────────────────────────
@@ -239,14 +248,14 @@ pub fn execute_script_headless_extended(
     let eval_ms = t0.elapsed().as_millis() as u64;
 
     // Compute mesh bounds from bounding points or use defaults
-    let (bounds_min, bounds_max) = auto_bounds(&*script_result.sdf, resolution);
+    let (bounds_min, bounds_max) = crate::pipeline::auto_bounds(&*script_result.sdf);
 
     // Extract mesh
-    let mesh = marching_cubes::extract_mesh(
+    let mesh = crate::export::build_export_mesh(
         script_result.sdf.as_ref(),
         bounds_min,
         bounds_max,
-        resolution,
+        quality_from_resolution(resolution),
         smooth_normals,
     );
 
@@ -254,15 +263,22 @@ pub fn execute_script_headless_extended(
     if let Some(out) = output_path {
         match format.to_lowercase().as_str() {
             "stl" => {
-                crate::export::export_stl(&mesh, out.to_str().unwrap())
+                crate::export::export_by_format(&mesh, out, "stl")
                     .map_err(|e| format!("STL export failed: {}", e))?;
             }
             "obj" => {
-                crate::export::export_obj(&mesh, out.to_str().unwrap())
+                crate::export::export_by_format(&mesh, out, "obj")
                     .map_err(|e| format!("OBJ export failed: {}", e))?;
             }
+            "package" => {
+                crate::export::export_manufacturing_package(
+                    &mesh,
+                    script_path.file_stem().and_then(|s| s.to_str()).unwrap_or("project"),
+                    out,
+                )?;
+            }
             _ => {
-                return Err(format!("Unknown format: {}. Use 'stl' or 'obj'.", format));
+                return Err(format!("Unknown format: {}. Use 'stl', 'obj', or 'package'.", format));
             }
         }
         println!("Exported {} ({} vertices, {} triangles)",
@@ -293,11 +309,11 @@ pub fn execute_script_headless_extended(
 }
 
 /// Load script text and dimensions from a path.
-/// Supports .ntop (project JSON) or raw Rhai scripts.
+/// Supports `.icad` project files or raw Rhai scripts.
 fn load_script_and_dims(path: &Path) -> Result<(String, IndexMap<String, f64>), String> {
     let ext = path.extension().and_then(|s| s.to_str()).unwrap_or("");
 
-    if ext == "ntop" {
+    if ext.eq_ignore_ascii_case("icad") {
         // Try loading as a project file
         match crate::project::Project::load(path) {
             Ok(project) => {
@@ -313,29 +329,6 @@ fn load_script_and_dims(path: &Path) -> Result<(String, IndexMap<String, f64>), 
     let script = std::fs::read_to_string(path)
         .map_err(|e| format!("Failed to read script: {}", e))?;
     Ok((script, IndexMap::new()))
-}
-
-/// Determine good mesh extraction bounds by probing the SDF.
-/// Uses a heuristic: expand from origin until SDF is positive everywhere on the shell.
-fn auto_bounds(sdf: &dyn Sdf, _resolution: u32) -> (Vec3, Vec3) {
-    // Quick sample: find the extent of the geometry
-    let probe_radii = [10.0_f32, 25.0, 50.0, 100.0, 200.0, 500.0, 1000.0, 2000.0];
-    for &r in &probe_radii {
-        // Check corners of the cube at radius r
-        let all_outside = [
-            Vec3::new( r,  r,  r),
-            Vec3::new(-r,  r,  r),
-            Vec3::new( r, -r,  r),
-            Vec3::new( r,  r, -r),
-        ]
-        .iter()
-        .all(|&p| sdf.distance(p) > 0.0);
-
-        if all_outside {
-            return (Vec3::splat(-r), Vec3::splat(r));
-        }
-    }
-    (Vec3::splat(-2000.0), Vec3::splat(2000.0))
 }
 
 pub fn execute_batch(
@@ -394,13 +387,14 @@ pub fn execute_batch(
 mod tests {
     use super::*;
     use crate::scripting::evaluate_script;
+    use tempfile::TempDir;
 
     #[test]
     fn test_metrics_volume_sphere() {
         // Sphere of radius 10 → analytical volume = 4/3 * π * 10³ ≈ 4188.8 mm³
         let script_result = evaluate_script("sphere(10.0)").unwrap();
         let sdf = &*script_result.sdf;
-        let mesh = marching_cubes::extract_mesh(sdf, Vec3::splat(-15.0), Vec3::splat(15.0), 64, false);
+        let mesh = crate::export::build_export_mesh(sdf, Vec3::splat(-15.0), Vec3::splat(15.0), MeshQuality::Ultra, false);
         let metrics = compute_metrics(sdf, &mesh, &script_result, 64, 0, &IndexMap::new());
         let analytical = (4.0_f32 / 3.0) * std::f32::consts::PI * 1000.0; // 4188.8
         let error_pct = ((metrics.volume_mm3 - analytical) / analytical).abs() * 100.0;
@@ -417,7 +411,7 @@ mod tests {
     fn test_metrics_has_all_fields() {
         let script_result = evaluate_script("sphere(5.0)").unwrap();
         let sdf = &*script_result.sdf;
-        let mesh = marching_cubes::extract_mesh(sdf, Vec3::splat(-10.0), Vec3::splat(10.0), 32, false);
+        let mesh = crate::export::build_export_mesh(sdf, Vec3::splat(-10.0), Vec3::splat(10.0), MeshQuality::Normal, false);
         let metrics = compute_metrics(sdf, &mesh, &script_result, 32, 100, &IndexMap::new());
         assert_eq!(metrics.schema_version, 1);
         assert!(metrics.volume_mm3 > 0.0);
@@ -438,8 +432,90 @@ mod tests {
             result.sdf.distance(Vec3::new(7.5, 0.0, 0.0)) < 0.0,
             "Sphere of radius 8 should contain point at 7.5"
         );
-        let mesh = marching_cubes::extract_mesh(&*result.sdf, Vec3::splat(-12.0), Vec3::splat(12.0), 32, false);
+        let mesh = crate::export::build_export_mesh(&*result.sdf, Vec3::splat(-12.0), Vec3::splat(12.0), MeshQuality::Normal, false);
         let metrics = compute_metrics(&*result.sdf, &mesh, &result, 32, 0, &dims);
         assert_eq!(metrics.dimensions_used.get("wingspan"), Some(&8.0_f64));
+    }
+
+    #[test]
+    fn test_load_script_and_dims_from_icad() {
+        let temp = TempDir::new().unwrap();
+        let path = temp.path().join("sample.icad");
+        std::fs::write(
+            &path,
+            r#"{
+  "version": "0.1.0",
+  "script": "sphere(radius)",
+  "resolution": 32,
+  "smooth_normals": false,
+  "show_wireframe": false,
+  "camera_position": [0.0, 0.0, 10.0],
+  "camera_target": [0.0, 0.0, 0.0],
+  "dimensions": { "radius": 6.5 }
+}"#,
+        ).unwrap();
+
+        let (script, dims) = load_script_and_dims(&path).unwrap();
+        assert_eq!(script, "sphere(radius)");
+        assert_eq!(dims.get("radius"), Some(&6.5));
+    }
+
+    #[test]
+    fn test_execute_headless_from_icad_writes_mesh_and_metrics() {
+        let temp = TempDir::new().unwrap();
+        let project_path = temp.path().join("sample.icad");
+        let mesh_path = temp.path().join("sample.stl");
+        let metrics_path = temp.path().join("metrics.json");
+        std::fs::write(
+            &project_path,
+            r#"{
+  "version": "0.1.0",
+  "script": "sphere(radius)",
+  "resolution": 32,
+  "smooth_normals": false,
+  "show_wireframe": false,
+  "camera_position": [0.0, 0.0, 10.0],
+  "camera_target": [0.0, 0.0, 0.0],
+  "dimensions": { "radius": 4.0 }
+}"#,
+        ).unwrap();
+
+        execute_script_headless_extended(
+            &project_path,
+            Some(&mesh_path),
+            "stl",
+            24,
+            false,
+            &[("radius".to_string(), 5.0)],
+            Some(&metrics_path),
+        ).unwrap();
+
+        assert!(mesh_path.exists(), "Headless export should write the mesh file");
+        assert!(metrics_path.exists(), "Headless export should write the metrics file");
+        let metrics = std::fs::read_to_string(metrics_path).unwrap();
+        assert!(metrics.contains("\"radius\""));
+        assert!(metrics.contains("5.0"));
+    }
+
+    #[test]
+    fn test_execute_headless_package_export() {
+        let temp = TempDir::new().unwrap();
+        let script_path = temp.path().join("sample.rhai");
+        let package_dir = temp.path().join("pkg");
+        std::fs::write(&script_path, "sphere(8.0)").unwrap();
+
+        execute_script_headless_extended(
+            &script_path,
+            Some(&package_dir),
+            "package",
+            24,
+            false,
+            &[],
+            None,
+        ).unwrap();
+
+        assert!(package_dir.join("main_body.stl").exists());
+        assert!(package_dir.join("bom.csv").exists());
+        assert!(package_dir.join("assembly_notes.md").exists());
     }
 }

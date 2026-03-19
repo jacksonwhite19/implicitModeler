@@ -1,7 +1,6 @@
 // Integration tests for field-driven operations
 
 use implicit_cad::scripting::evaluate_script;
-use implicit_cad::sdf::Sdf;
 use glam::Vec3;
 
 #[test]
