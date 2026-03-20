@@ -1476,6 +1476,112 @@ fn build(r) {
     }
 
     #[test]
+    fn test_conformal_spline_path_supports_offset_surface_features() {
+        let script = r#"
+            let fuse = fuselage([
+                [0.0, ellipse_section(0.05, 0.03)],
+                [0.3, ellipse_section(0.12, 0.08)],
+                [0.7, ellipse_section(0.12, 0.08)],
+                [1.0, ellipse_section(0.04, 0.03)],
+            ]);
+            let path = conformal_spline_path(
+                fuse,
+                [[0.2, 0.0, 0.12], [0.45, 0.0, 0.16], [0.7, 0.0, 0.12]],
+                0.02,
+                24
+            );
+            sweep(ellipse_profile(0.05, 0.03), path)
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "conformal_spline_path should succeed: {:?}", result.err());
+    }
+
+    #[test]
+    fn test_conformal_inlet_returns_fairing_and_duct() {
+        let script = r#"
+            let fuse = fuselage([
+                [0.0, ellipse_section(0.05, 0.03)],
+                [0.3, ellipse_section(0.12, 0.08)],
+                [0.7, ellipse_section(0.12, 0.08)],
+                [1.0, ellipse_section(0.04, 0.03)],
+            ]);
+            let parts = conformal_inlet(
+                fuse,
+                [[0.2, 0.0, 0.12], [0.4, 0.0, 0.16], [0.6, 0.0, 0.14]],
+                0.08, 0.05,
+                0.06, 0.03,
+                0.04,
+                0.01,
+                24,
+                [0.78, 0.0, 0.0],
+                [0.98, 0.0, 0.0]
+            );
+            parts[0]
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "conformal_inlet should succeed: {:?}", result.err());
+    }
+
+    #[test]
+    fn test_variable_duct_circular_outlet_builds() {
+        let script = r#"
+            let path = spline_path([
+                [0.0, 0.0, 0.04],
+                [0.08, 0.0, 0.045],
+                [0.18, 0.0, 0.02],
+                [0.30, 0.0, 0.0],
+                [0.45, 0.0, 0.0]
+            ]);
+            variable_duct_circular_outlet(path, 0.092, 0.090, 0.090, 0.002, 32, 0.9)
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "variable_duct_circular_outlet should succeed: {:?}", result.err());
+    }
+
+    #[test]
+    fn test_spline_tube_builds() {
+        let script = r#"
+            let path = spline_path([
+                [0.0, 0.0, 0.046],
+                [0.024, 0.0, 0.054],
+                [0.072, 0.0, 0.058],
+                [0.132, 0.0, 0.050],
+                [0.196, 0.0, 0.028],
+                [0.248, 0.0, 0.008],
+                [0.292, 0.0, 0.000],
+                [0.430, 0.0, 0.000]
+            ]);
+            spline_tube(path, 0.090, 0.090, 0.002, 96, 0.95)
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "spline_tube should succeed: {:?}", result.err());
+    }
+
+    #[test]
+    fn test_custom_profile_and_profile_duct_build() {
+        let script = r#"
+            let path = spline_path([
+                [0.0, 0.0, 0.046],
+                [0.020, 0.0, 0.052],
+                [0.056, 0.0, 0.058],
+                [0.108, 0.0, 0.060],
+                [0.164, 0.0, 0.048],
+                [0.218, 0.0, 0.024],
+                [0.266, 0.0, 0.008],
+                [0.312, 0.0, 0.000],
+                [0.430, 0.0, 0.000]
+            ]);
+            let outer_start = rounded_rect_profile(0.100, 0.076, 0.014);
+            let inner_start = custom_profile([[0.048,0.000],[0.032,0.022],[0.000,0.028],[-0.032,0.022],[-0.048,0.000],[-0.020,-0.018],[0.020,-0.018]]);
+            let outer_end = circle_profile(0.047);
+            let inner_end = circle_profile(0.045);
+            profile_duct(path, outer_start, outer_end, inner_start, inner_end, 0.070, 0.070, 160)
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "profile_duct should succeed: {:?}", result.err());
+    }
+
+    #[test]
     fn test_error_message_unknown_function() {
         let script = "unknown_fn(5.0)";
         let result = evaluate_script(script);

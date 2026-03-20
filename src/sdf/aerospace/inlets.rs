@@ -2,7 +2,10 @@
 // EDF duct system, and exhaust nozzles.
 
 use glam::Vec3;
+use std::sync::Arc;
 use crate::sdf::Sdf;
+use crate::sdf::sweep::SweepPath;
+use crate::sdf::aerospace::Section2D;
 
 // ── Smooth helpers ────────────────────────────────────────────────────────────
 
@@ -274,6 +277,578 @@ fn smoothstep(t: f32) -> f32 {
     t * t * (3.0 - 2.0 * t)
 }
 
+fn smooth_profile_lerp(a: f32, b: f32, t: f32, smoothness: f32) -> f32 {
+    let eased = smoothstep(t.clamp(0.0, 1.0));
+    let blend = t + (eased - t) * smoothness.clamp(0.0, 1.0);
+    a + (b - a) * blend
+}
+
+fn radius_at(start_radius: f32, end_radius: f32, t: f32, smoothness: f32) -> f32 {
+    smooth_profile_lerp(start_radius, end_radius, t, smoothness).max(1e-4)
+}
+
+fn point_distance_sq(path: &dyn SweepPath, p: Vec3, t: f32) -> f32 {
+    (path.evaluate(t.clamp(0.0, 1.0)) - p).length_squared()
+}
+
+fn refined_closest_t(path: &dyn SweepPath, coarse_ts: &[f32], p: Vec3) -> f32 {
+    if coarse_ts.is_empty() {
+        return 0.0;
+    }
+    if coarse_ts.len() == 1 {
+        return coarse_ts[0];
+    }
+
+    let mut best_i = 0usize;
+    let mut best_d2 = f32::INFINITY;
+    for (i, &t) in coarse_ts.iter().enumerate() {
+        let d2 = point_distance_sq(path, p, t);
+        if d2 < best_d2 {
+            best_d2 = d2;
+            best_i = i;
+        }
+    }
+
+    let lo_i = best_i.saturating_sub(1);
+    let hi_i = (best_i + 1).min(coarse_ts.len() - 1);
+    let mut a = coarse_ts[lo_i];
+    let mut b = coarse_ts[hi_i];
+    if (b - a).abs() < 1e-6 {
+        return coarse_ts[best_i];
+    }
+
+    let phi = 0.618_033_95_f32;
+    let mut c = b - (b - a) * phi;
+    let mut d = a + (b - a) * phi;
+    let mut fc = point_distance_sq(path, p, c);
+    let mut fd = point_distance_sq(path, p, d);
+
+    for _ in 0..28 {
+        if fc <= fd {
+            b = d;
+            d = c;
+            fd = fc;
+            c = b - (b - a) * phi;
+            fc = point_distance_sq(path, p, c);
+        } else {
+            a = c;
+            c = d;
+            fc = fd;
+            d = a + (b - a) * phi;
+            fd = point_distance_sq(path, p, d);
+        }
+    }
+
+    let mut t = 0.5 * (a + b);
+    for _ in 0..6 {
+        let h = ((b - a) * 0.1).max(1e-4);
+        let t0 = (t - h).clamp(0.0, 1.0);
+        let t1 = t;
+        let t2 = (t + h).clamp(0.0, 1.0);
+        let f0 = point_distance_sq(path, p, t0);
+        let f1 = point_distance_sq(path, p, t1);
+        let f2 = point_distance_sq(path, p, t2);
+        let denom = (t0 - t1) * (t0 - t2) * (t1 - t2);
+        if denom.abs() < 1e-10 {
+            break;
+        }
+        let a_quad = (t2 * (f1 - f0) + t1 * (f0 - f2) + t0 * (f2 - f1)) / denom;
+        let b_quad = (t2 * t2 * (f0 - f1) + t1 * t1 * (f2 - f0) + t0 * t0 * (f1 - f2)) / denom;
+        if a_quad.abs() < 1e-8 {
+            break;
+        }
+        let candidate = (-b_quad / (2.0 * a_quad)).clamp(a, b);
+        if (candidate - t).abs() < 1e-5 {
+            break;
+        }
+        t = candidate;
+    }
+
+    t.clamp(0.0, 1.0)
+}
+
+fn build_coarse_ts(samples: usize) -> Vec<f32> {
+    let n = samples.max(8);
+    (0..n).map(|i| i as f32 / (n - 1) as f32).collect()
+}
+
+struct ExtendedPath {
+    base: Arc<dyn SweepPath>,
+    start_extension: f32,
+    base_length: f32,
+    total_length: f32,
+    start_pos: Vec3,
+    end_pos: Vec3,
+    start_tangent: Vec3,
+    end_tangent: Vec3,
+}
+
+impl ExtendedPath {
+    fn new(base: Arc<dyn SweepPath>, start_extension: f32, end_extension: f32) -> Self {
+        let base_length = base.arc_length().max(1e-4);
+        let start_pos = base.evaluate(0.0);
+        let end_pos = base.evaluate(1.0);
+        let start_tangent = base.tangent(0.0).normalize_or_zero();
+        let end_tangent = base.tangent(1.0).normalize_or_zero();
+        let total_length = start_extension.max(0.0) + base_length + end_extension.max(0.0);
+        Self {
+            base,
+            start_extension: start_extension.max(0.0),
+            base_length,
+            total_length,
+            start_pos,
+            end_pos,
+            start_tangent,
+            end_tangent,
+        }
+    }
+
+    fn base_t_from_s(&self, s: f32) -> f32 {
+        ((s - self.start_extension) / self.base_length).clamp(0.0, 1.0)
+    }
+}
+
+impl SweepPath for ExtendedPath {
+    fn evaluate(&self, t: f32) -> Vec3 {
+        let s = t.clamp(0.0, 1.0) * self.total_length;
+        if s < self.start_extension {
+            self.start_pos - self.start_tangent * (self.start_extension - s)
+        } else if s > self.start_extension + self.base_length {
+            self.end_pos + self.end_tangent * (s - (self.start_extension + self.base_length))
+        } else {
+            self.base.evaluate(self.base_t_from_s(s))
+        }
+    }
+
+    fn tangent(&self, t: f32) -> Vec3 {
+        let s = t.clamp(0.0, 1.0) * self.total_length;
+        if s < self.start_extension {
+            self.start_tangent
+        } else if s > self.start_extension + self.base_length {
+            self.end_tangent
+        } else {
+            self.base.tangent(self.base_t_from_s(s))
+        }
+    }
+
+    fn arc_length(&self) -> f32 {
+        self.total_length
+    }
+}
+
+/// A true centerline-distance circular tube field around a smooth path.
+/// The closest point is refined on the actual curve parameter instead of
+/// blending local sweep segments together.
+pub struct SplineTube {
+    path: Arc<dyn SweepPath>,
+    coarse_ts: Vec<f32>,
+    start_radius: f32,
+    end_radius: f32,
+    smoothness: f32,
+}
+
+impl SplineTube {
+    pub fn new(
+        path: Arc<dyn SweepPath>,
+        start_diameter: f32,
+        end_diameter: f32,
+        samples: usize,
+        smoothness: f32,
+    ) -> Self {
+        Self {
+            path,
+            coarse_ts: build_coarse_ts(samples),
+            start_radius: (start_diameter * 0.5).max(1e-4),
+            end_radius: (end_diameter * 0.5).max(1e-4),
+            smoothness: smoothness.clamp(0.0, 1.0),
+        }
+    }
+
+    fn closest_t(&self, p: Vec3) -> f32 {
+        refined_closest_t(self.path.as_ref(), &self.coarse_ts, p)
+    }
+
+    fn signed_distance_at(&self, p: Vec3, t: f32) -> f32 {
+        let center = self.path.evaluate(t);
+        let r = radius_at(self.start_radius, self.end_radius, t, self.smoothness);
+        (p - center).length() - r
+    }
+}
+
+impl Sdf for SplineTube {
+    fn distance(&self, p: Vec3) -> f32 {
+        let t = self.closest_t(p);
+        self.signed_distance_at(p, t)
+    }
+}
+
+/// Hollow circular tube with open inlet/outlet. The inner void is extended
+/// linearly beyond the start and end tangents to avoid closed caps.
+pub struct HollowSplineTube {
+    outer: SplineTube,
+    inner: SplineTube,
+}
+
+impl HollowSplineTube {
+    pub fn new(
+        path: Arc<dyn SweepPath>,
+        start_inner_diameter: f32,
+        end_inner_diameter: f32,
+        wall_thickness: f32,
+        samples: usize,
+        smoothness: f32,
+    ) -> Self {
+        let wt = wall_thickness.max(1e-4);
+        let outer = SplineTube::new(
+            Arc::clone(&path),
+            start_inner_diameter + wt * 2.0,
+            end_inner_diameter + wt * 2.0,
+            samples,
+            smoothness,
+        );
+        let start_extension = (start_inner_diameter * 0.6).max(wt * 4.0);
+        let end_extension = (end_inner_diameter * 0.6).max(wt * 4.0);
+        let inner_path: Arc<dyn SweepPath> = Arc::new(ExtendedPath::new(
+            path,
+            start_extension,
+            end_extension,
+        ));
+        let inner = SplineTube::new(
+            inner_path,
+            start_inner_diameter,
+            end_inner_diameter,
+            samples,
+            smoothness,
+        );
+        Self { outer, inner }
+    }
+}
+
+impl Sdf for HollowSplineTube {
+    fn distance(&self, p: Vec3) -> f32 {
+        let outer_d = self.outer.distance(p);
+        outer_d.max(-self.inner.distance(p))
+    }
+}
+
+#[derive(Clone, Copy)]
+struct FrameSample {
+    t: f32,
+    normal: Vec3,
+    binormal: Vec3,
+}
+
+fn build_frame_samples(path: &dyn SweepPath, samples: usize) -> Vec<FrameSample> {
+    use crate::sdf::sweep::compute_frames;
+
+    let n = samples.max(8);
+    compute_frames(path, n, 0.0, 0.0)
+        .into_iter()
+        .enumerate()
+        .map(|(i, (_, frame))| FrameSample {
+            t: i as f32 / (n - 1) as f32,
+            normal: frame.col(1),
+            binormal: frame.col(2),
+        })
+        .collect()
+}
+
+fn frame_at(
+    samples: &[FrameSample],
+    tangent: Vec3,
+    t: f32,
+) -> (Vec3, Vec3) {
+    if samples.is_empty() {
+        let (_, n, b) = make_frame(tangent);
+        return (n, b);
+    }
+    if samples.len() == 1 {
+        let b = tangent.cross(samples[0].normal).normalize_or_zero();
+        let n = b.cross(tangent).normalize_or_zero();
+        return if n.length_squared() > 1e-8 && b.length_squared() > 1e-8 {
+            (n, b)
+        } else {
+            let (_, n, b) = make_frame(tangent);
+            (n, b)
+        };
+    }
+
+    let scaled = t.clamp(0.0, 1.0) * (samples.len() as f32 - 1.0);
+    let i = scaled.floor() as usize;
+    let i0 = i.min(samples.len() - 1);
+    let i1 = (i0 + 1).min(samples.len() - 1);
+    let a = samples[i0];
+    let b = samples[i1];
+    let denom = (b.t - a.t).abs().max(1e-6);
+    let u = ((t - a.t) / denom).clamp(0.0, 1.0);
+
+    let mut n = a.normal.lerp(b.normal, u).normalize_or_zero();
+    let mut bin = a.binormal.lerp(b.binormal, u).normalize_or_zero();
+    if n.length_squared() < 1e-8 || bin.length_squared() < 1e-8 {
+        let (_, fallback_n, _) = make_frame(tangent);
+        n = fallback_n;
+    } else {
+        n = (n - tangent * tangent.dot(n)).normalize_or_zero();
+        bin = (bin - tangent * tangent.dot(bin) - n * n.dot(bin)).normalize_or_zero();
+        if n.length_squared() < 1e-8 || bin.length_squared() < 1e-8 {
+            let (_, fallback_n, _) = make_frame(tangent);
+            n = fallback_n;
+        }
+    }
+    bin = tangent.cross(n).normalize_or_zero();
+    if bin.length_squared() < 1e-8 {
+        let (_, fallback_n, fallback_b) = make_frame(tangent);
+        n = fallback_n;
+        bin = fallback_b;
+    } else {
+        n = bin.cross(tangent).normalize_or_zero();
+    }
+    (n, bin)
+}
+
+fn ellipse_radial_distance(local: glam::Vec2, half_width: f32, half_height: f32) -> f32 {
+    let r = local.length();
+    if r < 1e-6 {
+        return -half_width.min(half_height);
+    }
+    let dir = local / r;
+    let boundary_r = 1.0
+        / ((dir.x * dir.x) / (half_width * half_width).max(1e-8)
+        + (dir.y * dir.y) / (half_height * half_height).max(1e-8))
+            .sqrt();
+    r - boundary_r
+}
+
+/// Dedicated implicit duct field built around a sampled centerline with a
+/// smoothly varying elliptical section.
+pub struct VariableDuct {
+    path: Arc<dyn SweepPath>,
+    coarse_ts: Vec<f32>,
+    frame_samples: Vec<FrameSample>,
+    inlet_half_width: f32,
+    inlet_half_height: f32,
+    outlet_half_width: f32,
+    outlet_half_height: f32,
+    smoothness: f32,
+}
+
+impl VariableDuct {
+    pub fn new(
+        path: Arc<dyn SweepPath>,
+        inlet_width: f32,
+        inlet_height: f32,
+        outlet_width: f32,
+        outlet_height: f32,
+        samples: usize,
+        smoothness: f32,
+    ) -> Self {
+        Self {
+            coarse_ts: build_coarse_ts(samples),
+            frame_samples: build_frame_samples(path.as_ref(), samples),
+            path,
+            inlet_half_width: inlet_width * 0.5,
+            inlet_half_height: inlet_height * 0.5,
+            outlet_half_width: outlet_width * 0.5,
+            outlet_half_height: outlet_height * 0.5,
+            smoothness: smoothness.clamp(0.0, 1.0),
+        }
+    }
+
+    fn closest_t(&self, p: Vec3) -> f32 {
+        refined_closest_t(self.path.as_ref(), &self.coarse_ts, p)
+    }
+
+    fn half_width_at(&self, t: f32) -> f32 {
+        smooth_profile_lerp(self.inlet_half_width, self.outlet_half_width, t, self.smoothness).max(1e-4)
+    }
+
+    fn half_height_at(&self, t: f32) -> f32 {
+        smooth_profile_lerp(self.inlet_half_height, self.outlet_half_height, t, self.smoothness).max(1e-4)
+    }
+
+    fn profile_distance(&self, p: Vec3, t: f32) -> f32 {
+        let center = self.path.evaluate(t);
+        let tangent = self.path.tangent(t).normalize_or_zero();
+        let (normal, binormal) = frame_at(&self.frame_samples, tangent, t);
+        let rel = p - center;
+        let axial = rel.dot(tangent);
+        let local = glam::Vec2::new(rel.dot(normal), rel.dot(binormal));
+        let profile_d = ellipse_radial_distance(local, self.half_width_at(t), self.half_height_at(t));
+
+        if t <= 1e-4 && axial < 0.0 {
+            let pd = profile_d.max(0.0);
+            (pd * pd + axial * axial).sqrt()
+        } else if t >= 1.0 - 1e-4 && axial > 0.0 {
+            let pd = profile_d.max(0.0);
+            (pd * pd + axial * axial).sqrt()
+        } else {
+            profile_d
+        }
+    }
+}
+
+impl Sdf for VariableDuct {
+    fn distance(&self, p: Vec3) -> f32 {
+        let t = self.closest_t(p);
+        self.profile_distance(p, t)
+    }
+}
+
+/// Hollow duct body with open inlet and outlet. The inner core extends beyond
+/// both ends so subtracting it leaves the duct open instead of capped.
+pub struct HollowVariableDuct {
+    outer: VariableDuct,
+    inner: VariableDuct,
+}
+
+impl HollowVariableDuct {
+    pub fn new(
+        path: Arc<dyn SweepPath>,
+        inlet_width: f32,
+        inlet_height: f32,
+        outlet_width: f32,
+        outlet_height: f32,
+        wall_thickness: f32,
+        samples: usize,
+        smoothness: f32,
+    ) -> Self {
+        let start_extension = inlet_width.max(inlet_height) * 0.75 + wall_thickness * 2.0;
+        let end_extension = outlet_width.max(outlet_height) * 0.75 + wall_thickness * 2.0;
+        let outer = VariableDuct::new(
+            Arc::clone(&path),
+            inlet_width + wall_thickness * 2.0,
+            inlet_height + wall_thickness * 2.0,
+            outlet_width + wall_thickness * 2.0,
+            outlet_height + wall_thickness * 2.0,
+            samples,
+            smoothness,
+        );
+        let inner_path: Arc<dyn SweepPath> = Arc::new(ExtendedPath::new(
+            path,
+            start_extension,
+            end_extension,
+        ));
+        let inner = VariableDuct::new(
+            inner_path,
+            inlet_width,
+            inlet_height,
+            outlet_width,
+            outlet_height,
+            samples,
+            smoothness,
+        );
+        Self { outer, inner }
+    }
+}
+
+impl Sdf for HollowVariableDuct {
+    fn distance(&self, p: Vec3) -> f32 {
+        self.outer.distance(p).max(-self.inner.distance(p))
+    }
+}
+
+/// Arbitrary-profile duct using the same refined closest-point-on-centerline
+/// evaluation as the circular and elliptical duct kernels.
+pub struct ProfileDuct {
+    path: Arc<dyn SweepPath>,
+    coarse_ts: Vec<f32>,
+    frame_samples: Vec<FrameSample>,
+    start_profile: Arc<dyn Section2D>,
+    end_profile: Arc<dyn Section2D>,
+}
+
+impl ProfileDuct {
+    pub fn new(
+        path: Arc<dyn SweepPath>,
+        start_profile: Arc<dyn Section2D>,
+        end_profile: Arc<dyn Section2D>,
+        samples: usize,
+    ) -> Self {
+        let coarse_ts = build_coarse_ts(samples);
+        let frame_samples = build_frame_samples(path.as_ref(), samples);
+        Self {
+            path,
+            coarse_ts,
+            frame_samples,
+            start_profile,
+            end_profile,
+        }
+    }
+
+    fn closest_t(&self, p: Vec3) -> f32 {
+        refined_closest_t(self.path.as_ref(), &self.coarse_ts, p)
+    }
+
+    fn profile_distance(&self, p: Vec3, t: f32) -> f32 {
+        let center = self.path.evaluate(t);
+        let tangent = self.path.tangent(t).normalize_or_zero();
+        let (normal, binormal) = frame_at(&self.frame_samples, tangent, t);
+        let rel = p - center;
+        let axial = rel.dot(tangent);
+        let local = glam::Vec2::new(rel.dot(normal), rel.dot(binormal));
+        let profile_d = self.start_profile.distance_lerped_2d(self.end_profile.as_ref(), t, local);
+
+        if t <= 1e-4 && axial < 0.0 {
+            let pd = profile_d.max(0.0);
+            (pd * pd + axial * axial).sqrt()
+        } else if t >= 1.0 - 1e-4 && axial > 0.0 {
+            let pd = profile_d.max(0.0);
+            (pd * pd + axial * axial).sqrt()
+        } else {
+            profile_d
+        }
+    }
+}
+
+impl Sdf for ProfileDuct {
+    fn distance(&self, p: Vec3) -> f32 {
+        let t = self.closest_t(p);
+        self.profile_distance(p, t)
+    }
+}
+
+/// Hollow arbitrary-profile duct with explicitly supplied outer and inner
+/// start/end profiles so custom inlets can use different inner/outer shapes
+/// without relying on generic offset approximations.
+pub struct HollowProfileDuct {
+    outer: ProfileDuct,
+    inner: ProfileDuct,
+}
+
+impl HollowProfileDuct {
+    pub fn new(
+        path: Arc<dyn SweepPath>,
+        outer_start: Arc<dyn Section2D>,
+        outer_end: Arc<dyn Section2D>,
+        inner_start: Arc<dyn Section2D>,
+        inner_end: Arc<dyn Section2D>,
+        start_extension: f32,
+        end_extension: f32,
+        samples: usize,
+    ) -> Self {
+        let outer = ProfileDuct::new(
+            Arc::clone(&path),
+            outer_start,
+            outer_end,
+            samples,
+        );
+        let inner_path: Arc<dyn SweepPath> = Arc::new(ExtendedPath::new(path, start_extension, end_extension));
+        let inner = ProfileDuct::new(
+            inner_path,
+            inner_start,
+            inner_end,
+            samples,
+        );
+        Self { outer, inner }
+    }
+}
+
+impl Sdf for HollowProfileDuct {
+    fn distance(&self, p: Vec3) -> f32 {
+        self.outer.distance(p).max(-self.inner.distance(p))
+    }
+}
+
 // ── BuriedInlet ───────────────────────────────────────────────────────────────
 
 /// A buried inlet: elliptical surface scoop leading to a cylindrical duct throat.
@@ -331,6 +906,8 @@ impl Sdf for BuriedInlet {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::sdf::profiles::{RoundedRectProfile, SplineProfile};
+    use crate::sdf::sweep::SplinePath;
 
     #[test]
     fn test_naca_inlet_finite() {
@@ -388,5 +965,75 @@ mod tests {
         // Point far away should be positive
         let d = lip.distance(Vec3::new(200.0, 200.0, 200.0));
         assert!(d > 0.0);
+    }
+
+    #[test]
+    fn test_spline_tube_centerline_is_inside() {
+        let path: Arc<dyn SweepPath> = Arc::new(SplinePath::new(vec![
+            Vec3::new(0.0, 0.0, 46.0),
+            Vec3::new(72.0, 0.0, 58.0),
+            Vec3::new(248.0, 0.0, 8.0),
+            Vec3::new(430.0, 0.0, 0.0),
+        ]));
+        let tube = SplineTube::new(path, 94.0, 94.0, 96, 0.95);
+        for t in [0.0_f32, 0.2, 0.5, 0.8, 1.0] {
+            let p = tube.path.evaluate(t);
+            assert!(tube.distance(p) < -40.0, "centerline should be deep inside at t={}", t);
+        }
+    }
+
+    #[test]
+    fn test_hollow_spline_tube_end_is_open() {
+        let path: Arc<dyn SweepPath> = Arc::new(SplinePath::new(vec![
+            Vec3::new(0.0, 0.0, 46.0),
+            Vec3::new(72.0, 0.0, 58.0),
+            Vec3::new(248.0, 0.0, 8.0),
+            Vec3::new(430.0, 0.0, 0.0),
+        ]));
+        let tube = HollowSplineTube::new(path, 90.0, 90.0, 2.0, 96, 0.95);
+        let near_start_axis = Vec3::new(-20.0, 0.0, 46.0);
+        assert!(tube.distance(near_start_axis) > 0.0, "open mouth axis should remain empty");
+    }
+
+    #[test]
+    fn test_variable_duct_centerline_follows_curve() {
+        let path: Arc<dyn SweepPath> = Arc::new(SplinePath::new(vec![
+            Vec3::new(0.0, 0.0, 46.0),
+            Vec3::new(20.0, 0.0, 52.0),
+            Vec3::new(56.0, 0.0, 58.0),
+            Vec3::new(108.0, 0.0, 60.0),
+            Vec3::new(164.0, 0.0, 48.0),
+            Vec3::new(218.0, 0.0, 24.0),
+            Vec3::new(266.0, 0.0, 8.0),
+            Vec3::new(312.0, 0.0, 0.0),
+            Vec3::new(430.0, 0.0, 0.0),
+        ]));
+        let duct = VariableDuct::new(path, 96.0, 88.0, 90.0, 90.0, 160, 0.98);
+        for t in [0.1_f32, 0.25, 0.45, 0.65, 0.85] {
+            let p = duct.path.evaluate(t);
+            assert!(duct.distance(p) < -38.0, "centerline should stay inside at t={}", t);
+        }
+    }
+
+    #[test]
+    fn test_profile_duct_centerline_follows_curve() {
+        let path: Arc<dyn SweepPath> = Arc::new(SplinePath::new(vec![
+            Vec3::new(0.0, 0.0, 46.0),
+            Vec3::new(20.0, 0.0, 52.0),
+            Vec3::new(56.0, 0.0, 58.0),
+            Vec3::new(108.0, 0.0, 60.0),
+            Vec3::new(164.0, 0.0, 48.0),
+            Vec3::new(218.0, 0.0, 24.0),
+            Vec3::new(266.0, 0.0, 8.0),
+            Vec3::new(312.0, 0.0, 0.0),
+            Vec3::new(430.0, 0.0, 0.0),
+        ]));
+        let start: Arc<dyn Section2D> = Arc::new(RoundedRectProfile::new(96.0, 72.0, 12.0));
+        let end: Arc<dyn Section2D> = Arc::new(SplineProfile::circle(16, 45.0));
+        let duct = ProfileDuct::new(path, start, end, 160);
+        for t in [0.1_f32, 0.25, 0.45, 0.65, 0.85] {
+            let p = duct.path.evaluate(t);
+            assert!(duct.distance(p) < -30.0, "profile centerline should stay inside at t={}", t);
+        }
     }
 }

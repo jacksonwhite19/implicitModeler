@@ -285,6 +285,49 @@ impl Section2D for RectProfile {
     fn as_any(&self) -> &dyn Any { self }
 }
 
+/// Rounded rectangle 2D cross-section.
+pub struct RoundedRectProfile {
+    pub half_w: f32,
+    pub half_h: f32,
+    pub radius: f32,
+}
+
+impl RoundedRectProfile {
+    pub fn new(width: f32, height: f32, radius: f32) -> Self {
+        let half_w = width / 2.0;
+        let half_h = height / 2.0;
+        let max_r = half_w.min(half_h).max(0.0);
+        Self {
+            half_w,
+            half_h,
+            radius: radius.clamp(0.0, max_r),
+        }
+    }
+}
+
+impl Section2D for RoundedRectProfile {
+    fn distance_2d(&self, p: Vec2) -> f32 {
+        let q = p.abs() - Vec2::new(self.half_w - self.radius, self.half_h - self.radius);
+        q.max(Vec2::ZERO).length() + q.x.max(q.y).min(0.0) - self.radius
+    }
+    fn lerp_to(&self, other: &dyn Section2D, t: f32) -> Arc<dyn Section2D> {
+        if let Some(o) = other.as_any().downcast_ref::<RoundedRectProfile>() {
+            Arc::new(RoundedRectProfile {
+                half_w: self.half_w + (o.half_w - self.half_w) * t,
+                half_h: self.half_h + (o.half_h - self.half_h) * t,
+                radius: self.radius + (o.radius - self.radius) * t,
+            })
+        } else {
+            Arc::new(RoundedRectProfile {
+                half_w: self.half_w,
+                half_h: self.half_h,
+                radius: self.radius,
+            })
+        }
+    }
+    fn as_any(&self) -> &dyn Any { self }
+}
+
 // ── NGonProfile ───────────────────────────────────────────────────────────────
 
 /// Regular n-sided polygon 2D cross-section.
@@ -326,4 +369,3 @@ impl Section2D for NGonProfile {
     }
     fn as_any(&self) -> &dyn Any { self }
 }
-

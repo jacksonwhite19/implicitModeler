@@ -46,6 +46,15 @@ fn closest_surface_point(sdf: &dyn Sdf, p: Vec3) -> Vec3 {
     q
 }
 
+fn closest_surface_point_with_offset(sdf: &dyn Sdf, p: Vec3, offset: f32) -> Vec3 {
+    let cp = closest_surface_point(sdf, p);
+    if offset.abs() < 1e-6 {
+        return cp;
+    }
+    let n = gradient(sdf, cp, 0.001).normalize_or_zero();
+    cp + n * offset
+}
+
 // ── LinePath ──────────────────────────────────────────────────────────────────
 
 /// Straight line from `start` to `end`.
@@ -227,6 +236,33 @@ impl SurfaceSpinePath {
 }
 
 impl SweepPath for SurfaceSpinePath {
+    fn evaluate(&self, t: f32) -> Vec3 { self.inner.evaluate(t) }
+    fn tangent(&self, t: f32) -> Vec3 { self.inner.tangent(t) }
+    fn arc_length(&self) -> f32 { self.inner.arc_length() }
+}
+
+/// A smooth guide spline projected onto an SDF surface, then offset along the
+/// local outward normal. Useful for dorsal fairings, conformal ducts, and other
+/// mold-line-following features that should stand off from the skin.
+pub struct ConformalSplinePath {
+    inner: PolylinePath,
+}
+
+impl ConformalSplinePath {
+    pub fn new(surface: Arc<dyn Sdf>, guide_points: Vec<Vec3>, offset: f32, samples: usize) -> Self {
+        let guide = SplinePath::new(guide_points);
+        let sample_count = samples.max(2);
+        let mut points = Vec::with_capacity(sample_count);
+        for i in 0..sample_count {
+            let t = i as f32 / (sample_count - 1) as f32;
+            let p = guide.evaluate(t);
+            points.push(closest_surface_point_with_offset(surface.as_ref(), p, offset));
+        }
+        Self { inner: PolylinePath::new(points) }
+    }
+}
+
+impl SweepPath for ConformalSplinePath {
     fn evaluate(&self, t: f32) -> Vec3 { self.inner.evaluate(t) }
     fn tangent(&self, t: f32) -> Vec3 { self.inner.tangent(t) }
     fn arc_length(&self) -> f32 { self.inner.arc_length() }

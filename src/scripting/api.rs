@@ -10,7 +10,7 @@ use crate::sdf::transforms::{Translate, Rotate, Scale, Offset, Shell, Twist, Ben
 use crate::sdf::patterns::{LinearArray, PolarArray, Mirror};
 use crate::sdf::aerospace::{
     Airfoil, get_naca_airfoil, ExtrudedAirfoil, wing_with_airfoil, wing_from_sections,
-    fuselage_parametric, nacelle_simple, is_valid_naca_4digit,
+    fuselage_parametric, fuselage_elliptical_parametric, nacelle_simple, is_valid_naca_4digit,
     CrossSection, LoftedFuselage, Section2D,
     rib_slab, spar_cylinder,
     bulkhead_at_station, lightening_hole_pattern,
@@ -20,6 +20,8 @@ use crate::sdf::aerospace::{
     countersink, counterbore, slot,
     chamfer_edge, thread_hole,
     fc_mount, motor_mount_pattern,
+    VariableDuct, HollowVariableDuct, SplineTube, HollowSplineTube,
+    ProfileDuct, HollowProfileDuct,
 };
 use crate::sdf::field::{
     primitives::{ConstantField, SdfField, PositionXField, PositionYField, PositionZField},
@@ -73,6 +75,7 @@ pub fn register_sdf_functions(engine: &mut Engine) {
     register_aerospace_functions(engine);
     register_mechanical_functions(engine);
     register_sweep_functions(engine);
+    register_variable_duct_functions(engine);
     register_field_functions(engine);
     register_lattices(engine);
     register_composite_functions(engine);
@@ -400,6 +403,24 @@ fn register_aerospace_functions(engine: &mut Engine) {
             diameter as f32,
             nose as f32,
             tail as f32
+        );
+        SdfHandle(Arc::new(fuse))
+    });
+
+    engine.register_fn("fuselage_elliptical",
+        |length: f64, width: f64, height: f64,
+         nose_length: f64, tail_length: f64,
+         nose_bluntness: f64, tail_bluntness: f64,
+         smoothness: f64| {
+        let fuse = fuselage_elliptical_parametric(
+            length as f32,
+            width as f32,
+            height as f32,
+            nose_length as f32,
+            tail_length as f32,
+            nose_bluntness as f32,
+            tail_bluntness as f32,
+            smoothness as f32,
         );
         SdfHandle(Arc::new(fuse))
     });
@@ -2316,9 +2337,9 @@ fn register_mechanical_functions(engine: &mut Engine) {
 
 fn register_sweep_functions(engine: &mut Engine) {
     use crate::sdf::sweep::{
-        LinePath, PolylinePath, SplinePath, SurfaceSpinePath, Sweep,
+        ConformalSplinePath, LinePath, PolylinePath, SplinePath, SurfaceSpinePath, Sweep,
     };
-    use crate::sdf::profiles::{SplineProfile, RectProfile, NGonProfile};
+    use crate::sdf::profiles::{SplineProfile, RectProfile, RoundedRectProfile, NGonProfile};
 
     // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Path constructors ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
@@ -2383,6 +2404,181 @@ fn register_sweep_functions(engine: &mut Engine) {
         )))
     });
 
+    engine.register_fn("conformal_spline_path",
+        |surface: SdfHandle,
+         pts: rhai::Array,
+         offset: f64,
+         samples: i64| -> Result<PathHandle, Box<rhai::EvalAltResult>> {
+        let mut verts = Vec::with_capacity(pts.len());
+        for (i, v) in pts.iter().enumerate() {
+            let arr = v.clone().try_cast::<rhai::Array>()
+                .ok_or_else(|| format!("conformal_spline_path: item {} must be [x,y,z]", i))?;
+            if arr.len() < 3 {
+                return Err(format!("conformal_spline_path: item {} must have 3 elements", i).into());
+            }
+            let x = arr[0].clone().try_cast::<f64>().unwrap_or(0.0) as f32;
+            let y = arr[1].clone().try_cast::<f64>().unwrap_or(0.0) as f32;
+            let z = arr[2].clone().try_cast::<f64>().unwrap_or(0.0) as f32;
+            verts.push(Vec3::new(x, y, z));
+        }
+        if verts.len() < 2 {
+            return Err("conformal_spline_path: need at least 2 points".into());
+        }
+        Ok(PathHandle(Arc::new(ConformalSplinePath::new(
+            surface.0,
+            verts,
+            offset as f32,
+            samples.max(2) as usize,
+        ))))
+    });
+
+    engine.register_fn("conformal_inlet",
+        |surface: SdfHandle,
+         guide_pts: rhai::Array,
+         outer_w: f64, outer_h: f64,
+         inner_w: f64, inner_h: f64,
+         outlet_d: f64,
+         surface_offset: f64,
+         samples: i64,
+         outlet_pt: rhai::Array,
+         exhaust_pt: rhai::Array|
+         -> Result<rhai::Array, Box<rhai::EvalAltResult>> {
+        let mut verts = Vec::with_capacity(guide_pts.len());
+        for (i, v) in guide_pts.iter().enumerate() {
+            let arr = v.clone().try_cast::<rhai::Array>()
+                .ok_or_else(|| format!("conformal_inlet: guide point {} must be [x,y,z]", i))?;
+            if arr.len() < 3 {
+                return Err(format!("conformal_inlet: guide point {} must have 3 elements", i).into());
+            }
+            let x = arr[0].clone().try_cast::<f64>().unwrap_or(0.0) as f32;
+            let y = arr[1].clone().try_cast::<f64>().unwrap_or(0.0) as f32;
+            let z = arr[2].clone().try_cast::<f64>().unwrap_or(0.0) as f32;
+            verts.push(Vec3::new(x, y, z));
+        }
+        if verts.len() < 2 {
+            return Err("conformal_inlet: need at least 2 guide points".into());
+        }
+        let parse_point = |label: &str, arr: rhai::Array| -> Result<Vec3, Box<rhai::EvalAltResult>> {
+            if arr.len() < 3 {
+                return Err(format!("conformal_inlet: {} must be [x,y,z]", label).into());
+            }
+            Ok(Vec3::new(
+                arr[0].clone().try_cast::<f64>().unwrap_or(0.0) as f32,
+                arr[1].clone().try_cast::<f64>().unwrap_or(0.0) as f32,
+                arr[2].clone().try_cast::<f64>().unwrap_or(0.0) as f32,
+            ))
+        };
+        let outlet = parse_point("outlet point", outlet_pt)?;
+        let exhaust = parse_point("exhaust point", exhaust_pt)?;
+
+        let outer_path: Arc<dyn crate::sdf::sweep::SweepPath> = Arc::new(
+            ConformalSplinePath::new(Arc::clone(&surface.0), verts, surface_offset as f32, samples.max(2) as usize)
+        );
+
+        let outer_profile: Arc<dyn Section2D> = {
+            let mut p = SplineProfile::circle(12, 1.0);
+            for pt in &mut p.control_points {
+                pt[0] *= outer_w as f32 / 2.0;
+                pt[1] *= outer_h as f32 / 2.0;
+            }
+            Arc::new(p)
+        };
+        let inner_profile: Arc<dyn Section2D> = {
+            let mut p = SplineProfile::circle(12, 1.0);
+            for pt in &mut p.control_points {
+                pt[0] *= inner_w as f32 / 2.0;
+                pt[1] *= inner_h as f32 / 2.0;
+            }
+            Arc::new(p)
+        };
+        let circular_profile: Arc<dyn Section2D> = Arc::new(SplineProfile::circle(12, outlet_d as f32 / 2.0));
+
+        let outer_fairing: Arc<dyn Sdf> = Arc::new(Sweep::new(outer_profile, Arc::clone(&outer_path), 0.0, 0.0));
+
+        let entry_start = outer_path.evaluate(0.0);
+        let entry_end = outer_path.evaluate(1.0) + Vec3::new(
+            0.0,
+            0.0,
+            -((inner_h as f32 * 0.9) + (surface_offset as f32 * 0.35)),
+        );
+        let entry_tangent = outer_path.tangent(0.0).normalize_or_zero();
+        let entry_mid = outer_path.evaluate(0.45) + Vec3::new(
+            0.0,
+            0.0,
+            -((inner_h as f32 * 0.35) + (surface_offset as f32 * 0.2)),
+        );
+        let entry_path: Arc<dyn crate::sdf::sweep::SweepPath> = Arc::new(SplinePath::new(vec![
+            entry_start,
+            entry_start + entry_tangent * (inner_w as f32 * 0.35),
+            entry_mid,
+            entry_end,
+        ]));
+        let inlet_entry: Arc<dyn Sdf> = Arc::new(Sweep::new(
+            Arc::clone(&inner_profile),
+            entry_path,
+            0.0,
+            0.0,
+        ));
+
+        let inlet_open_len = inner_w.max(inner_h) as f32;
+        let inlet_open_path: Arc<dyn crate::sdf::sweep::SweepPath> = Arc::new(LinePath {
+            start: entry_start - entry_tangent * inlet_open_len,
+            end: entry_start + entry_tangent * (inlet_open_len * 0.2),
+        });
+        let inlet_opening: Arc<dyn Sdf> = Arc::new(Sweep::new(
+            Arc::clone(&inner_profile),
+            inlet_open_path,
+            0.0,
+            0.0,
+        ));
+
+        let delta = outlet - entry_end;
+        let transition_path: Arc<dyn crate::sdf::sweep::SweepPath> = Arc::new(SplinePath::new(vec![
+            entry_end,
+            entry_end + delta * 0.35 + Vec3::new(0.0, 0.0, delta.z.abs() * 0.25),
+            entry_end + delta * 0.7,
+            outlet,
+        ]));
+        let transition_duct: Arc<dyn Sdf> = Arc::new(Sweep::new(circular_profile.clone(), transition_path, 0.0, 0.0));
+
+        let aft_path: Arc<dyn crate::sdf::sweep::SweepPath> = Arc::new(SplinePath::new(vec![
+            outlet,
+            outlet.lerp(exhaust, 0.45),
+            exhaust,
+        ]));
+        let aft_duct: Arc<dyn Sdf> = Arc::new(Sweep::new(circular_profile, aft_path, 0.0, 0.0));
+        let exhaust_dir = (exhaust - outlet).normalize_or_zero();
+        let exhaust_open_len = outlet_d as f32 * 0.8;
+        let exhaust_open_path: Arc<dyn crate::sdf::sweep::SweepPath> = Arc::new(LinePath {
+            start: exhaust - exhaust_dir * exhaust_open_len,
+            end: exhaust,
+        });
+        let exhaust_opening: Arc<dyn Sdf> = Arc::new(Sweep::new(
+            Arc::new(SplineProfile::circle(12, outlet_d as f32 / 2.0)),
+            exhaust_open_path,
+            0.0,
+            0.0,
+        ));
+
+        let duct_void: Arc<dyn Sdf> = Arc::new(SmoothUnion::new(
+            Arc::new(SmoothUnion::new(
+                Arc::new(SmoothUnion::new(
+                    Arc::new(SmoothUnion::new(inlet_opening, inlet_entry, outlet_d as f32 * 0.18)),
+                    transition_duct,
+                    outlet_d as f32 * 0.18,
+                )),
+                aft_duct,
+                outlet_d as f32 * 0.18,
+            )),
+            exhaust_opening,
+            outlet_d as f32 * 0.18,
+        ));
+        Ok(vec![
+            rhai::Dynamic::from(SdfHandle(outer_fairing)),
+            rhai::Dynamic::from(SdfHandle(duct_void)),
+        ])
+    });
+
     // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Profile constructors ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
     // circle_profile ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â convenience alias for a SplineProfile circle.
@@ -2406,9 +2602,33 @@ fn register_sweep_functions(engine: &mut Engine) {
         ProfileHandle(Arc::new(RectProfile::new(width as f32, height as f32)))
     });
 
+    engine.register_fn("rounded_rect_profile", |width: f64, height: f64, radius: f64| {
+        ProfileHandle(Arc::new(RoundedRectProfile::new(width as f32, height as f32, radius as f32)))
+    });
+
     // ngon_profile ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â regular n-gon cross-section.
     engine.register_fn("ngon_profile", |sides: i64, radius: f64| {
         ProfileHandle(Arc::new(NGonProfile::new(sides.max(3) as u32, radius as f32)))
+    });
+
+    engine.register_fn("custom_profile",
+        |pts: rhai::Array| -> Result<ProfileHandle, Box<rhai::EvalAltResult>> {
+        let mut verts = Vec::with_capacity(pts.len());
+        for (i, dynv) in pts.into_iter().enumerate() {
+            let arr = dynv.clone().try_cast::<rhai::Array>()
+                .ok_or_else(|| format!("custom_profile: item {} must be [x,y]", i))?;
+            if arr.len() != 2 {
+                return Err(format!("custom_profile: item {} must have 2 elements", i).into());
+            }
+            verts.push(glam::Vec2::new(
+                arr[0].clone().cast::<rhai::FLOAT>() as f32,
+                arr[1].clone().cast::<rhai::FLOAT>() as f32,
+            ));
+        }
+        if verts.len() < 3 {
+            return Err("custom_profile: need at least 3 points".into());
+        }
+        Ok(ProfileHandle(Arc::new(SplineProfile::new(verts))))
     });
 
     // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Sweep constructors ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
@@ -2459,6 +2679,123 @@ fn register_sweep_functions(engine: &mut Engine) {
 }
 
 // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Mesh import functions ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+
+fn register_variable_duct_functions(engine: &mut Engine) {
+    engine.register_fn("spline_tube_solid",
+        |path: PathHandle,
+         start_d: f64, end_d: f64,
+         samples: i64, smoothness: f64| {
+        SdfHandle(Arc::new(SplineTube::new(
+            path.0,
+            start_d as f32,
+            end_d as f32,
+            samples.max(8) as usize,
+            smoothness as f32,
+        )))
+    });
+
+    engine.register_fn("spline_tube",
+        |path: PathHandle,
+         start_inner_d: f64, end_inner_d: f64,
+         wall_thickness: f64,
+         samples: i64, smoothness: f64| {
+        SdfHandle(Arc::new(HollowSplineTube::new(
+            path.0,
+            start_inner_d as f32,
+            end_inner_d as f32,
+            wall_thickness as f32,
+            samples.max(8) as usize,
+            smoothness as f32,
+        )))
+    });
+
+    engine.register_fn("variable_duct_solid",
+        |path: PathHandle,
+         inlet_w: f64, inlet_h: f64,
+         outlet_w: f64, outlet_h: f64,
+         samples: i64, smoothness: f64| {
+        SdfHandle(Arc::new(VariableDuct::new(
+            path.0,
+            inlet_w as f32,
+            inlet_h as f32,
+            outlet_w as f32,
+            outlet_h as f32,
+            samples.max(4) as usize,
+            smoothness as f32,
+        )))
+    });
+
+    engine.register_fn("variable_duct",
+        |path: PathHandle,
+         inlet_w: f64, inlet_h: f64,
+         outlet_w: f64, outlet_h: f64,
+         wall_thickness: f64,
+         samples: i64, smoothness: f64| {
+        SdfHandle(Arc::new(HollowVariableDuct::new(
+            path.0,
+            inlet_w as f32,
+            inlet_h as f32,
+            outlet_w as f32,
+            outlet_h as f32,
+            wall_thickness as f32,
+            samples.max(4) as usize,
+            smoothness as f32,
+        )))
+    });
+
+    engine.register_fn("variable_duct_circular_outlet",
+        |path: PathHandle,
+         inlet_w: f64, inlet_h: f64,
+         outlet_d: f64,
+         wall_thickness: f64,
+         samples: i64, smoothness: f64| {
+        let od = outlet_d as f32;
+        SdfHandle(Arc::new(HollowVariableDuct::new(
+            path.0,
+            inlet_w as f32,
+            inlet_h as f32,
+            od,
+            od,
+            wall_thickness as f32,
+            samples.max(4) as usize,
+            smoothness as f32,
+        )))
+    });
+
+    engine.register_fn("profile_duct_solid",
+        |path: PathHandle,
+         start_profile: ProfileHandle,
+         end_profile: ProfileHandle,
+         samples: i64| {
+        SdfHandle(Arc::new(ProfileDuct::new(
+            path.0,
+            start_profile.0,
+            end_profile.0,
+            samples.max(8) as usize,
+        )))
+    });
+
+    engine.register_fn("profile_duct",
+        |path: PathHandle,
+         outer_start: ProfileHandle,
+         outer_end: ProfileHandle,
+         inner_start: ProfileHandle,
+         inner_end: ProfileHandle,
+         start_extension: f64,
+         end_extension: f64,
+         samples: i64| {
+        SdfHandle(Arc::new(HollowProfileDuct::new(
+            path.0,
+            outer_start.0,
+            outer_end.0,
+            inner_start.0,
+            inner_end.0,
+            start_extension as f32,
+            end_extension as f32,
+            samples.max(8) as usize,
+        )))
+    });
+}
 
 pub fn register_mesh_functions(
     engine:      &mut Engine,

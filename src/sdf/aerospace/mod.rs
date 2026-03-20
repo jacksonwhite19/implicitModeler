@@ -18,7 +18,7 @@ pub mod inlets;
 pub use section::Section2D;
 pub use airfoil::{Airfoil, ExtrudedAirfoil, get_naca_airfoil, is_valid_naca_4digit};
 pub use wing::{wing_with_airfoil, wing_from_sections};
-pub use fuselage::{fuselage_parametric, CrossSection, LoftedFuselage};
+pub use fuselage::{fuselage_parametric, fuselage_elliptical_parametric, CrossSection, LoftedFuselage};
 pub use nacelle::nacelle_simple;
 pub use structural::{rib_slab, spar_cylinder};
 pub use structural_drone::{
@@ -35,5 +35,8 @@ pub use mechanical::{
 
 
 pub use nose_tail::{HaackNose, HaackTail, TangentOgive, EllipsoidNose};
-pub use inlets::{NacaInlet, InletLip, InletShape, EdfDuct, SDuct, BuriedInlet};
-
+pub use inlets::{
+    NacaInlet, InletLip, InletShape, EdfDuct, SDuct, BuriedInlet,
+    VariableDuct, HollowVariableDuct, SplineTube, HollowSplineTube,
+    ProfileDuct, HollowProfileDuct,
+};

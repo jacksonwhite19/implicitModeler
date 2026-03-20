@@ -10,6 +10,7 @@ use crate::sdf::primitives::{Sphere, SdfBox, Cylinder};
 use crate::sdf::transforms::{Translate, Rotate, Offset};
 use crate::sdf::booleans::{Union, Subtract, Intersect, SmoothUnion};
 use crate::sdf::patterns::PolarArray;
+use crate::sdf::query::bounding_points;
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
 
@@ -119,9 +120,13 @@ pub fn bulkhead_at_station(
     num_holes: usize,
     hole_radius_fraction: f32,
 ) -> Arc<dyn Sdf> {
+    let bbox = bounding_points(fuselage.as_ref());
+    let extent_x = (bbox.max.x - bbox.min.x).max(1e-6);
+    let world_x = bbox.min.x + position.clamp(0.0, 1.0) * extent_x;
+
     // Thin slab at `position` along X, huge in Y and Z.
     let slab = Arc::new(SdfBox::new(Vec3::new(thickness * 0.5, 10_000.0, 10_000.0)));
-    let slab = Arc::new(Translate::new(slab, Vec3::new(position, 0.0, 0.0)));
+    let slab = Arc::new(Translate::new(slab, Vec3::new(world_x, 0.0, 0.0)));
 
     // Bulkhead = fuselage cross-section at this station.
     let bulkhead: Arc<dyn Sdf> = Arc::new(Intersect::new(Arc::clone(&fuselage), slab));
@@ -130,7 +135,7 @@ pub fn bulkhead_at_station(
         return bulkhead;
     }
 
-    let fuse_r = estimate_radius_at(&fuselage, position);
+    let fuse_r = estimate_radius_at(&fuselage, world_x);
     let hole_r  = fuse_r * hole_radius_fraction;
     // Place holes at 60 % of the fuselage radius (centroid of a thin ring).
     let hole_radial = fuse_r * 0.6;

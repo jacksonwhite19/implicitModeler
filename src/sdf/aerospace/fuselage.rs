@@ -385,6 +385,71 @@ pub fn fuselage_parametric(
     LoftedFuselage::new(sections, length)
 }
 
+/// Elliptical fuselage with explicit nose/tail lengths and bluntness controls.
+///
+/// `nose_bluntness` / `tail_bluntness`:
+/// - 0.0 = sharper, more slender growth/decay
+/// - 1.0 = blunter, fuller growth/decay
+///
+/// `smoothness`:
+/// - 0.0 = exact generated stations
+/// - 1.0 = stronger fairing between generated stations
+pub fn fuselage_elliptical_parametric(
+    length: f32,
+    max_width: f32,
+    max_height: f32,
+    nose_length: f32,
+    tail_length: f32,
+    nose_bluntness: f32,
+    tail_bluntness: f32,
+    smoothness: f32,
+) -> LoftedFuselage {
+    let length = length.max(1.0);
+    let nose_length = nose_length.clamp(1.0, length * 0.75);
+    let tail_length = tail_length.clamp(1.0, (length - nose_length).max(1.0));
+    let tail_start = (length - tail_length).max(nose_length + 1.0);
+
+    let half_w = max_width * 0.5;
+    let half_h = max_height * 0.5;
+    let nose_pow = 2.6 - nose_bluntness.clamp(0.0, 1.0) * 1.9; // sharp -> high exponent
+    let tail_pow = 2.4 - tail_bluntness.clamp(0.0, 1.0) * 1.7;
+
+    let nose_profile = |t: f32| t.clamp(0.0, 1.0).powf(nose_pow);
+    let tail_profile = |t: f32| (1.0 - t.clamp(0.0, 1.0)).powf(tail_pow);
+
+    let mut stations: Vec<(f32, Arc<dyn Section2D>)> = Vec::new();
+    let push_ellipse = |stations: &mut Vec<(f32, Arc<dyn Section2D>)>, x: f32, w: f32, h: f32| {
+        stations.push((
+            x / length,
+            Arc::new(CrossSection::Ellipse {
+                width: w.max(0.01),
+                height: h.max(0.01),
+            }) as Arc<dyn Section2D>,
+        ));
+    };
+
+    for t in [0.0f32, 0.08, 0.18, 0.30, 0.44, 0.60, 0.76, 0.90, 1.0] {
+        let f = nose_profile(t);
+        push_ellipse(&mut stations, nose_length * t, half_w * f, half_h * f);
+    }
+
+    for x in [
+        nose_length + (tail_start - nose_length) * 0.16,
+        nose_length + (tail_start - nose_length) * 0.40,
+        nose_length + (tail_start - nose_length) * 0.68,
+        tail_start,
+    ] {
+        push_ellipse(&mut stations, x, half_w, half_h);
+    }
+
+    for t in [0.12f32, 0.28, 0.46, 0.66, 0.82, 0.94, 1.0] {
+        let f = tail_profile(t);
+        push_ellipse(&mut stations, tail_start + tail_length * t, half_w * f, half_h * f);
+    }
+
+    LoftedFuselage::from_stations_smoothed(stations, length, smoothness)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -459,5 +524,13 @@ mod tests {
         let smoothed = LoftedFuselage::from_stations_smoothed(stations, 100.0, 1.0);
         let p = Vec3::new(50.0, 2.4, 0.0);
         assert!(rigid.distance(p) < smoothed.distance(p), "smoothed center section should be less bulged");
+    }
+
+    #[test]
+    fn test_elliptical_parametric_blunt_nose_is_fuller() {
+        let blunt = fuselage_elliptical_parametric(100.0, 20.0, 10.0, 20.0, 20.0, 1.0, 0.5, 0.0);
+        let sharp = fuselage_elliptical_parametric(100.0, 20.0, 10.0, 20.0, 20.0, 0.0, 0.5, 0.0);
+        let sample = Vec3::new(10.0, 4.5, 0.0);
+        assert!(blunt.distance(sample) < sharp.distance(sample), "blunter nose should be fuller near the front");
     }
 }
