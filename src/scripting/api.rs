@@ -21,7 +21,7 @@ use crate::sdf::aerospace::{
     chamfer_edge, thread_hole,
     fc_mount, motor_mount_pattern,
     VariableDuct, HollowVariableDuct, SplineTube, HollowSplineTube,
-    ProfileDuct, HollowProfileDuct,
+    ProfileDuct, HollowProfileDuct, build_conformal_profile_inlet,
 };
 use crate::sdf::field::{
     primitives::{ConstantField, SdfField, PositionXField, PositionYField, PositionZField},
@@ -2337,9 +2337,45 @@ fn register_mechanical_functions(engine: &mut Engine) {
 
 fn register_sweep_functions(engine: &mut Engine) {
     use crate::sdf::sweep::{
-        ConformalSplinePath, LinePath, PolylinePath, SplinePath, SurfaceSpinePath, Sweep,
+        ConformalSplinePath, LinePath, PolylinePath, SplinePath, SurfaceSpinePath, Sweep, SweepPath,
     };
     use crate::sdf::profiles::{SplineProfile, RectProfile, RoundedRectProfile, NGonProfile};
+
+    fn parse_vec3_list(
+        fn_name: &str,
+        label: &str,
+        pts: rhai::Array,
+    ) -> Result<Vec<Vec3>, Box<rhai::EvalAltResult>> {
+        let mut verts = Vec::with_capacity(pts.len());
+        for (i, v) in pts.into_iter().enumerate() {
+            let arr = v.clone().try_cast::<rhai::Array>()
+                .ok_or_else(|| format!("{}: {} {} must be [x,y,z]", fn_name, label, i))?;
+            if arr.len() < 3 {
+                return Err(format!("{}: {} {} must have 3 elements", fn_name, label, i).into());
+            }
+            verts.push(Vec3::new(
+                arr[0].clone().try_cast::<f64>().unwrap_or(0.0) as f32,
+                arr[1].clone().try_cast::<f64>().unwrap_or(0.0) as f32,
+                arr[2].clone().try_cast::<f64>().unwrap_or(0.0) as f32,
+            ));
+        }
+        Ok(verts)
+    }
+
+    fn parse_vec3(
+        fn_name: &str,
+        label: &str,
+        arr: rhai::Array,
+    ) -> Result<Vec3, Box<rhai::EvalAltResult>> {
+        if arr.len() < 3 {
+            return Err(format!("{}: {} must be [x,y,z]", fn_name, label).into());
+        }
+        Ok(Vec3::new(
+            arr[0].clone().try_cast::<f64>().unwrap_or(0.0) as f32,
+            arr[1].clone().try_cast::<f64>().unwrap_or(0.0) as f32,
+            arr[2].clone().try_cast::<f64>().unwrap_or(0.0) as f32,
+        ))
+    }
 
     // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Path constructors ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
@@ -2432,6 +2468,43 @@ fn register_sweep_functions(engine: &mut Engine) {
         ))))
     });
 
+    engine.register_fn("conformal_profile_inlet",
+        |surface: SdfHandle,
+         guide_pts: rhai::Array,
+         duct_path: PathHandle,
+         outer_start: ProfileHandle,
+         outer_end: ProfileHandle,
+         inner_start: ProfileHandle,
+         inner_end: ProfileHandle,
+         surface_offset: f64,
+         inlet_open_extension: f64,
+         outlet_open_extension: f64,
+         samples: i64|
+         -> Result<rhai::Array, Box<rhai::EvalAltResult>> {
+        let verts = parse_vec3_list("conformal_profile_inlet", "guide point", guide_pts)?;
+        if verts.len() < 2 {
+            return Err("conformal_profile_inlet: need at least 2 guide points".into());
+        }
+        let parts = build_conformal_profile_inlet(
+            surface.0,
+            verts,
+            duct_path.0,
+            outer_start.0,
+            outer_end.0,
+            inner_start.0,
+            inner_end.0,
+            surface_offset as f32,
+            inlet_open_extension as f32,
+            outlet_open_extension as f32,
+            samples.max(8) as usize,
+        );
+        Ok(vec![
+            rhai::Dynamic::from(SdfHandle(parts.outer_fairing)),
+            rhai::Dynamic::from(SdfHandle(parts.duct_void)),
+            rhai::Dynamic::from(SdfHandle(parts.internal_shell)),
+        ])
+    });
+
     engine.register_fn("conformal_inlet",
         |surface: SdfHandle,
          guide_pts: rhai::Array,
@@ -2443,139 +2516,84 @@ fn register_sweep_functions(engine: &mut Engine) {
          outlet_pt: rhai::Array,
          exhaust_pt: rhai::Array|
          -> Result<rhai::Array, Box<rhai::EvalAltResult>> {
-        let mut verts = Vec::with_capacity(guide_pts.len());
-        for (i, v) in guide_pts.iter().enumerate() {
-            let arr = v.clone().try_cast::<rhai::Array>()
-                .ok_or_else(|| format!("conformal_inlet: guide point {} must be [x,y,z]", i))?;
-            if arr.len() < 3 {
-                return Err(format!("conformal_inlet: guide point {} must have 3 elements", i).into());
-            }
-            let x = arr[0].clone().try_cast::<f64>().unwrap_or(0.0) as f32;
-            let y = arr[1].clone().try_cast::<f64>().unwrap_or(0.0) as f32;
-            let z = arr[2].clone().try_cast::<f64>().unwrap_or(0.0) as f32;
-            verts.push(Vec3::new(x, y, z));
-        }
+        let verts = parse_vec3_list("conformal_inlet", "guide point", guide_pts)?;
         if verts.len() < 2 {
             return Err("conformal_inlet: need at least 2 guide points".into());
         }
-        let parse_point = |label: &str, arr: rhai::Array| -> Result<Vec3, Box<rhai::EvalAltResult>> {
-            if arr.len() < 3 {
-                return Err(format!("conformal_inlet: {} must be [x,y,z]", label).into());
-            }
-            Ok(Vec3::new(
-                arr[0].clone().try_cast::<f64>().unwrap_or(0.0) as f32,
-                arr[1].clone().try_cast::<f64>().unwrap_or(0.0) as f32,
-                arr[2].clone().try_cast::<f64>().unwrap_or(0.0) as f32,
-            ))
-        };
-        let outlet = parse_point("outlet point", outlet_pt)?;
-        let exhaust = parse_point("exhaust point", exhaust_pt)?;
+        let outlet = parse_vec3("conformal_inlet", "outlet point", outlet_pt)?;
+        let exhaust = parse_vec3("conformal_inlet", "exhaust point", exhaust_pt)?;
+        let sample_count = samples.max(8) as usize;
 
-        let outer_path: Arc<dyn crate::sdf::sweep::SweepPath> = Arc::new(
-            ConformalSplinePath::new(Arc::clone(&surface.0), verts, surface_offset as f32, samples.max(2) as usize)
+        let preview_path = ConformalSplinePath::new(
+            Arc::clone(&surface.0),
+            verts.clone(),
+            surface_offset as f32,
+            sample_count,
         );
-
-        let outer_profile: Arc<dyn Section2D> = {
-            let mut p = SplineProfile::circle(12, 1.0);
-            for pt in &mut p.control_points {
-                pt[0] *= outer_w as f32 / 2.0;
-                pt[1] *= outer_h as f32 / 2.0;
-            }
-            Arc::new(p)
-        };
-        let inner_profile: Arc<dyn Section2D> = {
-            let mut p = SplineProfile::circle(12, 1.0);
-            for pt in &mut p.control_points {
-                pt[0] *= inner_w as f32 / 2.0;
-                pt[1] *= inner_h as f32 / 2.0;
-            }
-            Arc::new(p)
-        };
-        let circular_profile: Arc<dyn Section2D> = Arc::new(SplineProfile::circle(12, outlet_d as f32 / 2.0));
-
-        let outer_fairing: Arc<dyn Sdf> = Arc::new(Sweep::new(outer_profile, Arc::clone(&outer_path), 0.0, 0.0));
-
-        let entry_start = outer_path.evaluate(0.0);
-        let entry_end = outer_path.evaluate(1.0) + Vec3::new(
+        let mouth_start = preview_path.evaluate(0.0);
+        let mouth_end = preview_path.evaluate(1.0);
+        let mouth_tangent = preview_path.tangent(0.0).normalize_or_zero();
+        let throat = mouth_end + Vec3::new(
             0.0,
             0.0,
-            -((inner_h as f32 * 0.9) + (surface_offset as f32 * 0.35)),
+            -((inner_h as f32 * 0.55) + (surface_offset as f32 * 0.45)),
         );
-        let entry_tangent = outer_path.tangent(0.0).normalize_or_zero();
-        let entry_mid = outer_path.evaluate(0.45) + Vec3::new(
+        let transition_ctrl = throat.lerp(outlet, 0.45) + Vec3::new(
             0.0,
             0.0,
-            -((inner_h as f32 * 0.35) + (surface_offset as f32 * 0.2)),
+            (outlet.z - throat.z) * 0.18,
         );
-        let entry_path: Arc<dyn crate::sdf::sweep::SweepPath> = Arc::new(SplinePath::new(vec![
-            entry_start,
-            entry_start + entry_tangent * (inner_w as f32 * 0.35),
-            entry_mid,
-            entry_end,
-        ]));
-        let inlet_entry: Arc<dyn Sdf> = Arc::new(Sweep::new(
-            Arc::clone(&inner_profile),
-            entry_path,
-            0.0,
-            0.0,
-        ));
-
-        let inlet_open_len = inner_w.max(inner_h) as f32;
-        let inlet_open_path: Arc<dyn crate::sdf::sweep::SweepPath> = Arc::new(LinePath {
-            start: entry_start - entry_tangent * inlet_open_len,
-            end: entry_start + entry_tangent * (inlet_open_len * 0.2),
-        });
-        let inlet_opening: Arc<dyn Sdf> = Arc::new(Sweep::new(
-            Arc::clone(&inner_profile),
-            inlet_open_path,
-            0.0,
-            0.0,
-        ));
-
-        let delta = outlet - entry_end;
-        let transition_path: Arc<dyn crate::sdf::sweep::SweepPath> = Arc::new(SplinePath::new(vec![
-            entry_end,
-            entry_end + delta * 0.35 + Vec3::new(0.0, 0.0, delta.z.abs() * 0.25),
-            entry_end + delta * 0.7,
-            outlet,
-        ]));
-        let transition_duct: Arc<dyn Sdf> = Arc::new(Sweep::new(circular_profile.clone(), transition_path, 0.0, 0.0));
-
-        let aft_path: Arc<dyn crate::sdf::sweep::SweepPath> = Arc::new(SplinePath::new(vec![
+        let branch_ctrl = mouth_start + mouth_tangent * (inner_w as f32 * 0.18);
+        let duct_path: Arc<dyn crate::sdf::sweep::SweepPath> = Arc::new(SplinePath::new(vec![
+            mouth_start,
+            branch_ctrl,
+            mouth_end,
+            throat,
+            transition_ctrl,
             outlet,
             outlet.lerp(exhaust, 0.45),
             exhaust,
         ]));
-        let aft_duct: Arc<dyn Sdf> = Arc::new(Sweep::new(circular_profile, aft_path, 0.0, 0.0));
-        let exhaust_dir = (exhaust - outlet).normalize_or_zero();
-        let exhaust_open_len = outlet_d as f32 * 0.8;
-        let exhaust_open_path: Arc<dyn crate::sdf::sweep::SweepPath> = Arc::new(LinePath {
-            start: exhaust - exhaust_dir * exhaust_open_len,
-            end: exhaust,
-        });
-        let exhaust_opening: Arc<dyn Sdf> = Arc::new(Sweep::new(
-            Arc::new(SplineProfile::circle(12, outlet_d as f32 / 2.0)),
-            exhaust_open_path,
-            0.0,
-            0.0,
-        ));
 
-        let duct_void: Arc<dyn Sdf> = Arc::new(SmoothUnion::new(
-            Arc::new(SmoothUnion::new(
-                Arc::new(SmoothUnion::new(
-                    Arc::new(SmoothUnion::new(inlet_opening, inlet_entry, outlet_d as f32 * 0.18)),
-                    transition_duct,
-                    outlet_d as f32 * 0.18,
-                )),
-                aft_duct,
-                outlet_d as f32 * 0.18,
-            )),
-            exhaust_opening,
-            outlet_d as f32 * 0.18,
+        let outer_start: Arc<dyn Section2D> = {
+            let mut p = SplineProfile::circle(16, 1.0);
+            for pt in &mut p.control_points {
+                pt[0] *= outer_w as f32 * 0.5;
+                pt[1] *= outer_h as f32 * 0.5;
+            }
+            Arc::new(p)
+        };
+        let inner_start: Arc<dyn Section2D> = {
+            let mut p = SplineProfile::circle(16, 1.0);
+            for pt in &mut p.control_points {
+                pt[0] *= inner_w as f32 * 0.5;
+                pt[1] *= inner_h as f32 * 0.5;
+            }
+            Arc::new(p)
+        };
+        let wall_thickness = (((outer_w - inner_w).max(0.0) + (outer_h - inner_h).max(0.0)) * 0.25) as f32;
+        let outer_end: Arc<dyn Section2D> = Arc::new(SplineProfile::circle(
+            16,
+            outlet_d as f32 * 0.5 + wall_thickness.max(1e-4),
         ));
+        let inner_end: Arc<dyn Section2D> = Arc::new(SplineProfile::circle(16, outlet_d as f32 * 0.5));
+
+        let parts = build_conformal_profile_inlet(
+            surface.0,
+            verts,
+            duct_path,
+            outer_start,
+            outer_end,
+            inner_start,
+            inner_end,
+            surface_offset as f32,
+            inner_w.max(inner_h) as f32 * 0.35,
+            outlet_d as f32 * 0.5,
+            sample_count,
+        );
         Ok(vec![
-            rhai::Dynamic::from(SdfHandle(outer_fairing)),
-            rhai::Dynamic::from(SdfHandle(duct_void)),
+            rhai::Dynamic::from(SdfHandle(parts.outer_fairing)),
+            rhai::Dynamic::from(SdfHandle(parts.duct_void)),
         ])
     });
 
@@ -3946,6 +3964,20 @@ pub fn register_query_functions(engine: &mut Engine, ref_collector: RefPointColl
     engine.register_fn("closest_point_p",
         |sdf: SdfHandle, q: PointHandle| -> PointHandle {
             PointHandle(query::closest_point(sdf.0.as_ref(), q.0))
+        }
+    );
+
+    // sdf_distance_p(sdf, query: PointHandle) -> f64
+    engine.register_fn("sdf_distance_p",
+        |sdf: SdfHandle, q: PointHandle| -> f64 {
+            sdf.0.distance(q.0) as f64
+        }
+    );
+
+    // sdf_distance(sdf, x, y, z) -> f64
+    engine.register_fn("sdf_distance",
+        |sdf: SdfHandle, x: f64, y: f64, z: f64| -> f64 {
+            sdf.0.distance(glam::Vec3::new(x as f32, y as f32, z as f32)) as f64
         }
     );
 

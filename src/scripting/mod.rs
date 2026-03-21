@@ -1318,6 +1318,24 @@ fn build(r) {
     }
 
     #[test]
+    fn test_sdf_distance_queries() {
+        let script = r#"
+            let s = sphere(5.0);
+            let inside = sdf_distance_p(s, point(0.0, 0.0, 0.0));
+            let outside = sdf_distance(s, 8.0, 0.0, 0.0);
+            if inside < 0.0 && outside > 0.0 {
+                s
+            } else {
+                sphere(1.0)
+            }
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "sdf_distance queries should succeed: {:?}", result.err());
+        let sdf = result.unwrap().sdf;
+        assert!(sdf.distance(Vec3::ZERO) < 0.0);
+    }
+
+    #[test]
     fn test_offset_point() {
         let script = r#"
             let p = point(0.0, 0.0, 0.0);
@@ -1520,6 +1538,46 @@ fn build(r) {
         "#;
         let result = evaluate_script(script);
         assert!(result.is_ok(), "conformal_inlet should succeed: {:?}", result.err());
+    }
+
+    #[test]
+    fn test_conformal_profile_inlet_returns_all_parts() {
+        let script = r#"
+            let fuse = fuselage([
+                [0.0, ellipse_section(0.05, 0.03)],
+                [0.3, ellipse_section(0.12, 0.08)],
+                [0.7, ellipse_section(0.12, 0.08)],
+                [1.0, ellipse_section(0.04, 0.03)],
+            ]);
+            let guide = [[0.2, 0.0, 0.12], [0.36, 0.0, 0.16], [0.56, 0.0, 0.14]];
+            let duct = spline_path([
+                [0.2, 0.0, 0.12],
+                [0.28, 0.0, 0.13],
+                [0.42, 0.0, 0.06],
+                [0.62, 0.0, 0.02],
+                [0.82, 0.0, 0.0],
+            ]);
+            let outer_start = rounded_rect_profile(0.08, 0.05, 0.01);
+            let outer_end = circle_profile(0.025);
+            let inner_start = rounded_rect_profile(0.064, 0.038, 0.008);
+            let inner_end = circle_profile(0.023);
+            let parts = conformal_profile_inlet(
+                fuse,
+                guide,
+                duct,
+                outer_start,
+                outer_end,
+                inner_start,
+                inner_end,
+                0.01,
+                0.03,
+                0.03,
+                64
+            );
+            union(parts[0], parts[2])
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "conformal_profile_inlet should succeed: {:?}", result.err());
     }
 
     #[test]

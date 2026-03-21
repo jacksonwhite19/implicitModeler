@@ -41,6 +41,7 @@ pub fn function_status(doc: &FunctionDoc) -> FunctionStatus {
     match doc.name {
         "fea_fixed_face" | "fea_load_point" | "fea_gravity" | "fea_pressure"
         | "tail_cone" | "wall_thickness_at" | "print_overhang_angle"
+        | "conformal_inlet"
         | "tolerance_compensate" | "add_alignment_features" => FunctionStatus::Legacy,
         "cg_sensitivity" | "propulsion_analysis" | "rate_of_climb" | "glide_performance"
         | "static_margin" | "neutral_point" | "trim_analysis" | "range_endurance" => FunctionStatus::Experimental,
@@ -48,6 +49,7 @@ pub fn function_status(doc: &FunctionDoc) -> FunctionStatus {
         | "battery_hatch" | "fc_access_panel" | "attach_to_fuselage_station"
         | "attach_to_trailing_edge" | "control_throw" | "pushrod_guide"
         | "pushrod_length" => FunctionStatus::Stable,
+        _ if matches!(doc.name, "conformal_profile_inlet") => FunctionStatus::Experimental,
         _ if matches!(doc.category, "Aerodynamic Analysis" | "Geometry Analysis") => FunctionStatus::Experimental,
         _ => FunctionStatus::Stable,
     }
@@ -1675,11 +1677,21 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         name: "conformal_inlet",
         category: "Splines and Sweeps",
         signature: "conformal_inlet(surface: SdfHandle, guide_points: Array, outer_w: f64, outer_h: f64, inner_w: f64, inner_h: f64, outlet_d: f64, offset: f64, samples: i64, outlet_pt: Array, exhaust_pt: Array) -> Array",
-        description: "Builds a raised conformal intake fairing and matching internal duct path from a guide spline, returning [outer_fairing, duct_void].",
+        description: "Legacy convenience wrapper that auto-builds a conformal intake fairing and duct from scalar inlet dimensions, returning [outer_fairing, duct_void].",
         example: "let parts = conformal_inlet(fuse, [[240,0,72],[300,0,88],[360,0,78]], 120, 62, 96, 42, 90, 10, 40, [460,0,0], [690,0,0]);",
         returns: "Array",
-        notes: Some("The guide spline is projected to the nearest surface and then offset outward. Blend outer_fairing into the aircraft and build the internal duct wall separately from duct_void."),
+        notes: Some("Prefer conformal_profile_inlet for new work. This wrapper keeps older scripts running but gives you less control over the fairing path, wall shape, and through-body duct shell."),
         tags: &["inlet", "duct", "conformal", "fairing", "sweep"],
+    },
+    FunctionDoc {
+        name: "conformal_profile_inlet",
+        category: "Splines and Sweeps",
+        signature: "conformal_profile_inlet(surface: SdfHandle, guide_points: Array, duct_path: PathHandle, outer_start: SectionHandle, outer_end: SectionHandle, inner_start: SectionHandle, inner_end: SectionHandle, offset: f64, inlet_open_extension: f64, outlet_open_extension: f64, samples: i64) -> Array",
+        description: "Builds a robust conformal inlet using a surface-matched outer fairing plus an explicit internal duct path, returning [outer_fairing, duct_void, internal_shell].",
+        example: "let parts = conformal_profile_inlet(fuse, [[240,0,72],[300,0,88],[360,0,78]], duct_path, rounded_rect_profile(70,50,8), circle_profile(39), rounded_rect_profile(66,46,7), circle_profile(35), 10, 18, 24, 96);",
+        returns: "Array",
+        notes: Some("The fairing underside is trimmed against an offset copy of the parent OML, so the lower surface matches the mold line exactly even when the user-defined mouth profile would otherwise penetrate it. `parts[0]` is the exposed fairing, `parts[1]` is the duct void to subtract, and `parts[2]` is the through-body internal duct shell to union back in after shelling."),
+        tags: &["inlet", "duct", "conformal", "profile", "oml", "fairing"],
     },
     FunctionDoc {
         name: "spline_tube_solid",
@@ -2781,6 +2793,26 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         returns: "PointHandle",
         notes: None,
         tags: &["closest", "surface", "query"],
+    },
+    FunctionDoc {
+        name: "sdf_distance_p",
+        category: "Points and Queries",
+        signature: "sdf_distance_p(sdf: SdfHandle, query: PointHandle) -> f64",
+        description: "Returns the signed distance from the query point to the SDF. Positive is outside, negative is inside.",
+        example: "let d = sdf_distance_p(fuse, probe_pt);",
+        returns: "f64",
+        notes: Some("Useful for checking actual clearance or penetration at sampled points."),
+        tags: &["distance", "signed distance", "clearance", "penetration", "query"],
+    },
+    FunctionDoc {
+        name: "sdf_distance",
+        category: "Points and Queries",
+        signature: "sdf_distance(sdf: SdfHandle, x: f64, y: f64, z: f64) -> f64",
+        description: "Returns the signed distance from (x,y,z) to the SDF. Positive is outside, negative is inside.",
+        example: "let d = sdf_distance(fuse, 180.0, 0.0, 72.0);",
+        returns: "f64",
+        notes: Some("Use sdf_distance_p when you already have a PointHandle."),
+        tags: &["distance", "signed distance", "clearance", "penetration", "query"],
     },
     FunctionDoc {
         name: "furthest_point",

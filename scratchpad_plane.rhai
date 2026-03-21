@@ -24,7 +24,7 @@ let wing_tip_chord = 65.0;
 let wing_sweep_deg = 15.0;
 let wing_le_x = 230.0;
 let wing_root_blend_k = 16.0;
-let shell_thickness = 2.0;
+let shell_thickness = 1.0;
 let wing_rib_thickness = 2.2;
 let fuselage_bulkhead_thickness = 3.0;
 let show_shell = true;
@@ -36,10 +36,10 @@ let add_s_duct = true;
 
 let intake_x = 250.0;
 let intake_top_z = 68.0;
-let intake_outer_width = fuselage_width * 0.90;
+let intake_outer_width = fuselage_width * 0.675;
 let intake_outer_height = intake_outer_width * 0.70;
-let intake_inner_width = intake_outer_width - 24.0;
-let intake_inner_height = intake_outer_height - 20.0;
+let intake_inner_width = intake_outer_width - 12.0;
+let intake_inner_height = intake_outer_height - 10.0;
 let duct_diameter = 90.0;
 let intake_surface_offset = 10.0;
 let intake_blend_k = 14.0;
@@ -47,8 +47,8 @@ let duct_blend_k = 16.0;
 let duct_profile_samples = 160;
 let duct_open_extension = 70.0;
 let intake_mouth_clearance = 8.0;
-let intake_face_extension = 18.0;
-let intake_front_raise = 20.0;
+let intake_face_extension = 10.0;
+let intake_front_raise = 5.0;
 
 let htail_span = 400.0;
 let htail_root_chord = 98.0;
@@ -125,11 +125,11 @@ let body_outer = smooth_union(body_outer, vtail, tail_blend_k);
 // ---------------------------------------------------------------------------
 let duct_path = spline_path([
     [intake_x - 8.0,   0.0, intake_mouth_z],
-    [intake_x + 18.0,  0.0, intake_mouth_z],
-    [intake_x + 54.0,  0.0, intake_mouth_z],
-    [intake_x + 104.0, 0.0, intake_mouth_z - 2.0],
-    [intake_x + 162.0, 0.0, intake_mouth_z - 16.0],
-    [intake_x + 214.0, 0.0, 24.0],
+    [intake_x + 10.0,  0.0, intake_mouth_z],
+    [intake_x + 34.0,  0.0, intake_mouth_z - 1.0],
+    [intake_x + 76.0,  0.0, intake_mouth_z - 5.0],
+    [intake_x + 132.0, 0.0, intake_mouth_z - 13.0],
+    [intake_x + 192.0, 0.0, 26.0],
     [intake_x + 254.0, 0.0, 8.0],
     [intake_x + 288.0, 0.0, 0.0],
     [fuselage_length - 16.0, 0.0, 0.0]
@@ -137,11 +137,11 @@ let duct_path = spline_path([
 let duct_void_path = spline_path([
     [intake_x - 8.0 - intake_face_extension, 0.0, intake_mouth_z],
     [intake_x - 8.0,   0.0, intake_mouth_z],
-    [intake_x + 18.0,  0.0, intake_mouth_z],
-    [intake_x + 54.0,  0.0, intake_mouth_z],
-    [intake_x + 104.0, 0.0, intake_mouth_z - 2.0],
-    [intake_x + 162.0, 0.0, intake_mouth_z - 16.0],
-    [intake_x + 214.0, 0.0, 24.0],
+    [intake_x + 10.0,  0.0, intake_mouth_z],
+    [intake_x + 34.0,  0.0, intake_mouth_z - 1.0],
+    [intake_x + 76.0,  0.0, intake_mouth_z - 5.0],
+    [intake_x + 132.0, 0.0, intake_mouth_z - 13.0],
+    [intake_x + 192.0, 0.0, 26.0],
     [intake_x + 254.0, 0.0, 8.0],
     [intake_x + 288.0, 0.0, 0.0],
     [fuselage_length - 16.0, 0.0, 0.0],
@@ -149,13 +149,13 @@ let duct_void_path = spline_path([
 ]);
 
 let outer_start = rounded_rect_profile(
-    intake_outer_width,
     intake_outer_height,
+    intake_outer_width,
     intake_outer_height * 0.24
 );
 let inner_start = rounded_rect_profile(
-    intake_inner_width,
     intake_inner_height,
+    intake_inner_width,
     intake_inner_height * 0.24
 );
 let outer_end = circle_profile((duct_diameter + shell_thickness * 2.0) * 0.5);

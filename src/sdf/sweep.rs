@@ -55,6 +55,16 @@ fn closest_surface_point_with_offset(sdf: &dyn Sdf, p: Vec3, offset: f32) -> Vec
     cp + n * offset
 }
 
+pub fn project_point_to_surface_with_offset_and_normal(
+    sdf: &dyn Sdf,
+    p: Vec3,
+    offset: f32,
+) -> (Vec3, Vec3) {
+    let cp = closest_surface_point(sdf, p);
+    let n = gradient(sdf, cp, 0.001).normalize_or_zero();
+    (cp + n * offset, n)
+}
+
 // ── LinePath ──────────────────────────────────────────────────────────────────
 
 /// Straight line from `start` to `end`.

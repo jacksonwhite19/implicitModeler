@@ -1,11 +1,15 @@
 // Aerodynamic inlet geometry: NACA flush inlets, EDF buried inlets, inlet lips,
 // EDF duct system, and exhaust nozzles.
 
-use glam::Vec3;
+use glam::{Vec2, Vec3};
 use std::sync::Arc;
 use crate::sdf::Sdf;
-use crate::sdf::sweep::SweepPath;
+use crate::sdf::booleans::{Intersect, SmoothUnion, Subtract};
+use crate::sdf::profiles::{NGonProfile, RectProfile, RoundedRectProfile, SplineProfile};
+use crate::sdf::sweep::{PolylinePath, SplinePath, SweepPath, project_point_to_surface_with_offset_and_normal};
+use crate::sdf::transforms::Offset;
 use crate::sdf::aerospace::Section2D;
+use std::any::Any;
 
 // ── Smooth helpers ────────────────────────────────────────────────────────────
 
@@ -764,8 +768,23 @@ impl ProfileDuct {
         end_profile: Arc<dyn Section2D>,
         samples: usize,
     ) -> Self {
+        Self::new_with_frames(
+            Arc::clone(&path),
+            start_profile,
+            end_profile,
+            build_frame_samples(path.as_ref(), samples),
+            samples,
+        )
+    }
+
+    pub fn new_with_frames(
+        path: Arc<dyn SweepPath>,
+        start_profile: Arc<dyn Section2D>,
+        end_profile: Arc<dyn Section2D>,
+        frame_samples: Vec<FrameSample>,
+        samples: usize,
+    ) -> Self {
         let coarse_ts = build_coarse_ts(samples);
-        let frame_samples = build_frame_samples(path.as_ref(), samples);
         Self {
             path,
             coarse_ts,
@@ -849,6 +868,298 @@ impl Sdf for HollowProfileDuct {
     }
 }
 
+struct ScaledSection {
+    inner: Arc<dyn Section2D>,
+    sx: f32,
+    sy: f32,
+}
+
+impl ScaledSection {
+    fn new(inner: Arc<dyn Section2D>, sx: f32, sy: f32) -> Self {
+        Self {
+            inner,
+            sx: sx.max(1e-4),
+            sy: sy.max(1e-4),
+        }
+    }
+}
+
+impl Section2D for ScaledSection {
+    fn distance_2d(&self, point: Vec2) -> f32 {
+        let p = Vec2::new(point.x / self.sx, point.y / self.sy);
+        self.inner.distance_2d(p) * self.sx.min(self.sy)
+    }
+
+    fn distance_lerped_2d(&self, other: &dyn Section2D, t: f32, point: Vec2) -> f32 {
+        self.distance_2d(point) * (1.0 - t) + other.distance_2d(point) * t
+    }
+
+    fn lerp_to(&self, other: &dyn Section2D, t: f32) -> Arc<dyn Section2D> {
+        Arc::new(ScaledSection::new(self.inner.lerp_to(other, t), self.sx, self.sy))
+    }
+
+    fn as_any(&self) -> &dyn Any { self }
+}
+
+#[derive(Clone)]
+struct TopCapProfile {
+    width: f32,
+    height: f32,
+    radius: f32,
+}
+
+impl TopCapProfile {
+    fn new(width: f32, height: f32, radius: f32) -> Self {
+        Self {
+            width: width.max(1e-4),
+            height: height.max(1e-4),
+            radius: radius.max(0.0),
+        }
+    }
+}
+
+impl Section2D for TopCapProfile {
+    fn distance_2d(&self, point: Vec2) -> f32 {
+        let rr = RoundedRectProfile::new(self.width, self.height, self.radius);
+        let shifted = Vec2::new(point.x, point.y - self.height * 0.5);
+        let d_rr = rr.distance_2d(shifted);
+        let d_floor = -point.y;
+        d_rr.max(d_floor)
+    }
+
+    fn distance_lerped_2d(&self, other: &dyn Section2D, t: f32, point: Vec2) -> f32 {
+        self.distance_2d(point) * (1.0 - t) + other.distance_2d(point) * t
+    }
+
+    fn lerp_to(&self, other: &dyn Section2D, t: f32) -> Arc<dyn Section2D> {
+        if t < 0.5 {
+            Arc::new(self.clone())
+        } else {
+            other.lerp_to(other, 0.0)
+        }
+    }
+
+    fn as_any(&self) -> &dyn Any { self }
+}
+
+fn sample_section_outline(section: &dyn Section2D, samples: usize) -> Vec<Vec2> {
+    if let Some(profile) = section.as_any().downcast_ref::<SplineProfile>() {
+        return profile.sample(samples.max(24));
+    }
+    if let Some(profile) = section.as_any().downcast_ref::<RectProfile>() {
+        return vec![
+            Vec2::new(-profile.half_w, -profile.half_h),
+            Vec2::new(profile.half_w, -profile.half_h),
+            Vec2::new(profile.half_w, profile.half_h),
+            Vec2::new(-profile.half_w, profile.half_h),
+        ];
+    }
+    if let Some(profile) = section.as_any().downcast_ref::<RoundedRectProfile>() {
+        let n = samples.max(32);
+        let mut pts = Vec::with_capacity(n);
+        let inner_w = (profile.half_w - profile.radius).max(0.0);
+        let inner_h = (profile.half_h - profile.radius).max(0.0);
+        for i in 0..n {
+            let a = std::f32::consts::TAU * i as f32 / n as f32;
+            let sx = a.cos().signum();
+            let sy = a.sin().signum();
+            pts.push(Vec2::new(
+                sx * inner_w + a.cos() * profile.radius,
+                sy * inner_h + a.sin() * profile.radius,
+            ));
+        }
+        return pts;
+    }
+    if let Some(profile) = section.as_any().downcast_ref::<NGonProfile>() {
+        return (0..profile.sides).map(|i| {
+            let a = std::f32::consts::TAU * i as f32 / profile.sides as f32;
+            Vec2::new(a.cos() * profile.radius, a.sin() * profile.radius)
+        }).collect();
+    }
+
+    let n = samples.max(48);
+    let mut pts = Vec::with_capacity(n);
+    for i in 0..n {
+        let a = std::f32::consts::TAU * i as f32 / n as f32;
+        let dir = Vec2::new(a.cos(), a.sin());
+        let mut hi = 1.0_f32;
+        let mut iters = 0;
+        while section.distance_2d(dir * hi) <= 0.0 && iters < 32 {
+            hi *= 2.0;
+            iters += 1;
+        }
+        let mut lo = 0.0_f32;
+        for _ in 0..32 {
+            let mid = 0.5 * (lo + hi);
+            if section.distance_2d(dir * mid) <= 0.0 {
+                lo = mid;
+            } else {
+                hi = mid;
+            }
+        }
+        pts.push(dir * lo);
+    }
+    pts
+}
+
+fn section_lower_extent(section: &dyn Section2D, samples: usize) -> f32 {
+    sample_section_outline(section, samples)
+        .into_iter()
+        .map(|p| -p.y)
+        .fold(0.0_f32, f32::max)
+}
+
+fn fit_center_outside_offset_surface(
+    surface_limit: &dyn Sdf,
+    center: Vec3,
+    lateral: Vec3,
+    upward: Vec3,
+    outline: &[Vec2],
+    clearance: f32,
+) -> Vec3 {
+    let mut c = center;
+    let l = lateral.normalize_or_zero();
+    let u = upward.normalize_or_zero();
+    if l.length_squared() < 1e-8 || u.length_squared() < 1e-8 {
+        return c;
+    }
+    for _ in 0..10 {
+        let mut min_d = f32::INFINITY;
+        for p in outline {
+            let wp = c + l * p.x + u * p.y;
+            min_d = min_d.min(surface_limit.distance(wp));
+        }
+        if min_d >= clearance {
+            break;
+        }
+        c += u * (clearance - min_d + 0.02);
+    }
+    c
+}
+
+pub struct ConformalProfileInletParts {
+    pub outer_fairing: Arc<dyn Sdf>,
+    pub duct_void: Arc<dyn Sdf>,
+    pub internal_shell: Arc<dyn Sdf>,
+}
+
+pub fn build_conformal_profile_inlet(
+    surface: Arc<dyn Sdf>,
+    guide_points: Vec<Vec3>,
+    duct_path: Arc<dyn SweepPath>,
+    outer_start: Arc<dyn Section2D>,
+    outer_end: Arc<dyn Section2D>,
+    inner_start: Arc<dyn Section2D>,
+    inner_end: Arc<dyn Section2D>,
+    surface_offset: f32,
+    inlet_open_extension: f32,
+    outlet_open_extension: f32,
+    samples: usize,
+) -> ConformalProfileInletParts {
+    let sample_count = samples.max(8);
+    let surface_limit: Arc<dyn Sdf> = Arc::new(Offset::new(Arc::clone(&surface), surface_offset));
+    let guide_spline = PolylinePath::new(guide_points);
+    let fairing_t_end = 0.42_f32;
+    let fairing_start: Arc<dyn Section2D> = Arc::new(TopCapProfile::new(70.0, 24.0, 6.0));
+    let fairing_end: Arc<dyn Section2D> = Arc::new(TopCapProfile::new(20.0, 8.0, 3.0));
+    let start_lift = section_lower_extent(fairing_start.as_ref(), sample_count);
+    let end_lift = section_lower_extent(fairing_end.as_ref(), sample_count);
+    let start_outline = sample_section_outline(fairing_start.as_ref(), sample_count);
+    let end_outline = sample_section_outline(fairing_end.as_ref(), sample_count);
+    let mut conformal_points = Vec::with_capacity(sample_count);
+    let mut fairing_frames = Vec::with_capacity(sample_count);
+    for i in 0..sample_count {
+        let u = i as f32 / (sample_count - 1) as f32;
+        let t = fairing_t_end * u;
+        let guide = guide_spline.evaluate(t);
+        let (offset_point, normal) =
+            project_point_to_surface_with_offset_and_normal(surface.as_ref(), guide, surface_offset);
+        let end_fade = 1.0 - smoothstep(u);
+        let lift = smooth_profile_lerp(start_lift, end_lift, u, 0.85) * end_fade;
+        let mut center = offset_point + normal * lift;
+
+        let tangent = guide_spline.tangent(t).normalize_or_zero();
+        let mut upward = (normal - tangent * tangent.dot(normal)).normalize_or_zero();
+        if upward.length_squared() < 1e-8 {
+            let (_, _, fallback_up) = make_frame(tangent);
+            upward = fallback_up;
+        }
+        let mut lateral = upward.cross(tangent).normalize_or_zero();
+        if lateral.length_squared() < 1e-8 {
+            let (_, fallback_lateral, fallback_up) = make_frame(tangent);
+            lateral = fallback_lateral;
+            upward = fallback_up;
+        } else {
+            upward = tangent.cross(lateral).normalize_or_zero();
+        }
+        let outline = if u < 0.5 { &start_outline } else { &end_outline };
+        center = fit_center_outside_offset_surface(
+            surface_limit.as_ref(),
+            center,
+            lateral,
+            upward,
+            outline,
+            0.2,
+        );
+        conformal_points.push(center);
+        fairing_frames.push(FrameSample {
+            t: u,
+            normal: lateral,
+            binormal: upward,
+        });
+    }
+    let conformal_path: Arc<dyn SweepPath> = Arc::new(PolylinePath::new(conformal_points));
+    let fairing_proto: Arc<dyn Sdf> = Arc::new(ProfileDuct::new_with_frames(
+        conformal_path,
+        Arc::clone(&fairing_start),
+        Arc::clone(&fairing_end),
+        fairing_frames,
+        sample_count,
+    ));
+    let fairing_blend: Arc<dyn Sdf> = Arc::new(SmoothUnion::new(
+        Arc::clone(&surface),
+        fairing_proto,
+        10.0,
+    ));
+    let outer_fairing: Arc<dyn Sdf> = Arc::new(Subtract::new(
+        fairing_blend,
+        Arc::clone(&surface),
+    ));
+
+    let internal_shell_proto: Arc<dyn Sdf> = Arc::new(HollowProfileDuct::new(
+        Arc::clone(&duct_path),
+        outer_start,
+        outer_end,
+        Arc::clone(&inner_start),
+        Arc::clone(&inner_end),
+        0.0,
+        0.0,
+        sample_count,
+    ));
+    let internal_shell: Arc<dyn Sdf> = Arc::new(Intersect::new(
+        internal_shell_proto,
+        Arc::clone(&surface_limit),
+    ));
+
+    let extended_duct_path: Arc<dyn SweepPath> = Arc::new(ExtendedPath::new(
+        duct_path,
+        inlet_open_extension.max(0.0),
+        outlet_open_extension.max(0.0),
+    ));
+    let duct_void: Arc<dyn Sdf> = Arc::new(ProfileDuct::new(
+        extended_duct_path,
+        inner_start,
+        inner_end,
+        sample_count,
+    ));
+
+    ConformalProfileInletParts {
+        outer_fairing,
+        duct_void,
+        internal_shell,
+    }
+}
+
 // ── BuriedInlet ───────────────────────────────────────────────────────────────
 
 /// A buried inlet: elliptical surface scoop leading to a cylindrical duct throat.
@@ -908,6 +1219,7 @@ mod tests {
     use super::*;
     use crate::sdf::profiles::{RoundedRectProfile, SplineProfile};
     use crate::sdf::sweep::SplinePath;
+    use crate::sdf::primitives::Sphere;
 
     #[test]
     fn test_naca_inlet_finite() {
@@ -1035,5 +1347,41 @@ mod tests {
             let p = duct.path.evaluate(t);
             assert!(duct.distance(p) < -30.0, "profile centerline should stay inside at t={}", t);
         }
+    }
+
+    #[test]
+    fn test_conformal_profile_inlet_builds_three_parts() {
+        let surface: Arc<dyn Sdf> = Arc::new(Sphere::new(10.0));
+        let duct_path: Arc<dyn SweepPath> = Arc::new(SplinePath::new(vec![
+            Vec3::new(0.0, 0.0, 11.5),
+            Vec3::new(1.5, 0.0, 10.5),
+            Vec3::new(3.5, 0.0, 7.0),
+            Vec3::new(6.0, 0.0, 0.0),
+        ]));
+        let outer_start: Arc<dyn Section2D> = Arc::new(RoundedRectProfile::new(4.0, 3.0, 0.6));
+        let outer_end: Arc<dyn Section2D> = Arc::new(SplineProfile::circle(16, 1.4));
+        let inner_start: Arc<dyn Section2D> = Arc::new(RoundedRectProfile::new(3.2, 2.2, 0.5));
+        let inner_end: Arc<dyn Section2D> = Arc::new(SplineProfile::circle(16, 1.1));
+        let parts = build_conformal_profile_inlet(
+            surface,
+            vec![
+                Vec3::new(-2.0, 0.0, 12.0),
+                Vec3::new(0.0, 0.0, 12.5),
+                Vec3::new(2.0, 0.0, 11.8),
+            ],
+            duct_path,
+            outer_start,
+            outer_end,
+            inner_start,
+            inner_end,
+            1.0,
+            2.0,
+            2.0,
+            48,
+        );
+
+        assert!(parts.outer_fairing.distance(Vec3::new(0.0, 0.0, 12.5)).is_finite());
+        assert!(parts.duct_void.distance(Vec3::new(5.5, 0.0, 0.0)).is_finite());
+        assert!(parts.internal_shell.distance(Vec3::new(3.5, 0.0, 7.0)).is_finite());
     }
 }

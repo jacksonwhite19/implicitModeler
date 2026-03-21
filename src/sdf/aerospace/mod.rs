@@ -39,4 +39,5 @@ pub use inlets::{
     NacaInlet, InletLip, InletShape, EdfDuct, SDuct, BuriedInlet,
     VariableDuct, HollowVariableDuct, SplineTube, HollowSplineTube,
     ProfileDuct, HollowProfileDuct,
+    build_conformal_profile_inlet,
 };

@@ -1123,18 +1123,44 @@ smooth_union(aero, shell, 12.0)
 
     fn save_project(&mut self) {
         if let Some(path) = &self.current_file_path {
-            self.save_project_to_path(path.clone());
+            if Self::is_rhai_path(path) {
+                self.save_script_to_path(path.clone());
+            } else {
+                self.save_project_to_path(path.clone());
+            }
         } else {
             self.save_project_as();
         }
     }
 
     fn save_project_as(&mut self) {
-        if let Some(path) = rfd::FileDialog::new()
+        let save_script = self.current_file_path
+            .as_ref()
+            .map(|p| Self::is_rhai_path(p.as_path()))
+            .unwrap_or(false);
+        let dialog = rfd::FileDialog::new()
+            .add_filter("Rhai Script", &["rhai"])
             .add_filter("Implicit CAD Project", &["icad"])
-            .save_file()
-        {
-            self.save_project_to_path(path);
+            .set_file_name(if save_script { "script.rhai" } else { "project.icad" });
+        if let Some(path) = dialog.save_file() {
+            if save_script || Self::is_rhai_path(&path) {
+                self.save_script_to_path(path);
+            } else {
+                self.save_project_to_path(path);
+            }
+        }
+    }
+
+    fn save_script_to_path(&mut self, path: std::path::PathBuf) {
+        match std::fs::write(&path, &self.state.script_text) {
+            Ok(_) => {
+                self.current_file_path = Some(path.clone());
+                self.status_message = Some(format!("Saved script to {}", path.display()));
+                Self::clear_auto_save();
+            }
+            Err(e) => {
+                self.error_message = Some(format!("Failed to save script: {}", e));
+            }
         }
     }
 
@@ -1186,85 +1212,115 @@ smooth_union(aero, shell, 12.0)
     fn load_project(&mut self) {
         if let Some(path) = rfd::FileDialog::new()
             .add_filter("Implicit CAD Project", &["icad"])
+            .add_filter("Rhai Script", &["rhai"])
             .pick_file()
         {
-            match crate::project::Project::load(&path) {
-                Ok(project) => {
-                    self.state.script_text = project.script;
-                    self.resolution = project.resolution;
-                    self.smooth_normals = project.smooth_normals;
-                    self.show_wireframe = project.show_wireframe;
-
-                    // Restore camera position
-                    self.camera.eye = Vec3::from_array(project.camera_position);
-                    self.camera.target = Vec3::from_array(project.camera_target);
-
-                    // Restore profiles if present (orphaned profiles are preserved
-                    // by merging — existing profiles not in the file are kept).
-                    if let Some(loaded_profiles) = project.profiles {
-                        for (name, state) in loaded_profiles {
-                            self.state.profiles.insert(name, state);
+            if Self::is_rhai_path(&path) {
+                match std::fs::read_to_string(&path) {
+                    Ok(script) => {
+                        self.state.script_text = script;
+                        self.current_file_path = Some(path.clone());
+                        self.status_message = Some(format!("Loaded script {}", path.display()));
+                        self.undo_history.clear();
+                        self.version_control = crate::version_control::VersionControlState::new_with_root(&self.state);
+                        if let Some(dir) = path.parent() {
+                            let lib_dir = dir.join("lib");
+                            let mut mgr = LibraryManager::new(lib_dir);
+                            mgr.scan();
+                            self.library_manager = Some(mgr);
                         }
-                        self.sync_profiles_shared();
+                        self.execute_script();
                     }
-
-                    // Restore spine constraints if present
-                    if let Some(splines) = project.splines {
-                        self.state.splines = splines;
+                    Err(e) => {
+                        self.error_message = Some(format!("Failed to load script: {}", e));
                     }
-
-                    // Restore section view if present
-                    if let Some(sv) = project.section_view {
-                        self.section_view = sv;
-                    }
-
-                    // Restore FEA config if present
-                    if let Some(fc) = project.fea_config {
-                        self.fea_config = fc;
-                    }
-
-                    // Restore named dimensions
-                    if !project.dimensions.is_empty() {
-                        self.state.dimensions = project.dimensions;
-                    }
-
-                    // Restore print analysis settings if present
-                    if let Some(pa) = project.print_analysis_settings {
-                        self.print_analysis_settings = pa;
-                    }
-
-                    // Restore tolerance settings if present
-                    if let Some(ts) = project.tolerance_settings {
-                        self.tolerance_settings = ts;
-                    }
-                    self.workflow_config = project.workflow_config;
-
-                    // Restore version control state (or create fresh from loaded state)
-                    self.version_control = project.version_control.unwrap_or_else(|| {
-                        crate::version_control::VersionControlState::new_with_root(&self.state)
-                    });
-
-                    self.current_file_path = Some(path.clone());
-                    self.status_message = Some(format!("Loaded {}", path.display()));
-                    // Undo history is session-only — clear on load.
-                    self.undo_history.clear();
-
-                    // Initialize library manager for project lib/ dir
-                    if let Some(dir) = path.parent() {
-                        let lib_dir = dir.join("lib");
-                        let mut mgr = LibraryManager::new(lib_dir);
-                        mgr.scan();
-                        self.library_manager = Some(mgr);
-                    }
-
-                    // Execute the loaded script
-                    self.execute_script();
                 }
-                Err(e) => {
-                    self.error_message = Some(format!("Failed to load: {}", e));
+            } else {
+                match crate::project::Project::load(&path) {
+                    Ok(project) => {
+                        self.state.script_text = project.script;
+                        self.resolution = project.resolution;
+                        self.smooth_normals = project.smooth_normals;
+                        self.show_wireframe = project.show_wireframe;
+
+                        // Restore camera position
+                        self.camera.eye = Vec3::from_array(project.camera_position);
+                        self.camera.target = Vec3::from_array(project.camera_target);
+
+                        // Restore profiles if present (orphaned profiles are preserved
+                        // by merging — existing profiles not in the file are kept).
+                        if let Some(loaded_profiles) = project.profiles {
+                            for (name, state) in loaded_profiles {
+                                self.state.profiles.insert(name, state);
+                            }
+                            self.sync_profiles_shared();
+                        }
+
+                        // Restore spine constraints if present
+                        if let Some(splines) = project.splines {
+                            self.state.splines = splines;
+                        }
+
+                        // Restore section view if present
+                        if let Some(sv) = project.section_view {
+                            self.section_view = sv;
+                        }
+
+                        // Restore FEA config if present
+                        if let Some(fc) = project.fea_config {
+                            self.fea_config = fc;
+                        }
+
+                        // Restore named dimensions
+                        if !project.dimensions.is_empty() {
+                            self.state.dimensions = project.dimensions;
+                        }
+
+                        // Restore print analysis settings if present
+                        if let Some(pa) = project.print_analysis_settings {
+                            self.print_analysis_settings = pa;
+                        }
+
+                        // Restore tolerance settings if present
+                        if let Some(ts) = project.tolerance_settings {
+                            self.tolerance_settings = ts;
+                        }
+                        self.workflow_config = project.workflow_config;
+
+                        // Restore version control state (or create fresh from loaded state)
+                        self.version_control = project.version_control.unwrap_or_else(|| {
+                            crate::version_control::VersionControlState::new_with_root(&self.state)
+                        });
+
+                        self.current_file_path = Some(path.clone());
+                        self.status_message = Some(format!("Loaded {}", path.display()));
+                        // Undo history is session-only — clear on load.
+                        self.undo_history.clear();
+
+                        // Initialize library manager for project lib/ dir
+                        if let Some(dir) = path.parent() {
+                            let lib_dir = dir.join("lib");
+                            let mut mgr = LibraryManager::new(lib_dir);
+                            mgr.scan();
+                            self.library_manager = Some(mgr);
+                        }
+
+                        // Execute the loaded script
+                        self.execute_script();
+                    }
+                    Err(e) => {
+                        self.error_message = Some(format!("Failed to load: {}", e));
+                    }
                 }
             }
         }
+    }
+
+    fn is_rhai_path(path: &std::path::Path) -> bool {
+        path.extension()
+            .and_then(|s| s.to_str())
+            .map(|ext| ext.eq_ignore_ascii_case("rhai"))
+            .unwrap_or(false)
     }
 
     // push_history replaced by undo_history.execute(ScriptTextCommand) at each change site.
