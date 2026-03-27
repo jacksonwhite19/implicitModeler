@@ -3,20 +3,23 @@
 // - a simple elliptical fuselage
 // - a dorsal conformal fairing whose underside matches an offset OML
 // - an internal duct void
-// - an internal through-body duct shell
+// - a solid final body with the inlet carved through it
 
-let shell_thickness = 1.6;
 let samples = 96;
+let oml_offset = 12.0;
+let face_clearance = 2.0;
+let inlet_open_extension = 14.0;
+let outlet_open_extension = 32.0;
 
 let show_airframe = true;
 let show_fairing = true;
-let show_internal_shell = true;
+let show_internal_shell = false;
 let show_void = false;
 
 let fuselage = fuselage_elliptical(
     500.0,  // length
     170.0,  // width
-    95.0,   // height
+    150.0,  // height
     120.0,  // nose length
     130.0,  // tail length
     0.72,   // nose bluntness
@@ -54,9 +57,10 @@ let inlet_parts = conformal_profile_inlet(
     outer_end,
     inner_start,
     inner_end,
-    12.0,  // keep lower lip clearly above the OML
-    14.0,  // open the inlet mouth cleanly
-    18.0,  // open the aft outlet cleanly
+    oml_offset,
+    face_clearance,
+    inlet_open_extension,
+    outlet_open_extension,
     samples
 );
 
@@ -64,9 +68,9 @@ let outer_fairing = inlet_parts[0];
 let duct_void = inlet_parts[1];
 let internal_shell = inlet_parts[2];
 
-let airframe_shell = shell(fuselage, shell_thickness);
+let outer_body = smooth_union(fuselage, outer_fairing, 6.0);
 let inlet_airframe = subtract(
-    union(airframe_shell, union(outer_fairing, internal_shell)),
+    outer_body,
     duct_void
 );
 

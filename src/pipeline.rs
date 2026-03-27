@@ -9,6 +9,7 @@ pub fn auto_bounds(sdf: &dyn Sdf) -> (Vec3, Vec3) {
         min: Vec3,
         max: Vec3,
         step: Vec3,
+        phase: Vec3,
     ) -> Option<(Vec3, Vec3)> {
         let nx = ((max.x - min.x) / step.x).floor() as i32 + 1;
         let ny = ((max.y - min.y) / step.y).floor() as i32 + 1;
@@ -22,9 +23,9 @@ pub fn auto_bounds(sdf: &dyn Sdf) -> (Vec3, Vec3) {
                 let iy = ((idx / nx as usize) % ny as usize) as i32;
                 let ix = (idx % nx as usize) as i32;
                 let p = Vec3::new(
-                    min.x + ix as f32 * step.x,
-                    min.y + iy as f32 * step.y,
-                    min.z + iz as f32 * step.z,
+                    min.x + (ix as f32 + phase.x) * step.x,
+                    min.y + (iy as f32 + phase.y) * step.y,
+                    min.z + (iz as f32 + phase.z) * step.z,
                 );
                 if sdf.distance(p) < 0.0 {
                     (p, p)
@@ -40,12 +41,40 @@ pub fn auto_bounds(sdf: &dyn Sdf) -> (Vec3, Vec3) {
         if lo.x == f32::MAX { None } else { Some((lo, hi)) }
     }
 
+    fn phased_bounds(
+        sdf: &dyn Sdf,
+        min: Vec3,
+        max: Vec3,
+        step: Vec3,
+        phases: &[Vec3],
+    ) -> Option<(Vec3, Vec3)> {
+        let mut overall_lo = Vec3::splat(f32::MAX);
+        let mut overall_hi = Vec3::splat(f32::MIN);
+        let mut found = false;
+        for &phase in phases {
+            if let Some((lo, hi)) = scan_bounds(sdf, min, max, step, phase) {
+                overall_lo = overall_lo.min(lo);
+                overall_hi = overall_hi.max(hi);
+                found = true;
+            }
+        }
+        if found { Some((overall_lo, overall_hi)) } else { None }
+    }
+
+    let phases = [
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(0.5, 0.0, 0.0),
+        Vec3::new(0.0, 0.5, 0.0),
+        Vec3::new(0.0, 0.0, 0.5),
+        Vec3::new(0.5, 0.5, 0.5),
+    ];
+
     // Aircraft-oriented broad scan. The previous centerline probe missed translated wings.
     let coarse_min = Vec3::new(-800.0, -800.0, -300.0);
     let coarse_max = Vec3::new(1200.0, 800.0, 300.0);
     let coarse_step = Vec3::new(20.0, 20.0, 10.0);
 
-    let Some((coarse_lo, coarse_hi)) = scan_bounds(sdf, coarse_min, coarse_max, coarse_step) else {
+    let Some((coarse_lo, coarse_hi)) = phased_bounds(sdf, coarse_min, coarse_max, coarse_step, &phases) else {
         return (Vec3::splat(-100.0), Vec3::splat(100.0));
     };
 
@@ -54,7 +83,7 @@ pub fn auto_bounds(sdf: &dyn Sdf) -> (Vec3, Vec3) {
     let refine_min = coarse_lo - coarse_step * 2.0;
     let refine_max = coarse_hi + coarse_step * 2.0;
     let fine_step = Vec3::new(5.0, 5.0, 2.5);
-    let (bb_min, bb_max) = scan_bounds(sdf, refine_min, refine_max, fine_step)
+    let (bb_min, bb_max) = phased_bounds(sdf, refine_min, refine_max, fine_step, &phases)
         .unwrap_or((coarse_lo, coarse_hi));
 
     let span = (bb_max - bb_min).max(Vec3::splat(1.0));

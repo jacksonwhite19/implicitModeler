@@ -205,6 +205,11 @@ pub struct ScriptResult {
     pub reference_points: Vec<ReferencePoint>,
 }
 
+pub struct ComponentPreviewPart {
+    pub name: String,
+    pub sdf: Arc<dyn Sdf>,
+}
+
 impl ScriptResult {
     /// Compute the overall center of gravity from declared mass points.
     /// Returns None if no mass points were declared.
@@ -240,6 +245,93 @@ pub fn evaluate_script_with_profiles(
     splines: Option<Arc<LongitudinalSplines>>,
 ) -> Result<ScriptResult, String> {
     evaluate_script_full(source, profiles, splines, None, None, &indexmap::IndexMap::new(), None, None, &[])
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn evaluate_component_preview_parts(
+    source:             &str,
+    profiles:           Option<Arc<RwLock<HashMap<String, SplineProfile>>>>,
+    splines:            Option<Arc<LongitudinalSplines>>,
+    stress_field:       Option<Arc<dyn Field>>,
+    displacement_field: Option<Arc<dyn Field>>,
+    dimensions:         &indexmap::IndexMap<String, f64>,
+    project_dir:        Option<&Path>,
+    mesh_cache:         Option<Arc<Mutex<MeshCache>>>,
+    library_sources:    &[(String, String)],
+) -> Result<Vec<ComponentPreviewPart>, String> {
+    let mass_collector:   Arc<Mutex<Vec<MassPoint>>>  = Arc::new(Mutex::new(Vec::new()));
+    let comp_collector:   Arc<Mutex<Vec<ComponentHandle>>> = Arc::new(Mutex::new(Vec::new()));
+    let fea_collector:    Arc<Mutex<FEASetup>>        = Arc::new(Mutex::new(FEASetup::default()));
+    let layup_collector:  Arc<Mutex<Vec<Arc<crate::sdf::aerospace::composite::CompositeLayup>>>>
+                        = Arc::new(Mutex::new(Vec::new()));
+    let ref_collector:    RefPointCollector           = Arc::new(Mutex::new(Vec::new()));
+
+    let mut engine = Engine::new();
+    api::register_sdf_functions(&mut engine);
+    api::register_component_functions(&mut engine, Arc::clone(&mass_collector), Arc::clone(&comp_collector));
+    api::register_drone_auto_functions(&mut engine, Arc::clone(&comp_collector));
+    api::register_mass_functions(&mut engine, Arc::clone(&mass_collector));
+    api::register_fea_functions(&mut engine, Arc::clone(&fea_collector), stress_field, displacement_field);
+    if let Some(p) = profiles {
+        api::register_profile_functions(&mut engine, p);
+    }
+    if let Some(s) = splines {
+        api::register_spine_functions(&mut engine, s);
+    }
+    api::register_mesh_functions(
+        &mut engine,
+        project_dir.map(|p| p.to_path_buf()),
+        mesh_cache.unwrap_or_else(|| Arc::new(Mutex::new(MeshCache::new()))),
+    );
+    api::register_composite_collector(&mut engine, Arc::clone(&layup_collector));
+    api::register_query_functions(&mut engine, Arc::clone(&ref_collector));
+    let mut resolver = if let Some(base) = project_dir {
+        rhai::module_resolvers::FileModuleResolver::new_with_path(base)
+    } else {
+        rhai::module_resolvers::FileModuleResolver::new()
+    };
+    resolver.enable_cache(true);
+    engine.set_module_resolver(resolver);
+
+    for (mod_name, mod_source) in library_sources {
+        let comp_engine = rhai::Engine::new();
+        if let Ok(ast) = comp_engine.compile(mod_source.as_str()) {
+            if let Ok(module) = rhai::Module::eval_ast_as_new(rhai::Scope::new(), &ast, &comp_engine) {
+                engine.register_static_module(mod_name.as_str(), module.into());
+            }
+        }
+    }
+
+    let mut scope = Scope::new();
+    for (name, &value) in dimensions {
+        scope.push_constant(name.as_str(), value);
+    }
+
+    let ast = engine.compile(source)
+        .map_err(|e| errors::build_error_string(&errors::format_script_error(source, &format!("Script error: {}", e))))?;
+
+    let _ = engine.eval_ast_with_scope::<rhai::Dynamic>(&mut scope, &ast)
+        .map_err(|e| errors::build_error_string(&errors::format_script_error(source, &format!("Script error: {}", e))))?;
+
+    let comp_map = engine.call_fn::<rhai::Map>(&mut scope, &ast, "component", ())
+        .map_err(|e| format!("Component preview error: {}", e))?;
+
+    let mut parts = Vec::new();
+    if let Some(parts_dyn) = comp_map.get("parts") {
+        if let Some(parts_map) = parts_dyn.clone().try_cast::<rhai::Map>() {
+            for (name, value) in parts_map {
+                if let Some(sdf) = value.clone().try_cast::<SdfHandle>() {
+                    parts.push(ComponentPreviewPart { name: name.to_string(), sdf: sdf.0 });
+                }
+            }
+        }
+    }
+    if parts.is_empty() {
+        if let Some(sdf) = comp_map.get("physical").and_then(|v| v.clone().try_cast::<SdfHandle>()) {
+            parts.push(ComponentPreviewPart { name: "physical".to_string(), sdf: sdf.0 });
+        }
+    }
+    Ok(parts)
 }
 
 /// Full evaluator.
@@ -287,6 +379,13 @@ pub fn evaluate_script_full(
     );
     api::register_composite_collector(&mut engine, Arc::clone(&layup_collector));
     api::register_query_functions(&mut engine, Arc::clone(&ref_collector));
+    let mut resolver = if let Some(base) = project_dir {
+        rhai::module_resolvers::FileModuleResolver::new_with_path(base)
+    } else {
+        rhai::module_resolvers::FileModuleResolver::new()
+    };
+    resolver.enable_cache(true);
+    engine.set_module_resolver(resolver);
 
     // Register library components as static modules.
     for (mod_name, mod_source) in library_sources {
@@ -484,6 +583,13 @@ pub fn evaluate_script_cells(
     );
     api::register_composite_collector(&mut engine, Arc::clone(&layup_collector));
     api::register_query_functions(&mut engine, Arc::clone(&ref_collector));
+    let mut resolver = if let Some(base) = project_dir {
+        rhai::module_resolvers::FileModuleResolver::new_with_path(base)
+    } else {
+        rhai::module_resolvers::FileModuleResolver::new()
+    };
+    resolver.enable_cache(true);
+    engine.set_module_resolver(resolver);
 
     for (mod_name, mod_source) in library_sources {
         let comp_engine = rhai::Engine::new();
@@ -657,6 +763,7 @@ mod cell_tests {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tempfile::tempdir;
 
     #[test]
     fn test_evaluate_simple_sphere() {
@@ -1364,52 +1471,6 @@ fn build(r) {
     // ── Phase 22: Bracket / mounting hole tests ───────────────────────────────
 
     #[test]
-    fn test_auto_bracket_flat_produces_valid_sdfs() {
-        let script = r#"
-            let comp = component_named("servo", box_(20.0, 10.0, 6.0), 2.0, 5.0);
-            let comp_placed = place(comp, 0.0, 0.0, 0.0);
-            let parent = box_(100.0, 80.0, 5.0);
-            let holes = [
-                mounting_hole( 8.0,  4.0, -3.0,  0.0, 0.0, 1.0, "M3"),
-                mounting_hole(-8.0,  4.0, -3.0,  0.0, 0.0, 1.0, "M3"),
-                mounting_hole( 8.0, -4.0, -3.0,  0.0, 0.0, 1.0, "M3"),
-                mounting_hole(-8.0, -4.0, -3.0,  0.0, 0.0, 1.0, "M3"),
-            ];
-            let result = auto_bracket_flat(comp_placed, parent, holes, "M3");
-            result[1]
-        "#;
-        let result = evaluate_script(script);
-        assert!(result.is_ok(), "auto_bracket_flat should succeed: {:?}", result.err());
-        let sdf = result.unwrap().sdf;
-        // Bracket body should be solid at its nominal center
-        let d = sdf.distance(Vec3::new(0.0, 0.0, -4.0));
-        assert!(d < 0.1, "Bracket body should be solid near component, got {}", d);
-    }
-
-    #[test]
-    fn test_auto_bracket_detect_no_panic() {
-        let script = r#"
-            let comp = component_named("box_comp", box_(15.0, 8.0, 4.0), 1.0, 3.0);
-            let parent = box_(80.0, 60.0, 4.0);
-            let result = auto_bracket_detect(comp, parent, "M3");
-            result[0]
-        "#;
-        let result = evaluate_script(script);
-        assert!(result.is_ok(), "auto_bracket_detect should not panic: {:?}", result.err());
-    }
-
-    #[test]
-    fn test_mounting_hole_manual_creation() {
-        let script = r#"
-            let p = point(5.0, 3.0, 0.0);
-            let h = mounting_hole(p, 0.0, 0.0, 1.0, "M3");
-            sphere(1.0)
-        "#;
-        let result = evaluate_script(script);
-        assert!(result.is_ok(), "mounting_hole creation should succeed: {:?}", result.err());
-    }
-
-    #[test]
     fn test_bulkhead_with_components_subtracts_keepout() {
         // fuselage radius at x=0.5 is 1.0 (model units).
         // Battery box half-extents: X=0.2, Y=0.1, Z=0.075 — centred at (0.5, 0, 0).
@@ -1640,6 +1701,165 @@ fn build(r) {
     }
 
     #[test]
+    fn test_conformal_profile_builds_for_dorsal_and_side_mounts() {
+        let script = r#"
+            let fuse = fuselage([
+                [0.0, ellipse_section(0.05, 0.04)],
+                [0.3, ellipse_section(0.10, 0.09)],
+                [0.7, ellipse_section(0.10, 0.09)],
+                [1.0, ellipse_section(0.04, 0.03)],
+            ]);
+            let trap = custom_profile([[-0.028,-0.018],[0.028,-0.018],[0.022,0.018],[-0.022,0.018]]);
+            let dorsal = conformal_profile(fuse, trap, point(0.30, 0.0, 0.12), point(1.0, 0.0, 0.0), 0.004, 64);
+            let cheek = conformal_profile(fuse, trap, point(0.30, 0.11, 0.05), point(1.0, 0.0, 0.0), 0.004, 64);
+            let d_prof = dorsal[0];
+            let d_ctr = dorsal[1];
+            let c_prof = cheek[0];
+            let c_ctr = cheek[1];
+            union(
+                profile_duct_fixed_solid(polyline_path([[d_ctr.x,d_ctr.y,d_ctr.z],[d_ctr.x+0.02,d_ctr.y,d_ctr.z]]), d_prof, d_prof, 64),
+                profile_duct_fixed_solid(polyline_path([[c_ctr.x,c_ctr.y,c_ctr.z],[c_ctr.x+0.02,c_ctr.y,c_ctr.z]]), c_prof, c_prof, 64)
+            )
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "conformal_profile should support dorsal and side mounts: {:?}", result.err());
+    }
+
+    #[test]
+    fn test_conformal_profile_x_builds_without_global_surface_snap() {
+        let script = r#"
+            let fuse = fuselage([
+                [0.0, ellipse_section(0.05, 0.04)],
+                [0.3, ellipse_section(0.10, 0.09)],
+                [0.7, ellipse_section(0.10, 0.09)],
+                [1.0, ellipse_section(0.04, 0.03)],
+            ]);
+            let wing = translate(box_(0.15, 0.40, 0.01), 0.30, 0.22, 0.00);
+            let body = union(fuse, wing);
+            let trap = custom_profile([[-0.028,-0.018],[0.028,-0.018],[0.022,0.018],[-0.022,0.018]]);
+            let data = conformal_profile_x(body, trap, 0.30, 0.0, 0.12, point(1.0, 0.0, 0.0), 0.004, 64);
+            let prof = data[0];
+            let ctr = data[1];
+            profile_duct_fixed_solid(polyline_path([[ctr.x,ctr.y,ctr.z],[ctr.x+0.02,ctr.y,ctr.z]]), prof, prof, 64)
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "conformal_profile_x should succeed on a cluttered x-station: {:?}", result.err());
+    }
+
+    #[test]
+    fn test_conformal_profile_duct_x_builds_full_parts() {
+        let script = r#"
+            let fuse = fuselage([
+                [0.0, ellipse_section(0.05, 0.04)],
+                [0.3, ellipse_section(0.10, 0.09)],
+                [0.7, ellipse_section(0.10, 0.09)],
+                [1.0, ellipse_section(0.04, 0.03)],
+            ]);
+            let parts = conformal_profile_duct_x(
+                fuse,
+                rounded_rect_profile(0.072, 0.039, 0.002),
+                rounded_rect_profile(0.068, 0.035, 0.001),
+                0.155, 0.0, 0.12,
+                point(1.0, 0.0, 0.0),
+                0.005,
+                spline_path([
+                    [0.155, 0.0, 0.10],
+                    [0.230, 0.0, 0.10],
+                    [0.320, 0.0, 0.02],
+                    [0.430, 0.0, 0.00]
+                ]),
+                circle_profile(0.035),
+                circle_profile(0.033),
+                0.014,
+                0.024,
+                0.1,
+                0.9,
+                128
+            );
+            union(parts[0], parts[2])
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "conformal_profile_duct_x should build complete parts: {:?}", result.err());
+    }
+
+    #[test]
+    fn test_dual_conformal_profile_duct_x_builds_standalone_pair() {
+        let script = r#"
+            let fuse = fuselage([
+                [0.0, ellipse_section(0.05, 0.04)],
+                [0.3, ellipse_section(0.10, 0.09)],
+                [0.7, ellipse_section(0.10, 0.09)],
+                [1.0, ellipse_section(0.04, 0.03)],
+            ]);
+            let parts = dual_conformal_profile_duct_x(
+                fuse,
+                rounded_rect_profile(0.050, 0.028, 0.004),
+                rounded_rect_profile(0.046, 0.024, 0.003),
+                0.155, 0.055, 0.05,
+                0.155, -0.055, 0.05,
+                point(1.0, 0.0, 0.0),
+                spline_path([
+                    [0.155, 0.055, 0.052],
+                    [0.250, 0.070, 0.040],
+                    [0.350, 0.080, 0.028]
+                ]),
+                spline_path([
+                    [0.155, -0.055, 0.052],
+                    [0.250, -0.070, 0.040],
+                    [0.350, -0.080, 0.028]
+                ]),
+                circle_profile(0.022),
+                circle_profile(0.020),
+                0.004,
+                0.014,
+                0.020,
+                0.2,
+                0.9,
+                160
+            );
+            union(parts[0], parts[2])
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "dual_conformal_profile_duct_x should build a standalone pair: {:?}", result.err());
+    }
+
+    #[test]
+    fn test_mirrored_dual_conformal_profile_duct_x_builds_merge_case() {
+        let script = r#"
+            let fuse = fuselage([
+                [0.0, ellipse_section(0.05, 0.04)],
+                [0.3, ellipse_section(0.10, 0.09)],
+                [0.7, ellipse_section(0.10, 0.09)],
+                [1.0, ellipse_section(0.04, 0.03)],
+            ]);
+            let parts = mirrored_dual_conformal_profile_duct_x(
+                fuse,
+                rounded_rect_profile(0.050, 0.028, 0.004),
+                rounded_rect_profile(0.046, 0.024, 0.003),
+                0.155, 0.055, 0.05,
+                point(1.0, 0.0, 0.0),
+                spline_path([
+                    [0.155, 0.055, 0.052],
+                    [0.230, 0.045, 0.040],
+                    [0.320, 0.018, 0.018],
+                    [0.410, 0.000, 0.000]
+                ]),
+                circle_profile(0.028),
+                circle_profile(0.026),
+                0.004,
+                0.014,
+                0.024,
+                0.2,
+                0.9,
+                160
+            );
+            union(parts[0], parts[2])
+        "#;
+        let result = evaluate_script(script);
+        assert!(result.is_ok(), "mirrored_dual_conformal_profile_duct_x should build a merge case: {:?}", result.err());
+    }
+
+    #[test]
     fn test_error_message_unknown_function() {
         let script = "unknown_fn(5.0)";
         let result = evaluate_script(script);
@@ -1820,6 +2040,79 @@ fn build(r) {
         "#;
         let result = evaluate_script(script);
         assert!(result.is_ok(), "Installation helpers should evaluate: {:?}", result.err());
+    }
+
+    #[test]
+    fn test_imported_servo_component_module_builds() {
+        let temp = tempdir().unwrap();
+        let project_dir = temp.path();
+        let components_dir = project_dir.join("components");
+        std::fs::create_dir_all(&components_dir).unwrap();
+        std::fs::copy(
+            "components/servo_9g.rhai",
+            components_dir.join("servo_9g.rhai"),
+        ).unwrap();
+
+        let script = r#"
+            import "components/servo_9g" as servo;
+
+            let wing_bay = translate(box_(220.0, 80.0, 24.0), 120.0, 0.0, 0.0);
+            let wing_shell = shell(wing_bay, 1.6);
+            let placed = mount_component_granular(wing_shell, servo::component(), 120.0, 0.0, -15.0);
+            placed.assembly
+        "#;
+
+        let result = evaluate_script_full(
+            script,
+            None,
+            None,
+            None,
+            None,
+            &indexmap::IndexMap::new(),
+            Some(project_dir),
+            None,
+            &[],
+        );
+        assert!(result.is_ok(), "imported servo component should evaluate: {:?}", result.err());
+    }
+
+    #[test]
+    fn test_mount_component_granular_builds() {
+        let temp = tempfile::tempdir().unwrap();
+        let project_dir = temp.path();
+        let components_dir = project_dir.join("components");
+        std::fs::create_dir_all(&components_dir).unwrap();
+        std::fs::copy(
+            "components/electronics_box.rhai",
+            components_dir.join("electronics_box.rhai"),
+        ).unwrap();
+
+        let script = r#"
+            import "components/electronics_box" as ebox;
+
+            let fuselage_outer = fuselage_elliptical(220.0, 90.0, 70.0, 45.0, 50.0, 0.9, 0.8, 8.0);
+            let fuselage_shell = shell(fuselage_outer, 1.6);
+            let fuse_center = bbox_center(fuselage_outer);
+            let placed = mount_component_granular(
+                fuselage_shell,
+                ebox::component(),
+                fuse_center.x, 0.0, fuse_center.z + 2.0
+            );
+            placed.assembly
+        "#;
+
+        let result = evaluate_script_full(
+            script,
+            None,
+            None,
+            None,
+            None,
+            &indexmap::IndexMap::new(),
+            Some(project_dir),
+            None,
+            &[],
+        );
+        assert!(result.is_ok(), "granular component mount should evaluate: {:?}", result.err());
     }
 
 }

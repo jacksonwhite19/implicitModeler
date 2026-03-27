@@ -38,6 +38,9 @@ pub use nose_tail::{HaackNose, HaackTail, TangentOgive, EllipsoidNose};
 pub use inlets::{
     NacaInlet, InletLip, InletShape, EdfDuct, SDuct, BuriedInlet,
     VariableDuct, HollowVariableDuct, SplineTube, HollowSplineTube,
-    ProfileDuct, HollowProfileDuct,
-    build_conformal_profile_inlet,
+    ProfileDuct, HollowProfileDuct, FixedProfileDuct, HollowFixedProfileDuct,
+    build_conformal_profile_duct_at_x, build_conformal_profile_inlet,
+    build_dual_conformal_profile_duct_at_x, build_mirrored_dual_conformal_profile_duct_at_x,
+    conformal_profile_section, conformal_profile_section_at_x,
+    conformal_rounded_rect_section,
 };

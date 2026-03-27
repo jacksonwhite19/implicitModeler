@@ -21,7 +21,11 @@ use crate::sdf::aerospace::{
     chamfer_edge, thread_hole,
     fc_mount, motor_mount_pattern,
     VariableDuct, HollowVariableDuct, SplineTube, HollowSplineTube,
-    ProfileDuct, HollowProfileDuct, build_conformal_profile_inlet,
+    ProfileDuct, HollowProfileDuct, FixedProfileDuct, HollowFixedProfileDuct,
+    build_conformal_profile_duct_at_x, build_conformal_profile_inlet,
+    build_dual_conformal_profile_duct_at_x, build_mirrored_dual_conformal_profile_duct_at_x,
+    conformal_profile_section, conformal_profile_section_at_x,
+    conformal_rounded_rect_section,
 };
 use crate::sdf::field::{
     primitives::{ConstantField, SdfField, PositionXField, PositionYField, PositionZField},
@@ -41,12 +45,12 @@ use crate::sdf::print::panels::{RetentionMechanism, panel_rect,
 use crate::sdf::print::joints::JointDelta;
 use std::sync::{Mutex, RwLock};
 use std::collections::HashMap;
+use std::fs;
 use crate::sdf::profiles::SplineProfile;
 use crate::sdf::spine::LongitudinalSplines;
 use super::{SdfHandle, FieldHandle, MassPoint, ComponentHandle, SectionHandle, StationHandle,
             PathHandle, ProfileHandle, MaterialHandle, LayerHandle, LayupConfigHandle,
             HingeHandle, LinkageHandle, PointHandle, RefPointCollector, ReferencePoint, REF_COLORS,
-            MountingHole, MountingHoleHandle, MountingHoleSetHandle, HoleSource,
             FlightConditionHandle};
 
 pub fn register_sdf_functions(engine: &mut Engine) {
@@ -86,7 +90,7 @@ pub fn register_sdf_functions(engine: &mut Engine) {
     register_joint_functions(engine);
     register_layup_library_functions(engine);
     register_control_surface_functions(engine);
-    register_bracket_functions(engine);
+    register_granular_bracket_functions(engine);
     register_placement_functions(engine);
     register_instance_functions(engine);
     super::analysis_api::register_aero_functions(engine);
@@ -105,6 +109,320 @@ fn analysis_bounds(sdf: &dyn Sdf) -> (Vec3, Vec3) {
         (size.z * 0.1).max(5.0),
     );
     (bbox.min - pad, bbox.max + pad)
+}
+
+#[derive(Clone)]
+struct FnSdf {
+    func: Arc<dyn Fn(Vec3) -> f32 + Send + Sync>,
+}
+
+impl Sdf for FnSdf {
+    fn distance(&self, point: Vec3) -> f32 {
+        (self.func)(point)
+    }
+}
+
+#[derive(Clone)]
+enum StructuralRole {
+    Sticky,
+    Removable,
+}
+
+#[derive(Clone)]
+struct BracketMountPoint {
+    position: Vec3,
+    normal: Vec3,
+    tier: i64,
+    base_radius: f32,
+}
+
+#[derive(Clone)]
+struct BracketPart {
+    id: String,
+    sdf: Arc<dyn Sdf>,
+    structural_role: StructuralRole,
+    bbox_min: Option<Vec3>,
+    bbox_max: Option<Vec3>,
+}
+
+#[derive(Clone)]
+struct BracketPathResult {
+    points: Vec<Vec3>,
+    termination_reason: String,
+    iterations: usize,
+    host_part_id: Option<String>,
+    keepout_part_id: Option<String>,
+    min_keepout_distance: f32,
+    final_host_distance: f32,
+}
+
+#[derive(Clone)]
+struct BracketConfig {
+    grad_eps: f32,
+    safe_norm_eps: f32,
+    step_size_mm: f32,
+    min_step_mm: f32,
+    max_step_mm: f32,
+    rep_scale_max: f32,
+    max_path_iters: usize,
+    surface_tol_mm: f32,
+    tier2_bridge_thresh_mm: f32,
+    dilate_keepout_mm: f32,
+    pocket_offset_mm: f32,
+    tier1_radius_end_factor: f32,
+    tier2_bridge_radius_factor: f32,
+    host_blend_k: f32,
+    support_density: u32,
+    tray_clearance_mm: f32,
+    tray_thickness_mm: f32,
+}
+
+impl Default for BracketConfig {
+    fn default() -> Self {
+        Self {
+            grad_eps: 1e-3,
+            safe_norm_eps: 1e-8,
+            step_size_mm: 1.0,
+            min_step_mm: 0.1,
+            max_step_mm: 5.0,
+            rep_scale_max: 10.0,
+            max_path_iters: 200,
+            surface_tol_mm: 0.05,
+            tier2_bridge_thresh_mm: 15.0,
+            dilate_keepout_mm: 1.5,
+            pocket_offset_mm: 0.2,
+            tier1_radius_end_factor: 2.5,
+            tier2_bridge_radius_factor: 0.9,
+            host_blend_k: 20.0,
+            support_density: 3,
+            tray_clearance_mm: 0.5,
+            tray_thickness_mm: 1.0,
+        }
+    }
+}
+
+fn safe_normalize(v: Vec3, eps: f32) -> Vec3 {
+    let len = v.length();
+    if len < eps {
+        Vec3::ZERO
+    } else {
+        v / len
+    }
+}
+
+fn calc_gradient<F>(sdf_func: F, p: Vec3, epsilon: f32) -> Vec3
+where
+    F: Fn(Vec3) -> f32,
+{
+    let ex = Vec3::new(epsilon, 0.0, 0.0);
+    let ey = Vec3::new(0.0, epsilon, 0.0);
+    let ez = Vec3::new(0.0, 0.0, epsilon);
+
+    let dx = (sdf_func(p + ex) - sdf_func(p - ex)) / (2.0 * epsilon);
+    let dy = (sdf_func(p + ey) - sdf_func(p - ey)) / (2.0 * epsilon);
+    let dz = (sdf_func(p + ez) - sdf_func(p - ez)) / (2.0 * epsilon);
+    let g = Vec3::new(dx, dy, dz);
+    if g.length() < 1e-6 {
+        let dx = (sdf_func(p + ex) - sdf_func(p)) / epsilon;
+        let dy = (sdf_func(p + ey) - sdf_func(p)) / epsilon;
+        let dz = (sdf_func(p + ez) - sdf_func(p)) / epsilon;
+        safe_normalize(Vec3::new(dx, dy, dz), 1e-8)
+    } else {
+        safe_normalize(g, 1e-8)
+    }
+}
+
+fn sdf_tapered_capsule_distance(p: Vec3, a: Vec3, b: Vec3, ra: f32, rb: f32) -> f32 {
+    let ab = b - a;
+    let ab_len2 = ab.length_squared();
+    if ab_len2 <= 1e-12 {
+        return (p - a).length() - ra.max(rb);
+    }
+    let t = ((p - a).dot(ab) / ab_len2).clamp(0.0, 1.0);
+    let p_on_segment = a + ab * t;
+    let r = ra + t * (rb - ra);
+    (p - p_on_segment).length() - r
+}
+
+fn smin_exp_pair(d1: f32, d2: f32, k: f32) -> f32 {
+    if k <= 0.0 {
+        return d1.min(d2);
+    }
+    let a = -k * d1;
+    let b = -k * d2;
+    let m = a.max(b);
+    let s = (a - m).exp() + (b - m).exp();
+    -((s + 1e-12).ln() + m) / k
+}
+
+fn aggregate_parts(parts: &[BracketPart], role: StructuralRole, p: Vec3) -> (f32, Option<String>) {
+    let mut best = f32::INFINITY;
+    let mut best_id = None;
+    for part in parts {
+        let matches = matches!(
+            (&part.structural_role, &role),
+            (StructuralRole::Sticky, StructuralRole::Sticky)
+                | (StructuralRole::Removable, StructuralRole::Removable)
+        );
+        if !matches {
+            continue;
+        }
+        if let (Some(bmin), Some(bmax)) = (part.bbox_min, part.bbox_max) {
+            let q = p.clamp(bmin, bmax);
+            let bbox_dist = p.distance(q);
+            if bbox_dist > best {
+                continue;
+            }
+        }
+        let d = part.sdf.distance(p);
+        if d < best {
+            best = d;
+            best_id = Some(part.id.clone());
+        }
+    }
+    (best, best_id)
+}
+
+fn nearest_point_on_polyline(polyline: &[Vec3], query: Vec3) -> Option<Vec3> {
+    if polyline.len() < 2 {
+        return polyline.first().copied();
+    }
+    let mut best_p = None;
+    let mut best_d2 = f32::INFINITY;
+    for seg in polyline.windows(2) {
+        let a = seg[0];
+        let b = seg[1];
+        let ab = b - a;
+        let ab_len2 = ab.length_squared();
+        if ab_len2 <= 1e-12 {
+            let d2 = query.distance_squared(a);
+            if d2 < best_d2 {
+                best_d2 = d2;
+                best_p = Some(a);
+            }
+            continue;
+        }
+        let t = ((query - a).dot(ab) / ab_len2).clamp(0.0, 1.0);
+        let p = a + ab * t;
+        let d2 = query.distance_squared(p);
+        if d2 < best_d2 {
+            best_d2 = d2;
+            best_p = Some(p);
+        }
+    }
+    best_p
+}
+
+fn bracket_part(id: impl Into<String>, sdf: Arc<dyn Sdf>, structural_role: StructuralRole) -> BracketPart {
+    let bbox = crate::sdf::query::bounding_points(sdf.as_ref());
+    BracketPart {
+        id: id.into(),
+        sdf,
+        structural_role,
+        bbox_min: Some(bbox.min),
+        bbox_max: Some(bbox.max),
+    }
+}
+
+fn apply_bracket_config_overrides(
+    mut config: BracketConfig,
+    map: &rhai::Map,
+) -> BracketConfig {
+    if let Some(v) = map.get("bracket_offset_mm").and_then(|v| v.clone().try_cast::<f64>()) {
+        config.pocket_offset_mm = v.clamp(-1.0, 5.0) as f32;
+    }
+    if let Some(v) = map.get("support_density").and_then(|v| v.clone().try_cast::<i64>()) {
+        config.support_density = v.clamp(1, 10) as u32;
+    }
+    if let Some(v) = map.get("tray_clearance_mm").and_then(|v| v.clone().try_cast::<f64>()) {
+        config.tray_clearance_mm = v.clamp(0.0, 5.0) as f32;
+    }
+    if let Some(v) = map.get("tray_thickness_mm").and_then(|v| v.clone().try_cast::<f64>()) {
+        config.tray_thickness_mm = v.clamp(0.5, 8.0) as f32;
+    }
+    let Some(cfg) = map.get("bracket_config").and_then(|v| v.clone().try_cast::<rhai::Map>()) else {
+        return config;
+    };
+    if let Some(v) = cfg.get("grad_eps").and_then(|v| v.clone().try_cast::<f64>()) {
+        config.grad_eps = v.max(1e-5) as f32;
+    }
+    if let Some(v) = cfg.get("step_size_mm").and_then(|v| v.clone().try_cast::<f64>()) {
+        config.step_size_mm = v.max(0.05) as f32;
+    }
+    if let Some(v) = cfg.get("min_step_mm").and_then(|v| v.clone().try_cast::<f64>()) {
+        config.min_step_mm = v.max(0.01) as f32;
+    }
+    if let Some(v) = cfg.get("max_step_mm").and_then(|v| v.clone().try_cast::<f64>()) {
+        config.max_step_mm = v.max(config.min_step_mm as f64) as f32;
+    }
+    if let Some(v) = cfg.get("rep_scale_max").and_then(|v| v.clone().try_cast::<f64>()) {
+        config.rep_scale_max = v.max(0.0) as f32;
+    }
+    if let Some(v) = cfg.get("max_path_iters").and_then(|v| v.clone().try_cast::<i64>()) {
+        config.max_path_iters = v.max(10) as usize;
+    }
+    if let Some(v) = cfg.get("surface_tol_mm").and_then(|v| v.clone().try_cast::<f64>()) {
+        config.surface_tol_mm = v.max(0.005) as f32;
+    }
+    if let Some(v) = cfg.get("tier2_bridge_thresh_mm").and_then(|v| v.clone().try_cast::<f64>()) {
+        config.tier2_bridge_thresh_mm = v.max(0.0) as f32;
+    }
+    if let Some(v) = cfg.get("dilate_keepout_mm").and_then(|v| v.clone().try_cast::<f64>()) {
+        config.dilate_keepout_mm = v.max(0.0) as f32;
+    }
+    if let Some(v) = cfg.get("pocket_offset_mm").and_then(|v| v.clone().try_cast::<f64>()) {
+        config.pocket_offset_mm = v.clamp(-1.0, 5.0) as f32;
+    }
+    if let Some(v) = cfg.get("tier1_radius_end_factor").and_then(|v| v.clone().try_cast::<f64>()) {
+        config.tier1_radius_end_factor = v.max(1.0) as f32;
+    }
+    if let Some(v) = cfg.get("tier2_bridge_radius_factor").and_then(|v| v.clone().try_cast::<f64>()) {
+        config.tier2_bridge_radius_factor = v.max(0.1) as f32;
+    }
+    if let Some(v) = cfg.get("host_blend_k").and_then(|v| v.clone().try_cast::<f64>()) {
+        config.host_blend_k = v.max(0.0) as f32;
+    }
+    if let Some(v) = cfg.get("support_density").and_then(|v| v.clone().try_cast::<i64>()) {
+        config.support_density = v.clamp(1, 10) as u32;
+    }
+    if let Some(v) = cfg.get("tray_clearance_mm").and_then(|v| v.clone().try_cast::<f64>()) {
+        config.tray_clearance_mm = v.clamp(0.0, 5.0) as f32;
+    }
+    if let Some(v) = cfg.get("tray_thickness_mm").and_then(|v| v.clone().try_cast::<f64>()) {
+        config.tray_thickness_mm = v.clamp(0.5, 8.0) as f32;
+    }
+    config
+}
+
+fn effective_support_density(level: u32) -> f32 {
+    let t = ((level as f32) - 1.0).clamp(0.0, 9.0) / 9.0;
+    1.0 + t.powf(1.6) * 5.0
+}
+
+fn map_get_sdf(map: &rhai::Map, key: &str) -> Result<SdfHandle, Box<rhai::EvalAltResult>> {
+    map.get(key)
+        .and_then(|v| v.clone().try_cast::<SdfHandle>())
+        .ok_or_else(|| format!("component map must contain SDF field '{}'", key).into())
+}
+
+fn map_get_optional_sdf(map: &rhai::Map, key: &str) -> Option<SdfHandle> {
+    map.get(key).and_then(|v| v.clone().try_cast::<SdfHandle>())
+}
+
+fn place_component_map_impl(map: &rhai::Map, pos: Vec3) -> rhai::Map {
+    let mut out = rhai::Map::new();
+    for (key, value) in map.iter() {
+        let placed = if let Some(sdf) = value.clone().try_cast::<SdfHandle>() {
+            rhai::Dynamic::from(SdfHandle(Arc::new(Translate::new(sdf.0, pos))))
+        } else if let Some(point) = value.clone().try_cast::<PointHandle>() {
+            rhai::Dynamic::from(PointHandle(point.0 + pos))
+        } else {
+            value.clone()
+        };
+        out.insert(key.clone(), placed);
+    }
+    out.insert("position".into(), rhai::Dynamic::from(PointHandle(pos)));
+    out
 }
 
 #[allow(dead_code)]
@@ -1632,6 +1950,12 @@ pub fn register_component_functions(
     }
 
     // geometry(comp) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â extract the actual part SDF
+    engine.register_fn("place_component",
+        |comp_map: rhai::Map, x: f64, y: f64, z: f64| -> rhai::Map {
+            place_component_map_impl(&comp_map, Vec3::new(x as f32, y as f32, z as f32))
+        }
+    );
+
     engine.register_fn("geometry", |comp: ComponentHandle| {
         SdfHandle(comp.geometry)
     });
@@ -2477,6 +2801,7 @@ fn register_sweep_functions(engine: &mut Engine) {
          inner_start: ProfileHandle,
          inner_end: ProfileHandle,
          surface_offset: f64,
+         face_clearance: f64,
          inlet_open_extension: f64,
          outlet_open_extension: f64,
          samples: i64|
@@ -2493,6 +2818,45 @@ fn register_sweep_functions(engine: &mut Engine) {
             outer_end.0,
             inner_start.0,
             inner_end.0,
+            surface_offset as f32,
+            face_clearance as f32,
+            inlet_open_extension as f32,
+            outlet_open_extension as f32,
+            samples.max(8) as usize,
+        );
+        Ok(vec![
+            rhai::Dynamic::from(SdfHandle(parts.outer_fairing)),
+            rhai::Dynamic::from(SdfHandle(parts.duct_void)),
+            rhai::Dynamic::from(SdfHandle(parts.internal_shell)),
+        ])
+    });
+
+    engine.register_fn("conformal_profile_inlet",
+        |surface: SdfHandle,
+         guide_pts: rhai::Array,
+         duct_path: PathHandle,
+         outer_start: ProfileHandle,
+         outer_end: ProfileHandle,
+         inner_start: ProfileHandle,
+         inner_end: ProfileHandle,
+         surface_offset: f64,
+         inlet_open_extension: f64,
+         outlet_open_extension: f64,
+         samples: i64|
+         -> Result<rhai::Array, Box<rhai::EvalAltResult>> {
+        let verts = parse_vec3_list("conformal_profile_inlet", "guide point", guide_pts)?;
+        if verts.len() < 2 {
+            return Err("conformal_profile_inlet: need at least 2 guide points".into());
+        }
+        let parts = build_conformal_profile_inlet(
+            surface.0,
+            verts,
+            duct_path.0,
+            outer_start.0,
+            outer_end.0,
+            inner_start.0,
+            inner_end.0,
+            surface_offset as f32,
             surface_offset as f32,
             inlet_open_extension as f32,
             outlet_open_extension as f32,
@@ -2587,6 +2951,7 @@ fn register_sweep_functions(engine: &mut Engine) {
             inner_start,
             inner_end,
             surface_offset as f32,
+            surface_offset as f32,
             inner_w.max(inner_h) as f32 * 0.35,
             outlet_d as f32 * 0.5,
             sample_count,
@@ -2648,6 +3013,191 @@ fn register_sweep_functions(engine: &mut Engine) {
         }
         Ok(ProfileHandle(Arc::new(SplineProfile::new(verts))))
     });
+
+    engine.register_fn("profile_from_csv",
+        |path: &str| -> Result<ProfileHandle, Box<rhai::EvalAltResult>> {
+        let text = fs::read_to_string(path)
+            .map_err(|e| format!("profile_from_csv: failed to read '{}': {}", path, e))?;
+        let mut verts = Vec::new();
+        for (line_no, line) in text.lines().enumerate() {
+            if line_no == 0 {
+                continue;
+            }
+            let trimmed = line.trim();
+            if trimmed.is_empty() {
+                continue;
+            }
+            let mut parts = trimmed.split(',');
+            let x = parts
+                .next()
+                .ok_or_else(|| format!("profile_from_csv: line {} missing first column", line_no + 1))?
+                .trim()
+                .parse::<f32>()
+                .map_err(|e| format!("profile_from_csv: line {} invalid first column: {}", line_no + 1, e))?;
+            let y = parts
+                .next()
+                .ok_or_else(|| format!("profile_from_csv: line {} missing second column", line_no + 1))?
+                .trim()
+                .parse::<f32>()
+                .map_err(|e| format!("profile_from_csv: line {} invalid second column: {}", line_no + 1, e))?;
+            if verts.last().map(|p: &glam::Vec2| (*p - glam::Vec2::new(x, y)).length_squared() < 1e-12).unwrap_or(false) {
+                continue;
+            }
+            verts.push(glam::Vec2::new(x, y));
+        }
+        if verts.len() < 3 {
+            return Err("profile_from_csv: need at least 3 points".into());
+        }
+        if (verts[0] - verts[verts.len() - 1]).length_squared() < 1e-12 {
+            verts.pop();
+        }
+        Ok(ProfileHandle(Arc::new(SplineProfile::new(verts))))
+    });
+
+    engine.register_fn("section_profile_yz",
+        |sdf: SdfHandle,
+         x: f64,
+         center_y: f64,
+         center_z: f64,
+         max_radius: f64,
+         samples: i64| -> Result<ProfileHandle, Box<rhai::EvalAltResult>> {
+        let center = glam::Vec3::new(x as f32, center_y as f32, center_z as f32);
+        let radius = max_radius.max(1.0) as f32;
+        let n = samples.max(16) as usize;
+        let mut pts = Vec::with_capacity(n);
+        for i in 0..n {
+            let a = std::f32::consts::TAU * i as f32 / n as f32;
+            let dir = glam::Vec3::new(0.0, a.cos(), a.sin());
+            let hit = crate::sdf::query::surface_point(sdf.0.as_ref(), center, dir, radius)
+                .ok_or_else(|| format!("section_profile_yz: no hit at sample {} from center [{:.3},{:.3},{:.3}]", i, center.x, center.y, center.z))?;
+            pts.push(glam::Vec2::new(hit.y - center.y, hit.z - center.z));
+        }
+        Ok(ProfileHandle(Arc::new(SplineProfile::new(pts))))
+    });
+
+    engine.register_fn("conformal_rounded_rect_profile",
+        |surface: SdfHandle,
+         x: f64,
+         center_y: f64,
+         search_z: f64,
+         width: f64,
+         height: f64,
+         radius: f64,
+         face_clearance: f64,
+         samples: i64| -> rhai::Array {
+            let (profile, center_z) = conformal_rounded_rect_section(
+                surface.0,
+                x as f32,
+                center_y as f32,
+                search_z as f32,
+                width as f32,
+                height as f32,
+                radius as f32,
+                face_clearance as f32,
+                samples.max(16) as usize,
+            );
+            vec![
+                rhai::Dynamic::from(ProfileHandle(profile)),
+                rhai::Dynamic::from(center_z as f64),
+            ]
+        }
+    );
+
+    engine.register_fn("conformal_profile",
+        |surface: SdfHandle,
+         base_profile: ProfileHandle,
+         anchor: PointHandle,
+         flow_dir: PointHandle,
+         face_clearance: f64,
+         samples: i64| -> rhai::Array {
+            let (profile, center) = conformal_profile_section(
+                surface.0,
+                base_profile.0,
+                anchor.0,
+                flow_dir.0,
+                face_clearance as f32,
+                samples.max(16) as usize,
+            );
+            vec![
+                rhai::Dynamic::from(ProfileHandle(profile)),
+                rhai::Dynamic::from(PointHandle(center)),
+            ]
+        }
+    );
+
+    engine.register_fn("conformal_profile_x",
+        |surface: SdfHandle,
+         base_profile: ProfileHandle,
+         x: f64,
+         guess_y: f64,
+         guess_z: f64,
+         flow_dir: PointHandle,
+         face_clearance: f64,
+         samples: i64| -> rhai::Array {
+            let (profile, center) = conformal_profile_section_at_x(
+                surface.0,
+                base_profile.0,
+                x as f32,
+                guess_y as f32,
+                guess_z as f32,
+                flow_dir.0,
+                face_clearance as f32,
+                samples.max(16) as usize,
+            );
+            vec![
+                rhai::Dynamic::from(ProfileHandle(profile)),
+                rhai::Dynamic::from(PointHandle(center)),
+            ]
+        }
+    );
+
+    engine.register_fn("conformal_profile_x",
+        |surface: SdfHandle,
+         base_profile: ProfileHandle,
+         x: f64,
+         guess_y: f64,
+         guess_z: f64,
+         dx: f64, dy: f64, dz: f64,
+         face_clearance: f64,
+         samples: i64| -> rhai::Array {
+            let (profile, center) = conformal_profile_section_at_x(
+                surface.0,
+                base_profile.0,
+                x as f32,
+                guess_y as f32,
+                guess_z as f32,
+                glam::Vec3::new(dx as f32, dy as f32, dz as f32),
+                face_clearance as f32,
+                samples.max(16) as usize,
+            );
+            vec![
+                rhai::Dynamic::from(ProfileHandle(profile)),
+                rhai::Dynamic::from(PointHandle(center)),
+            ]
+        }
+    );
+
+    engine.register_fn("conformal_profile",
+        |surface: SdfHandle,
+         base_profile: ProfileHandle,
+         ax: f64, ay: f64, az: f64,
+         dx: f64, dy: f64, dz: f64,
+         face_clearance: f64,
+         samples: i64| -> rhai::Array {
+            let (profile, center) = conformal_profile_section(
+                surface.0,
+                base_profile.0,
+                glam::Vec3::new(ax as f32, ay as f32, az as f32),
+                glam::Vec3::new(dx as f32, dy as f32, dz as f32),
+                face_clearance as f32,
+                samples.max(16) as usize,
+            );
+            vec![
+                rhai::Dynamic::from(ProfileHandle(profile)),
+                rhai::Dynamic::from(PointHandle(center)),
+            ]
+        }
+    );
 
     // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Sweep constructors ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
@@ -2793,6 +3343,19 @@ fn register_variable_duct_functions(engine: &mut Engine) {
         )))
     });
 
+    engine.register_fn("profile_duct_fixed_solid",
+        |path: PathHandle,
+         start_profile: ProfileHandle,
+         end_profile: ProfileHandle,
+         samples: i64| {
+        SdfHandle(Arc::new(FixedProfileDuct::new(
+            path.0,
+            start_profile.0,
+            end_profile.0,
+            samples.max(8) as usize,
+        )))
+    });
+
     engine.register_fn("profile_duct",
         |path: PathHandle,
          outer_start: ProfileHandle,
@@ -2813,6 +3376,217 @@ fn register_variable_duct_functions(engine: &mut Engine) {
             samples.max(8) as usize,
         )))
     });
+
+    engine.register_fn("profile_duct_fixed",
+        |path: PathHandle,
+         outer_start: ProfileHandle,
+         outer_end: ProfileHandle,
+         inner_start: ProfileHandle,
+         inner_end: ProfileHandle,
+         start_extension: f64,
+         end_extension: f64,
+         samples: i64| {
+        SdfHandle(Arc::new(HollowFixedProfileDuct::new(
+            path.0,
+            outer_start.0,
+            outer_end.0,
+            inner_start.0,
+            inner_end.0,
+            start_extension as f32,
+            end_extension as f32,
+            samples.max(8) as usize,
+        )))
+    });
+
+    engine.register_fn("profile_duct_fixed_solid_scheduled",
+        |path: PathHandle,
+         start_profile: ProfileHandle,
+         end_profile: ProfileHandle,
+         morph_start: f64,
+         morph_end: f64,
+         samples: i64| {
+        SdfHandle(Arc::new(FixedProfileDuct::with_schedule(
+            path.0,
+            start_profile.0,
+            end_profile.0,
+            morph_start as f32,
+            morph_end as f32,
+            samples.max(8) as usize,
+        )))
+    });
+
+    engine.register_fn("profile_duct_fixed_scheduled",
+        |path: PathHandle,
+         outer_start: ProfileHandle,
+         outer_end: ProfileHandle,
+         inner_start: ProfileHandle,
+         inner_end: ProfileHandle,
+         start_extension: f64,
+         end_extension: f64,
+         morph_start: f64,
+         morph_end: f64,
+         samples: i64| {
+        SdfHandle(Arc::new(HollowFixedProfileDuct::with_schedule(
+            path.0,
+            outer_start.0,
+            outer_end.0,
+            inner_start.0,
+            inner_end.0,
+            start_extension as f32,
+            end_extension as f32,
+            morph_start as f32,
+            morph_end as f32,
+            samples.max(8) as usize,
+        )))
+    });
+
+    engine.register_fn("conformal_profile_duct_x",
+        |surface: SdfHandle,
+         outer_base_start: ProfileHandle,
+         inner_base_start: ProfileHandle,
+         x: f64,
+         guess_y: f64,
+         guess_z: f64,
+         flow_dir: PointHandle,
+         face_clearance: f64,
+         duct_path: PathHandle,
+         outer_end: ProfileHandle,
+         inner_end: ProfileHandle,
+         start_extension: f64,
+         end_extension: f64,
+         morph_start: f64,
+         morph_end: f64,
+         samples: i64| -> rhai::Array {
+            let parts = build_conformal_profile_duct_at_x(
+                surface.0,
+                outer_base_start.0,
+                inner_base_start.0,
+                x as f32,
+                guess_y as f32,
+                guess_z as f32,
+                flow_dir.0,
+                face_clearance as f32,
+                duct_path.0,
+                outer_end.0,
+                inner_end.0,
+                start_extension as f32,
+                end_extension as f32,
+                morph_start as f32,
+                morph_end as f32,
+                samples.max(8) as usize,
+            );
+            vec![
+                rhai::Dynamic::from(SdfHandle(parts.outer_body)),
+                rhai::Dynamic::from(SdfHandle(parts.duct_void)),
+                rhai::Dynamic::from(SdfHandle(parts.duct_shell)),
+                rhai::Dynamic::from(ProfileHandle(parts.outer_start_profile)),
+                rhai::Dynamic::from(ProfileHandle(parts.inner_start_profile)),
+                rhai::Dynamic::from(PointHandle(parts.mouth_center)),
+            ]
+        }
+    );
+
+    engine.register_fn("dual_conformal_profile_duct_x",
+        |surface: SdfHandle,
+         outer_base_start: ProfileHandle,
+         inner_base_start: ProfileHandle,
+         left_x: f64,
+         left_guess_y: f64,
+         left_guess_z: f64,
+         right_x: f64,
+         right_guess_y: f64,
+         right_guess_z: f64,
+         flow_dir: PointHandle,
+         left_path: PathHandle,
+         right_path: PathHandle,
+         outer_end: ProfileHandle,
+         inner_end: ProfileHandle,
+         face_clearance: f64,
+         start_extension: f64,
+         end_extension: f64,
+         morph_start: f64,
+         morph_end: f64,
+         samples: i64| -> rhai::Array {
+            let parts = build_dual_conformal_profile_duct_at_x(
+                surface.0,
+                outer_base_start.0,
+                inner_base_start.0,
+                left_x as f32,
+                left_guess_y as f32,
+                left_guess_z as f32,
+                right_x as f32,
+                right_guess_y as f32,
+                right_guess_z as f32,
+                flow_dir.0,
+                left_path.0,
+                right_path.0,
+                outer_end.0,
+                inner_end.0,
+                face_clearance as f32,
+                start_extension as f32,
+                end_extension as f32,
+                morph_start as f32,
+                morph_end as f32,
+                samples.max(8) as usize,
+            );
+            vec![
+                rhai::Dynamic::from(SdfHandle(parts.outer_body)),
+                rhai::Dynamic::from(SdfHandle(parts.duct_void)),
+                rhai::Dynamic::from(SdfHandle(parts.duct_shell)),
+                rhai::Dynamic::from(ProfileHandle(parts.left_outer_start_profile)),
+                rhai::Dynamic::from(ProfileHandle(parts.right_outer_start_profile)),
+                rhai::Dynamic::from(PointHandle(parts.left_mouth_center)),
+                rhai::Dynamic::from(PointHandle(parts.right_mouth_center)),
+            ]
+        }
+    );
+
+    engine.register_fn("mirrored_dual_conformal_profile_duct_x",
+        |surface: SdfHandle,
+         outer_base_start: ProfileHandle,
+         inner_base_start: ProfileHandle,
+         x: f64,
+         guess_y: f64,
+         guess_z: f64,
+         flow_dir: PointHandle,
+         left_path: PathHandle,
+         outer_end: ProfileHandle,
+         inner_end: ProfileHandle,
+         face_clearance: f64,
+         start_extension: f64,
+         end_extension: f64,
+         morph_start: f64,
+         morph_end: f64,
+         samples: i64| -> rhai::Array {
+            let parts = build_mirrored_dual_conformal_profile_duct_at_x(
+                surface.0,
+                outer_base_start.0,
+                inner_base_start.0,
+                x as f32,
+                guess_y as f32,
+                guess_z as f32,
+                flow_dir.0,
+                left_path.0,
+                outer_end.0,
+                inner_end.0,
+                face_clearance as f32,
+                start_extension as f32,
+                end_extension as f32,
+                morph_start as f32,
+                morph_end as f32,
+                samples.max(8) as usize,
+            );
+            vec![
+                rhai::Dynamic::from(SdfHandle(parts.outer_body)),
+                rhai::Dynamic::from(SdfHandle(parts.duct_void)),
+                rhai::Dynamic::from(SdfHandle(parts.duct_shell)),
+                rhai::Dynamic::from(ProfileHandle(parts.left_outer_start_profile)),
+                rhai::Dynamic::from(ProfileHandle(parts.right_outer_start_profile)),
+                rhai::Dynamic::from(PointHandle(parts.left_mouth_center)),
+                rhai::Dynamic::from(PointHandle(parts.right_mouth_center)),
+            ]
+        }
+    );
 }
 
 pub fn register_mesh_functions(
@@ -4120,208 +4894,668 @@ pub fn register_query_functions(engine: &mut Engine, ref_collector: RefPointColl
     }
 }
 
-// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Bracket / mounting hole functions ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
-
-pub fn register_bracket_functions(engine: &mut Engine) {
-    use crate::sdf::print::bracket::{
-        BracketType, BracketHole, auto_bracket as do_auto_bracket,
-    };
-    use crate::sdf::query::bounding_points;
-
-    engine.register_type::<MountingHoleHandle>();
-    engine.register_type::<MountingHoleSetHandle>();
-
-    // mounting_hole(x, y, z, dx, dy, dz, designation) -> MountingHoleHandle
-    engine.register_fn("mounting_hole",
-        |px: f64, py: f64, pz: f64, dx: f64, dy: f64, dz: f64, desig: &str|
-        -> MountingHoleHandle
-    {
-        MountingHoleHandle(MountingHole {
-            position:          Vec3::new(px as f32, py as f32, pz as f32),
-            direction:         Vec3::new(dx as f32, dy as f32, dz as f32).normalize_or_zero(),
-            screw_designation: desig.to_string(),
-            source:            HoleSource::Manual,
-        })
-    });
-
-    // mounting_hole(point, dx, dy, dz, designation) -> MountingHoleHandle
-    engine.register_fn("mounting_hole",
-        |pos: PointHandle, dx: f64, dy: f64, dz: f64, desig: &str|
-        -> MountingHoleHandle
-    {
-        MountingHoleHandle(MountingHole {
-            position:          pos.0,
-            direction:         Vec3::new(dx as f32, dy as f32, dz as f32).normalize_or_zero(),
-            screw_designation: desig.to_string(),
-            source:            HoleSource::Manual,
-        })
-    });
-
-    // Helper: extract BracketHoles from a rhai::Array of MountingHoleHandles.
-    fn extract_holes(holes: &rhai::Array) -> Vec<BracketHole> {
-        holes.iter().filter_map(|h| {
-            h.clone().try_cast::<MountingHoleHandle>().map(|mh| BracketHole {
-                position:    mh.0.position,
-                direction:   mh.0.direction,
-                designation: mh.0.screw_designation.clone(),
-            })
-        }).collect()
+pub fn register_granular_bracket_functions(engine: &mut Engine) {
+    fn hidden_sdf_handle() -> SdfHandle {
+        SdfHandle(Arc::new(FnSdf { func: Arc::new(|_| 1e6) }))
     }
 
-    // Parse bracket type string.
-    fn parse_type(type_str: &str) -> BracketType {
-        match type_str {
-            "saddle"      => BracketType::Saddle { wall_thickness: 2.0, conform_radius: 0.0 },
-            "cantilever"  => BracketType::Cantilever { arm_thickness: 3.0, arm_width: 8.0, face: crate::sdf::print::bracket::BracketFace::Bottom },
-            "tray"        => BracketType::FullTray { wall_thickness: 2.0, floor_thickness: 2.0, open_face: crate::sdf::print::bracket::BracketFace::Top },
-            _             => BracketType::FlatPlate { plate_thickness: 3.0, tab_width: 8.0, tab_extension: 5.0 },
+    engine.register_fn("bracket_offset",
+        |mut comp_map: rhai::Map, offset_mm: f64| -> rhai::Map {
+            let offset_mm = offset_mm.clamp(-1.0, 5.0);
+            let mut cfg = comp_map
+                .get("bracket_config")
+                .and_then(|v| v.clone().try_cast::<rhai::Map>())
+                .unwrap_or_else(rhai::Map::new);
+            cfg.insert(
+                "pocket_offset_mm".into(),
+                rhai::Dynamic::from(offset_mm)
+            );
+            comp_map.insert("bracket_config".into(), rhai::Dynamic::from(cfg));
+            comp_map.insert("bracket_offset_mm".into(), rhai::Dynamic::from(offset_mm));
+            comp_map
+        }
+    );
+
+    engine.register_fn("support_density",
+        |mut comp_map: rhai::Map, level: i64| -> rhai::Map {
+            let level = level.clamp(1, 10);
+            let mut cfg = comp_map
+                .get("bracket_config")
+                .and_then(|v| v.clone().try_cast::<rhai::Map>())
+                .unwrap_or_else(rhai::Map::new);
+            cfg.insert(
+                "support_density".into(),
+                rhai::Dynamic::from(level)
+            );
+            comp_map.insert("bracket_config".into(), rhai::Dynamic::from(cfg));
+            comp_map.insert("support_density".into(), rhai::Dynamic::from(level));
+            comp_map
+        }
+    );
+
+    engine.register_fn("tray_clearance",
+        |mut comp_map: rhai::Map, clearance_mm: f64| -> rhai::Map {
+            let clearance_mm = clearance_mm.clamp(0.0, 5.0);
+            let mut cfg = comp_map
+                .get("bracket_config")
+                .and_then(|v| v.clone().try_cast::<rhai::Map>())
+                .unwrap_or_else(rhai::Map::new);
+            cfg.insert("tray_clearance_mm".into(), rhai::Dynamic::from(clearance_mm));
+            comp_map.insert("bracket_config".into(), rhai::Dynamic::from(cfg));
+            comp_map.insert("tray_clearance_mm".into(), rhai::Dynamic::from(clearance_mm));
+            comp_map
+        }
+    );
+
+    engine.register_fn("tray_thickness",
+        |mut comp_map: rhai::Map, thickness_mm: f64| -> rhai::Map {
+            let thickness_mm = thickness_mm.clamp(0.5, 8.0);
+            let mut cfg = comp_map
+                .get("bracket_config")
+                .and_then(|v| v.clone().try_cast::<rhai::Map>())
+                .unwrap_or_else(rhai::Map::new);
+            cfg.insert("tray_thickness_mm".into(), rhai::Dynamic::from(thickness_mm));
+            comp_map.insert("bracket_config".into(), rhai::Dynamic::from(cfg));
+            comp_map.insert("tray_thickness_mm".into(), rhai::Dynamic::from(thickness_mm));
+            comp_map
+        }
+    );
+
+    engine.register_fn("hide_part",
+        |mut value_map: rhai::Map, key: &str| -> rhai::Map {
+            if let Some(value) = value_map.get(key).cloned() {
+                if value.clone().try_cast::<SdfHandle>().is_some() {
+                    value_map.insert(key.into(), rhai::Dynamic::from(hidden_sdf_handle()));
+                }
+            }
+            value_map
+        }
+    );
+
+    engine.register_fn("hide_parts",
+        |mut value_map: rhai::Map, keys: rhai::Array| -> rhai::Map {
+            for key in keys {
+                if let Some(name) = key.try_cast::<rhai::ImmutableString>() {
+                    let key = name.to_string();
+                    if let Some(value) = value_map.get(key.as_str()).cloned() {
+                        if value.clone().try_cast::<SdfHandle>().is_some() {
+                            value_map.insert(key.into(), rhai::Dynamic::from(hidden_sdf_handle()));
+                        }
+                    }
+                }
+            }
+            value_map
+        }
+    );
+
+    fn parse_mount_point_map(
+        value: &rhai::Dynamic,
+        translation: Vec3,
+    ) -> Result<BracketMountPoint, Box<rhai::EvalAltResult>> {
+        let map = value.clone().try_cast::<rhai::Map>()
+            .ok_or_else(|| "mount_points entries must be maps".to_string())?;
+
+        let position = map.get("position")
+            .and_then(|v| v.clone().try_cast::<PointHandle>())
+            .map(|p| p.0 + translation)
+            .ok_or_else(|| "mount point map must contain Point field 'position'".to_string())?;
+        let normal = map.get("normal")
+            .and_then(|v| v.clone().try_cast::<PointHandle>())
+            .map(|p| safe_normalize(p.0, 1e-8))
+            .ok_or_else(|| "mount point map must contain Point field 'normal'".to_string())?;
+        let tier = map.get("tier")
+            .and_then(|v| v.clone().try_cast::<i64>())
+            .ok_or_else(|| "mount point map must contain integer field 'tier'".to_string())?;
+        if tier != 1 && tier != 2 {
+            return Err("mount point tier must be 1 or 2".into());
+        }
+        let base_radius = map.get("base_radius")
+            .and_then(|v| v.clone().try_cast::<f64>())
+            .ok_or_else(|| "mount point map must contain numeric field 'base_radius'".to_string())? as f32;
+        if base_radius <= 0.0 {
+            return Err("mount point base_radius must be positive".into());
+        }
+
+        Ok(BracketMountPoint { position, normal, tier, base_radius })
+    }
+
+    fn parse_mount_points(
+        comp_map: &rhai::Map,
+        translation: Vec3,
+    ) -> Result<Vec<BracketMountPoint>, Box<rhai::EvalAltResult>> {
+        let arr = comp_map.get("mount_points")
+            .and_then(|v| v.clone().try_cast::<rhai::Array>())
+            .ok_or_else(|| "component map must contain array field 'mount_points'".to_string())?;
+        let mut out = Vec::new();
+        for item in arr {
+            out.push(parse_mount_point_map(&item, translation)?);
+        }
+        if out.is_empty() {
+            return Err("mount_points must contain at least one entry".into());
+        }
+        Ok(out)
+    }
+
+    fn expand_mount_points_for_density(
+        points: &[BracketMountPoint],
+        density: u32,
+    ) -> Vec<BracketMountPoint> {
+        if points.is_empty() {
+            return Vec::new();
+        }
+        let mut out = points.to_vec();
+        if density <= 1 {
+            return out;
+        }
+
+        let eff_density = effective_support_density(density);
+        let tier1_subdiv = eff_density.floor().max(1.0) as usize - 1;
+        let tier2_subdiv = (eff_density.floor() - 2.0).max(0.0) as usize;
+
+        for i in 0..points.len() {
+            let a = &points[i];
+            let mut neighbors: Vec<(usize, f32)> = Vec::new();
+            for j in (i + 1)..points.len() {
+                let a = &points[i];
+                let b = &points[j];
+                if a.tier != b.tier {
+                    continue;
+                }
+                if a.normal.dot(b.normal) < 0.985 {
+                    continue;
+                }
+                let delta = b.position - a.position;
+                let same_face = delta.dot(a.normal).abs() <= 1.0;
+                if !same_face {
+                    continue;
+                }
+                let tangential_span = (delta - a.normal * delta.dot(a.normal)).length();
+                if tangential_span < 6.0 {
+                    continue;
+                }
+                neighbors.push((j, tangential_span));
+            }
+            neighbors.sort_by(|lhs, rhs| lhs.1.partial_cmp(&rhs.1).unwrap_or(std::cmp::Ordering::Equal));
+            let neighbor_limit = if a.tier == 1 {
+                if eff_density >= 5.2 { 3 } else if eff_density >= 2.8 { 2 } else { 1 }
+            } else if eff_density >= 4.5 {
+                2
+            } else {
+                1
+            };
+            for (j, _) in neighbors.into_iter().take(neighbor_limit) {
+                let b = &points[j];
+                let subdiv = if a.tier == 1 { tier1_subdiv } else { tier2_subdiv };
+                if subdiv == 0 {
+                    continue;
+                }
+                for k in 1..=subdiv {
+                    let t = k as f32 / (subdiv + 1) as f32;
+                    out.push(BracketMountPoint {
+                        position: a.position.lerp(b.position, t),
+                        normal: safe_normalize(a.normal.lerp(b.normal, t), 1e-8),
+                        tier: a.tier,
+                        base_radius: (a.base_radius + b.base_radius) * 0.5,
+                    });
+                }
+            }
+        }
+
+        out
+    }
+
+    fn get_host_sdf(parts: &[BracketPart], p: Vec3) -> (f32, Option<String>) {
+        aggregate_parts(parts, StructuralRole::Sticky, p)
+    }
+
+    fn get_keepout_sdf(parts: &[BracketPart], p: Vec3) -> (f32, Option<String>) {
+        aggregate_parts(parts, StructuralRole::Removable, p)
+    }
+
+    fn trace_path_from_mount(
+        mount: &BracketMountPoint,
+        host_parts: &[BracketPart],
+        keepout_parts: &[BracketPart],
+        config: &BracketConfig,
+    ) -> BracketPathResult {
+        let initial_offset = (mount.base_radius * 0.1).max(0.5);
+        let mut p = mount.position + mount.normal * initial_offset;
+        let mut points = vec![mount.position, p];
+        let mut termination_reason = "max_iter".to_string();
+        let mut last_host_id = None;
+        let mut last_keepout_id = None;
+        let mut min_keepout_distance = f32::INFINITY;
+        let mut final_host_distance = f32::INFINITY;
+
+        for i in 0..config.max_path_iters {
+            let (host_dist_here, host_id_here) = get_host_sdf(host_parts, p);
+            let (keepout_dist_here, keepout_id_here) = get_keepout_sdf(keepout_parts, p);
+            last_host_id = host_id_here.clone();
+            last_keepout_id = keepout_id_here.clone();
+            min_keepout_distance = min_keepout_distance.min(keepout_dist_here);
+            final_host_distance = host_dist_here.abs();
+
+            let host_fn = |q: Vec3| get_host_sdf(host_parts, q).0;
+            let keepout_fn = |q: Vec3| get_keepout_sdf(keepout_parts, q).0;
+
+            let attr = -calc_gradient(host_fn, p, config.grad_eps);
+            let rep = calc_gradient(keepout_fn, p, config.grad_eps);
+            let rep_scale = (1.0 / (keepout_dist_here.abs() + 1e-2)).clamp(0.0, config.rep_scale_max);
+
+            let mut combined = attr + rep * rep_scale;
+            if combined.length() < config.safe_norm_eps {
+                combined = if attr.length() >= config.safe_norm_eps { attr } else { mount.normal };
+            }
+            let combined = safe_normalize(combined, config.safe_norm_eps);
+
+            let adaptive_step = (config.step_size_mm * host_dist_here.abs().max(0.5))
+                .clamp(config.min_step_mm, config.max_step_mm);
+            let mut step = combined * adaptive_step;
+
+            if points.len() >= 3 {
+                let prev = points[points.len() - 3];
+                if p.distance(prev) < adaptive_step * 0.75 {
+                    step *= 0.5;
+                }
+            }
+
+            if step.length() < config.min_step_mm * 0.1 {
+                termination_reason = "stuck_small_step".to_string();
+                return BracketPathResult {
+                    points,
+                    termination_reason,
+                    iterations: i + 1,
+                    host_part_id: last_host_id,
+                    keepout_part_id: last_keepout_id,
+                    min_keepout_distance,
+                    final_host_distance,
+                };
+            }
+
+            let p_next = p + step;
+            points.push(p_next);
+
+            let (host_dist_next_raw, host_id_next) = get_host_sdf(host_parts, p_next);
+            let host_dist_next = host_dist_next_raw.abs();
+            final_host_distance = host_dist_next;
+            last_host_id = host_id_next.clone();
+            if host_dist_next <= config.surface_tol_mm {
+                let snapped = if let Some(part) = host_parts.iter().find(|part| Some(&part.id) == host_id_next.as_ref()) {
+                    crate::sdf::query::closest_point(part.sdf.as_ref(), p_next)
+                } else {
+                    p_next
+                };
+                if points.last().copied() != Some(snapped) {
+                    points.push(snapped);
+                }
+                termination_reason = "hit_host".to_string();
+                return BracketPathResult {
+                    points,
+                    termination_reason,
+                    iterations: i + 1,
+                    host_part_id: last_host_id,
+                    keepout_part_id: last_keepout_id,
+                    min_keepout_distance,
+                    final_host_distance,
+                };
+            }
+
+            let (keepout_dist_next, keepout_id_next) = get_keepout_sdf(keepout_parts, p_next);
+            last_keepout_id = keepout_id_next;
+            min_keepout_distance = min_keepout_distance.min(keepout_dist_next);
+            if keepout_dist_next <= -0.5 {
+                termination_reason = "violated_keepout".to_string();
+                return BracketPathResult {
+                    points,
+                    termination_reason,
+                    iterations: i + 1,
+                    host_part_id: last_host_id,
+                    keepout_part_id: last_keepout_id,
+                    min_keepout_distance,
+                    final_host_distance,
+                };
+            }
+
+            p = p_next;
+        }
+
+        BracketPathResult {
+            points,
+            termination_reason,
+            iterations: config.max_path_iters,
+            host_part_id: last_host_id,
+            keepout_part_id: last_keepout_id,
+            min_keepout_distance,
+            final_host_distance,
         }
     }
 
-    // auto_bracket(comp, parent, holes, designation, type_str) -> [modified_parent, bracket]
-    engine.register_fn("auto_bracket",
-        |comp: ComponentHandle, parent: SdfHandle, holes: rhai::Array, _desig: &str, type_str: &str|
-        -> rhai::Array
-    {
-        let bracket_holes = extract_holes(&holes);
-        // Use geometry bounds (not keepout) so the bracket sits at the component surface.
-        let bi = bounding_points(comp.geometry.as_ref());
-        let bt = parse_type(type_str);
-        let (modified_parent, bracket) = do_auto_bracket(
-            Arc::clone(&comp.keepout),
-            parent.0,
-            &bracket_holes,
-            &bt,
-            bi.min,
-            bi.max,
-        );
-        vec![
-            rhai::Dynamic::from(SdfHandle(modified_parent)),
-            rhai::Dynamic::from(SdfHandle(bracket)),
-        ]
-    });
+    fn make_capsule_chain(points: &[Vec3], base_radius: f32, radius_end_factor: f32) -> Vec<Arc<dyn Sdf>> {
+        if points.len() < 2 {
+            return Vec::new();
+        }
+        let seg_count = points.len() - 1;
+        let mut out = Vec::new();
+        for (i, seg) in points.windows(2).enumerate() {
+            let t0 = i as f32 / seg_count as f32;
+            let t1 = (i + 1) as f32 / seg_count as f32;
+            let r0 = base_radius + t0 * (base_radius * radius_end_factor - base_radius);
+            let r1 = base_radius + t1 * (base_radius * radius_end_factor - base_radius);
+            let a = seg[0];
+            let b = seg[1];
+            let sdf = FnSdf {
+                func: Arc::new(move |p: Vec3| sdf_tapered_capsule_distance(p, a, b, r0, r1)),
+            };
+            out.push(Arc::new(sdf) as Arc<dyn Sdf>);
+        }
+        out
+    }
 
-    // auto_bracket_flat(comp, parent, holes, designation) -> [modified_parent, bracket]
-    engine.register_fn("auto_bracket_flat",
-        |comp: ComponentHandle, parent: SdfHandle, holes: rhai::Array, _desig: &str|
-        -> rhai::Array
-    {
-        let bracket_holes = extract_holes(&holes);
-        let bi = bounding_points(comp.geometry.as_ref());
-        let bt = BracketType::FlatPlate { plate_thickness: 3.0, tab_width: 8.0, tab_extension: 5.0 };
-        let (modified_parent, bracket) = do_auto_bracket(
-            Arc::clone(&comp.keepout),
-            parent.0,
-            &bracket_holes,
-            &bt,
-            bi.min,
-            bi.max,
-        );
-        vec![
-            rhai::Dynamic::from(SdfHandle(modified_parent)),
-            rhai::Dynamic::from(SdfHandle(bracket)),
-        ]
-    });
+    fn make_tier1_cover(
+        points: &[BracketMountPoint],
+        tray_clearance: f32,
+        tray_thickness: f32,
+    ) -> Vec<Arc<dyn Sdf>> {
+        let tier1_points: Vec<&BracketMountPoint> = points.iter().filter(|p| p.tier == 1).collect();
+        if tier1_points.is_empty() {
+            return Vec::new();
+        }
+        let mut out = Vec::new();
+        let face_radius = (tray_thickness * 0.55).max(0.5);
+        let offset_positions: Vec<Vec3> = tier1_points
+            .iter()
+            .map(|mp| mp.position + mp.normal * tray_clearance)
+            .collect();
 
-    // auto_bracket_saddle(comp, parent, holes, designation) -> [modified_parent, bracket]
-    engine.register_fn("auto_bracket_saddle",
-        |comp: ComponentHandle, parent: SdfHandle, holes: rhai::Array, _desig: &str|
-        -> rhai::Array
-    {
-        let bracket_holes = extract_holes(&holes);
-        let bi = bounding_points(comp.geometry.as_ref());
-        let bt = BracketType::Saddle { wall_thickness: 2.0, conform_radius: 0.0 };
-        let (modified_parent, bracket) = do_auto_bracket(
-            Arc::clone(&comp.keepout),
-            parent.0,
-            &bracket_holes,
-            &bt,
-            bi.min,
-            bi.max,
-        );
-        vec![
-            rhai::Dynamic::from(SdfHandle(modified_parent)),
-            rhai::Dynamic::from(SdfHandle(bracket)),
-        ]
-    });
-
-    // auto_bracket_cantilever(comp, parent, holes, designation) -> [modified_parent, bracket]
-    engine.register_fn("auto_bracket_cantilever",
-        |comp: ComponentHandle, parent: SdfHandle, holes: rhai::Array, _desig: &str|
-        -> rhai::Array
-    {
-        let bracket_holes = extract_holes(&holes);
-        let bi = bounding_points(comp.geometry.as_ref());
-        let bt = BracketType::Cantilever {
-            arm_thickness: 3.0,
-            arm_width: 8.0,
-            face: crate::sdf::print::bracket::BracketFace::Bottom,
+        let mut connect_pair = |a: Vec3, b: Vec3| {
+            let sdf = FnSdf {
+                func: Arc::new(move |p: Vec3| sdf_tapered_capsule_distance(p, a, b, face_radius, face_radius)),
+            };
+            out.push(Arc::new(sdf) as Arc<dyn Sdf>);
         };
-        let (modified_parent, bracket) = do_auto_bracket(
-            Arc::clone(&comp.keepout),
-            parent.0,
-            &bracket_holes,
-            &bt,
-            bi.min,
-            bi.max,
-        );
-        vec![
-            rhai::Dynamic::from(SdfHandle(modified_parent)),
-            rhai::Dynamic::from(SdfHandle(bracket)),
-        ]
-    });
 
-    // auto_bracket_tray(comp, parent, holes, designation) -> [modified_parent, bracket]
-    engine.register_fn("auto_bracket_tray",
-        |comp: ComponentHandle, parent: SdfHandle, holes: rhai::Array, _desig: &str|
-        -> rhai::Array
-    {
-        let bracket_holes = extract_holes(&holes);
-        let bi = bounding_points(comp.geometry.as_ref());
-        let bt = BracketType::FullTray {
-            wall_thickness: 2.0,
-            floor_thickness: 2.0,
-            open_face: crate::sdf::print::bracket::BracketFace::Top,
-        };
-        let (modified_parent, bracket) = do_auto_bracket(
-            Arc::clone(&comp.keepout),
-            parent.0,
-            &bracket_holes,
-            &bt,
-            bi.min,
-            bi.max,
-        );
-        vec![
-            rhai::Dynamic::from(SdfHandle(modified_parent)),
-            rhai::Dynamic::from(SdfHandle(bracket)),
-        ]
-    });
+        // Connect nearby points on the same support face to make local tray rails.
+        for i in 0..tier1_points.len() {
+            let a = tier1_points[i];
+            let mut neighbors: Vec<(usize, f32)> = Vec::new();
+            for j in (i + 1)..tier1_points.len() {
+                let b = tier1_points[j];
+                if a.normal.dot(b.normal) < 0.985 {
+                    continue;
+                }
+                let delta = b.position - a.position;
+                if delta.dot(a.normal).abs() > 1.0 {
+                    continue;
+                }
+                let tangential_span = (delta - a.normal * delta.dot(a.normal)).length();
+                if tangential_span < 8.0 {
+                    continue;
+                }
+                neighbors.push((j, tangential_span));
+            }
+            neighbors.sort_by(|lhs, rhs| lhs.1.partial_cmp(&rhs.1).unwrap_or(std::cmp::Ordering::Equal));
+            for (j, _) in neighbors.into_iter().take(2) {
+                connect_pair(offset_positions[i], offset_positions[j]);
+            }
+        }
 
-    // auto_bracket_detect(comp, parent, designation) -> [modified_parent, bracket]
-    // Falls back to 4 corner holes when no holes are detected (no mesh available).
-    engine.register_fn("auto_bracket_detect",
-        |comp: ComponentHandle, parent: SdfHandle, _desig: &str|
-        -> rhai::Array
-    {
-        let bi = bounding_points(comp.geometry.as_ref());
-        let bt = BracketType::FlatPlate { plate_thickness: 3.0, tab_width: 8.0, tab_extension: 5.0 };
-        // Pass empty holes ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ auto_bracket generates 4 default corner holes.
-        let (modified_parent, bracket) = do_auto_bracket(
-            Arc::clone(&comp.keepout),
-            parent.0,
-            &[],
-            &bt,
-            bi.min,
-            bi.max,
-        );
-        vec![
-            rhai::Dynamic::from(SdfHandle(modified_parent)),
-            rhai::Dynamic::from(SdfHandle(bracket)),
-        ]
-    });
+        // Also force the tier-1 cover to be globally connected by building a minimal
+        // spanning network across all tier-1 tray points. This turns per-face strips
+        // into a single tray perimeter instead of disconnected local patches.
+        if tier1_points.len() >= 2 {
+            let mut connected = vec![false; tier1_points.len()];
+            connected[0] = true;
+            for _ in 1..tier1_points.len() {
+                let mut best: Option<(usize, usize, f32)> = None;
+                for i in 0..tier1_points.len() {
+                    if !connected[i] {
+                        continue;
+                    }
+                    for j in 0..tier1_points.len() {
+                        if connected[j] || i == j {
+                            continue;
+                        }
+                        let d = offset_positions[i].distance(offset_positions[j]);
+                        match best {
+                            Some((_, _, best_d)) if d >= best_d => {}
+                            _ => best = Some((i, j, d)),
+                        }
+                    }
+                }
+                if let Some((i, j, _)) = best {
+                    connect_pair(offset_positions[i], offset_positions[j]);
+                    connected[j] = true;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        for mp in tier1_points {
+            let p0 = mp.position + mp.normal * tray_clearance;
+            let p1 = mp.position + mp.normal * (tray_clearance + tray_thickness);
+            connect_pair(p0, p1);
+        }
+        out
+    }
+
+    fn make_offset_band(seed: Arc<dyn Sdf>, offset_mm: f32, thickness_mm: f32) -> Arc<dyn Sdf> {
+        let inner = Arc::new(Offset::new(Arc::clone(&seed), offset_mm));
+        let outer = Arc::new(Offset::new(Arc::clone(&seed), offset_mm + thickness_mm));
+        Arc::new(Subtract::new(outer, inner))
+    }
+
+    fn make_smooth_union(parts: Vec<Arc<dyn Sdf>>, k: f32) -> Arc<dyn Sdf> {
+        if parts.is_empty() {
+            return Arc::new(FnSdf { func: Arc::new(|_| 1e6) });
+        }
+        Arc::new(FnSdf {
+            func: Arc::new(move |p: Vec3| {
+                let mut acc = parts[0].distance(p);
+                for sdf in parts.iter().skip(1) {
+                    acc = smin_exp_pair(acc, sdf.distance(p), k);
+                }
+                acc
+            }),
+        })
+    }
+
+    engine.register_fn("mount_point",
+        |position: PointHandle, normal: PointHandle, tier: i64, base_radius: f64| -> rhai::Map {
+            let mut map = rhai::Map::new();
+            map.insert("position".into(), rhai::Dynamic::from(position));
+            map.insert("normal".into(), rhai::Dynamic::from(normal));
+            map.insert("tier".into(), rhai::Dynamic::from(tier));
+            map.insert("base_radius".into(), rhai::Dynamic::from(base_radius));
+            map
+        }
+    );
+
+    engine.register_fn("mount_component_granular",
+        |parent: SdfHandle, comp_map: rhai::Map, x: f64, y: f64, z: f64|
+         -> Result<rhai::Map, Box<rhai::EvalAltResult>> {
+            let pos = Vec3::new(x as f32, y as f32, z as f32);
+            let placed = place_component_map_impl(&comp_map, pos);
+            let mount_points = expand_mount_points_for_density(
+                &parse_mount_points(&comp_map, pos)?,
+                apply_bracket_config_overrides(BracketConfig::default(), &comp_map).support_density
+            );
+
+            let physical = map_get_sdf(&placed, "physical")?;
+            let keepout = map_get_sdf(&placed, "keepout")?;
+            let service_keepout = map_get_optional_sdf(&placed, "service_keepout");
+            let swept_volume = map_get_optional_sdf(&placed, "swept_volume");
+
+            let host_parts = vec![
+                bracket_part("host", Arc::clone(&parent.0), StructuralRole::Sticky),
+            ];
+            let mut keepout_parts = vec![
+                bracket_part("keepout", Arc::clone(&keepout.0), StructuralRole::Removable),
+            ];
+            if let Some(sk) = service_keepout.as_ref() {
+                keepout_parts.push(bracket_part("service_keepout", Arc::clone(&sk.0), StructuralRole::Removable));
+            }
+            if let Some(sw) = swept_volume.as_ref() {
+                keepout_parts.push(bracket_part("swept_volume", Arc::clone(&sw.0), StructuralRole::Removable));
+            }
+
+            let mut config = apply_bracket_config_overrides(BracketConfig::default(), &comp_map);
+            let eff_density = effective_support_density(config.support_density);
+            config.tier2_bridge_thresh_mm *= 1.0 + 0.10 * (eff_density - 1.0);
+
+            let tier1_cover = if let Some(seed) = map_get_optional_sdf(&placed, "tray_seed") {
+                make_offset_band(
+                    Arc::clone(&seed.0),
+                    config.tray_clearance_mm,
+                    config.tray_thickness_mm,
+                )
+            } else {
+                make_smooth_union(
+                    make_tier1_cover(
+                        &mount_points,
+                        config.tray_clearance_mm,
+                        config.tray_thickness_mm,
+                    ),
+                    8.0
+                )
+            };
+
+            let mut tier1_capsules = Vec::new();
+            let mut tier1_paths = Vec::new();
+            let mut tier2_capsules = Vec::new();
+            let mut debug_paths = rhai::Array::new();
+
+            for mount in mount_points.iter().filter(|m| m.tier == 1) {
+                let path = trace_path_from_mount(mount, &host_parts, &keepout_parts, &config);
+                let mut dbg = rhai::Map::new();
+                dbg.insert("tier".into(), rhai::Dynamic::from(1_i64));
+                dbg.insert("termination_reason".into(), rhai::Dynamic::from(path.termination_reason.clone()));
+                dbg.insert("iterations".into(), rhai::Dynamic::from(path.iterations as i64));
+                dbg.insert("point_count".into(), rhai::Dynamic::from(path.points.len() as i64));
+                dbg.insert("host_part_id".into(), rhai::Dynamic::from(path.host_part_id.clone().unwrap_or_default()));
+                dbg.insert("keepout_part_id".into(), rhai::Dynamic::from(path.keepout_part_id.clone().unwrap_or_default()));
+                dbg.insert("min_keepout_distance".into(), rhai::Dynamic::from(path.min_keepout_distance as f64));
+                dbg.insert("final_host_distance".into(), rhai::Dynamic::from(path.final_host_distance as f64));
+                debug_paths.push(rhai::Dynamic::from(dbg));
+                if path.points.len() >= 2 {
+                    tier1_capsules.extend(make_capsule_chain(&path.points, mount.base_radius, config.tier1_radius_end_factor));
+                    tier1_paths.push(path.points);
+                }
+            }
+
+            for mount in mount_points.iter().filter(|m| m.tier == 2) {
+                let path = trace_path_from_mount(mount, &host_parts, &keepout_parts, &config);
+                let mut dbg = rhai::Map::new();
+                dbg.insert("tier".into(), rhai::Dynamic::from(2_i64));
+                dbg.insert("termination_reason".into(), rhai::Dynamic::from(path.termination_reason.clone()));
+                dbg.insert("iterations".into(), rhai::Dynamic::from(path.iterations as i64));
+                dbg.insert("point_count".into(), rhai::Dynamic::from(path.points.len() as i64));
+                dbg.insert("host_part_id".into(), rhai::Dynamic::from(path.host_part_id.clone().unwrap_or_default()));
+                dbg.insert("keepout_part_id".into(), rhai::Dynamic::from(path.keepout_part_id.clone().unwrap_or_default()));
+                dbg.insert("min_keepout_distance".into(), rhai::Dynamic::from(path.min_keepout_distance as f64));
+                dbg.insert("final_host_distance".into(), rhai::Dynamic::from(path.final_host_distance as f64));
+                debug_paths.push(rhai::Dynamic::from(dbg));
+                let Some(end) = path.points.last().copied() else { continue; };
+
+                let mut best: Option<(f32, Vec3)> = None;
+                for tier1_path in &tier1_paths {
+                    if let Some(p_tier1) = nearest_point_on_polyline(tier1_path, end) {
+                        let d = end.distance(p_tier1);
+                        if d < config.tier2_bridge_thresh_mm {
+                            match best {
+                                Some((best_d, _)) if d >= best_d => {}
+                                _ => best = Some((d, p_tier1)),
+                            }
+                        }
+                    }
+                }
+
+                if let Some((_, p_tier1)) = best {
+                    let a = end;
+                    let b = p_tier1;
+                    let bridge_radius = (mount.base_radius * config.tier2_bridge_radius_factor).max(0.8);
+                    let sdf = FnSdf {
+                        func: Arc::new(move |p: Vec3| sdf_tapered_capsule_distance(p, a, b, bridge_radius, bridge_radius)),
+                    };
+                    tier2_capsules.push(Arc::new(sdf) as Arc<dyn Sdf>);
+                }
+            }
+
+            let mut all_capsules = Vec::new();
+            all_capsules.push(Arc::clone(&tier1_cover));
+            all_capsules.extend(tier1_capsules);
+            all_capsules.extend(tier2_capsules);
+            let bracket_field = make_smooth_union(all_capsules, 2.0);
+
+            let keepout_union = {
+                let mut parts = vec![Arc::clone(&keepout.0)];
+                if let Some(sk) = service_keepout.as_ref() { parts.push(Arc::clone(&sk.0)); }
+                if let Some(sw) = swept_volume.as_ref() { parts.push(Arc::clone(&sw.0)); }
+                make_smooth_union(parts, 32.0)
+            };
+
+            let dilate_mm = config.dilate_keepout_mm;
+            let bracket_after_cut: Arc<dyn Sdf> = Arc::new(FnSdf {
+                func: {
+                    let bracket_field = Arc::clone(&bracket_field);
+                    let keepout_union = Arc::clone(&keepout_union);
+                    Arc::new(move |p: Vec3| {
+                        let dilated_keepout = keepout_union.distance(p) - dilate_mm;
+                        bracket_field.distance(p).max(-dilated_keepout)
+                    })
+                },
+            });
+
+            let final_blended: Arc<dyn Sdf> = Arc::new(FnSdf {
+                func: {
+                    let bracket_after_cut = Arc::clone(&bracket_after_cut);
+                    let host = Arc::clone(&parent.0);
+                    let host_blend_k = config.host_blend_k;
+                    Arc::new(move |p: Vec3| {
+                        if host_blend_k <= 0.0 {
+                            bracket_after_cut.distance(p).min(host.distance(p))
+                        } else {
+                            smin_exp_pair(bracket_after_cut.distance(p), host.distance(p), host_blend_k)
+                        }
+                    })
+                },
+            });
+
+            let pocket_offset = config.pocket_offset_mm;
+            let final_mount: Arc<dyn Sdf> = Arc::new(FnSdf {
+                func: {
+                    let final_blended = Arc::clone(&final_blended);
+                    let physical: Arc<dyn Sdf> = Arc::clone(&physical.0);
+                    Arc::new(move |p: Vec3| {
+                        final_blended.distance(p).max(-(physical.distance(p) + pocket_offset))
+                    })
+                },
+            });
+
+            let mut out = placed;
+            out.insert("raw_bracket".into(), rhai::Dynamic::from(SdfHandle(Arc::clone(&bracket_field))));
+            out.insert("tray".into(), rhai::Dynamic::from(SdfHandle(Arc::clone(&tier1_cover))));
+            out.insert("cut_bracket".into(), rhai::Dynamic::from(SdfHandle(Arc::clone(&bracket_after_cut))));
+            out.insert("blended_bracket".into(), rhai::Dynamic::from(SdfHandle(Arc::clone(&final_blended))));
+            out.insert("bracket".into(), rhai::Dynamic::from(SdfHandle(Arc::clone(&final_mount))));
+            out.insert("assembly".into(), rhai::Dynamic::from(SdfHandle(final_mount)));
+            out.insert("component_physical".into(), rhai::Dynamic::from(physical));
+            out.insert("debug_paths".into(), rhai::Dynamic::from(debug_paths));
+            let mut debug_summary = rhai::Map::new();
+            debug_summary.insert("tier1_count".into(), rhai::Dynamic::from(tier1_paths.len() as i64));
+            debug_summary.insert("tier2_count".into(), rhai::Dynamic::from((mount_points.iter().filter(|m| m.tier == 2).count()) as i64));
+            debug_summary.insert("dilate_keepout_mm".into(), rhai::Dynamic::from(config.dilate_keepout_mm as f64));
+            debug_summary.insert("pocket_offset_mm".into(), rhai::Dynamic::from(config.pocket_offset_mm as f64));
+            debug_summary.insert("host_blend_k".into(), rhai::Dynamic::from(config.host_blend_k as f64));
+            debug_summary.insert("support_density".into(), rhai::Dynamic::from(config.support_density as i64));
+            debug_summary.insert("effective_support_density".into(), rhai::Dynamic::from(effective_support_density(config.support_density) as f64));
+            debug_summary.insert("tray_clearance_mm".into(), rhai::Dynamic::from(config.tray_clearance_mm as f64));
+            debug_summary.insert("tray_thickness_mm".into(), rhai::Dynamic::from(config.tray_thickness_mm as f64));
+            out.insert("debug_summary".into(), rhai::Dynamic::from(debug_summary));
+            Ok(out)
+        }
+    );
 }
-
-// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Geometry-relative placement functions ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 fn register_placement_functions(engine: &mut Engine) {
     use crate::sdf::query::bounding_points;

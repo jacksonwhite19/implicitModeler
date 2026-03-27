@@ -26,6 +26,28 @@ use crate::ui::library_panel::{LibraryPanelState, show_library_panel};
 use crate::ui::examples;
 use crate::ui::project_wizard::{show_wizard, WizardState};
 
+struct ScriptEvalSuccess {
+    sdf: Arc<dyn Sdf>,
+    sdf_grid: Arc<SdfGrid>,
+    mesh_volume_mm3: f32,
+    cg: Option<Vec3>,
+    mass_points: Vec<MassPoint>,
+    fea_setup: crate::fea::FEASetup,
+    layups: Vec<Arc<crate::sdf::aerospace::composite::CompositeLayup>>,
+    reference_points: Vec<crate::scripting::ReferencePoint>,
+    bounds_min: Vec3,
+    bounds_max: Vec3,
+    eval_time_ms: f64,
+    mesh_time_ms: f64,
+    component_preview_parts: Vec<(String, Arc<dyn Sdf>)>,
+}
+
+struct ScriptEvalResponse {
+    job_id: u64,
+    cells: Option<Vec<scripting::ScriptCell>>,
+    outcome: Result<ScriptEvalSuccess, String>,
+}
+
 #[derive(Clone, Copy, PartialEq, Default)]
 pub enum FEAOverlayMode { #[default] None, Stress, Displacement }
 
@@ -35,6 +57,13 @@ pub enum SplitAxisUi { #[default] Z, X, Y, Arbitrary }
 
 #[derive(Clone, Copy, PartialEq, Default)]
 pub enum SplitAlignUi { #[default] None, Pins, Groove, Dovetail, BoltHoles }
+
+#[derive(Clone, Copy, PartialEq, Default)]
+enum ComponentSelectionMode {
+    #[default]
+    Highlight,
+    Isolate,
+}
 
 pub struct App {
     /// All user-editable state (participates in undo/redo).
@@ -60,6 +89,9 @@ pub struct App {
     eval_time_ms: Option<f64>,
     mesh_time_ms: Option<f64>,
     is_processing: bool,
+    processing_status: Option<String>,
+    script_eval_receiver: Option<std::sync::mpsc::Receiver<ScriptEvalResponse>>,
+    script_eval_job_id: u64,
 
     // Mesh quality controls
     resolution: u32,
@@ -299,6 +331,10 @@ pub struct App {
     example_search:        String,
     /// Pending copy-to-main action from right-click context menu.
     pending_copy_example:  Option<usize>,
+    component_preview_parts: Vec<(String, Arc<dyn Sdf>)>,
+    selected_component_part: Option<String>,
+    component_selection_mode: ComponentSelectionMode,
+    selected_component_bounds: Option<(Vec3, Vec3)>,
 }
 
 impl App {
@@ -319,6 +355,9 @@ impl App {
             eval_time_ms: None,
             mesh_time_ms: None,
             is_processing: false,
+            processing_status: None,
+            script_eval_receiver: None,
+            script_eval_job_id: 0,
             resolution: 96,
             smooth_normals: true,
             mesh_quality: MeshQuality::Normal,
@@ -491,6 +530,10 @@ impl App {
             active_example_tab:  None,
             example_search:      String::new(),
             pending_copy_example: None,
+            component_preview_parts: Vec::new(),
+            selected_component_part: None,
+            component_selection_mode: ComponentSelectionMode::Highlight,
+            selected_component_bounds: None,
         };
 
         // Try to restore from auto-save
@@ -798,6 +841,8 @@ smooth_union(aero, shell, 12.0)
             self.eval_time_ms = None;
             self.mesh_time_ms = None;
             self.is_processing = false;
+            self.processing_status = None;
+            self.script_eval_receiver = None;
             return;
         }
 
@@ -816,14 +861,232 @@ smooth_union(aero, shell, 12.0)
         // Use cell-aware evaluation when more than one cell exists.
         if new_cells.len() > 1 {
             self.script_cells = new_cells;
-            self.evaluate_and_render_cells(&script);
+            self.start_background_script_eval(script, Some(self.script_cells.clone()));
         } else {
             self.script_cells = new_cells;
-            self.evaluate_and_render(&script);
+            self.start_background_script_eval(script, None);
         }
 
         // Update working changes indicator.
         self.update_vc_working_changes();
+    }
+
+    fn start_background_script_eval(&mut self, script: String, cells: Option<Vec<scripting::ScriptCell>>) {
+        use std::time::Instant;
+
+        self.script_eval_job_id = self.script_eval_job_id.wrapping_add(1);
+        let job_id = self.script_eval_job_id;
+        self.is_processing = true;
+        self.processing_status = Some(if cells.is_some() {
+            "Evaluating script cells and rebuilding viewport…".to_string()
+        } else {
+            "Evaluating script and rebuilding viewport…".to_string()
+        });
+        self.error_message = None;
+
+        let profiles_ref = Arc::clone(&self.profiles_shared);
+        let splines_ref = Arc::new(self.state.splines.clone());
+        let sf = self.fea_stress_field.clone();
+        let df = self.fea_displacement_field.clone();
+        let dimensions = self.state.dimensions.clone();
+        let project_dir = self.current_file_path.as_deref().and_then(|p| p.parent()).map(|p| p.to_path_buf());
+        let library_sources = self.library_manager.as_ref()
+            .map(|m| m.module_sources())
+            .unwrap_or_default();
+        let mesh_cache = Arc::clone(&self.mesh_cache);
+        let viewport_resolution = self.resolution.clamp(48, 256);
+        let is_component_script = self.current_file_path.as_ref()
+            .and_then(|p| p.parent().and_then(|parent| parent.file_name()).map(|n| n == "components"))
+            .unwrap_or(false);
+        let (tx, rx) = std::sync::mpsc::channel();
+        self.script_eval_receiver = Some(rx);
+
+        std::thread::spawn(move || {
+            let start_eval = Instant::now();
+            let response = if let Some(mut worker_cells) = cells {
+                let result_opt = scripting::evaluate_script_cells(
+                    &script,
+                    &mut worker_cells,
+                    Some(profiles_ref),
+                    Some(splines_ref),
+                    sf, df,
+                    &dimensions,
+                    project_dir.as_deref(),
+                    Some(mesh_cache),
+                    &library_sources,
+                );
+                let eval_time_ms = start_eval.elapsed().as_secs_f64() * 1000.0;
+                let outcome = if let Some(result) = result_opt {
+                    build_script_eval_success(result, viewport_resolution, eval_time_ms, Vec::new())
+                } else {
+                    let err_msg = worker_cells.iter()
+                        .filter_map(|c| {
+                            if let scripting::CellStatus::Error { message, line } = &c.status {
+                                let line_info = line.map(|l| format!(" (line {})", l)).unwrap_or_default();
+                                Some(format!("[{}]{}: {}", c.name, line_info, message))
+                            } else {
+                                None
+                            }
+                        })
+                        .collect::<Vec<_>>()
+                        .join("\n");
+                    Err(err_msg)
+                };
+                ScriptEvalResponse { job_id, cells: Some(worker_cells), outcome }
+            } else {
+                let outcome = match scripting::evaluate_script_full(
+                    &script,
+                    Some(profiles_ref),
+                    Some(splines_ref),
+                    sf.clone(), df.clone(),
+                    &dimensions,
+                    project_dir.as_deref(),
+                    Some(Arc::clone(&mesh_cache)),
+                    &library_sources,
+                ) {
+                    Ok(result) => {
+                        let eval_time_ms = start_eval.elapsed().as_secs_f64() * 1000.0;
+                        let component_preview_parts = if is_component_script {
+                            scripting::evaluate_component_preview_parts(
+                                &script,
+                                None,
+                                None,
+                                sf.clone(),
+                                df.clone(),
+                                &dimensions,
+                                project_dir.as_deref(),
+                                Some(Arc::clone(&mesh_cache)),
+                                &library_sources,
+                            ).unwrap_or_default()
+                        } else {
+                            Vec::new()
+                        };
+                        build_script_eval_success(result, viewport_resolution, eval_time_ms, component_preview_parts)
+                    }
+                    Err(e) => Err(e),
+                };
+                ScriptEvalResponse { job_id, cells: None, outcome }
+            };
+            let _ = tx.send(response);
+        });
+    }
+
+    fn apply_script_eval_success(&mut self, success: ScriptEvalSuccess) {
+        let should_frame_camera = self.current_sdf_grid.is_none();
+        self.component_preview_parts = success.component_preview_parts;
+        if self.component_preview_parts.is_empty() {
+            self.selected_component_part = None;
+            self.selected_component_bounds = None;
+        } else if let Some(selected) = self.selected_component_part.clone() {
+            if !self.component_preview_parts.iter().any(|(name, _)| *name == selected) {
+                self.selected_component_part = None;
+                self.selected_component_bounds = None;
+            }
+        }
+        self.mesh_volume_mm3 = Some(success.mesh_volume_mm3);
+        self.cg = success.cg;
+        self.mass_points = success.mass_points;
+        if let Some(cg) = self.cg {
+            self.aero_cg_x_mm = cg.x;
+        }
+
+        if should_frame_camera {
+            if let Some((tight_min, tight_max)) = crate::pipeline::tight_bounds_from_grid(&success.sdf_grid) {
+                self.camera.frame_bounds(tight_min, tight_max);
+            } else {
+                self.camera.frame_bounds(success.bounds_min, success.bounds_max);
+            }
+        }
+
+        self.state.fea_setup = success.fea_setup;
+        if !self.state.fea_setup.is_empty() {
+            self.fea_viz = Some(crate::fea::compute_fea_viz(
+                &self.state.fea_setup, success.bounds_min, success.bounds_max,
+            ));
+        } else {
+            self.fea_viz = None;
+        }
+
+        self.current_layups = success.layups;
+        self.current_ref_points = success.reference_points;
+        self.current_sdf = Some(success.sdf);
+        self.current_mesh = None;
+        self.current_sdf_grid = Some(success.sdf_grid);
+        self.error_message = None;
+        self.eval_time_ms = Some(success.eval_time_ms);
+        self.mesh_time_ms = Some(success.mesh_time_ms);
+
+        if self.measurements.volume_mm3.is_some() {
+            self.measurements_stale = true;
+        }
+        if self.print_analysis_result.is_some() {
+            self.print_analysis_result       = None;
+            self.print_overhang_overlay      = false;
+            self.print_overhang_needs_upload = false;
+        }
+
+        let profile_names: Vec<String> = self.state.profiles.keys().cloned().collect();
+        self.project_tree.rebuild(
+            &self.mass_points,
+            &self.state.fea_setup,
+            &profile_names,
+            &self.state.splines,
+            &self.current_ref_points,
+        );
+
+        if let Some(selected) = self.selected_component_part.clone() {
+            self.set_component_preview_selection(Some(selected), false);
+        }
+    }
+
+    fn set_component_preview_selection(&mut self, selected: Option<String>, jump_to_code: bool) {
+        self.selected_component_part = selected.clone();
+        let viewport_resolution = self.resolution.clamp(48, 256);
+
+        if let Some(name) = selected.clone() {
+            let selected_sdf = self.component_preview_parts.iter()
+                .find(|(n, _)| *n == name)
+                .map(|(_, sdf)| Arc::clone(sdf));
+
+            if let Some(part_sdf) = selected_sdf {
+                let (part_min, part_max) = crate::pipeline::auto_bounds(part_sdf.as_ref());
+                self.selected_component_bounds = Some((part_min, part_max));
+
+                let display_sdf = match self.component_selection_mode {
+                    ComponentSelectionMode::Highlight => self.current_sdf.clone(),
+                    ComponentSelectionMode::Isolate => Some(part_sdf),
+                };
+
+                if let Some(sdf) = display_sdf {
+                    let (bounds_min, bounds_max) = crate::pipeline::auto_bounds(sdf.as_ref());
+                    self.current_sdf_grid = Some(Arc::new(crate::pipeline::compute_sdf_grid(
+                        sdf.as_ref(), bounds_min, bounds_max, viewport_resolution,
+                    )));
+                }
+
+                self.status_message = Some(format!(
+                    "{} component part '{}'",
+                    match self.component_selection_mode {
+                        ComponentSelectionMode::Highlight => "Highlighted",
+                        ComponentSelectionMode::Isolate => "Isolated",
+                    },
+                    name
+                ));
+                if jump_to_code {
+                    if let Some((offset, line)) = find_name_in_script(&self.state.script_text, &name) {
+                        self.pending_cursor_offset = Some(offset);
+                        self.pending_scroll_line = Some(line);
+                    }
+                }
+            }
+        } else if let Some(sdf) = self.current_sdf.clone() {
+            self.selected_component_bounds = None;
+            let (bounds_min, bounds_max) = crate::pipeline::auto_bounds(sdf.as_ref());
+            self.current_sdf_grid = Some(Arc::new(crate::pipeline::compute_sdf_grid(
+                sdf.as_ref(), bounds_min, bounds_max, viewport_resolution,
+            )));
+            self.status_message = Some("Showing full component preview".to_string());
+        }
     }
 
     fn evaluate_and_render(&mut self, script: &str) {
@@ -1481,11 +1744,88 @@ smooth_union(aero, shell, 12.0)
     }
 }
 
+fn build_script_eval_success(
+    result: scripting::ScriptResult,
+    viewport_resolution: u32,
+    eval_time_ms: f64,
+    component_preview_parts: Vec<scripting::ComponentPreviewPart>,
+) -> Result<ScriptEvalSuccess, String> {
+    let cg = result.center_of_gravity();
+    let mass_points = result.mass_points;
+    let fea_setup = result.fea_setup;
+    let layups = result.layups;
+    let reference_points = result.reference_points;
+    let sdf = result.sdf;
+
+    let start_mesh = std::time::Instant::now();
+    let (bounds_min, bounds_max) = crate::pipeline::auto_bounds(sdf.as_ref());
+    let sdf_grid = Arc::new(crate::pipeline::compute_sdf_grid(
+        sdf.as_ref(), bounds_min, bounds_max, viewport_resolution,
+    ));
+    let mesh_time_ms = start_mesh.elapsed().as_secs_f64() * 1000.0;
+
+    let step = (bounds_max - bounds_min) / viewport_resolution as f32;
+    let voxel_vol = step.x * step.y * step.z;
+    let inside = sdf_grid.data.iter().filter(|&&d| d < 0.0).count();
+    let mesh_volume_mm3 = inside as f32 * voxel_vol;
+
+    Ok(ScriptEvalSuccess {
+        sdf,
+        sdf_grid,
+        mesh_volume_mm3,
+        cg,
+        mass_points,
+        fea_setup,
+        layups,
+        reference_points,
+        bounds_min,
+        bounds_max,
+        eval_time_ms,
+        mesh_time_ms,
+        component_preview_parts: component_preview_parts.into_iter()
+            .map(|p| (p.name, p.sdf))
+            .collect(),
+    })
+}
+
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Auto-save periodically
         if self.last_auto_save.elapsed() >= self.auto_save_interval {
             self.auto_save();
+        }
+
+        if self.is_processing {
+            let mut latest_response: Option<ScriptEvalResponse> = None;
+            if let Some(ref rx) = self.script_eval_receiver {
+                while let Ok(resp) = rx.try_recv() {
+                    latest_response = Some(resp);
+                }
+            }
+            if let Some(resp) = latest_response {
+                if resp.job_id == self.script_eval_job_id {
+                    if let Some(cells) = resp.cells {
+                        self.script_cells = cells;
+                    }
+                    match resp.outcome {
+                        Ok(success) => {
+                            self.apply_script_eval_success(success);
+                            self.status_message = Some("Script rebuilt".to_string());
+                        }
+                        Err(e) => {
+                            self.error_message = Some(e);
+                            self.eval_time_ms = None;
+                            self.mesh_time_ms = None;
+                        }
+                    }
+                    self.is_processing = false;
+                    self.processing_status = None;
+                    self.script_eval_receiver = None;
+                }
+            }
+            if self.is_processing {
+                ctx.request_repaint_after(std::time::Duration::from_millis(50));
+            }
         }
 
         // Trigger re-eval when dimensions changed last frame.
@@ -1958,7 +2298,12 @@ impl eframe::App for App {
         // ── Bottom status bar ────────────────────────────────────────────────
         egui::TopBottomPanel::bottom("status_bar").show(ctx, |ui| {
             ui.horizontal(|ui| {
-                if self.export_in_progress {
+                if self.is_processing {
+                    ui.spinner();
+                    ui.label(egui::RichText::new(
+                        self.processing_status.as_deref().unwrap_or("Evaluating…")
+                    ).color(egui::Color32::from_rgb(100, 180, 255)));
+                } else if self.export_in_progress {
                     ui.spinner();
                     ui.label(egui::RichText::new(&self.export_progress)
                         .color(egui::Color32::from_rgb(100, 180, 255)));
@@ -2469,6 +2814,47 @@ impl eframe::App for App {
                 }
 
                 // ── Script Mode ───────────────────────────────────────────────
+
+                // File operations
+                if !self.component_preview_parts.is_empty() && self.active_example_tab.is_none() {
+                    ui.group(|ui| {
+                        ui.strong("Component Parts");
+                        ui.horizontal(|ui| {
+                            ui.label("Mode:");
+                            let changed_highlight = ui.selectable_value(
+                                &mut self.component_selection_mode,
+                                ComponentSelectionMode::Highlight,
+                                "Highlight",
+                            ).changed();
+                            let changed_isolate = ui.selectable_value(
+                                &mut self.component_selection_mode,
+                                ComponentSelectionMode::Isolate,
+                                "Isolate",
+                            ).changed();
+                            if changed_highlight || changed_isolate {
+                                self.set_component_preview_selection(self.selected_component_part.clone(), false);
+                            }
+                        });
+                        ui.separator();
+                        ui.horizontal_wrapped(|ui| {
+                            let show_all = self.selected_component_part.is_none();
+                            if ui.selectable_label(show_all, "Show All").clicked() {
+                                self.set_component_preview_selection(None, false);
+                            }
+                        });
+                        ui.separator();
+                        ui.label(egui::RichText::new("component()").strong());
+                        ui.indent("component_parts_tree", |ui| {
+                            for (name, _) in self.component_preview_parts.clone() {
+                                let selected = self.selected_component_part.as_deref() == Some(name.as_str());
+                                if ui.selectable_label(selected, &name).clicked() {
+                                    self.set_component_preview_selection(Some(name.clone()), true);
+                                }
+                            }
+                        });
+                    });
+                    ui.separator();
+                }
 
                 // File operations
                 ui.horizontal(|ui| {
@@ -3808,6 +4194,24 @@ impl App {
                 }
             }
         }
+        else if response.clicked() && !self.is_dragging_left && !self.component_preview_parts.is_empty() {
+            if let (Some(click_pos), Some(grid)) = (response.interact_pointer_pos(), &self.current_sdf_grid) {
+                if let Some(hit) = self.unproject_and_march(click_pos, rect, grid.as_ref()) {
+                    let mut best_name: Option<String> = None;
+                    let mut best_d = f32::INFINITY;
+                    for (name, sdf) in &self.component_preview_parts {
+                        let d = sdf.distance(hit).abs();
+                        if d < best_d {
+                            best_d = d;
+                            best_name = Some(name.clone());
+                        }
+                    }
+                    if let Some(name) = best_name {
+                        self.set_component_preview_selection(Some(name), true);
+                    }
+                }
+            }
+        }
 
         // Handle zoom
         if response.hovered() {
@@ -3908,6 +4312,19 @@ impl App {
                     if self.measurements.center_of_mass != Some(cg) {
                         Self::draw_cg_crosshair_color(&painter, cg, egui::Color32::from_rgb(255,200,0), &self.camera, rect);
                     }
+                }
+            }
+
+            if self.component_selection_mode == ComponentSelectionMode::Highlight {
+                if let Some((bmin, bmax)) = self.selected_component_bounds {
+                    Self::draw_world_bbox(
+                        &painter,
+                        bmin,
+                        bmax,
+                        egui::Color32::from_rgb(255, 170, 40),
+                        &self.camera,
+                        rect,
+                    );
                 }
             }
 
@@ -4454,6 +4871,39 @@ impl App {
         }
         if let Some(center) = Self::project_to_screen(cg, camera, rect) {
             painter.circle_filled(center, 4.0, color);
+        }
+    }
+
+    fn draw_world_bbox(
+        painter: &egui::Painter,
+        bounds_min: Vec3,
+        bounds_max: Vec3,
+        color: egui::Color32,
+        camera: &Camera,
+        rect: egui::Rect,
+    ) {
+        let corners = [
+            Vec3::new(bounds_min.x, bounds_min.y, bounds_min.z),
+            Vec3::new(bounds_max.x, bounds_min.y, bounds_min.z),
+            Vec3::new(bounds_max.x, bounds_max.y, bounds_min.z),
+            Vec3::new(bounds_min.x, bounds_max.y, bounds_min.z),
+            Vec3::new(bounds_min.x, bounds_min.y, bounds_max.z),
+            Vec3::new(bounds_max.x, bounds_min.y, bounds_max.z),
+            Vec3::new(bounds_max.x, bounds_max.y, bounds_max.z),
+            Vec3::new(bounds_min.x, bounds_max.y, bounds_max.z),
+        ];
+        let projected: Vec<Option<egui::Pos2>> = corners.iter()
+            .map(|&p| Self::project_to_screen(p, camera, rect))
+            .collect();
+        let edges = [
+            (0, 1), (1, 2), (2, 3), (3, 0),
+            (4, 5), (5, 6), (6, 7), (7, 4),
+            (0, 4), (1, 5), (2, 6), (3, 7),
+        ];
+        for (a, b) in edges {
+            if let (Some(pa), Some(pb)) = (projected[a], projected[b]) {
+                painter.line_segment([pa, pb], egui::Stroke::new(2.0, color));
+            }
         }
     }
 

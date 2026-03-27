@@ -32,7 +32,7 @@ let show_structure = true;
 let inspect_cutaway = false;
 let cutaway_y_min = 0.0;
 let cutaway_z_min = 15.0;
-let add_s_duct = true;
+let inlet_mode = "single";   // "none", "single", "dual"
 
 let intake_x = 250.0;
 let intake_top_z = 68.0;
@@ -49,6 +49,11 @@ let duct_open_extension = 70.0;
 let intake_mouth_clearance = 8.0;
 let intake_face_extension = 10.0;
 let intake_front_raise = 5.0;
+let inlet_morph_start = 0.10;
+let inlet_morph_end = 0.90;
+let dual_inlet_guess_y = 52.0;
+let dual_inlet_guess_z = 52.0;
+let dual_inlet_end_diameter = 70.0;
 
 let htail_span = 400.0;
 let htail_root_chord = 98.0;
@@ -119,93 +124,101 @@ let body_outer = smooth_union(body_outer, htail, tail_blend_k);
 let body_outer = smooth_union(body_outer, vtail, tail_blend_k);
 
 // ---------------------------------------------------------------------------
-// Raised dorsal intake + internal S-duct
-// Built from explicit outer/inner custom profiles using the refined
-// centerline-distance duct kernel.
+// Intake + internal duct
+// Canonical path using conformal_profile_duct_x(...) for a single dorsal inlet
+// or mirrored_dual_conformal_profile_duct_x(...) for a symmetric dual inlet.
 // ---------------------------------------------------------------------------
-let duct_path = spline_path([
-    [intake_x - 8.0,   0.0, intake_mouth_z],
-    [intake_x + 10.0,  0.0, intake_mouth_z],
-    [intake_x + 34.0,  0.0, intake_mouth_z - 1.0],
-    [intake_x + 76.0,  0.0, intake_mouth_z - 5.0],
-    [intake_x + 132.0, 0.0, intake_mouth_z - 13.0],
-    [intake_x + 192.0, 0.0, 26.0],
-    [intake_x + 254.0, 0.0, 8.0],
-    [intake_x + 288.0, 0.0, 0.0],
-    [fuselage_length - 16.0, 0.0, 0.0]
-]);
-let duct_void_path = spline_path([
-    [intake_x - 8.0 - intake_face_extension, 0.0, intake_mouth_z],
-    [intake_x - 8.0,   0.0, intake_mouth_z],
-    [intake_x + 10.0,  0.0, intake_mouth_z],
-    [intake_x + 34.0,  0.0, intake_mouth_z - 1.0],
-    [intake_x + 76.0,  0.0, intake_mouth_z - 5.0],
-    [intake_x + 132.0, 0.0, intake_mouth_z - 13.0],
-    [intake_x + 192.0, 0.0, 26.0],
-    [intake_x + 254.0, 0.0, 8.0],
-    [intake_x + 288.0, 0.0, 0.0],
-    [fuselage_length - 16.0, 0.0, 0.0],
-    [fuselage_length + duct_open_extension, 0.0, 0.0]
-]);
-
-let outer_start = rounded_rect_profile(
-    intake_outer_height,
+let single_outer_start = rounded_rect_profile(
     intake_outer_width,
+    intake_outer_height,
     intake_outer_height * 0.24
 );
-let inner_start = rounded_rect_profile(
-    intake_inner_height,
+let single_inner_start = rounded_rect_profile(
     intake_inner_width,
+    intake_inner_height,
     intake_inner_height * 0.24
 );
-let outer_end = circle_profile((duct_diameter + shell_thickness * 2.0) * 0.5);
-let inner_end = circle_profile(duct_diameter * 0.5);
+let single_outer_end = circle_profile((duct_diameter + shell_thickness * 2.0) * 0.5);
+let single_inner_end = circle_profile(duct_diameter * 0.5);
+let single_duct_path = spline_path([
+    [intake_x, 0.0, intake_mouth_z],
+    [intake_x + 14.0, 0.0, intake_mouth_z],
+    [intake_x + 42.0, 0.0, intake_mouth_z - 1.5],
+    [intake_x + 86.0, 0.0, intake_mouth_z - 5.5],
+    [intake_x + 140.0, 0.0, intake_mouth_z - 12.0],
+    [intake_x + 208.0, 0.0, 28.0],
+    [intake_x + 268.0, 0.0, 8.0],
+    [intake_x + 308.0, 0.0, 0.0],
+    [fuselage_length - 22.0, 0.0, 0.0]
+]);
 
-let inlet_outer = if add_s_duct {
-    profile_duct_solid(
-        duct_path,
-        outer_start,
-        outer_end,
+let dual_outer_start = rounded_rect_profile(50.0, 28.0, 4.0);
+let dual_inner_start = rounded_rect_profile(46.0, 24.0, 3.0);
+let dual_outer_end = circle_profile(dual_inlet_end_diameter * 0.5 + shell_thickness);
+let dual_inner_end = circle_profile(dual_inlet_end_diameter * 0.5);
+let dual_left_path = spline_path([
+    [intake_x, dual_inlet_guess_y, intake_mouth_z - 6.0],
+    [intake_x + 75.0, dual_inlet_guess_y - 10.0, intake_mouth_z - 18.0],
+    [intake_x + 145.0, 22.0, 24.0],
+    [intake_x + 210.0, 8.0, 8.0],
+    [intake_x + 250.0, 0.0, 0.0],
+    [fuselage_length - 22.0, 0.0, 0.0]
+]);
+
+let inlet_parts = if inlet_mode == "single" {
+    conformal_profile_duct_x(
+        fuselage,
+        single_outer_start,
+        single_inner_start,
+        intake_x,
+        0.0,
+        intake_mouth_z,
+        point(1.0, 0.0, 0.0),
+        intake_surface_offset,
+        single_duct_path,
+        single_outer_end,
+        single_inner_end,
+        intake_face_extension,
+        duct_open_extension,
+        inlet_morph_start,
+        inlet_morph_end,
+        duct_profile_samples
+    )
+} else if inlet_mode == "dual" {
+    mirrored_dual_conformal_profile_duct_x(
+        fuselage,
+        dual_outer_start,
+        dual_inner_start,
+        intake_x,
+        dual_inlet_guess_y,
+        dual_inlet_guess_z,
+        point(1.0, 0.0, 0.0),
+        dual_left_path,
+        dual_outer_end,
+        dual_inner_end,
+        intake_surface_offset,
+        intake_face_extension,
+        duct_open_extension + 20.0,
+        0.15,
+        0.75,
         duct_profile_samples
     )
 } else {
-    box_(0.01, 0.01, 0.01)
+    [box_(0.01, 0.01, 0.01), box_(0.01, 0.01, 0.01), box_(0.01, 0.01, 0.01)]
 };
-let duct_void = if add_s_duct {
-    profile_duct_solid(
-        duct_void_path,
-        inner_start,
-        inner_end,
-        duct_profile_samples
-    )
-} else {
-    box_(0.01, 0.01, 0.01)
-};
-let duct_shell_internal = if add_s_duct {
-    intersect(
-        profile_duct(
-            duct_path,
-            outer_start,
-            outer_end,
-            inner_start,
-            inner_end,
-            duct_open_extension,
-            duct_open_extension,
-            duct_profile_samples
-        ),
-        offset(fuselage, shell_thickness * 3.0)
-    )
-} else {
-    box_(0.01, 0.01, 0.01)
-};
-let body_outer = if add_s_duct {
+
+let inlet_outer = inlet_parts[0];
+let duct_void = inlet_parts[1];
+let duct_shell_internal = inlet_parts[2];
+
+let body_outer = if inlet_mode != "none" {
     smooth_union(body_outer, inlet_outer, intake_blend_k)
 } else {
     body_outer
 };
 
 // Hollow shell
-let shell_body = if add_s_duct {
+let shell_body = if inlet_mode != "none" {
     union(
         subtract(shell(body_outer, shell_thickness), duct_void),
         duct_shell_internal
@@ -248,7 +261,7 @@ let structure = union(
         union(union(bh_nose, bh_wing), bh_aft)
     )
 );
-let structure = if add_s_duct {
+let structure = if inlet_mode != "none" {
     subtract(structure, duct_void)
 } else {
     structure
