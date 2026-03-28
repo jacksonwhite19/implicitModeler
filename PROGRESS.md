@@ -1,5 +1,27 @@
 # Implicit CAD - Progress Summary
 
+## Recent Bracket/Tray Update
+
+Recent work added a new component-driven mounting workflow for internal hardware:
+
+- reusable component modules such as `components/servo_9g.rhai` and `components/electronics_box.rhai`
+- granular mount definition through `mount_point(...)`
+- `mount_component_granular(...)` as the active bracket generator
+- tray-first mounting with:
+  - `tray_seed`
+  - `tray_clearance(...)`
+  - `tray_thickness(...)`
+- support tuning with:
+  - `support_density(...)`
+  - `bracket_offset(...)`
+- visibility helpers:
+  - `hide_part(...)`
+  - `hide_parts(...)`
+
+The electronics-box demo and tray-only debug script are the current reference implementations for this workflow.
+
+---
+
 ## Overview
 A code-first implicit CAD modeler using signed distance fields (SDFs). Users write scripts to construct models through primitives, booleans, and transforms. Built with Rust, wgpu, egui, and Rhai.
 

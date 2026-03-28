@@ -5,19 +5,117 @@
 //   Z = up
 // Origin = center of the box bottom face.
 
+fn screw_at(x, y, shaft_r, head_r, head_d, shaft_d, z_top) {
+    translate(
+        countersink(shaft_r, head_r, head_d, shaft_d),
+        x, y, z_top
+    )
+}
+
+fn screw_keepout_at(x, y, shaft_r, head_r, head_d, shaft_d, z_top, above_h, below_extra, top_open_below) {
+    let hole = translate(
+        countersink(shaft_r, head_r, head_d, shaft_d),
+        x, y, z_top
+    );
+    let head_clear = translate(
+        cylinder(head_r, above_h + top_open_below),
+        x, y, z_top + (above_h - top_open_below) * 0.5
+    );
+    let tail_clear = translate(
+        cylinder(shaft_r, below_extra),
+        x, y, z_top - head_d - shaft_d - below_extra * 0.5
+    );
+    union(union(hole, head_clear), tail_clear)
+}
+
+fn screw_pad_seed_at(x, y, shaft_r, shaft_d, z_top, head_d, below_extra) {
+    translate(
+        cylinder(shaft_r, shaft_d + below_extra),
+        x, y, z_top - head_d - (shaft_d + below_extra) * 0.5
+    )
+}
+
+fn screw_pad_limit_at(x, y, limit_r, shaft_d, z_top, head_d, below_extra) {
+    translate(
+        cylinder(limit_r, shaft_d + below_extra),
+        x, y, z_top - head_d - (shaft_d + below_extra) * 0.5
+    )
+}
+
 fn component() {
     let body_x = 50.0;
     let body_y = 40.0;
     let body_z = 10.0;
+    let screw_edge_inset = 5.0;
+    let screw_shaft_r = 1.7;
+    let screw_head_r = 3.1;
+    let screw_head_d = 2.0;
+    let screw_penetration_below = 3.0;
+    let screw_shaft_d = body_z - screw_head_d + screw_penetration_below;
+    let screw_cut_head_radius_extra = 0.2;
 
     let wall_clearance = 0.5;
     let top_keepout_z = body_z * 0.5;
     let top_keepout_h = body_z * 0.5 + 6.0;
+    let screw_keepout_margin = 0.35;
+    let screw_head_relief_above = 1.5;
+    let screw_head_relief_below = 0.8;
+    let screw_head_clear_above = 1.0;
+    let screw_tail_keepout_extra = 0.8;
+    let fastener_pad_limit_r = screw_head_r + 1.8;
 
-    let physical = translate(
+    let screw_x = body_x * 0.5 - screw_edge_inset;
+    let screw_y = body_y * 0.5 - screw_edge_inset;
+
+    let screw_cut = union(
+        union(
+            screw_keepout_at( screw_x,  screw_y, screw_shaft_r, screw_head_r + screw_cut_head_radius_extra, screw_head_d, screw_shaft_d, body_z, screw_head_relief_above, 0.0, screw_head_relief_below),
+            screw_keepout_at(-screw_x,  screw_y, screw_shaft_r, screw_head_r + screw_cut_head_radius_extra, screw_head_d, screw_shaft_d, body_z, screw_head_relief_above, 0.0, screw_head_relief_below)
+        ),
+        union(
+            screw_keepout_at( screw_x, -screw_y, screw_shaft_r, screw_head_r + screw_cut_head_radius_extra, screw_head_d, screw_shaft_d, body_z, screw_head_relief_above, 0.0, screw_head_relief_below),
+            screw_keepout_at(-screw_x, -screw_y, screw_shaft_r, screw_head_r + screw_cut_head_radius_extra, screw_head_d, screw_shaft_d, body_z, screw_head_relief_above, 0.0, screw_head_relief_below)
+        )
+    );
+
+    let fastener_keepout = union(
+        union(
+            screw_keepout_at( screw_x,  screw_y, screw_shaft_r + screw_keepout_margin, screw_head_r + screw_keepout_margin, screw_head_d + 0.2, screw_shaft_d + 0.2, body_z, screw_head_clear_above, screw_tail_keepout_extra, screw_head_relief_below + 0.2),
+            screw_keepout_at(-screw_x,  screw_y, screw_shaft_r + screw_keepout_margin, screw_head_r + screw_keepout_margin, screw_head_d + 0.2, screw_shaft_d + 0.2, body_z, screw_head_clear_above, screw_tail_keepout_extra, screw_head_relief_below + 0.2)
+        ),
+        union(
+            screw_keepout_at( screw_x, -screw_y, screw_shaft_r + screw_keepout_margin, screw_head_r + screw_keepout_margin, screw_head_d + 0.2, screw_shaft_d + 0.2, body_z, screw_head_clear_above, screw_tail_keepout_extra, screw_head_relief_below + 0.2),
+            screw_keepout_at(-screw_x, -screw_y, screw_shaft_r + screw_keepout_margin, screw_head_r + screw_keepout_margin, screw_head_d + 0.2, screw_shaft_d + 0.2, body_z, screw_head_clear_above, screw_tail_keepout_extra, screw_head_relief_below + 0.2)
+        )
+    );
+
+    let fastener_pad_seed = union(
+        union(
+            screw_pad_seed_at( screw_x,  screw_y, screw_shaft_r + screw_keepout_margin, screw_shaft_d + 0.2, body_z, screw_head_d + 0.2, screw_tail_keepout_extra),
+            screw_pad_seed_at(-screw_x,  screw_y, screw_shaft_r + screw_keepout_margin, screw_shaft_d + 0.2, body_z, screw_head_d + 0.2, screw_tail_keepout_extra)
+        ),
+        union(
+            screw_pad_seed_at( screw_x, -screw_y, screw_shaft_r + screw_keepout_margin, screw_shaft_d + 0.2, body_z, screw_head_d + 0.2, screw_tail_keepout_extra),
+            screw_pad_seed_at(-screw_x, -screw_y, screw_shaft_r + screw_keepout_margin, screw_shaft_d + 0.2, body_z, screw_head_d + 0.2, screw_tail_keepout_extra)
+        )
+    );
+
+    let fastener_pad_limit = union(
+        union(
+            screw_pad_limit_at( screw_x,  screw_y, fastener_pad_limit_r, screw_shaft_d + 0.2, body_z, screw_head_d + 0.2, screw_tail_keepout_extra),
+            screw_pad_limit_at(-screw_x,  screw_y, fastener_pad_limit_r, screw_shaft_d + 0.2, body_z, screw_head_d + 0.2, screw_tail_keepout_extra)
+        ),
+        union(
+            screw_pad_limit_at( screw_x, -screw_y, fastener_pad_limit_r, screw_shaft_d + 0.2, body_z, screw_head_d + 0.2, screw_tail_keepout_extra),
+            screw_pad_limit_at(-screw_x, -screw_y, fastener_pad_limit_r, screw_shaft_d + 0.2, body_z, screw_head_d + 0.2, screw_tail_keepout_extra)
+        )
+    );
+
+    let physical_outer = translate(
         box_(body_x, body_y, body_z),
         0.0, 0.0, body_z * 0.5
     );
+    let physical = subtract(physical_outer, fastener_keepout);
 
     let keepout = translate(
         box_(
@@ -115,6 +213,9 @@ fn component() {
     #{
         parts: #{
             body: physical,
+            fastener_pad_limit: fastener_pad_limit,
+            fastener_pad_seed: fastener_pad_seed,
+            fastener_keepout: fastener_keepout,
             service_keepout: service_keepout,
             boss: boss,
             tray_seed: tray_seed,
@@ -122,6 +223,9 @@ fn component() {
         },
         keepout: keepout,
         service_keepout: service_keepout,
+        fastener_pad_limit: fastener_pad_limit,
+        fastener_pad_seed: fastener_pad_seed,
+        fastener_keepout: fastener_keepout,
         tray_seed: tray_seed,
         mount_points: mount_points,
         support_density: 3,
@@ -135,4 +239,4 @@ fn component() {
 }
 
 let preview = component();
-union(preview.physical, preview.service_keepout)
+preview.physical

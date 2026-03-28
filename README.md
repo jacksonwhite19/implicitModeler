@@ -22,6 +22,7 @@ A code-first CAD modeler using signed distance fields (SDFs). Write scripts to c
 - **Aircraft Workflow**: Template-driven fixed-wing project setup with manufacturing presets
 - **Workflow Constraints and Variants**: Project-level assembly rules and saved design variants for dimension-driven iteration
 - **Workflow Summaries**: Consolidated manufacturing and flight checks in the project workflow panel
+- **Component Modules and Mounting**: Import reusable hardware components, place them in host geometry, and generate trays/brackets procedurally
 
 ### Geometry Primitives
 - Sphere, Box, Cylinder
@@ -129,6 +130,82 @@ implicit-cad --headless --script aircraft.icad --output ./package --format packa
 ## Scripting API
 
 Status note: the scripting surface mixes stable APIs with some compatibility aliases. Prefer the primary geometry, print, and analysis functions shown in the help panel over older shorthand wrappers when both exist.
+
+### Component Mounting Workflow
+
+The current component/bracket workflow is built around reusable component maps and a granular tray-first bracket generator.
+
+Component modules typically export:
+
+- `physical`: the actual hardware body
+- `keepout`: minimum no-intersection clearance
+- `service_keepout`: optional removable/service no-go volume
+- `tray_seed`: optional explicit face region used to build a connected tray shell
+- `fastener_keepout`: optional screw/fastener no-go volume used for local pad-up reinforcement
+- `mount_points`: bracket/support origins defined with `mount_point(...)`
+- `boss`: optional oversized mounting/boss geometry
+
+The main mounting entry point is:
+
+```rhai
+mount_component_granular(parent, component_map, x, y, z)
+```
+
+Useful helpers:
+
+```rhai
+bracket_offset(component_map, offset_mm)
+tray_clearance(component_map, clearance_mm)
+tray_thickness(component_map, thickness_mm)
+support_density(component_map, level)   // 1..10
+hide_part(value_map, "component_physical")
+hide_parts(value_map, ["component_physical", "raw_bracket"])
+```
+
+The mounting pipeline is:
+
+1. place the component map into the host geometry
+2. build a connected tier-1 tray shell from `tray_seed` when available
+3. branch supports from the tray/mount points into the host
+4. cut back by keepout/service volumes
+5. blend into the host and return stage outputs
+
+The returned map currently includes:
+
+- `tray`
+- `fastener_pads`
+- `raw_bracket`
+- `cut_bracket`
+- `blended_bracket`
+- `bracket`
+- `assembly`
+- `component_physical`
+- `debug_paths`
+- `debug_summary`
+
+Example:
+
+```rhai
+import "components/electronics_box" as ebox;
+
+let fuselage_outer = fuselage_elliptical(220.0, 90.0, 70.0, 45.0, 50.0, 0.9, 0.8, 8.0);
+let fuselage_shell = shell(fuselage_outer, 1.6);
+let fuse_center = bbox_center(fuselage_outer);
+
+let c = ebox::component();
+let c = bracket_offset(c, 0.5);
+let c = tray_clearance(c, 0.5);
+let c = tray_thickness(c, 1.0);
+let c = support_density(c, 6);
+
+let placed = mount_component_granular(
+    fuselage_shell,
+    c,
+    fuse_center.x, 0.0, fuse_center.z + 2.0
+);
+
+union(intersect(placed.assembly, fuselage_outer), placed.component_physical)
+```
 
 ## Fixed-Wing Workflow
 

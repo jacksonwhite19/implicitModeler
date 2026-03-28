@@ -5385,6 +5385,9 @@ pub fn register_granular_bracket_functions(engine: &mut Engine) {
             let keepout = map_get_sdf(&placed, "keepout")?;
             let service_keepout = map_get_optional_sdf(&placed, "service_keepout");
             let swept_volume = map_get_optional_sdf(&placed, "swept_volume");
+            let fastener_pad_limit = map_get_optional_sdf(&placed, "fastener_pad_limit");
+            let fastener_pad_seed = map_get_optional_sdf(&placed, "fastener_pad_seed");
+            let fastener_keepout = map_get_optional_sdf(&placed, "fastener_keepout");
 
             let host_parts = vec![
                 bracket_part("host", Arc::clone(&parent.0), StructuralRole::Sticky),
@@ -5397,6 +5400,9 @@ pub fn register_granular_bracket_functions(engine: &mut Engine) {
             }
             if let Some(sw) = swept_volume.as_ref() {
                 keepout_parts.push(bracket_part("swept_volume", Arc::clone(&sw.0), StructuralRole::Removable));
+            }
+            if let Some(fk) = fastener_keepout.as_ref() {
+                keepout_parts.push(bracket_part("fastener_keepout", Arc::clone(&fk.0), StructuralRole::Removable));
             }
 
             let mut config = apply_bracket_config_overrides(BracketConfig::default(), &comp_map);
@@ -5418,6 +5424,23 @@ pub fn register_granular_bracket_functions(engine: &mut Engine) {
                     ),
                     8.0
                 )
+            };
+
+            let fastener_pads_raw = fastener_pad_seed
+                .as_ref()
+                .or(fastener_keepout.as_ref())
+                .map(|fk| {
+                make_offset_band(
+                    Arc::clone(&fk.0),
+                    config.tray_clearance_mm,
+                    (config.tray_thickness_mm * 1.5).max(config.tray_thickness_mm + 0.5),
+                )
+            });
+
+            let fastener_pads = if let (Some(raw), Some(limit)) = (fastener_pads_raw.as_ref(), fastener_pad_limit.as_ref()) {
+                Some(Arc::new(Intersect::new(Arc::clone(raw), Arc::clone(&limit.0))) as Arc<dyn Sdf>)
+            } else {
+                fastener_pads_raw
             };
 
             let mut tier1_capsules = Vec::new();
@@ -5506,23 +5529,39 @@ pub fn register_granular_bracket_functions(engine: &mut Engine) {
                 },
             });
 
+            let bracket_with_fasteners: Arc<dyn Sdf> = if let (Some(fp), Some(fk)) = (fastener_pads.as_ref(), fastener_keepout.as_ref()) {
+                Arc::new(FnSdf {
+                    func: {
+                        let bracket_after_cut = Arc::clone(&bracket_after_cut);
+                        let fastener_pads = Arc::clone(fp);
+                        let fastener_keepout = Arc::clone(&fk.0);
+                        Arc::new(move |p: Vec3| {
+                            let pads_cut = fastener_pads.distance(p).max(-fastener_keepout.distance(p));
+                            smin_exp_pair(bracket_after_cut.distance(p), pads_cut, 8.0)
+                        })
+                    },
+                })
+            } else {
+                Arc::clone(&bracket_after_cut)
+            };
+
             let final_blended: Arc<dyn Sdf> = Arc::new(FnSdf {
                 func: {
-                    let bracket_after_cut = Arc::clone(&bracket_after_cut);
+                    let bracket_with_fasteners = Arc::clone(&bracket_with_fasteners);
                     let host = Arc::clone(&parent.0);
                     let host_blend_k = config.host_blend_k;
                     Arc::new(move |p: Vec3| {
                         if host_blend_k <= 0.0 {
-                            bracket_after_cut.distance(p).min(host.distance(p))
+                            bracket_with_fasteners.distance(p).min(host.distance(p))
                         } else {
-                            smin_exp_pair(bracket_after_cut.distance(p), host.distance(p), host_blend_k)
+                            smin_exp_pair(bracket_with_fasteners.distance(p), host.distance(p), host_blend_k)
                         }
                     })
                 },
             });
 
             let pocket_offset = config.pocket_offset_mm;
-            let final_mount: Arc<dyn Sdf> = Arc::new(FnSdf {
+            let final_mount_raw: Arc<dyn Sdf> = Arc::new(FnSdf {
                 func: {
                     let final_blended = Arc::clone(&final_blended);
                     let physical: Arc<dyn Sdf> = Arc::clone(&physical.0);
@@ -5532,10 +5571,28 @@ pub fn register_granular_bracket_functions(engine: &mut Engine) {
                 },
             });
 
+            let final_mount: Arc<dyn Sdf> = if let Some(fk) = fastener_keepout.as_ref() {
+                Arc::new(FnSdf {
+                    func: {
+                        let final_mount_raw = Arc::clone(&final_mount_raw);
+                        let fastener_keepout = Arc::clone(&fk.0);
+                        Arc::new(move |p: Vec3| {
+                            final_mount_raw.distance(p).max(-fastener_keepout.distance(p))
+                        })
+                    },
+                })
+            } else {
+                Arc::clone(&final_mount_raw)
+            };
+
             let mut out = placed;
             out.insert("raw_bracket".into(), rhai::Dynamic::from(SdfHandle(Arc::clone(&bracket_field))));
             out.insert("tray".into(), rhai::Dynamic::from(SdfHandle(Arc::clone(&tier1_cover))));
+            if let Some(fp) = fastener_pads {
+                out.insert("fastener_pads".into(), rhai::Dynamic::from(SdfHandle(fp)));
+            }
             out.insert("cut_bracket".into(), rhai::Dynamic::from(SdfHandle(Arc::clone(&bracket_after_cut))));
+            out.insert("fastener_bracket".into(), rhai::Dynamic::from(SdfHandle(Arc::clone(&bracket_with_fasteners))));
             out.insert("blended_bracket".into(), rhai::Dynamic::from(SdfHandle(Arc::clone(&final_blended))));
             out.insert("bracket".into(), rhai::Dynamic::from(SdfHandle(Arc::clone(&final_mount))));
             out.insert("assembly".into(), rhai::Dynamic::from(SdfHandle(final_mount)));

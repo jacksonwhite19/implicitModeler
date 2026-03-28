@@ -131,6 +131,14 @@ Planned modeling capabilities include:
 - custom modeling blocks
 - support for **sketch-based geometry generation**, where spline or profile sketches can be converted into implicit geometry.
 
+Current higher-level procedural capabilities also include:
+
+- reusable imported component modules
+- granular bracket and tray generation into host geometry
+- host-aware keepout and service-clearance enforcement
+- tray-shell creation from explicit component face regions (`tray_seed`)
+- support-density control for generated branch structure
+
 ---
 
 ## Development Goals
@@ -144,6 +152,38 @@ Primary goals of the project:
 5. Maintain a **simple, extensible architecture**
 
 The long-term objective is to build a system capable of **nTop-style computational design workflows** while remaining lightweight, scriptable, and developer-friendly.
+
+---
+
+## Current Component/Bracket Model
+
+The current repo now has a working component-driven mounting workflow for small hardware like servos and electronics boxes.
+
+Components are authored as Rhai modules that return a map containing geometry and semantics, for example:
+
+- `physical`
+- `keepout`
+- `service_keepout`
+- `tray_seed`
+- `fastener_keepout`
+- `mount_points`
+- `boss`
+
+The mount workflow is:
+
+1. import a component module
+2. optionally adjust `bracket_offset`, `tray_clearance`, `tray_thickness`, and `support_density`
+3. call `mount_component_granular(...)` into a host shell/body
+4. inspect returned stages like `tray`, `bracket`, and `assembly`
+
+The tray system is now tray-first:
+
+- when a component provides `tray_seed`, the generator creates a connected offset tray shell from that face region
+- when a component provides `fastener_keepout`, the generator grows local reinforcement pads from those keepout volumes
+- supports then branch from that tray/mount region into the host
+- removable/service volumes are kept clear
+
+This is the current path for component seating and support generation. Screw-hole automation and fastener-specific reinforcement are intentionally deferred until the tray workflow is stable.
 
 ---
 
