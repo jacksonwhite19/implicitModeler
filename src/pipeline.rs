@@ -1,7 +1,35 @@
 use crate::render::SdfGrid;
 use crate::sdf::Sdf;
+use crate::gpu::{compute_sdf_grid_gpu, lower_sdf_ir};
 use glam::Vec3;
 use rayon::prelude::*;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex, OnceLock};
+
+#[derive(Hash, PartialEq, Eq, Clone, Copy)]
+struct GridCacheKey {
+    sdf_id: usize,
+    res: u32,
+    bmin: [i32; 3],
+    bmax: [i32; 3],
+}
+
+fn sdf_identity(sdf: &dyn Sdf) -> usize {
+    (sdf as *const dyn Sdf as *const ()) as usize
+}
+
+fn quantize_bounds(v: Vec3) -> [i32; 3] {
+    [
+        (v.x * 100.0).round() as i32,
+        (v.y * 100.0).round() as i32,
+        (v.z * 100.0).round() as i32,
+    ]
+}
+
+fn grid_cache() -> &'static Mutex<HashMap<GridCacheKey, Arc<SdfGrid>>> {
+    static CACHE: OnceLock<Mutex<HashMap<GridCacheKey, Arc<SdfGrid>>>> = OnceLock::new();
+    CACHE.get_or_init(|| Mutex::new(HashMap::new()))
+}
 
 pub fn auto_bounds(sdf: &dyn Sdf) -> (Vec3, Vec3) {
     fn scan_bounds(
@@ -99,6 +127,12 @@ pub fn compute_sdf_grid(
     bounds_max: Vec3,
     res: u32,
 ) -> SdfGrid {
+    if let Some(ir) = lower_sdf_ir(sdf) {
+        if let Ok(grid) = compute_sdf_grid_gpu(&ir, bounds_min, bounds_max, res) {
+            return grid;
+        }
+    }
+
     let step = (bounds_max - bounds_min) / res as f32;
     let total = (res * res * res) as usize;
 
@@ -118,6 +152,33 @@ pub fn compute_sdf_grid(
         .collect();
 
     SdfGrid { data, resolution: res, bounds_min, bounds_max }
+}
+
+pub fn compute_sdf_grid_cached_arc(
+    sdf: &Arc<dyn Sdf>,
+    bounds_min: Vec3,
+    bounds_max: Vec3,
+    res: u32,
+) -> Arc<SdfGrid> {
+    let key = GridCacheKey {
+        sdf_id: sdf_identity(sdf.as_ref()),
+        res,
+        bmin: quantize_bounds(bounds_min),
+        bmax: quantize_bounds(bounds_max),
+    };
+    if let Some(existing) = grid_cache().lock().ok().and_then(|m| m.get(&key).cloned()) {
+        return existing;
+    }
+    let grid = Arc::new(compute_sdf_grid(sdf.as_ref(), bounds_min, bounds_max, res));
+    if let Ok(mut cache) = grid_cache().lock() {
+        cache.insert(key, Arc::clone(&grid));
+        if cache.len() > 48 {
+            if let Some(first_key) = cache.keys().next().copied() {
+                cache.remove(&first_key);
+            }
+        }
+    }
+    grid
 }
 
 pub fn tight_bounds_from_grid(grid: &SdfGrid) -> Option<(Vec3, Vec3)> {

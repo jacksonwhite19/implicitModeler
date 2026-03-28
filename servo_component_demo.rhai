@@ -19,6 +19,11 @@ let servo_y = wing_center.y;
 let servo_z = wing_min.z + 10.0;
 
 let s = servo::component();
+let s = tray_style(s, "u_channel");
+let s = tray_clearance(s, 0.4);
+let s = tray_thickness(s, 1.0);
+let s = tray_wall_height(s, 12.0);
+let s = tray_lip_height(s, 0.8);
 s.bracket_config = #{
     step_size_mm: 0.7,
     max_path_iters: 220,
@@ -31,5 +36,16 @@ let placed = mount_component_granular(
     s,
     servo_x, servo_y, servo_z
 );
+
+let preview_parts = #{
+    parts: #{
+        component_physical: placed.component_physical,
+        tray: placed.tray,
+        raw_bracket: placed.raw_bracket,
+        cut_bracket: placed.cut_bracket,
+        bracket: placed.bracket,
+        wing_shell: wing_shell
+    }
+};
 
 placed.assembly

@@ -1,6 +1,8 @@
 // Mesh export functionality
 
 use crate::mesh::{Mesh, MeshQuality, adaptive_mc};
+use crate::gpu::{extract_mesh_from_vertex_grid_gpu, extract_mesh_gpu, lower_sdf_ir};
+use crate::pipeline::compute_sdf_grid;
 use crate::sdf::Sdf;
 use std::fs::File;
 use std::io::{self, Write};
@@ -14,7 +16,29 @@ pub fn build_export_mesh(
     quality: MeshQuality,
     smooth_normals: bool,
 ) -> Mesh {
+    if let Some(ir) = lower_sdf_ir(sdf) {
+        if let Ok(mesh) = extract_mesh_gpu(&ir, bounds_min, bounds_max, quality, smooth_normals) {
+            if !mesh.vertices.is_empty() {
+                return mesh;
+            }
+        }
+    }
     let target_cell = quality.target_cell_size_mm().max(0.02);
+    let cell_resolution = (((bounds_max - bounds_min).max_element() / target_cell).ceil() as u32)
+        .clamp(8, 256);
+    let vertex_resolution = cell_resolution + 1;
+    let vertex_grid = compute_sdf_grid(sdf, bounds_min, bounds_max, vertex_resolution);
+    if let Ok(mesh) = extract_mesh_from_vertex_grid_gpu(
+        bounds_min,
+        bounds_max,
+        cell_resolution,
+        &vertex_grid.data,
+        smooth_normals,
+    ) {
+        if !mesh.vertices.is_empty() {
+            return mesh;
+        }
+    }
     adaptive_mc::extract_mesh_adaptive(sdf, bounds_min, bounds_max, target_cell, smooth_normals)
 }
 
@@ -187,4 +211,30 @@ pub fn export_manufacturing_package(
         bom_csv,
         assembly_notes,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use glam::Vec3;
+
+    use super::build_export_mesh;
+    use crate::mesh::MeshQuality;
+    use crate::sdf::Sdf;
+    use crate::sdf::field::lattice::GyroidLattice;
+
+    #[test]
+    fn export_mesh_uses_gpu_fallback_for_unsupported_tree() {
+        let shape: Arc<dyn Sdf> = Arc::new(GyroidLattice::new(8.0, 1.0));
+        let mesh = build_export_mesh(
+            shape.as_ref(),
+            Vec3::new(-12.0, -12.0, -12.0),
+            Vec3::new(12.0, 12.0, 12.0),
+            MeshQuality::Draft,
+            false,
+        );
+        assert!(!mesh.vertices.is_empty(), "Unsupported trees should still produce export meshes");
+        assert_eq!(mesh.indices.len() % 3, 0, "Export mesh output should remain triangle indexed");
+    }
 }

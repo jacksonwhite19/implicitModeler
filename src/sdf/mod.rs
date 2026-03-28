@@ -1,9 +1,10 @@
 // SDF trait and core types
 
+use std::any::Any;
 use glam::Vec3;
 
 /// Trait for signed distance field evaluation
-pub trait Sdf: Send + Sync {
+pub trait Sdf: Any + Send + Sync {
     /// Returns the signed distance from a point to the surface.
     /// Negative values indicate the point is inside the shape.
     fn distance(&self, point: Vec3) -> f32;

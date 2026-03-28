@@ -210,6 +210,27 @@ pub struct ComponentPreviewPart {
     pub sdf: Arc<dyn Sdf>,
 }
 
+fn extract_preview_parts_from_map(map: &rhai::Map) -> Vec<ComponentPreviewPart> {
+    let mut parts = Vec::new();
+    if let Some(parts_dyn) = map.get("parts") {
+        if let Some(parts_map) = parts_dyn.clone().try_cast::<rhai::Map>() {
+            for (name, value) in parts_map {
+                if let Some(sdf) = value.clone().try_cast::<SdfHandle>() {
+                    parts.push(ComponentPreviewPart { name: name.to_string(), sdf: sdf.0 });
+                }
+            }
+        }
+    }
+    if parts.is_empty() {
+        for key in ["physical", "component_physical", "tray", "fastener_pads", "bracket", "assembly"] {
+            if let Some(sdf) = map.get(key).and_then(|v| v.clone().try_cast::<SdfHandle>()) {
+                parts.push(ComponentPreviewPart { name: key.to_string(), sdf: sdf.0 });
+            }
+        }
+    }
+    parts
+}
+
 impl ScriptResult {
     /// Compute the overall center of gravity from declared mass points.
     /// Returns None if no mass points were declared.
@@ -316,22 +337,97 @@ pub fn evaluate_component_preview_parts(
     let comp_map = engine.call_fn::<rhai::Map>(&mut scope, &ast, "component", ())
         .map_err(|e| format!("Component preview error: {}", e))?;
 
-    let mut parts = Vec::new();
-    if let Some(parts_dyn) = comp_map.get("parts") {
-        if let Some(parts_map) = parts_dyn.clone().try_cast::<rhai::Map>() {
-            for (name, value) in parts_map {
-                if let Some(sdf) = value.clone().try_cast::<SdfHandle>() {
-                    parts.push(ComponentPreviewPart { name: name.to_string(), sdf: sdf.0 });
-                }
+    Ok(extract_preview_parts_from_map(&comp_map))
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn evaluate_preview_parts(
+    source:             &str,
+    profiles:           Option<Arc<RwLock<HashMap<String, SplineProfile>>>>,
+    splines:            Option<Arc<LongitudinalSplines>>,
+    stress_field:       Option<Arc<dyn Field>>,
+    displacement_field: Option<Arc<dyn Field>>,
+    dimensions:         &indexmap::IndexMap<String, f64>,
+    project_dir:        Option<&Path>,
+    mesh_cache:         Option<Arc<Mutex<MeshCache>>>,
+    library_sources:    &[(String, String)],
+) -> Result<Vec<ComponentPreviewPart>, String> {
+    let mass_collector:   Arc<Mutex<Vec<MassPoint>>>  = Arc::new(Mutex::new(Vec::new()));
+    let comp_collector:   Arc<Mutex<Vec<ComponentHandle>>> = Arc::new(Mutex::new(Vec::new()));
+    let fea_collector:    Arc<Mutex<FEASetup>>        = Arc::new(Mutex::new(FEASetup::default()));
+    let layup_collector:  Arc<Mutex<Vec<Arc<crate::sdf::aerospace::composite::CompositeLayup>>>>
+                        = Arc::new(Mutex::new(Vec::new()));
+    let ref_collector:    RefPointCollector           = Arc::new(Mutex::new(Vec::new()));
+
+    let mut engine = Engine::new();
+    api::register_sdf_functions(&mut engine);
+    api::register_component_functions(&mut engine, Arc::clone(&mass_collector), Arc::clone(&comp_collector));
+    api::register_drone_auto_functions(&mut engine, Arc::clone(&comp_collector));
+    api::register_mass_functions(&mut engine, Arc::clone(&mass_collector));
+    api::register_fea_functions(&mut engine, Arc::clone(&fea_collector), stress_field, displacement_field);
+    if let Some(p) = profiles {
+        api::register_profile_functions(&mut engine, p);
+    }
+    if let Some(s) = splines {
+        api::register_spine_functions(&mut engine, s);
+    }
+    api::register_mesh_functions(
+        &mut engine,
+        project_dir.map(|p| p.to_path_buf()),
+        mesh_cache.unwrap_or_else(|| Arc::new(Mutex::new(MeshCache::new()))),
+    );
+    api::register_composite_collector(&mut engine, Arc::clone(&layup_collector));
+    api::register_query_functions(&mut engine, Arc::clone(&ref_collector));
+    let mut resolver = if let Some(base) = project_dir {
+        rhai::module_resolvers::FileModuleResolver::new_with_path(base)
+    } else {
+        rhai::module_resolvers::FileModuleResolver::new()
+    };
+    resolver.enable_cache(true);
+    engine.set_module_resolver(resolver);
+
+    for (mod_name, mod_source) in library_sources {
+        let comp_engine = rhai::Engine::new();
+        if let Ok(ast) = comp_engine.compile(mod_source.as_str()) {
+            if let Ok(module) = rhai::Module::eval_ast_as_new(rhai::Scope::new(), &ast, &comp_engine) {
+                engine.register_static_module(mod_name.as_str(), module.into());
             }
         }
     }
-    if parts.is_empty() {
-        if let Some(sdf) = comp_map.get("physical").and_then(|v| v.clone().try_cast::<SdfHandle>()) {
-            parts.push(ComponentPreviewPart { name: "physical".to_string(), sdf: sdf.0 });
+
+    let mut scope = Scope::new();
+    for (name, &value) in dimensions {
+        scope.push_constant(name.as_str(), value);
+    }
+
+    let ast = engine.compile(source)
+        .map_err(|e| errors::build_error_string(&errors::format_script_error(source, &format!("Script error: {}", e))))?;
+
+    let _ = engine.eval_ast_with_scope::<rhai::Dynamic>(&mut scope, &ast)
+        .map_err(|e| errors::build_error_string(&errors::format_script_error(source, &format!("Script error: {}", e))))?;
+
+    if let Some(map) = scope.get_value::<rhai::Map>("preview_parts") {
+        let parts = extract_preview_parts_from_map(&map);
+        if !parts.is_empty() {
+            return Ok(parts);
         }
     }
-    Ok(parts)
+
+    if let Ok(map) = engine.call_fn::<rhai::Map>(&mut scope, &ast, "preview_parts", ()) {
+        let parts = extract_preview_parts_from_map(&map);
+        if !parts.is_empty() {
+            return Ok(parts);
+        }
+    }
+
+    if let Ok(map) = engine.call_fn::<rhai::Map>(&mut scope, &ast, "component", ()) {
+        let parts = extract_preview_parts_from_map(&map);
+        if !parts.is_empty() {
+            return Ok(parts);
+        }
+    }
+
+    Ok(Vec::new())
 }
 
 /// Full evaluator.

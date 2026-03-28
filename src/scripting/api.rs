@@ -4,7 +4,7 @@ use std::sync::Arc;
 use rhai::Engine;
 use glam::{Vec3, Quat};
 use crate::sdf::Sdf;
-use crate::sdf::primitives::{Sphere, SdfBox, Cylinder, Torus, Cone, Plane};
+use crate::sdf::primitives::{Sphere, SdfBox, Cylinder, Torus, Cone, Plane, TaperedCapsule};
 use crate::sdf::booleans::{Union, Subtract, Intersect, SmoothUnion, SmoothSubtract, SmoothIntersect};
 use crate::sdf::transforms::{Translate, Rotate, Scale, Offset, Shell, Twist, Bend};
 use crate::sdf::patterns::{LinearArray, PolarArray, Mirror};
@@ -175,6 +175,10 @@ struct BracketConfig {
     support_density: u32,
     tray_clearance_mm: f32,
     tray_thickness_mm: f32,
+    tray_wall_height_mm: f32,
+    tray_lip_height_mm: f32,
+    tray_extend_mm: f32,
+    tray_style: String,
 }
 
 impl Default for BracketConfig {
@@ -197,6 +201,10 @@ impl Default for BracketConfig {
             support_density: 3,
             tray_clearance_mm: 0.5,
             tray_thickness_mm: 1.0,
+            tray_wall_height_mm: 0.0,
+            tray_lip_height_mm: 0.0,
+            tray_extend_mm: 0.0,
+            tray_style: "shell".to_string(),
         }
     }
 }
@@ -230,29 +238,6 @@ where
     } else {
         safe_normalize(g, 1e-8)
     }
-}
-
-fn sdf_tapered_capsule_distance(p: Vec3, a: Vec3, b: Vec3, ra: f32, rb: f32) -> f32 {
-    let ab = b - a;
-    let ab_len2 = ab.length_squared();
-    if ab_len2 <= 1e-12 {
-        return (p - a).length() - ra.max(rb);
-    }
-    let t = ((p - a).dot(ab) / ab_len2).clamp(0.0, 1.0);
-    let p_on_segment = a + ab * t;
-    let r = ra + t * (rb - ra);
-    (p - p_on_segment).length() - r
-}
-
-fn smin_exp_pair(d1: f32, d2: f32, k: f32) -> f32 {
-    if k <= 0.0 {
-        return d1.min(d2);
-    }
-    let a = -k * d1;
-    let b = -k * d2;
-    let m = a.max(b);
-    let s = (a - m).exp() + (b - m).exp();
-    -((s + 1e-12).ln() + m) / k
 }
 
 fn aggregate_parts(parts: &[BracketPart], role: StructuralRole, p: Vec3) -> (f32, Option<String>) {
@@ -340,6 +325,18 @@ fn apply_bracket_config_overrides(
     if let Some(v) = map.get("tray_thickness_mm").and_then(|v| v.clone().try_cast::<f64>()) {
         config.tray_thickness_mm = v.clamp(0.5, 8.0) as f32;
     }
+    if let Some(v) = map.get("tray_wall_height_mm").and_then(|v| v.clone().try_cast::<f64>()) {
+        config.tray_wall_height_mm = v.clamp(0.0, 50.0) as f32;
+    }
+    if let Some(v) = map.get("tray_lip_height_mm").and_then(|v| v.clone().try_cast::<f64>()) {
+        config.tray_lip_height_mm = v.clamp(0.0, 20.0) as f32;
+    }
+    if let Some(v) = map.get("tray_extend_mm").and_then(|v| v.clone().try_cast::<f64>()) {
+        config.tray_extend_mm = v.clamp(0.0, 20.0) as f32;
+    }
+    if let Some(v) = map.get("tray_style").and_then(|v| v.clone().try_cast::<String>()) {
+        config.tray_style = v;
+    }
     let Some(cfg) = map.get("bracket_config").and_then(|v| v.clone().try_cast::<rhai::Map>()) else {
         return config;
     };
@@ -390,6 +387,18 @@ fn apply_bracket_config_overrides(
     }
     if let Some(v) = cfg.get("tray_thickness_mm").and_then(|v| v.clone().try_cast::<f64>()) {
         config.tray_thickness_mm = v.clamp(0.5, 8.0) as f32;
+    }
+    if let Some(v) = cfg.get("tray_wall_height_mm").and_then(|v| v.clone().try_cast::<f64>()) {
+        config.tray_wall_height_mm = v.clamp(0.0, 50.0) as f32;
+    }
+    if let Some(v) = cfg.get("tray_lip_height_mm").and_then(|v| v.clone().try_cast::<f64>()) {
+        config.tray_lip_height_mm = v.clamp(0.0, 20.0) as f32;
+    }
+    if let Some(v) = cfg.get("tray_extend_mm").and_then(|v| v.clone().try_cast::<f64>()) {
+        config.tray_extend_mm = v.clamp(0.0, 20.0) as f32;
+    }
+    if let Some(v) = cfg.get("tray_style").and_then(|v| v.clone().try_cast::<String>()) {
+        config.tray_style = v;
     }
     config
 }
@@ -4961,6 +4970,66 @@ pub fn register_granular_bracket_functions(engine: &mut Engine) {
         }
     );
 
+    engine.register_fn("tray_wall_height",
+        |mut comp_map: rhai::Map, height_mm: f64| -> rhai::Map {
+            let height_mm = height_mm.clamp(0.0, 50.0);
+            let mut cfg = comp_map
+                .get("bracket_config")
+                .and_then(|v| v.clone().try_cast::<rhai::Map>())
+                .unwrap_or_else(rhai::Map::new);
+            cfg.insert("tray_wall_height_mm".into(), rhai::Dynamic::from(height_mm));
+            comp_map.insert("bracket_config".into(), rhai::Dynamic::from(cfg));
+            comp_map.insert("tray_wall_height_mm".into(), rhai::Dynamic::from(height_mm));
+            comp_map
+        }
+    );
+
+    engine.register_fn("tray_lip_height",
+        |mut comp_map: rhai::Map, height_mm: f64| -> rhai::Map {
+            let height_mm = height_mm.clamp(0.0, 20.0);
+            let mut cfg = comp_map
+                .get("bracket_config")
+                .and_then(|v| v.clone().try_cast::<rhai::Map>())
+                .unwrap_or_else(rhai::Map::new);
+            cfg.insert("tray_lip_height_mm".into(), rhai::Dynamic::from(height_mm));
+            comp_map.insert("bracket_config".into(), rhai::Dynamic::from(cfg));
+            comp_map.insert("tray_lip_height_mm".into(), rhai::Dynamic::from(height_mm));
+            comp_map
+        }
+    );
+
+    engine.register_fn("tray_extend",
+        |mut comp_map: rhai::Map, extend_mm: f64| -> rhai::Map {
+            let extend_mm = extend_mm.clamp(0.0, 20.0);
+            let mut cfg = comp_map
+                .get("bracket_config")
+                .and_then(|v| v.clone().try_cast::<rhai::Map>())
+                .unwrap_or_else(rhai::Map::new);
+            cfg.insert("tray_extend_mm".into(), rhai::Dynamic::from(extend_mm));
+            comp_map.insert("bracket_config".into(), rhai::Dynamic::from(cfg));
+            comp_map.insert("tray_extend_mm".into(), rhai::Dynamic::from(extend_mm));
+            comp_map
+        }
+    );
+
+    engine.register_fn("tray_style",
+        |mut comp_map: rhai::Map, style: &str| -> Result<rhai::Map, Box<rhai::EvalAltResult>> {
+            let style_norm = style.trim().to_ascii_lowercase();
+            match style_norm.as_str() {
+                "shell" | "u_channel" | "floor" => {}
+                _ => return Err(format!("tray_style must be one of: shell, u_channel, floor; got '{}'", style).into()),
+            }
+            let mut cfg = comp_map
+                .get("bracket_config")
+                .and_then(|v| v.clone().try_cast::<rhai::Map>())
+                .unwrap_or_else(rhai::Map::new);
+            cfg.insert("tray_style".into(), rhai::Dynamic::from(style_norm.clone()));
+            comp_map.insert("bracket_config".into(), rhai::Dynamic::from(cfg));
+            comp_map.insert("tray_style".into(), rhai::Dynamic::from(style_norm));
+            Ok(comp_map)
+        }
+    );
+
     engine.register_fn("hide_part",
         |mut value_map: rhai::Map, key: &str| -> rhai::Map {
             if let Some(value) = value_map.get(key).cloned() {
@@ -5136,9 +5205,8 @@ pub fn register_granular_bracket_functions(engine: &mut Engine) {
             final_host_distance = host_dist_here.abs();
 
             let host_fn = |q: Vec3| get_host_sdf(host_parts, q).0;
-            let keepout_fn = |q: Vec3| get_keepout_sdf(keepout_parts, q).0;
-
             let attr = -calc_gradient(host_fn, p, config.grad_eps);
+            let keepout_fn = |q: Vec3| get_keepout_sdf(keepout_parts, q).0;
             let rep = calc_gradient(keepout_fn, p, config.grad_eps);
             let rep_scale = (1.0 / (keepout_dist_here.abs() + 1e-2)).clamp(0.0, config.rep_scale_max);
 
@@ -5243,10 +5311,7 @@ pub fn register_granular_bracket_functions(engine: &mut Engine) {
             let r1 = base_radius + t1 * (base_radius * radius_end_factor - base_radius);
             let a = seg[0];
             let b = seg[1];
-            let sdf = FnSdf {
-                func: Arc::new(move |p: Vec3| sdf_tapered_capsule_distance(p, a, b, r0, r1)),
-            };
-            out.push(Arc::new(sdf) as Arc<dyn Sdf>);
+            out.push(Arc::new(TaperedCapsule::new(a, b, r0, r1)) as Arc<dyn Sdf>);
         }
         out
     }
@@ -5268,10 +5333,7 @@ pub fn register_granular_bracket_functions(engine: &mut Engine) {
             .collect();
 
         let mut connect_pair = |a: Vec3, b: Vec3| {
-            let sdf = FnSdf {
-                func: Arc::new(move |p: Vec3| sdf_tapered_capsule_distance(p, a, b, face_radius, face_radius)),
-            };
-            out.push(Arc::new(sdf) as Arc<dyn Sdf>);
+            out.push(Arc::new(TaperedCapsule::new(a, b, face_radius, face_radius)) as Arc<dyn Sdf>);
         };
 
         // Connect nearby points on the same support face to make local tray rails.
@@ -5345,19 +5407,100 @@ pub fn register_granular_bracket_functions(engine: &mut Engine) {
         Arc::new(Subtract::new(outer, inner))
     }
 
+    fn make_conformal_tray_band(
+        physical: Arc<dyn Sdf>,
+        tray_seed: Arc<dyn Sdf>,
+        clearance_mm: f32,
+        thickness_mm: f32,
+        wall_height_mm: f32,
+        lip_height_mm: f32,
+        extend_mm: f32,
+        style: &str,
+    ) -> Arc<dyn Sdf> {
+        let inner = Arc::new(Offset::new(Arc::clone(&physical), clearance_mm));
+        let outer = Arc::new(Offset::new(Arc::clone(&physical), clearance_mm + thickness_mm));
+        let band: Arc<dyn Sdf> = Arc::new(Subtract::new(outer, inner));
+
+        // Use an expanded tray seed only as a mask so the resulting tray follows the
+        // actual component shape instead of the coarse seed boxes.
+        let bbox = crate::sdf::query::bounding_points(physical.as_ref());
+        let mask_pad = (clearance_mm + thickness_mm + 1.0 + extend_mm).max(1.0);
+        let mut tray_mask: Arc<dyn Sdf> = Arc::new(Offset::new(Arc::clone(&tray_seed), mask_pad));
+
+        let z_min = bbox.min.z - (thickness_mm + 2.0);
+        let z_top = bbox.max.z + clearance_mm + thickness_mm;
+        let z_max = if style.eq_ignore_ascii_case("floor") {
+            bbox.min.z + clearance_mm + thickness_mm + 2.0
+        } else if wall_height_mm > 0.0 {
+            (bbox.min.z + wall_height_mm + clearance_mm + thickness_mm).min(z_top)
+        } else {
+            z_top + lip_height_mm.max(0.0)
+        };
+
+        let z_slab_center = (z_min + z_max) * 0.5;
+        let z_slab_height = (z_max - z_min).max(0.5);
+        let z_slab: Arc<dyn Sdf> = Arc::new(Translate::new(
+            Arc::new(SdfBox::new(Vec3::new(5000.0, 5000.0, z_slab_height * 0.5))),
+            Vec3::new(0.0, 0.0, z_slab_center),
+        ));
+        tray_mask = Arc::new(Intersect::new(tray_mask, z_slab));
+
+        let tray_body: Arc<dyn Sdf> = Arc::new(Intersect::new(band, tray_mask));
+
+        if lip_height_mm <= 1e-4 || style.eq_ignore_ascii_case("floor") {
+            return tray_body;
+        }
+
+        let lip_center_z = z_top + lip_height_mm * 0.5;
+        let lip_box: Arc<dyn Sdf> = Arc::new(Translate::new(
+            Arc::new(SdfBox::new(Vec3::new(
+                (bbox.max.x - bbox.min.x + 40.0) * 0.5,
+                (bbox.max.y - bbox.min.y + 40.0) * 0.5,
+                lip_height_mm.max(0.5) * 0.5,
+            ))),
+            Vec3::new(
+                (bbox.min.x + bbox.max.x) * 0.5,
+                (bbox.min.y + bbox.max.y) * 0.5,
+                lip_center_z,
+            ),
+        ));
+        let lip_band: Arc<dyn Sdf> = Arc::new(Intersect::new(
+            Arc::new(Subtract::new(
+                Arc::new(Offset::new(Arc::clone(&physical), clearance_mm + thickness_mm)),
+                Arc::new(Offset::new(Arc::clone(&physical), clearance_mm)),
+            )),
+            lip_box,
+        ));
+
+        Arc::new(Union::new(tray_body, lip_band))
+    }
+
     fn make_smooth_union(parts: Vec<Arc<dyn Sdf>>, k: f32) -> Arc<dyn Sdf> {
         if parts.is_empty() {
             return Arc::new(FnSdf { func: Arc::new(|_| 1e6) });
         }
-        Arc::new(FnSdf {
-            func: Arc::new(move |p: Vec3| {
-                let mut acc = parts[0].distance(p);
-                for sdf in parts.iter().skip(1) {
-                    acc = smin_exp_pair(acc, sdf.distance(p), k);
+        let mut layer = parts;
+        while layer.len() > 1 {
+            let mut next = Vec::with_capacity((layer.len() + 1) / 2);
+            let mut i = 0usize;
+            while i < layer.len() {
+                if i + 1 < layer.len() {
+                    let a = Arc::clone(&layer[i]);
+                    let b = Arc::clone(&layer[i + 1]);
+                    next.push(if k <= 0.0 {
+                        Arc::new(Union::new(a, b)) as Arc<dyn Sdf>
+                    } else {
+                        Arc::new(SmoothUnion::new(a, b, k)) as Arc<dyn Sdf>
+                    });
+                    i += 2;
+                } else {
+                    next.push(Arc::clone(&layer[i]));
+                    i += 1;
                 }
-                acc
-            }),
-        })
+            }
+            layer = next;
+        }
+        layer.pop().unwrap()
     }
 
     engine.register_fn("mount_point",
@@ -5410,10 +5553,15 @@ pub fn register_granular_bracket_functions(engine: &mut Engine) {
             config.tier2_bridge_thresh_mm *= 1.0 + 0.10 * (eff_density - 1.0);
 
             let tier1_cover = if let Some(seed) = map_get_optional_sdf(&placed, "tray_seed") {
-                make_offset_band(
+                make_conformal_tray_band(
+                    Arc::clone(&physical.0),
                     Arc::clone(&seed.0),
                     config.tray_clearance_mm,
                     config.tray_thickness_mm,
+                    config.tray_wall_height_mm,
+                    config.tray_lip_height_mm,
+                    config.tray_extend_mm,
+                    &config.tray_style,
                 )
             } else {
                 make_smooth_union(
@@ -5497,10 +5645,7 @@ pub fn register_granular_bracket_functions(engine: &mut Engine) {
                     let a = end;
                     let b = p_tier1;
                     let bridge_radius = (mount.base_radius * config.tier2_bridge_radius_factor).max(0.8);
-                    let sdf = FnSdf {
-                        func: Arc::new(move |p: Vec3| sdf_tapered_capsule_distance(p, a, b, bridge_radius, bridge_radius)),
-                    };
-                    tier2_capsules.push(Arc::new(sdf) as Arc<dyn Sdf>);
+                    tier2_capsules.push(Arc::new(TaperedCapsule::new(a, b, bridge_radius, bridge_radius)) as Arc<dyn Sdf>);
                 }
             }
 
@@ -5510,79 +5655,56 @@ pub fn register_granular_bracket_functions(engine: &mut Engine) {
             all_capsules.extend(tier2_capsules);
             let bracket_field = make_smooth_union(all_capsules, 2.0);
 
-            let keepout_union = {
-                let mut parts = vec![Arc::clone(&keepout.0)];
-                if let Some(sk) = service_keepout.as_ref() { parts.push(Arc::clone(&sk.0)); }
-                if let Some(sw) = swept_volume.as_ref() { parts.push(Arc::clone(&sw.0)); }
-                make_smooth_union(parts, 32.0)
+            let mut clearance_cut_parts: Vec<Arc<dyn Sdf>> = Vec::new();
+            if let Some(sk) = service_keepout.as_ref() { clearance_cut_parts.push(Arc::clone(&sk.0)); }
+            if let Some(sw) = swept_volume.as_ref() { clearance_cut_parts.push(Arc::clone(&sw.0)); }
+
+            let bracket_after_cut: Arc<dyn Sdf> = if clearance_cut_parts.is_empty() {
+                Arc::clone(&bracket_field)
+            } else {
+                let clearance_cut_union = make_smooth_union(clearance_cut_parts, 32.0);
+                let dilate_mm = config.dilate_keepout_mm;
+                let dilated_clearance_cut: Arc<dyn Sdf> = if dilate_mm.abs() > 1e-6 {
+                    Arc::new(Offset::new(Arc::clone(&clearance_cut_union), dilate_mm))
+                } else {
+                    Arc::clone(&clearance_cut_union)
+                };
+                Arc::new(Subtract::new(Arc::clone(&bracket_field), dilated_clearance_cut))
             };
 
-            let dilate_mm = config.dilate_keepout_mm;
-            let bracket_after_cut: Arc<dyn Sdf> = Arc::new(FnSdf {
-                func: {
-                    let bracket_field = Arc::clone(&bracket_field);
-                    let keepout_union = Arc::clone(&keepout_union);
-                    Arc::new(move |p: Vec3| {
-                        let dilated_keepout = keepout_union.distance(p) - dilate_mm;
-                        bracket_field.distance(p).max(-dilated_keepout)
-                    })
-                },
-            });
-
-            let bracket_with_fasteners: Arc<dyn Sdf> = if let (Some(fp), Some(fk)) = (fastener_pads.as_ref(), fastener_keepout.as_ref()) {
-                Arc::new(FnSdf {
-                    func: {
-                        let bracket_after_cut = Arc::clone(&bracket_after_cut);
-                        let fastener_pads = Arc::clone(fp);
-                        let fastener_keepout = Arc::clone(&fk.0);
-                        Arc::new(move |p: Vec3| {
-                            let pads_cut = fastener_pads.distance(p).max(-fastener_keepout.distance(p));
-                            smin_exp_pair(bracket_after_cut.distance(p), pads_cut, 8.0)
-                        })
-                    },
-                })
+            let bracket_with_fasteners_raw: Arc<dyn Sdf> = if let (Some(fp), Some(fk)) = (fastener_pads.as_ref(), fastener_keepout.as_ref()) {
+                let pads_cut: Arc<dyn Sdf> = Arc::new(Subtract::new(Arc::clone(fp), Arc::clone(&fk.0)));
+                Arc::new(SmoothUnion::new(Arc::clone(&bracket_after_cut), pads_cut, 8.0))
             } else {
                 Arc::clone(&bracket_after_cut)
             };
 
-            let final_blended: Arc<dyn Sdf> = Arc::new(FnSdf {
-                func: {
-                    let bracket_with_fasteners = Arc::clone(&bracket_with_fasteners);
-                    let host = Arc::clone(&parent.0);
-                    let host_blend_k = config.host_blend_k;
-                    Arc::new(move |p: Vec3| {
-                        if host_blend_k <= 0.0 {
-                            bracket_with_fasteners.distance(p).min(host.distance(p))
-                        } else {
-                            smin_exp_pair(bracket_with_fasteners.distance(p), host.distance(p), host_blend_k)
-                        }
-                    })
-                },
-            });
+            let bracket_with_fasteners = Arc::clone(&bracket_with_fasteners_raw);
 
-            let pocket_offset = config.pocket_offset_mm;
-            let final_mount_raw: Arc<dyn Sdf> = Arc::new(FnSdf {
-                func: {
-                    let final_blended = Arc::clone(&final_blended);
-                    let physical: Arc<dyn Sdf> = Arc::clone(&physical.0);
-                    Arc::new(move |p: Vec3| {
-                        final_blended.distance(p).max(-(physical.distance(p) + pocket_offset))
-                    })
-                },
-            });
+            let seating_pocket_base: Arc<dyn Sdf> = Arc::clone(&keepout.0);
+            let seating_pocket: Arc<dyn Sdf> = if config.pocket_offset_mm.abs() > 1e-6 {
+                Arc::new(Offset::new(Arc::clone(&seating_pocket_base), config.pocket_offset_mm))
+            } else {
+                Arc::clone(&seating_pocket_base)
+            };
+            let final_mount_raw: Arc<dyn Sdf> = Arc::new(Subtract::new(Arc::clone(&bracket_with_fasteners), seating_pocket));
 
             let final_mount: Arc<dyn Sdf> = if let Some(fk) = fastener_keepout.as_ref() {
-                Arc::new(FnSdf {
-                    func: {
-                        let final_mount_raw = Arc::clone(&final_mount_raw);
-                        let fastener_keepout = Arc::clone(&fk.0);
-                        Arc::new(move |p: Vec3| {
-                            final_mount_raw.distance(p).max(-fastener_keepout.distance(p))
-                        })
-                    },
-                })
+                Arc::new(Subtract::new(Arc::clone(&final_mount_raw), Arc::clone(&fk.0)))
             } else {
                 Arc::clone(&final_mount_raw)
+            };
+
+            let final_blended_raw: Arc<dyn Sdf> = if config.host_blend_k <= 0.0 {
+                Arc::new(Union::new(Arc::clone(&final_mount), Arc::clone(&parent.0)))
+            } else {
+                Arc::new(SmoothUnion::new(Arc::clone(&final_mount), Arc::clone(&parent.0), config.host_blend_k))
+            };
+
+            let final_blended: Arc<dyn Sdf> = if let Some(fk) = fastener_keepout.as_ref() {
+                Arc::new(Subtract::new(Arc::clone(&final_blended_raw), Arc::clone(&fk.0)))
+            } else {
+                Arc::clone(&final_blended_raw)
             };
 
             let mut out = placed;
@@ -5593,9 +5715,9 @@ pub fn register_granular_bracket_functions(engine: &mut Engine) {
             }
             out.insert("cut_bracket".into(), rhai::Dynamic::from(SdfHandle(Arc::clone(&bracket_after_cut))));
             out.insert("fastener_bracket".into(), rhai::Dynamic::from(SdfHandle(Arc::clone(&bracket_with_fasteners))));
-            out.insert("blended_bracket".into(), rhai::Dynamic::from(SdfHandle(Arc::clone(&final_blended))));
             out.insert("bracket".into(), rhai::Dynamic::from(SdfHandle(Arc::clone(&final_mount))));
-            out.insert("assembly".into(), rhai::Dynamic::from(SdfHandle(final_mount)));
+            out.insert("blended_bracket".into(), rhai::Dynamic::from(SdfHandle(Arc::clone(&final_blended))));
+            out.insert("assembly".into(), rhai::Dynamic::from(SdfHandle(final_blended)));
             out.insert("component_physical".into(), rhai::Dynamic::from(physical));
             out.insert("debug_paths".into(), rhai::Dynamic::from(debug_paths));
             let mut debug_summary = rhai::Map::new();
@@ -5603,11 +5725,16 @@ pub fn register_granular_bracket_functions(engine: &mut Engine) {
             debug_summary.insert("tier2_count".into(), rhai::Dynamic::from((mount_points.iter().filter(|m| m.tier == 2).count()) as i64));
             debug_summary.insert("dilate_keepout_mm".into(), rhai::Dynamic::from(config.dilate_keepout_mm as f64));
             debug_summary.insert("pocket_offset_mm".into(), rhai::Dynamic::from(config.pocket_offset_mm as f64));
+            debug_summary.insert("seat_from_keepout".into(), rhai::Dynamic::from(true));
             debug_summary.insert("host_blend_k".into(), rhai::Dynamic::from(config.host_blend_k as f64));
             debug_summary.insert("support_density".into(), rhai::Dynamic::from(config.support_density as i64));
             debug_summary.insert("effective_support_density".into(), rhai::Dynamic::from(effective_support_density(config.support_density) as f64));
             debug_summary.insert("tray_clearance_mm".into(), rhai::Dynamic::from(config.tray_clearance_mm as f64));
             debug_summary.insert("tray_thickness_mm".into(), rhai::Dynamic::from(config.tray_thickness_mm as f64));
+            debug_summary.insert("tray_wall_height_mm".into(), rhai::Dynamic::from(config.tray_wall_height_mm as f64));
+            debug_summary.insert("tray_lip_height_mm".into(), rhai::Dynamic::from(config.tray_lip_height_mm as f64));
+            debug_summary.insert("tray_extend_mm".into(), rhai::Dynamic::from(config.tray_extend_mm as f64));
+            debug_summary.insert("tray_style".into(), rhai::Dynamic::from(config.tray_style.clone()));
             out.insert("debug_summary".into(), rhai::Dynamic::from(debug_summary));
             Ok(out)
         }

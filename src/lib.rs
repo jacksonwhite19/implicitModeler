@@ -16,6 +16,7 @@ pub mod pipeline;
 pub mod project;
 pub mod render;
 pub mod settings;
+pub mod gpu;
 pub mod ui;
 pub mod undo;
 pub mod version_control;

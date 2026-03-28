@@ -946,21 +946,33 @@ smooth_union(aero, shell, 12.0)
                 ) {
                     Ok(result) => {
                         let eval_time_ms = start_eval.elapsed().as_secs_f64() * 1000.0;
-                        let component_preview_parts = if is_component_script {
-                            scripting::evaluate_component_preview_parts(
-                                &script,
-                                None,
-                                None,
-                                sf.clone(),
-                                df.clone(),
-                                &dimensions,
-                                project_dir.as_deref(),
-                                Some(Arc::clone(&mesh_cache)),
-                                &library_sources,
-                            ).unwrap_or_default()
-                        } else {
-                            Vec::new()
-                        };
+                        let component_preview_parts = scripting::evaluate_preview_parts(
+                            &script,
+                            None,
+                            None,
+                            sf.clone(),
+                            df.clone(),
+                            &dimensions,
+                            project_dir.as_deref(),
+                            Some(Arc::clone(&mesh_cache)),
+                            &library_sources,
+                        ).unwrap_or_else(|_| {
+                            if is_component_script {
+                                scripting::evaluate_component_preview_parts(
+                                    &script,
+                                    None,
+                                    None,
+                                    sf.clone(),
+                                    df.clone(),
+                                    &dimensions,
+                                    project_dir.as_deref(),
+                                    Some(Arc::clone(&mesh_cache)),
+                                    &library_sources,
+                                ).unwrap_or_default()
+                            } else {
+                                Vec::new()
+                            }
+                        });
                         build_script_eval_success(result, viewport_resolution, eval_time_ms, component_preview_parts)
                     }
                     Err(e) => Err(e),
@@ -1059,13 +1071,13 @@ smooth_union(aero, shell, 12.0)
 
                 if let Some(sdf) = display_sdf {
                     let (bounds_min, bounds_max) = crate::pipeline::auto_bounds(sdf.as_ref());
-                    self.current_sdf_grid = Some(Arc::new(crate::pipeline::compute_sdf_grid(
-                        sdf.as_ref(), bounds_min, bounds_max, viewport_resolution,
-                    )));
+                    self.current_sdf_grid = Some(crate::pipeline::compute_sdf_grid_cached_arc(
+                        &sdf, bounds_min, bounds_max, viewport_resolution,
+                    ));
                 }
 
                 self.status_message = Some(format!(
-                    "{} component part '{}'",
+                    "{} preview part '{}'",
                     match self.component_selection_mode {
                         ComponentSelectionMode::Highlight => "Highlighted",
                         ComponentSelectionMode::Isolate => "Isolated",
@@ -1082,10 +1094,10 @@ smooth_union(aero, shell, 12.0)
         } else if let Some(sdf) = self.current_sdf.clone() {
             self.selected_component_bounds = None;
             let (bounds_min, bounds_max) = crate::pipeline::auto_bounds(sdf.as_ref());
-            self.current_sdf_grid = Some(Arc::new(crate::pipeline::compute_sdf_grid(
-                sdf.as_ref(), bounds_min, bounds_max, viewport_resolution,
-            )));
-            self.status_message = Some("Showing full component preview".to_string());
+            self.current_sdf_grid = Some(crate::pipeline::compute_sdf_grid_cached_arc(
+                &sdf, bounds_min, bounds_max, viewport_resolution,
+            ));
+            self.status_message = Some("Showing full preview".to_string());
         }
     }
 
@@ -1129,9 +1141,9 @@ smooth_union(aero, shell, 12.0)
                 let (bounds_min, bounds_max) = crate::pipeline::auto_bounds(sdf.as_ref());
                 let viewport_resolution = self.resolution.clamp(48, 256);
 
-                let sdf_grid = Arc::new(crate::pipeline::compute_sdf_grid(
-                    sdf.as_ref(), bounds_min, bounds_max, viewport_resolution,
-                ));
+                let sdf_grid = crate::pipeline::compute_sdf_grid_cached_arc(
+                    &sdf, bounds_min, bounds_max, viewport_resolution,
+                );
                 let mesh_time = start_mesh.elapsed().as_secs_f64() * 1000.0;
 
                 // Estimate volume from negative voxel count (no marching cubes needed).
@@ -1248,9 +1260,9 @@ smooth_union(aero, shell, 12.0)
                 let (bounds_min, bounds_max) = crate::pipeline::auto_bounds(sdf.as_ref());
                 let viewport_resolution = self.resolution.clamp(48, 256);
 
-                let sdf_grid = Arc::new(crate::pipeline::compute_sdf_grid(
-                    sdf.as_ref(), bounds_min, bounds_max, viewport_resolution,
-                ));
+                let sdf_grid = crate::pipeline::compute_sdf_grid_cached_arc(
+                    &sdf, bounds_min, bounds_max, viewport_resolution,
+                );
                 let mesh_time = start_mesh.elapsed().as_secs_f64() * 1000.0;
 
                 let step = (bounds_max - bounds_min) / viewport_resolution as f32;
@@ -1759,9 +1771,9 @@ fn build_script_eval_success(
 
     let start_mesh = std::time::Instant::now();
     let (bounds_min, bounds_max) = crate::pipeline::auto_bounds(sdf.as_ref());
-    let sdf_grid = Arc::new(crate::pipeline::compute_sdf_grid(
-        sdf.as_ref(), bounds_min, bounds_max, viewport_resolution,
-    ));
+    let sdf_grid = crate::pipeline::compute_sdf_grid_cached_arc(
+        &sdf, bounds_min, bounds_max, viewport_resolution,
+    );
     let mesh_time_ms = start_mesh.elapsed().as_secs_f64() * 1000.0;
 
     let step = (bounds_max - bounds_min) / viewport_resolution as f32;
@@ -2818,7 +2830,7 @@ impl eframe::App for App {
                 // File operations
                 if !self.component_preview_parts.is_empty() && self.active_example_tab.is_none() {
                     ui.group(|ui| {
-                        ui.strong("Component Parts");
+                        ui.strong("Preview Parts");
                         ui.horizontal(|ui| {
                             ui.label("Mode:");
                             let changed_highlight = ui.selectable_value(
@@ -2843,7 +2855,7 @@ impl eframe::App for App {
                             }
                         });
                         ui.separator();
-                        ui.label(egui::RichText::new("component()").strong());
+                        ui.label(egui::RichText::new("preview_parts() / component()").strong());
                         ui.indent("component_parts_tree", |ui| {
                             for (name, _) in self.component_preview_parts.clone() {
                                 let selected = self.selected_component_part.as_deref() == Some(name.as_str());

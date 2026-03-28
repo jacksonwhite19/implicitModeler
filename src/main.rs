@@ -9,6 +9,7 @@ mod export;
 mod project;
 mod headless;
 mod pipeline;
+mod gpu;
 mod components;
 mod ui;
 mod analysis;

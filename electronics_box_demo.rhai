@@ -16,6 +16,10 @@ let c = ebox::component();
 let c = bracket_offset(c, 0.5);
 let c = tray_clearance(c, 0.5);
 let c = tray_thickness(c, 1.0);
+let c = tray_style(c, "u_channel");
+let c = tray_wall_height(c, 10.5);
+let c = tray_lip_height(c, 1.0);
+let c = tray_extend(c, 0.8);
 let c = support_density(c, 6);
 c.bracket_config = #{
     step_size_mm: 0.8,
@@ -27,14 +31,29 @@ c.bracket_config = #{
     host_blend_k: 28.0
 };
 
-let placed = mount_component_granular(
-    fuselage_shell,
-    c,
-    box_x, box_y, box_z
-);
+let placed = mount_component_granular(fuselage_shell, c, box_x, box_y, box_z);
 // Example visibility control:
 // let placed = hide_part(placed, "component_physical");
 
-let clipped_assembly = intersect(placed.assembly, fuselage_outer);
+let visible_fuselage = intersect(fuselage_shell, fuselage_outer);
+let visible_bracket = intersect(placed.bracket, fuselage_outer);
+let visible_mounts = subtract(union(visible_fuselage, visible_bracket), placed.fastener_keepout);
 
-union(clipped_assembly, placed.component_physical)
+let preview_parts = #{
+    parts: #{
+        component_physical: placed.component_physical,
+        tray: intersect(placed.tray, fuselage_outer),
+        raw_bracket: intersect(placed.raw_bracket, fuselage_outer),
+        cut_bracket: intersect(placed.cut_bracket, fuselage_outer),
+        fastener_pads: placed.fastener_pads,
+        bracket: intersect(placed.bracket, fuselage_outer),
+        fuselage_shell: visible_fuselage,
+        fastener_keepout: placed.fastener_keepout,
+        keepout: placed.keepout
+    }
+};
+
+union(
+    visible_mounts,
+    placed.component_physical
+)

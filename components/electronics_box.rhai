@@ -28,17 +28,17 @@ fn screw_keepout_at(x, y, shaft_r, head_r, head_d, shaft_d, z_top, above_h, belo
     union(union(hole, head_clear), tail_clear)
 }
 
-fn screw_pad_seed_at(x, y, shaft_r, shaft_d, z_top, head_d, below_extra) {
+fn screw_pad_seed_at(x, y, shaft_r, below_len) {
     translate(
-        cylinder(shaft_r, shaft_d + below_extra),
-        x, y, z_top - head_d - (shaft_d + below_extra) * 0.5
+        cylinder(shaft_r, below_len),
+        x, y, -below_len * 0.5
     )
 }
 
-fn screw_pad_limit_at(x, y, limit_r, shaft_d, z_top, head_d, below_extra) {
+fn screw_pad_limit_at(x, y, limit_r, below_len) {
     translate(
-        cylinder(limit_r, shaft_d + below_extra),
-        x, y, z_top - head_d - (shaft_d + below_extra) * 0.5
+        cylinder(limit_r, below_len),
+        x, y, -below_len * 0.5
     )
 }
 
@@ -63,6 +63,7 @@ fn component() {
     let screw_head_clear_above = 1.0;
     let screw_tail_keepout_extra = 0.8;
     let fastener_pad_limit_r = screw_head_r + 1.8;
+    let fastener_pad_below_len = screw_penetration_below + screw_tail_keepout_extra;
 
     let screw_x = body_x * 0.5 - screw_edge_inset;
     let screw_y = body_y * 0.5 - screw_edge_inset;
@@ -91,23 +92,23 @@ fn component() {
 
     let fastener_pad_seed = union(
         union(
-            screw_pad_seed_at( screw_x,  screw_y, screw_shaft_r + screw_keepout_margin, screw_shaft_d + 0.2, body_z, screw_head_d + 0.2, screw_tail_keepout_extra),
-            screw_pad_seed_at(-screw_x,  screw_y, screw_shaft_r + screw_keepout_margin, screw_shaft_d + 0.2, body_z, screw_head_d + 0.2, screw_tail_keepout_extra)
+            screw_pad_seed_at( screw_x,  screw_y, screw_shaft_r + screw_keepout_margin, fastener_pad_below_len),
+            screw_pad_seed_at(-screw_x,  screw_y, screw_shaft_r + screw_keepout_margin, fastener_pad_below_len)
         ),
         union(
-            screw_pad_seed_at( screw_x, -screw_y, screw_shaft_r + screw_keepout_margin, screw_shaft_d + 0.2, body_z, screw_head_d + 0.2, screw_tail_keepout_extra),
-            screw_pad_seed_at(-screw_x, -screw_y, screw_shaft_r + screw_keepout_margin, screw_shaft_d + 0.2, body_z, screw_head_d + 0.2, screw_tail_keepout_extra)
+            screw_pad_seed_at( screw_x, -screw_y, screw_shaft_r + screw_keepout_margin, fastener_pad_below_len),
+            screw_pad_seed_at(-screw_x, -screw_y, screw_shaft_r + screw_keepout_margin, fastener_pad_below_len)
         )
     );
 
     let fastener_pad_limit = union(
         union(
-            screw_pad_limit_at( screw_x,  screw_y, fastener_pad_limit_r, screw_shaft_d + 0.2, body_z, screw_head_d + 0.2, screw_tail_keepout_extra),
-            screw_pad_limit_at(-screw_x,  screw_y, fastener_pad_limit_r, screw_shaft_d + 0.2, body_z, screw_head_d + 0.2, screw_tail_keepout_extra)
+            screw_pad_limit_at( screw_x,  screw_y, fastener_pad_limit_r, fastener_pad_below_len),
+            screw_pad_limit_at(-screw_x,  screw_y, fastener_pad_limit_r, fastener_pad_below_len)
         ),
         union(
-            screw_pad_limit_at( screw_x, -screw_y, fastener_pad_limit_r, screw_shaft_d + 0.2, body_z, screw_head_d + 0.2, screw_tail_keepout_extra),
-            screw_pad_limit_at(-screw_x, -screw_y, fastener_pad_limit_r, screw_shaft_d + 0.2, body_z, screw_head_d + 0.2, screw_tail_keepout_extra)
+            screw_pad_limit_at( screw_x, -screw_y, fastener_pad_limit_r, fastener_pad_below_len),
+            screw_pad_limit_at(-screw_x, -screw_y, fastener_pad_limit_r, fastener_pad_below_len)
         )
     );
 

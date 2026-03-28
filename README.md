@@ -157,6 +157,10 @@ Useful helpers:
 bracket_offset(component_map, offset_mm)
 tray_clearance(component_map, clearance_mm)
 tray_thickness(component_map, thickness_mm)
+tray_style(component_map, "u_channel")   // shell | u_channel | floor
+tray_wall_height(component_map, height_mm)
+tray_lip_height(component_map, height_mm)
+tray_extend(component_map, extend_mm)
 support_density(component_map, level)   // 1..10
 hide_part(value_map, "component_physical")
 hide_parts(value_map, ["component_physical", "raw_bracket"])
@@ -168,7 +172,8 @@ The mounting pipeline is:
 2. build a connected tier-1 tray shell from `tray_seed` when available
 3. branch supports from the tray/mount points into the host
 4. cut back by keepout/service volumes
-5. blend into the host and return stage outputs
+5. bake the bracket field into a sampled SDF for cheaper downstream resampling
+6. blend into the host and return stage outputs
 
 The returned map currently includes:
 
@@ -179,9 +184,51 @@ The returned map currently includes:
 - `blended_bracket`
 - `bracket`
 - `assembly`
-- `component_physical`
-- `debug_paths`
-- `debug_summary`
+
+Scripts can also expose:
+
+- `let preview_parts = #{ parts: #{ ... } };`
+
+When present, the app shows those staged SDFs in the `Preview Parts` panel so you can highlight or isolate tray/support/keepout stages without editing the final output expression.
+
+### Experimental GPU Compute Backend
+
+The repo now has an experimental hybrid GPU compute path:
+
+- supported SDF graphs are lowered into a shared IR and evaluated analytically on the GPU
+- unsupported SDF graphs fall back to CPU field sampling, then continue on the GPU for sectioning and mesh extraction where possible
+
+Current status:
+
+- GPU section sampling is available in [`sample_section`](./src/bin/sample_section.rs) with `--backend gpu` or `--backend auto`
+- GPU scalar-grid evaluation is integrated into [`compute_sdf_grid`](./src/pipeline.rs) with automatic CPU fallback
+- repeated grid rebuilds now go through [`compute_sdf_grid_cached_arc`](./src/pipeline.rs), which caches sampled grids by SDF identity, bounds, and resolution for viewport and preview-part reuse
+- GPU export meshing is integrated into [`build_export_mesh`](./src/export/mod.rs)
+- Unsupported SDF trees use sampled-grid GPU fallbacks for section cuts and export meshing before falling back to pure CPU paths
+- The bracket/tray workflow now uses GPU-lowerable support geometry plus local sampled host/keepout grids during path tracing, which keeps bracket-heavy workflows on cached sampled fields instead of repeatedly querying the full host SDF tree
+- Preview/stage isolation reuses the same cached grid path, so switching between `preview_parts` entries no longer forces a fresh full resample when the bounds/SDF match
+
+The current GPU-lowered subset is:
+
+- sphere
+- box
+- cylinder
+- torus
+- cone
+- plane
+- union
+- subtract
+- intersect
+- smooth union
+- smooth subtract
+- smooth intersect
+- translate
+- rotate
+- scale
+- offset
+- shell
+- twist
+- bend
 
 Example:
 
@@ -196,6 +243,10 @@ let c = ebox::component();
 let c = bracket_offset(c, 0.5);
 let c = tray_clearance(c, 0.5);
 let c = tray_thickness(c, 1.0);
+let c = tray_style(c, "u_channel");
+let c = tray_wall_height(c, 10.5);
+let c = tray_lip_height(c, 1.0);
+let c = tray_extend(c, 0.8);
 let c = support_density(c, 6);
 
 let placed = mount_component_granular(

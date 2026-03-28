@@ -121,6 +121,34 @@ impl Sdf for Cone {
     }
 }
 
+/// A tapered capsule segment between two points with linearly varying radius.
+pub struct TaperedCapsule {
+    pub a: Vec3,
+    pub b: Vec3,
+    pub radius_a: f32,
+    pub radius_b: f32,
+}
+
+impl TaperedCapsule {
+    pub fn new(a: Vec3, b: Vec3, radius_a: f32, radius_b: f32) -> Self {
+        Self { a, b, radius_a, radius_b }
+    }
+}
+
+impl Sdf for TaperedCapsule {
+    fn distance(&self, point: Vec3) -> f32 {
+        let ab = self.b - self.a;
+        let ab_len2 = ab.length_squared();
+        if ab_len2 <= 1e-12 {
+            return (point - self.a).length() - self.radius_a.max(self.radius_b);
+        }
+        let t = ((point - self.a).dot(ab) / ab_len2).clamp(0.0, 1.0);
+        let p_on_segment = self.a + ab * t;
+        let r = self.radius_a + t * (self.radius_b - self.radius_a);
+        (point - p_on_segment).length() - r
+    }
+}
+
 /// An infinite plane defined by normal and distance from origin
 pub struct Plane {
     pub normal: Vec3,    // Plane normal (should be normalized)
