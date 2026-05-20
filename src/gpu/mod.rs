@@ -5,36 +5,106 @@ use bytemuck::{Pod, Zeroable};
 use eframe::wgpu;
 use glam::{Mat3, Vec3, Vec3Swizzles};
 
-use crate::mesh::{Mesh, Vertex, MeshQuality};
+use crate::mesh::marching_cubes::{EDGE_TABLE, TRI_TABLE};
+use crate::mesh::{Mesh, MeshQuality, Vertex};
 use crate::render::SdfGrid;
 use crate::sdf::Sdf;
-use crate::sdf::booleans::{Intersect, SmoothIntersect, SmoothSubtract, SmoothUnion, Subtract, Union};
-use crate::mesh::marching_cubes::{EDGE_TABLE, TRI_TABLE};
+use crate::sdf::booleans::{
+    Intersect, SmoothIntersect, SmoothSubtract, SmoothUnion, Subtract, Union,
+};
 use crate::sdf::primitives::{Cone, Cylinder, Plane, SdfBox, Sphere, TaperedCapsule, Torus};
 use crate::sdf::transforms::{Bend, Offset, Rotate, Scale, Shell, Translate, Twist};
 
 #[derive(Clone, Debug)]
 pub enum SdfIr {
-    Sphere { radius: f32 },
-    Box { half_extents: [f32; 3] },
-    Cylinder { radius: f32, half_height: f32 },
-    Torus { major_radius: f32, minor_radius: f32 },
-    Cone { radius: f32, height: f32 },
-    TaperedCapsule { a: [f32; 3], b: [f32; 3], radius_a: f32, radius_b: f32 },
-    Plane { normal: [f32; 3], distance: f32 },
-    Union { a: Box<SdfIr>, b: Box<SdfIr> },
-    Subtract { a: Box<SdfIr>, b: Box<SdfIr> },
-    Intersect { a: Box<SdfIr>, b: Box<SdfIr> },
-    SmoothUnion { a: Box<SdfIr>, b: Box<SdfIr>, smoothness: f32 },
-    SmoothSubtract { a: Box<SdfIr>, b: Box<SdfIr>, smoothness: f32 },
-    SmoothIntersect { a: Box<SdfIr>, b: Box<SdfIr>, smoothness: f32 },
-    Translate { child: Box<SdfIr>, offset: [f32; 3] },
-    Rotate { child: Box<SdfIr>, inverse_basis: [[f32; 3]; 3] },
-    Scale { child: Box<SdfIr>, scale: [f32; 3], min_scale: f32 },
-    Offset { child: Box<SdfIr>, distance: f32 },
-    Shell { child: Box<SdfIr>, thickness: f32 },
-    Twist { child: Box<SdfIr>, axis: [f32; 3], rate: f32 },
-    Bend { child: Box<SdfIr>, axis: [f32; 3], bend_b: [f32; 3], bend_c: [f32; 3], curvature: f32 },
+    Sphere {
+        radius: f32,
+    },
+    Box {
+        half_extents: [f32; 3],
+    },
+    Cylinder {
+        radius: f32,
+        half_height: f32,
+    },
+    Torus {
+        major_radius: f32,
+        minor_radius: f32,
+    },
+    Cone {
+        radius: f32,
+        height: f32,
+    },
+    TaperedCapsule {
+        a: [f32; 3],
+        b: [f32; 3],
+        radius_a: f32,
+        radius_b: f32,
+    },
+    Plane {
+        normal: [f32; 3],
+        distance: f32,
+    },
+    Union {
+        a: Box<SdfIr>,
+        b: Box<SdfIr>,
+    },
+    Subtract {
+        a: Box<SdfIr>,
+        b: Box<SdfIr>,
+    },
+    Intersect {
+        a: Box<SdfIr>,
+        b: Box<SdfIr>,
+    },
+    SmoothUnion {
+        a: Box<SdfIr>,
+        b: Box<SdfIr>,
+        smoothness: f32,
+    },
+    SmoothSubtract {
+        a: Box<SdfIr>,
+        b: Box<SdfIr>,
+        smoothness: f32,
+    },
+    SmoothIntersect {
+        a: Box<SdfIr>,
+        b: Box<SdfIr>,
+        smoothness: f32,
+    },
+    Translate {
+        child: Box<SdfIr>,
+        offset: [f32; 3],
+    },
+    Rotate {
+        child: Box<SdfIr>,
+        inverse_basis: [[f32; 3]; 3],
+    },
+    Scale {
+        child: Box<SdfIr>,
+        scale: [f32; 3],
+        min_scale: f32,
+    },
+    Offset {
+        child: Box<SdfIr>,
+        distance: f32,
+    },
+    Shell {
+        child: Box<SdfIr>,
+        thickness: f32,
+    },
+    Twist {
+        child: Box<SdfIr>,
+        axis: [f32; 3],
+        rate: f32,
+    },
+    Bend {
+        child: Box<SdfIr>,
+        axis: [f32; 3],
+        bend_b: [f32; 3],
+        bend_c: [f32; 3],
+        curvature: f32,
+    },
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -67,6 +137,15 @@ struct GridParams {
 
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
+struct PointSampleParams {
+    count: u32,
+    _pad0: u32,
+    _pad1: u32,
+    _pad2: u32,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Pod, Zeroable)]
 struct MeshParams {
     bounds_min: [f32; 3],
     cell_resolution: u32,
@@ -81,16 +160,27 @@ pub fn lower_sdf_ir(sdf: &dyn Sdf) -> Option<SdfIr> {
         return Some(SdfIr::Sphere { radius: s.radius });
     }
     if let Some(b) = any.downcast_ref::<SdfBox>() {
-        return Some(SdfIr::Box { half_extents: b.half_extents.to_array() });
+        return Some(SdfIr::Box {
+            half_extents: b.half_extents.to_array(),
+        });
     }
     if let Some(c) = any.downcast_ref::<Cylinder>() {
-        return Some(SdfIr::Cylinder { radius: c.radius, half_height: c.half_height });
+        return Some(SdfIr::Cylinder {
+            radius: c.radius,
+            half_height: c.half_height,
+        });
     }
     if let Some(t) = any.downcast_ref::<Torus>() {
-        return Some(SdfIr::Torus { major_radius: t.major_radius, minor_radius: t.minor_radius });
+        return Some(SdfIr::Torus {
+            major_radius: t.major_radius,
+            minor_radius: t.minor_radius,
+        });
     }
     if let Some(c) = any.downcast_ref::<Cone>() {
-        return Some(SdfIr::Cone { radius: c.radius, height: c.height });
+        return Some(SdfIr::Cone {
+            radius: c.radius,
+            height: c.height,
+        });
     }
     if let Some(c) = any.downcast_ref::<TaperedCapsule>() {
         return Some(SdfIr::TaperedCapsule {
@@ -101,7 +191,10 @@ pub fn lower_sdf_ir(sdf: &dyn Sdf) -> Option<SdfIr> {
         });
     }
     if let Some(p) = any.downcast_ref::<Plane>() {
-        return Some(SdfIr::Plane { normal: p.normal.to_array(), distance: p.distance });
+        return Some(SdfIr::Plane {
+            normal: p.normal.to_array(),
+            distance: p.distance,
+        });
     }
     if let Some(u) = any.downcast_ref::<Union>() {
         return Some(SdfIr::Union {
@@ -183,7 +276,11 @@ pub fn lower_sdf_ir(sdf: &dyn Sdf) -> Option<SdfIr> {
     }
     if let Some(b) = any.downcast_ref::<Bend>() {
         let a = b.axis;
-        let world_ref = if a.abs().dot(Vec3::Y) < 0.9 { Vec3::Y } else { Vec3::Z };
+        let world_ref = if a.abs().dot(Vec3::Y) < 0.9 {
+            Vec3::Y
+        } else {
+            Vec3::Z
+        };
         let bend_b = a.cross(world_ref).normalize();
         let bend_c = a.cross(bend_b);
         return Some(SdfIr::Bend {
@@ -205,11 +302,21 @@ pub fn eval_ir_cpu(ir: &SdfIr, p: Vec3) -> f32 {
             let q = p.abs() - Vec3::from_array(*half_extents);
             q.max(Vec3::ZERO).length() + q.max_element().min(0.0)
         }
-        SdfIr::Cylinder { radius, half_height } => {
-            let d = Vec3::new(p.truncate().length() - *radius, 0.0, p.z.abs() - *half_height);
+        SdfIr::Cylinder {
+            radius,
+            half_height,
+        } => {
+            let d = Vec3::new(
+                p.truncate().length() - *radius,
+                0.0,
+                p.z.abs() - *half_height,
+            );
             d.max(Vec3::ZERO).length() + d.x.max(d.z).min(0.0)
         }
-        SdfIr::Torus { major_radius, minor_radius } => {
+        SdfIr::Torus {
+            major_radius,
+            minor_radius,
+        } => {
             let q = Vec3::new(p.truncate().length() - *major_radius, 0.0, p.z);
             q.xz().length() - *minor_radius
         }
@@ -226,7 +333,12 @@ pub fn eval_ir_cpu(ir: &SdfIr, p: Vec3) -> f32 {
                 cone_dist
             }
         }
-        SdfIr::TaperedCapsule { a, b, radius_a, radius_b } => {
+        SdfIr::TaperedCapsule {
+            a,
+            b,
+            radius_a,
+            radius_b,
+        } => {
             let a = Vec3::from_array(*a);
             let b = Vec3::from_array(*b);
             let ab = b - a;
@@ -263,11 +375,18 @@ pub fn eval_ir_cpu(ir: &SdfIr, p: Vec3) -> f32 {
             d2 * (1.0 - h) + d1 * h + *smoothness * h * (1.0 - h)
         }
         SdfIr::Translate { child, offset } => eval_ir_cpu(child, p - Vec3::from_array(*offset)),
-        SdfIr::Rotate { child, inverse_basis } => {
+        SdfIr::Rotate {
+            child,
+            inverse_basis,
+        } => {
             let m = rows_to_mat3(*inverse_basis);
             eval_ir_cpu(child, m * p)
         }
-        SdfIr::Scale { child, scale, min_scale } => {
+        SdfIr::Scale {
+            child,
+            scale,
+            min_scale,
+        } => {
             let s = Vec3::from_array(*scale);
             eval_ir_cpu(child, p / s) * *min_scale
         }
@@ -280,7 +399,13 @@ pub fn eval_ir_cpu(ir: &SdfIr, p: Vec3) -> f32 {
             let rotation = glam::Quat::from_axis_angle(axis, -angle_rad);
             eval_ir_cpu(child, rotation * p)
         }
-        SdfIr::Bend { child, axis, bend_b, bend_c, curvature } => {
+        SdfIr::Bend {
+            child,
+            axis,
+            bend_b,
+            bend_c,
+            curvature,
+        } => {
             let a = Vec3::from_array(*axis);
             let b = Vec3::from_array(*bend_b);
             let c = Vec3::from_array(*bend_c);
@@ -309,10 +434,12 @@ pub fn sample_section_gpu(
 ) -> Result<Vec<f32>, String> {
     let ctx = gpu_context()?;
     let shader = build_section_shader(ir);
-    let shader_module = ctx.device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: Some("GPU Section Sampling Shader"),
-        source: wgpu::ShaderSource::Wgsl(shader.into()),
-    });
+    let shader_module = ctx
+        .device
+        .create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("GPU Section Sampling Shader"),
+            source: wgpu::ShaderSource::Wgsl(shader.into()),
+        });
     let params = SectionParams {
         amin,
         da: (amax - amin) / (na as f32 - 1.0),
@@ -321,7 +448,10 @@ pub fn sample_section_gpu(
         coord,
         na: na as u32,
         nb: nb as u32,
-        plane: match plane { SectionPlane::Xz => 0, SectionPlane::Yz => 1 },
+        plane: match plane {
+            SectionPlane::Xz => 0,
+            SectionPlane::Yz => 1,
+        },
     };
     let output_len = na * nb;
     let output_size = (output_len * std::mem::size_of::<f32>()) as u64;
@@ -332,7 +462,8 @@ pub fn sample_section_gpu(
         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         mapped_at_creation: false,
     });
-    ctx.queue.write_buffer(&params_buffer, 0, bytemuck::bytes_of(&params));
+    ctx.queue
+        .write_buffer(&params_buffer, 0, bytemuck::bytes_of(&params));
 
     let output_buffer = ctx.device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("GPU Section Output"),
@@ -347,56 +478,70 @@ pub fn sample_section_gpu(
         mapped_at_creation: false,
     });
 
-    let bind_group_layout = ctx.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-        label: Some("GPU Section BGL"),
-        entries: &[
-            wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
+    let bind_group_layout = ctx
+        .device
+        .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("GPU Section BGL"),
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
                 },
-                count: None,
-            },
-            wgpu::BindGroupLayoutEntry {
-                binding: 1,
-                visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Storage { read_only: false },
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: false },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
                 },
-                count: None,
-            },
-        ],
-    });
+            ],
+        });
     let bind_group = ctx.device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("GPU Section BG"),
         layout: &bind_group_layout,
         entries: &[
-            wgpu::BindGroupEntry { binding: 0, resource: params_buffer.as_entire_binding() },
-            wgpu::BindGroupEntry { binding: 1, resource: output_buffer.as_entire_binding() },
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: params_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: output_buffer.as_entire_binding(),
+            },
         ],
     });
-    let pipeline_layout = ctx.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-        label: Some("GPU Section PL"),
-        bind_group_layouts: &[&bind_group_layout],
-        push_constant_ranges: &[],
-    });
-    let pipeline = ctx.device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-        label: Some("GPU Section Pipeline"),
-        layout: Some(&pipeline_layout),
-        module: &shader_module,
-        entry_point: "main",
-        compilation_options: Default::default(),
-        cache: None,
-    });
+    let pipeline_layout = ctx
+        .device
+        .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("GPU Section PL"),
+            bind_group_layouts: &[&bind_group_layout],
+            push_constant_ranges: &[],
+        });
+    let pipeline = ctx
+        .device
+        .create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+            label: Some("GPU Section Pipeline"),
+            layout: Some(&pipeline_layout),
+            module: &shader_module,
+            entry_point: "main",
+            compilation_options: Default::default(),
+            cache: None,
+        });
 
-    let mut encoder = ctx.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-        label: Some("GPU Section Encoder"),
-    });
+    let mut encoder = ctx
+        .device
+        .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("GPU Section Encoder"),
+        });
     {
         let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
             label: Some("GPU Section Pass"),
@@ -426,10 +571,12 @@ pub fn sample_section_from_grid_gpu(
 ) -> Result<Vec<f32>, String> {
     let ctx = gpu_context()?;
     let shader = build_grid_section_shader();
-    let shader_module = ctx.device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: Some("GPU Grid Section Shader"),
-        source: wgpu::ShaderSource::Wgsl(shader.into()),
-    });
+    let shader_module = ctx
+        .device
+        .create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("GPU Grid Section Shader"),
+            source: wgpu::ShaderSource::Wgsl(shader.into()),
+        });
     let params = SectionParams {
         amin,
         da: (amax - amin) / (na as f32 - 1.0),
@@ -438,7 +585,10 @@ pub fn sample_section_from_grid_gpu(
         coord,
         na: na as u32,
         nb: nb as u32,
-        plane: match plane { SectionPlane::Xz => 0, SectionPlane::Yz => 1 },
+        plane: match plane {
+            SectionPlane::Xz => 0,
+            SectionPlane::Yz => 1,
+        },
     };
     let grid_params = GridParams {
         bounds_min: grid.bounds_min.to_array(),
@@ -456,21 +606,24 @@ pub fn sample_section_from_grid_gpu(
         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         mapped_at_creation: false,
     });
-    ctx.queue.write_buffer(&section_buffer, 0, bytemuck::bytes_of(&params));
+    ctx.queue
+        .write_buffer(&section_buffer, 0, bytemuck::bytes_of(&params));
     let grid_buffer = ctx.device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("GPU Grid Section Grid Params"),
         size: std::mem::size_of::<GridParams>() as u64,
         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         mapped_at_creation: false,
     });
-    ctx.queue.write_buffer(&grid_buffer, 0, bytemuck::bytes_of(&grid_params));
+    ctx.queue
+        .write_buffer(&grid_buffer, 0, bytemuck::bytes_of(&grid_params));
     let scalar_buffer = ctx.device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("GPU Grid Section Scalars"),
         size: scalar_size,
         usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
         mapped_at_creation: false,
     });
-    ctx.queue.write_buffer(&scalar_buffer, 0, bytemuck::cast_slice(&grid.data));
+    ctx.queue
+        .write_buffer(&scalar_buffer, 0, bytemuck::cast_slice(&grid.data));
     let output_buffer = ctx.device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("GPU Grid Section Output"),
         size: output_size,
@@ -484,77 +637,97 @@ pub fn sample_section_from_grid_gpu(
         mapped_at_creation: false,
     });
 
-    let bind_group_layout = ctx.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-        label: Some("GPU Grid Section BGL"),
-        entries: &[
-            wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
+    let bind_group_layout = ctx
+        .device
+        .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("GPU Grid Section BGL"),
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
                 },
-                count: None,
-            },
-            wgpu::BindGroupLayoutEntry {
-                binding: 1,
-                visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
                 },
-                count: None,
-            },
-            wgpu::BindGroupLayoutEntry {
-                binding: 2,
-                visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Storage { read_only: true },
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
+                wgpu::BindGroupLayoutEntry {
+                    binding: 2,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
                 },
-                count: None,
-            },
-            wgpu::BindGroupLayoutEntry {
-                binding: 3,
-                visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Storage { read_only: false },
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
+                wgpu::BindGroupLayoutEntry {
+                    binding: 3,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: false },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
                 },
-                count: None,
-            },
-        ],
-    });
+            ],
+        });
     let bind_group = ctx.device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("GPU Grid Section BG"),
         layout: &bind_group_layout,
         entries: &[
-            wgpu::BindGroupEntry { binding: 0, resource: section_buffer.as_entire_binding() },
-            wgpu::BindGroupEntry { binding: 1, resource: grid_buffer.as_entire_binding() },
-            wgpu::BindGroupEntry { binding: 2, resource: scalar_buffer.as_entire_binding() },
-            wgpu::BindGroupEntry { binding: 3, resource: output_buffer.as_entire_binding() },
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: section_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: grid_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 2,
+                resource: scalar_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 3,
+                resource: output_buffer.as_entire_binding(),
+            },
         ],
     });
-    let pipeline_layout = ctx.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-        label: Some("GPU Grid Section PL"),
-        bind_group_layouts: &[&bind_group_layout],
-        push_constant_ranges: &[],
-    });
-    let pipeline = ctx.device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-        label: Some("GPU Grid Section Pipeline"),
-        layout: Some(&pipeline_layout),
-        module: &shader_module,
-        entry_point: "main",
-        compilation_options: Default::default(),
-        cache: None,
-    });
-    let mut encoder = ctx.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-        label: Some("GPU Grid Section Encoder"),
-    });
+    let pipeline_layout = ctx
+        .device
+        .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("GPU Grid Section PL"),
+            bind_group_layouts: &[&bind_group_layout],
+            push_constant_ranges: &[],
+        });
+    let pipeline = ctx
+        .device
+        .create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+            label: Some("GPU Grid Section Pipeline"),
+            layout: Some(&pipeline_layout),
+            module: &shader_module,
+            entry_point: "main",
+            compilation_options: Default::default(),
+            cache: None,
+        });
+    let mut encoder = ctx
+        .device
+        .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("GPU Grid Section Encoder"),
+        });
     {
         let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
             label: Some("GPU Grid Section Pass"),
@@ -579,10 +752,12 @@ pub fn compute_sdf_grid_gpu(
 ) -> Result<SdfGrid, String> {
     let ctx = gpu_context()?;
     let shader = build_grid_shader(ir);
-    let shader_module = ctx.device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: Some("GPU Grid Sampling Shader"),
-        source: wgpu::ShaderSource::Wgsl(shader.into()),
-    });
+    let shader_module = ctx
+        .device
+        .create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("GPU Grid Sampling Shader"),
+            source: wgpu::ShaderSource::Wgsl(shader.into()),
+        });
     let params = GridParams {
         bounds_min: bounds_min.to_array(),
         resolution,
@@ -598,7 +773,8 @@ pub fn compute_sdf_grid_gpu(
         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         mapped_at_creation: false,
     });
-    ctx.queue.write_buffer(&params_buffer, 0, bytemuck::bytes_of(&params));
+    ctx.queue
+        .write_buffer(&params_buffer, 0, bytemuck::bytes_of(&params));
 
     let output_buffer = ctx.device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("GPU Grid Output"),
@@ -613,56 +789,70 @@ pub fn compute_sdf_grid_gpu(
         mapped_at_creation: false,
     });
 
-    let bind_group_layout = ctx.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-        label: Some("GPU Grid BGL"),
-        entries: &[
-            wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
+    let bind_group_layout = ctx
+        .device
+        .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("GPU Grid BGL"),
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
                 },
-                count: None,
-            },
-            wgpu::BindGroupLayoutEntry {
-                binding: 1,
-                visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Storage { read_only: false },
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: false },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
                 },
-                count: None,
-            },
-        ],
-    });
+            ],
+        });
     let bind_group = ctx.device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("GPU Grid BG"),
         layout: &bind_group_layout,
         entries: &[
-            wgpu::BindGroupEntry { binding: 0, resource: params_buffer.as_entire_binding() },
-            wgpu::BindGroupEntry { binding: 1, resource: output_buffer.as_entire_binding() },
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: params_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: output_buffer.as_entire_binding(),
+            },
         ],
     });
-    let pipeline_layout = ctx.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-        label: Some("GPU Grid PL"),
-        bind_group_layouts: &[&bind_group_layout],
-        push_constant_ranges: &[],
-    });
-    let pipeline = ctx.device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-        label: Some("GPU Grid Pipeline"),
-        layout: Some(&pipeline_layout),
-        module: &shader_module,
-        entry_point: "main",
-        compilation_options: Default::default(),
-        cache: None,
-    });
+    let pipeline_layout = ctx
+        .device
+        .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("GPU Grid PL"),
+            bind_group_layouts: &[&bind_group_layout],
+            push_constant_ranges: &[],
+        });
+    let pipeline = ctx
+        .device
+        .create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+            label: Some("GPU Grid Pipeline"),
+            layout: Some(&pipeline_layout),
+            module: &shader_module,
+            entry_point: "main",
+            compilation_options: Default::default(),
+            cache: None,
+        });
 
-    let mut encoder = ctx.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-        label: Some("GPU Grid Encoder"),
-    });
+    let mut encoder = ctx
+        .device
+        .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("GPU Grid Encoder"),
+        });
     {
         let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
             label: Some("GPU Grid Pass"),
@@ -682,6 +872,153 @@ pub fn compute_sdf_grid_gpu(
         bounds_min,
         bounds_max,
     })
+}
+
+pub fn sample_points_gpu(ir: &SdfIr, points: &[Vec3]) -> Result<Vec<f32>, String> {
+    if points.is_empty() {
+        return Ok(Vec::new());
+    }
+    let ctx = gpu_context()?;
+    let shader = build_points_shader(ir);
+    let shader_module = ctx
+        .device
+        .create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("GPU Point Sampling Shader"),
+            source: wgpu::ShaderSource::Wgsl(shader.into()),
+        });
+
+    let params = PointSampleParams {
+        count: points.len() as u32,
+        _pad0: 0,
+        _pad1: 0,
+        _pad2: 0,
+    };
+    let packed_points: Vec<[f32; 4]> = points.iter().map(|p| [p.x, p.y, p.z, 0.0]).collect();
+    let points_size = (packed_points.len() * std::mem::size_of::<[f32; 4]>()) as u64;
+    let output_size = (points.len() * std::mem::size_of::<f32>()) as u64;
+
+    let params_buffer = ctx.device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("GPU Point Sampling Params"),
+        size: std::mem::size_of::<PointSampleParams>() as u64,
+        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        mapped_at_creation: false,
+    });
+    ctx.queue
+        .write_buffer(&params_buffer, 0, bytemuck::bytes_of(&params));
+
+    let points_buffer = ctx.device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("GPU Point Sampling Input"),
+        size: points_size,
+        usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+        mapped_at_creation: false,
+    });
+    ctx.queue
+        .write_buffer(&points_buffer, 0, bytemuck::cast_slice(&packed_points));
+
+    let output_buffer = ctx.device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("GPU Point Sampling Output"),
+        size: output_size,
+        usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+        mapped_at_creation: false,
+    });
+    let readback_buffer = ctx.device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("GPU Point Sampling Readback"),
+        size: output_size,
+        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+        mapped_at_creation: false,
+    });
+
+    let bind_group_layout = ctx
+        .device
+        .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("GPU Point Sampling BGL"),
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 2,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: false },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
+            ],
+        });
+    let bind_group = ctx.device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("GPU Point Sampling BG"),
+        layout: &bind_group_layout,
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: params_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: points_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 2,
+                resource: output_buffer.as_entire_binding(),
+            },
+        ],
+    });
+    let pipeline_layout = ctx
+        .device
+        .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("GPU Point Sampling PL"),
+            bind_group_layouts: &[&bind_group_layout],
+            push_constant_ranges: &[],
+        });
+    let pipeline = ctx
+        .device
+        .create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+            label: Some("GPU Point Sampling Pipeline"),
+            layout: Some(&pipeline_layout),
+            module: &shader_module,
+            entry_point: "main",
+            compilation_options: Default::default(),
+            cache: None,
+        });
+
+    let mut encoder = ctx
+        .device
+        .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("GPU Point Sampling Encoder"),
+        });
+    {
+        let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+            label: Some("GPU Point Sampling Pass"),
+            timestamp_writes: None,
+        });
+        pass.set_pipeline(&pipeline);
+        pass.set_bind_group(0, &bind_group, &[]);
+        let groups = (points.len() as u32 + 63) / 64;
+        pass.dispatch_workgroups(groups.max(1), 1, 1);
+    }
+    encoder.copy_buffer_to_buffer(&output_buffer, 0, &readback_buffer, 0, output_size);
+    ctx.queue.submit(Some(encoder.finish()));
+    read_back_f32_buffer(&ctx.device, &readback_buffer, points.len())
 }
 
 pub fn extract_mesh_gpu(
@@ -714,7 +1051,8 @@ pub fn extract_mesh_gpu(
         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         mapped_at_creation: false,
     });
-    ctx.queue.write_buffer(&params_buffer, 0, bytemuck::bytes_of(&mesh_params));
+    ctx.queue
+        .write_buffer(&params_buffer, 0, bytemuck::bytes_of(&mesh_params));
 
     let scalar_buffer = ctx.device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("GPU Mesh Scalar Grid"),
@@ -743,11 +1081,20 @@ pub fn extract_mesh_gpu(
         usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
         mapped_at_creation: false,
     });
-    run_gpu_mesh_count_pass(&ctx.device, &ctx.queue, &params_buffer, &scalar_buffer, &counts_buffer, cell_resolution)?;
+    run_gpu_mesh_count_pass(
+        &ctx.device,
+        &ctx.queue,
+        &params_buffer,
+        &scalar_buffer,
+        &counts_buffer,
+        cell_resolution,
+    )?;
     {
-        let mut encoder = ctx.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("GPU Mesh Count Readback"),
-        });
+        let mut encoder = ctx
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("GPU Mesh Count Readback"),
+            });
         encoder.copy_buffer_to_buffer(&counts_buffer, 0, &counts_readback, 0, count_size);
         ctx.queue.submit(Some(encoder.finish()));
     }
@@ -759,7 +1106,10 @@ pub fn extract_mesh_gpu(
         total_vertices = total_vertices.saturating_add(*count);
     }
     if total_vertices == 0 {
-        return Ok(Mesh { vertices: Vec::new(), indices: Vec::new() });
+        return Ok(Mesh {
+            vertices: Vec::new(),
+            indices: Vec::new(),
+        });
     }
 
     let offsets_buffer = ctx.device.create_buffer(&wgpu::BufferDescriptor {
@@ -768,7 +1118,8 @@ pub fn extract_mesh_gpu(
         usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
         mapped_at_creation: false,
     });
-    ctx.queue.write_buffer(&offsets_buffer, 0, bytemuck::cast_slice(&offsets));
+    ctx.queue
+        .write_buffer(&offsets_buffer, 0, bytemuck::cast_slice(&offsets));
 
     let vertex_stride = std::mem::size_of::<[f32; 4]>() as u64;
     let positions_buffer = ctx.device.create_buffer(&wgpu::BufferDescriptor {
@@ -793,9 +1144,11 @@ pub fn extract_mesh_gpu(
         cell_resolution,
     )?;
     {
-        let mut encoder = ctx.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("GPU Mesh Position Readback"),
-        });
+        let mut encoder = ctx
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("GPU Mesh Position Readback"),
+            });
         encoder.copy_buffer_to_buffer(
             &positions_buffer,
             0,
@@ -806,7 +1159,11 @@ pub fn extract_mesh_gpu(
         ctx.queue.submit(Some(encoder.finish()));
     }
 
-    let positions_raw = read_back_f32_buffer(&ctx.device, &positions_readback, total_vertices as usize * 4)?;
+    let positions_raw = read_back_f32_buffer(
+        &ctx.device,
+        &positions_readback,
+        total_vertices as usize * 4,
+    )?;
     let mut vertices = Vec::with_capacity(total_vertices as usize);
     for chunk in positions_raw.chunks_exact(4) {
         vertices.push(Vertex {
@@ -848,14 +1205,16 @@ pub fn extract_mesh_from_vertex_grid_gpu(
         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         mapped_at_creation: false,
     });
-    ctx.queue.write_buffer(&params_buffer, 0, bytemuck::bytes_of(&mesh_params));
+    ctx.queue
+        .write_buffer(&params_buffer, 0, bytemuck::bytes_of(&mesh_params));
     let scalar_buffer = ctx.device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("GPU Vertex Grid Mesh Scalars"),
         size: (vertex_scalars.len() * std::mem::size_of::<f32>()) as u64,
         usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
         mapped_at_creation: false,
     });
-    ctx.queue.write_buffer(&scalar_buffer, 0, bytemuck::cast_slice(vertex_scalars));
+    ctx.queue
+        .write_buffer(&scalar_buffer, 0, bytemuck::cast_slice(vertex_scalars));
 
     extract_mesh_from_scalar_buffer_gpu(
         &ctx.device,
@@ -880,9 +1239,8 @@ fn mat3_to_rows(m: Mat3) -> [[f32; 3]; 3] {
 
 fn rows_to_mat3(rows: [[f32; 3]; 3]) -> Mat3 {
     Mat3::from_cols_array(&[
-        rows[0][0], rows[1][0], rows[2][0],
-        rows[0][1], rows[1][1], rows[2][1],
-        rows[0][2], rows[1][2], rows[2][2],
+        rows[0][0], rows[1][0], rows[2][0], rows[0][1], rows[1][1], rows[2][1], rows[0][2],
+        rows[1][2], rows[2][2],
     ])
 }
 
@@ -1113,6 +1471,114 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {{
     )
 }
 
+fn build_points_shader(ir: &SdfIr) -> String {
+    let expr = wgsl_expr(ir, "p");
+    format!(
+        r#"
+struct Params {{
+    count: u32,
+    _pad0: u32,
+    _pad1: u32,
+    _pad2: u32,
+}}
+
+@group(0) @binding(0) var<uniform> params: Params;
+@group(0) @binding(1) var<storage, read> in_points: array<vec4<f32>>;
+@group(0) @binding(2) var<storage, read_write> out_data: array<f32>;
+
+fn sdf_box(p: vec3<f32>, half_extents: vec3<f32>) -> f32 {{
+    let q = abs(p) - half_extents;
+    return length(max(q, vec3<f32>(0.0))) + min(max(q.x, max(q.y, q.z)), 0.0);
+}}
+
+fn sdf_cylinder(p: vec3<f32>, radius: f32, half_height: f32) -> f32 {{
+    let radial = length(p.xy) - radius;
+    let axial = abs(p.z) - half_height;
+    let d = vec2<f32>(radial, axial);
+    return length(max(d, vec2<f32>(0.0))) + min(max(d.x, d.y), 0.0);
+}}
+
+fn sdf_torus(p: vec3<f32>, major_radius: f32, minor_radius: f32) -> f32 {{
+    let q = vec2<f32>(length(p.xy) - major_radius, p.z);
+    return length(q) - minor_radius;
+}}
+
+fn sdf_cone(p: vec3<f32>, radius: f32, height: f32) -> f32 {{
+    let q = length(p.xy);
+    let h = -p.z;
+    let tan_angle = radius / height;
+    let cone_dist = (q - h * tan_angle) / sqrt(1.0 + tan_angle * tan_angle);
+    if (h < 0.0) {{
+        return sqrt(q * q + p.z * p.z);
+    }}
+    if (h > height) {{
+        return length(vec2<f32>(q - radius, h - height));
+    }}
+    return cone_dist;
+}}
+
+fn sdf_tapered_capsule(p: vec3<f32>, a: vec3<f32>, b: vec3<f32>, radius_a: f32, radius_b: f32) -> f32 {{
+    let ab = b - a;
+    let ab_len2 = dot(ab, ab);
+    if (ab_len2 <= 1e-12) {{
+        return length(p - a) - max(radius_a, radius_b);
+    }}
+    let t = clamp(dot(p - a, ab) / ab_len2, 0.0, 1.0);
+    let p_on_segment = a + ab * t;
+    let r = radius_a + t * (radius_b - radius_a);
+    return length(p - p_on_segment) - r;
+}}
+
+fn smooth_union_poly(a: f32, b: f32, k: f32) -> f32 {{
+    let h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
+    return b * (1.0 - h) + a * h - k * h * (1.0 - h);
+}}
+
+fn smooth_intersect_poly(a: f32, b: f32, k: f32) -> f32 {{
+    let h = clamp(0.5 - 0.5 * (b - a) / k, 0.0, 1.0);
+    return b * (1.0 - h) + a * h + k * h * (1.0 - h);
+}}
+
+fn smooth_subtract_poly(base: f32, tool: f32, k: f32) -> f32 {{
+    let h = clamp(0.5 - 0.5 * (base + tool) / k, 0.0, 1.0);
+    return base + (-tool - base) * h + k * h * (1.0 - h);
+}}
+
+fn rotate_around_axis(p: vec3<f32>, axis: vec3<f32>, angle: f32) -> vec3<f32> {{
+    let s = sin(angle);
+    let c = cos(angle);
+    return p * c + cross(axis, p) * s + axis * dot(axis, p) * (1.0 - c);
+}}
+
+fn bend_eval_point(p: vec3<f32>, axis: vec3<f32>, bend_b: vec3<f32>, bend_c: vec3<f32>, curvature: f32) -> vec3<f32> {{
+    let d = dot(p, axis);
+    let pb = dot(p, bend_b);
+    let pc = dot(p, bend_c);
+    let angle = curvature * d;
+    let s = sin(angle);
+    let c = cos(angle);
+    let qa = c * d + s * pb;
+    let qb = -s * d + c * pb;
+    return qa * axis + qb * bend_b + pc * bend_c;
+}}
+
+fn sdf_eval(p: vec3<f32>) -> f32 {{
+    return {expr};
+}}
+
+@compute @workgroup_size(64, 1, 1)
+fn main(@builtin(global_invocation_id) gid: vec3<u32>) {{
+    let idx = gid.x;
+    if (idx >= params.count) {{
+        return;
+    }}
+    let p = in_points[idx].xyz;
+    out_data[idx] = sdf_eval(p);
+}}
+"#
+    )
+}
+
 fn build_grid_section_shader() -> String {
     r#"
 struct SectionParams {
@@ -1193,7 +1659,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     let idx = gid.x + gid.y * section.na;
     out_data[idx] = sample_grid(p);
 }
-"#.to_string()
+"#
+    .to_string()
 }
 
 fn build_vertex_grid_shader(ir: &SdfIr) -> String {
@@ -1297,28 +1764,46 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {{
 }
 
 fn edge_table_wgsl() -> String {
-    let values = EDGE_TABLE.iter().map(|v| format!("{v}u")).collect::<Vec<_>>().join(", ");
+    let values = EDGE_TABLE
+        .iter()
+        .map(|v| format!("{v}u"))
+        .collect::<Vec<_>>()
+        .join(", ");
     format!("var<private> EDGE_TABLE: array<u32, 256> = array<u32, 256>({values});")
 }
 
 fn tri_table_wgsl() -> String {
-    let rows = TRI_TABLE.iter().map(|row| {
-        let vals = row.iter().map(|v| format!("{v}")).collect::<Vec<_>>().join(", ");
-        format!("array<i32, 16>({vals})")
-    }).collect::<Vec<_>>().join(",\n");
-    format!("var<private> TRI_TABLE: array<array<i32, 16>, 256> = array<array<i32, 16>, 256>(\n{rows}\n);")
+    let rows = TRI_TABLE
+        .iter()
+        .map(|row| {
+            let vals = row
+                .iter()
+                .map(|v| format!("{v}"))
+                .collect::<Vec<_>>()
+                .join(", ");
+            format!("array<i32, 16>({vals})")
+        })
+        .collect::<Vec<_>>()
+        .join(",\n");
+    format!(
+        "var<private> TRI_TABLE: array<array<i32, 16>, 256> = array<array<i32, 16>, 256>(\n{rows}\n);"
+    )
 }
 
 fn tri_count_wgsl() -> String {
-    let counts = TRI_TABLE.iter().map(|row| {
-        let mut c = 0u32;
-        let mut i = 0usize;
-        while i < 16 && row[i] != -1 {
-            c += 1;
-            i += 3;
-        }
-        format!("{c}u")
-    }).collect::<Vec<_>>().join(", ");
+    let counts = TRI_TABLE
+        .iter()
+        .map(|row| {
+            let mut c = 0u32;
+            let mut i = 0usize;
+            while i < 16 && row[i] != -1 {
+                c += 1;
+                i += 3;
+            }
+            format!("{c}u")
+        })
+        .collect::<Vec<_>>()
+        .join(", ");
     format!("var<private> TRI_COUNTS: array<u32, 256> = array<u32, 256>({counts});")
 }
 
@@ -1560,8 +2045,14 @@ fn run_gpu_vertex_grid_pass(
         label: Some("GPU Vertex Grid BG"),
         layout: &bind_group_layout,
         entries: &[
-            wgpu::BindGroupEntry { binding: 0, resource: params_buffer.as_entire_binding() },
-            wgpu::BindGroupEntry { binding: 1, resource: output_buffer.as_entire_binding() },
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: params_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: output_buffer.as_entire_binding(),
+            },
         ],
     });
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -1645,9 +2136,18 @@ fn run_gpu_mesh_count_pass(
         label: Some("GPU Mesh Count BG"),
         layout: &bind_group_layout,
         entries: &[
-            wgpu::BindGroupEntry { binding: 0, resource: params_buffer.as_entire_binding() },
-            wgpu::BindGroupEntry { binding: 1, resource: scalar_buffer.as_entire_binding() },
-            wgpu::BindGroupEntry { binding: 2, resource: counts_buffer.as_entire_binding() },
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: params_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: scalar_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 2,
+                resource: counts_buffer.as_entire_binding(),
+            },
         ],
     });
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -1742,10 +2242,22 @@ fn run_gpu_mesh_emit_pass(
         label: Some("GPU Mesh Emit BG"),
         layout: &bind_group_layout,
         entries: &[
-            wgpu::BindGroupEntry { binding: 0, resource: params_buffer.as_entire_binding() },
-            wgpu::BindGroupEntry { binding: 1, resource: scalar_buffer.as_entire_binding() },
-            wgpu::BindGroupEntry { binding: 2, resource: offsets_buffer.as_entire_binding() },
-            wgpu::BindGroupEntry { binding: 3, resource: positions_buffer.as_entire_binding() },
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: params_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: scalar_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 2,
+                resource: offsets_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 3,
+                resource: positions_buffer.as_entire_binding(),
+            },
         ],
     });
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -1803,7 +2315,14 @@ fn extract_mesh_from_scalar_buffer_gpu(
         usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
         mapped_at_creation: false,
     });
-    run_gpu_mesh_count_pass(device, queue, params_buffer, scalar_buffer, &counts_buffer, cell_resolution)?;
+    run_gpu_mesh_count_pass(
+        device,
+        queue,
+        params_buffer,
+        scalar_buffer,
+        &counts_buffer,
+        cell_resolution,
+    )?;
     {
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("GPU Scalar Mesh Count Readback"),
@@ -1819,7 +2338,10 @@ fn extract_mesh_from_scalar_buffer_gpu(
         total_vertices = total_vertices.saturating_add(*count);
     }
     if total_vertices == 0 {
-        return Ok(Mesh { vertices: Vec::new(), indices: Vec::new() });
+        return Ok(Mesh {
+            vertices: Vec::new(),
+            indices: Vec::new(),
+        });
     }
 
     let offsets_buffer = device.create_buffer(&wgpu::BufferDescriptor {
@@ -1865,7 +2387,8 @@ fn extract_mesh_from_scalar_buffer_gpu(
         );
         queue.submit(Some(encoder.finish()));
     }
-    let positions_raw = read_back_f32_buffer(device, &positions_readback, total_vertices as usize * 4)?;
+    let positions_raw =
+        read_back_f32_buffer(device, &positions_readback, total_vertices as usize * 4)?;
     let mut vertices = Vec::with_capacity(total_vertices as usize);
     for chunk in positions_raw.chunks_exact(4) {
         vertices.push(Vertex {
@@ -1911,14 +2434,25 @@ fn wgsl_expr(ir: &SdfIr, point_expr: &str) -> String {
             "sdf_box({point_expr}, vec3<f32>({}f, {}f, {}f))",
             half_extents[0], half_extents[1], half_extents[2]
         ),
-        SdfIr::Cylinder { radius, half_height } => {
+        SdfIr::Cylinder {
+            radius,
+            half_height,
+        } => {
             format!("sdf_cylinder({point_expr}, {radius}f, {half_height}f)")
         }
-        SdfIr::Torus { major_radius, minor_radius } => {
+        SdfIr::Torus {
+            major_radius,
+            minor_radius,
+        } => {
             format!("sdf_torus({point_expr}, {major_radius}f, {minor_radius}f)")
         }
         SdfIr::Cone { radius, height } => format!("sdf_cone({point_expr}, {radius}f, {height}f)"),
-        SdfIr::TaperedCapsule { a, b, radius_a, radius_b } => format!(
+        SdfIr::TaperedCapsule {
+            a,
+            b,
+            radius_a,
+            radius_b,
+        } => format!(
             "sdf_tapered_capsule({point_expr}, vec3<f32>({}f, {}f, {}f), vec3<f32>({}f, {}f, {}f), {radius_a}f, {radius_b}f)",
             a[0], a[1], a[2], b[0], b[1], b[2]
         ),
@@ -1926,9 +2460,21 @@ fn wgsl_expr(ir: &SdfIr, point_expr: &str) -> String {
             "dot({point_expr}, vec3<f32>({}f, {}f, {}f)) - {distance}f",
             normal[0], normal[1], normal[2]
         ),
-        SdfIr::Union { a, b } => format!("min({}, {})", wgsl_expr(a, point_expr), wgsl_expr(b, point_expr)),
-        SdfIr::Subtract { a, b } => format!("max({}, -({}))", wgsl_expr(a, point_expr), wgsl_expr(b, point_expr)),
-        SdfIr::Intersect { a, b } => format!("max({}, {})", wgsl_expr(a, point_expr), wgsl_expr(b, point_expr)),
+        SdfIr::Union { a, b } => format!(
+            "min({}, {})",
+            wgsl_expr(a, point_expr),
+            wgsl_expr(b, point_expr)
+        ),
+        SdfIr::Subtract { a, b } => format!(
+            "max({}, -({}))",
+            wgsl_expr(a, point_expr),
+            wgsl_expr(b, point_expr)
+        ),
+        SdfIr::Intersect { a, b } => format!(
+            "max({}, {})",
+            wgsl_expr(a, point_expr),
+            wgsl_expr(b, point_expr)
+        ),
         SdfIr::SmoothUnion { a, b, smoothness } => {
             format!(
                 "smooth_union_poly({}, {}, {}f)",
@@ -1954,24 +2500,49 @@ fn wgsl_expr(ir: &SdfIr, point_expr: &str) -> String {
             )
         }
         SdfIr::Translate { child, offset } => {
-            let q = format!("{point_expr} - vec3<f32>({}f, {}f, {}f)", offset[0], offset[1], offset[2]);
-            wgsl_expr(child, &q)
-        }
-        SdfIr::Rotate { child, inverse_basis } => {
             let q = format!(
-                "mat3x3<f32>(vec3<f32>({}f, {}f, {}f), vec3<f32>({}f, {}f, {}f), vec3<f32>({}f, {}f, {}f)) * {point_expr}",
-                inverse_basis[0][0], inverse_basis[1][0], inverse_basis[2][0],
-                inverse_basis[0][1], inverse_basis[1][1], inverse_basis[2][1],
-                inverse_basis[0][2], inverse_basis[1][2], inverse_basis[2][2],
+                "{point_expr} - vec3<f32>({}f, {}f, {}f)",
+                offset[0], offset[1], offset[2]
             );
             wgsl_expr(child, &q)
         }
-        SdfIr::Scale { child, scale, min_scale } => {
-            let q = format!("{point_expr} / vec3<f32>({}f, {}f, {}f)", scale[0], scale[1], scale[2]);
+        SdfIr::Rotate {
+            child,
+            inverse_basis,
+        } => {
+            let q = format!(
+                "mat3x3<f32>(vec3<f32>({}f, {}f, {}f), vec3<f32>({}f, {}f, {}f), vec3<f32>({}f, {}f, {}f)) * {point_expr}",
+                inverse_basis[0][0],
+                inverse_basis[1][0],
+                inverse_basis[2][0],
+                inverse_basis[0][1],
+                inverse_basis[1][1],
+                inverse_basis[2][1],
+                inverse_basis[0][2],
+                inverse_basis[1][2],
+                inverse_basis[2][2],
+            );
+            wgsl_expr(child, &q)
+        }
+        SdfIr::Scale {
+            child,
+            scale,
+            min_scale,
+        } => {
+            let q = format!(
+                "{point_expr} / vec3<f32>({}f, {}f, {}f)",
+                scale[0], scale[1], scale[2]
+            );
             format!("({}) * {min_scale}f", wgsl_expr(child, &q))
         }
-        SdfIr::Offset { child, distance } => format!("({}) - {distance}f", wgsl_expr(child, point_expr)),
-        SdfIr::Shell { child, thickness } => format!("abs({}) - {}f / 2.0", wgsl_expr(child, point_expr), thickness),
+        SdfIr::Offset { child, distance } => {
+            format!("({}) - {distance}f", wgsl_expr(child, point_expr))
+        }
+        SdfIr::Shell { child, thickness } => format!(
+            "abs({}) - {}f / 2.0",
+            wgsl_expr(child, point_expr),
+            thickness
+        ),
         SdfIr::Twist { child, axis, rate } => {
             let q = format!(
                 "rotate_around_axis({point_expr}, vec3<f32>({}f, {}f, {}f), -radians({rate}f * dot({point_expr}, vec3<f32>({}f, {}f, {}f))))",
@@ -1979,12 +2550,24 @@ fn wgsl_expr(ir: &SdfIr, point_expr: &str) -> String {
             );
             wgsl_expr(child, &q)
         }
-        SdfIr::Bend { child, axis, bend_b, bend_c, curvature } => {
+        SdfIr::Bend {
+            child,
+            axis,
+            bend_b,
+            bend_c,
+            curvature,
+        } => {
             let q = format!(
                 "bend_eval_point({point_expr}, vec3<f32>({}f, {}f, {}f), vec3<f32>({}f, {}f, {}f), vec3<f32>({}f, {}f, {}f), {curvature}f)",
-                axis[0], axis[1], axis[2],
-                bend_b[0], bend_b[1], bend_b[2],
-                bend_c[0], bend_c[1], bend_c[2]
+                axis[0],
+                axis[1],
+                axis[2],
+                bend_b[0],
+                bend_b[1],
+                bend_b[2],
+                bend_c[0],
+                bend_c[1],
+                bend_c[2]
             );
             wgsl_expr(child, &q)
         }
@@ -2005,7 +2588,8 @@ fn gpu_context() -> Result<std::sync::MutexGuard<'static, GpuContext>, String> {
             power_preference: wgpu::PowerPreference::HighPerformance,
             compatible_surface: None,
             force_fallback_adapter: false,
-        })).ok_or_else(|| "No suitable GPU adapter found".to_string())?;
+        }))
+        .ok_or_else(|| "No suitable GPU adapter found".to_string())?;
 
         let (device, queue) = pollster::block_on(adapter.request_device(
             &wgpu::DeviceDescriptor {
@@ -2015,17 +2599,24 @@ fn gpu_context() -> Result<std::sync::MutexGuard<'static, GpuContext>, String> {
                 memory_hints: wgpu::MemoryHints::Performance,
             },
             None,
-        )).map_err(|e| format!("Failed to create GPU device: {e}"))?;
+        ))
+        .map_err(|e| format!("Failed to create GPU device: {e}"))?;
 
         Ok(Mutex::new(GpuContext { device, queue }))
     });
     match ctx {
-        Ok(m) => m.lock().map_err(|_| "GPU context lock poisoned".to_string()),
+        Ok(m) => m
+            .lock()
+            .map_err(|_| "GPU context lock poisoned".to_string()),
         Err(e) => Err(e.clone()),
     }
 }
 
-fn read_back_f32_buffer(device: &wgpu::Device, buffer: &wgpu::Buffer, len: usize) -> Result<Vec<f32>, String> {
+fn read_back_f32_buffer(
+    device: &wgpu::Device,
+    buffer: &wgpu::Buffer,
+    len: usize,
+) -> Result<Vec<f32>, String> {
     use std::sync::mpsc;
 
     let slice = buffer.slice(..);
@@ -2034,18 +2625,26 @@ fn read_back_f32_buffer(device: &wgpu::Device, buffer: &wgpu::Buffer, len: usize
         let _ = tx.send(result.map_err(|e| e.to_string()));
     });
     device.poll(wgpu::Maintain::Wait);
-    rx.recv().map_err(|e| format!("GPU readback channel error: {e}"))??;
+    rx.recv()
+        .map_err(|e| format!("GPU readback channel error: {e}"))??;
     let data = slice.get_mapped_range();
     let values = bytemuck::cast_slice::<u8, f32>(&data).to_vec();
     drop(data);
     buffer.unmap();
     if values.len() != len {
-        return Err(format!("GPU readback size mismatch: expected {len}, got {}", values.len()));
+        return Err(format!(
+            "GPU readback size mismatch: expected {len}, got {}",
+            values.len()
+        ));
     }
     Ok(values)
 }
 
-fn read_back_u32_buffer(device: &wgpu::Device, buffer: &wgpu::Buffer, len: usize) -> Result<Vec<u32>, String> {
+fn read_back_u32_buffer(
+    device: &wgpu::Device,
+    buffer: &wgpu::Buffer,
+    len: usize,
+) -> Result<Vec<u32>, String> {
     use std::sync::mpsc;
 
     let slice = buffer.slice(..);
@@ -2054,13 +2653,17 @@ fn read_back_u32_buffer(device: &wgpu::Device, buffer: &wgpu::Buffer, len: usize
         let _ = tx.send(result.map_err(|e| e.to_string()));
     });
     device.poll(wgpu::Maintain::Wait);
-    rx.recv().map_err(|e| format!("GPU readback channel error: {e}"))??;
+    rx.recv()
+        .map_err(|e| format!("GPU readback channel error: {e}"))??;
     let data = slice.get_mapped_range();
     let values = bytemuck::cast_slice::<u8, u32>(&data).to_vec();
     drop(data);
     buffer.unmap();
     if values.len() != len {
-        return Err(format!("GPU readback size mismatch: expected {len}, got {}", values.len()));
+        return Err(format!(
+            "GPU readback size mismatch: expected {len}, got {}",
+            values.len()
+        ));
     }
     Ok(values)
 }
@@ -2068,18 +2671,21 @@ fn read_back_u32_buffer(device: &wgpu::Device, buffer: &wgpu::Buffer, len: usize
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::Arc;
-    use glam::Vec3;
     use crate::pipeline::compute_sdf_grid;
-    use crate::sdf::field::lattice::GyroidLattice;
     use crate::sdf::booleans::{SmoothIntersect, SmoothSubtract, Union};
-    use crate::sdf::primitives::{Sphere, SdfBox};
+    use crate::sdf::field::lattice::GyroidLattice;
+    use crate::sdf::primitives::{SdfBox, Sphere};
     use crate::sdf::transforms::{Bend, Translate};
+    use glam::Vec3;
+    use std::sync::Arc;
 
     #[test]
     fn lower_supported_sdf_tree() {
         let shape: Arc<dyn Sdf> = Arc::new(Union::new(
-            Arc::new(Translate::new(Arc::new(Sphere::new(3.0)), Vec3::new(5.0, 0.0, 0.0))),
+            Arc::new(Translate::new(
+                Arc::new(Sphere::new(3.0)),
+                Vec3::new(5.0, 0.0, 0.0),
+            )),
             Arc::new(SdfBox::new(Vec3::new(1.0, 2.0, 3.0))),
         ));
         let ir = lower_sdf_ir(shape.as_ref());
@@ -2091,20 +2697,32 @@ mod tests {
         let shape: Arc<dyn Sdf> = Arc::new(SmoothIntersect::new(
             Arc::new(SmoothSubtract::new(
                 Arc::new(SdfBox::new(Vec3::new(4.0, 4.0, 2.0))),
-                Arc::new(Translate::new(Arc::new(Sphere::new(1.5)), Vec3::new(0.0, 0.0, 1.0))),
+                Arc::new(Translate::new(
+                    Arc::new(Sphere::new(1.5)),
+                    Vec3::new(0.0, 0.0, 1.0),
+                )),
                 0.75,
             )),
-            Arc::new(Translate::new(Arc::new(Sphere::new(5.0)), Vec3::new(0.0, 0.0, -0.5))),
+            Arc::new(Translate::new(
+                Arc::new(Sphere::new(5.0)),
+                Vec3::new(0.0, 0.0, -0.5),
+            )),
             0.5,
         ));
         let ir = lower_sdf_ir(shape.as_ref());
-        assert!(ir.is_some(), "Expected smooth subtract/intersect tree to lower into IR");
+        assert!(
+            ir.is_some(),
+            "Expected smooth subtract/intersect tree to lower into IR"
+        );
     }
 
     #[test]
     fn gpu_section_matches_cpu_for_supported_subset() {
         let shape: Arc<dyn Sdf> = Arc::new(Union::new(
-            Arc::new(Translate::new(Arc::new(Sphere::new(3.0)), Vec3::new(1.0, 0.0, 0.0))),
+            Arc::new(Translate::new(
+                Arc::new(Sphere::new(3.0)),
+                Vec3::new(1.0, 0.0, 0.0),
+            )),
             Arc::new(SdfBox::new(Vec3::new(1.5, 1.0, 0.75))),
         ));
         let ir = lower_sdf_ir(shape.as_ref()).expect("IR lowering");
@@ -2121,57 +2739,140 @@ mod tests {
                 let p = Vec3::new(x, 0.0, z);
                 let cpu = eval_ir_cpu(&ir, p);
                 let d = gpu[ia + ib * 32];
-                assert!((cpu - d).abs() < 1e-3, "Mismatch at ({x},{z}): cpu={cpu}, gpu={d}");
+                assert!(
+                    (cpu - d).abs() < 1e-3,
+                    "Mismatch at ({x},{z}): cpu={cpu}, gpu={d}"
+                );
             }
         }
     }
 
     #[test]
     fn gpu_grid_matches_cpu_for_supported_subset() {
-        let shape: Arc<dyn Sdf> = Arc::new(Translate::new(Arc::new(Sphere::new(2.0)), Vec3::new(0.5, 0.0, -0.5)));
+        let shape: Arc<dyn Sdf> = Arc::new(Translate::new(
+            Arc::new(Sphere::new(2.0)),
+            Vec3::new(0.5, 0.0, -0.5),
+        ));
         let ir = lower_sdf_ir(shape.as_ref()).expect("IR lowering");
-        let grid = compute_sdf_grid_gpu(&ir, Vec3::new(-4.0, -4.0, -4.0), Vec3::new(4.0, 4.0, 4.0), 16)
-            .expect("GPU grid eval");
+        let grid = compute_sdf_grid_gpu(
+            &ir,
+            Vec3::new(-4.0, -4.0, -4.0),
+            Vec3::new(4.0, 4.0, 4.0),
+            16,
+        )
+        .expect("GPU grid eval");
         let step = (grid.bounds_max - grid.bounds_min) / grid.resolution as f32;
         for z in 0..grid.resolution as usize {
             for y in 0..grid.resolution as usize {
                 for x in 0..grid.resolution as usize {
-                    let idx = x + y * grid.resolution as usize + z * grid.resolution as usize * grid.resolution as usize;
-                    let p = grid.bounds_min + Vec3::new(
-                        (x as f32 + 0.5) * step.x,
-                        (y as f32 + 0.5) * step.y,
-                        (z as f32 + 0.5) * step.z,
-                    );
+                    let idx = x
+                        + y * grid.resolution as usize
+                        + z * grid.resolution as usize * grid.resolution as usize;
+                    let p = grid.bounds_min
+                        + Vec3::new(
+                            (x as f32 + 0.5) * step.x,
+                            (y as f32 + 0.5) * step.y,
+                            (z as f32 + 0.5) * step.z,
+                        );
                     let cpu = eval_ir_cpu(&ir, p);
                     let gpu = grid.data[idx];
-                    assert!((cpu - gpu).abs() < 1e-3, "Mismatch at idx {idx}: cpu={cpu}, gpu={gpu}");
+                    assert!(
+                        (cpu - gpu).abs() < 1e-3,
+                        "Mismatch at idx {idx}: cpu={cpu}, gpu={gpu}"
+                    );
                 }
             }
         }
     }
 
     #[test]
+    fn gpu_point_sampling_matches_cpu_for_supported_subset() {
+        let shape: Arc<dyn Sdf> = Arc::new(SmoothSubtract::new(
+            Arc::new(SdfBox::new(Vec3::new(4.0, 4.0, 2.0))),
+            Arc::new(Translate::new(
+                Arc::new(Sphere::new(1.5)),
+                Vec3::new(0.5, 0.0, 0.0),
+            )),
+            0.5,
+        ));
+        let ir = lower_sdf_ir(shape.as_ref()).expect("IR lowering");
+        let points = vec![
+            Vec3::new(0.0, 0.0, 0.0),
+            Vec3::new(1.0, 0.5, 0.0),
+            Vec3::new(-2.0, 0.25, 0.1),
+            Vec3::new(3.0, 0.0, 0.0),
+        ];
+        let gpu = sample_points_gpu(&ir, &points).expect("GPU point sampling");
+        assert_eq!(gpu.len(), points.len());
+        for (i, p) in points.iter().enumerate() {
+            let cpu = eval_ir_cpu(&ir, *p);
+            assert!(
+                (cpu - gpu[i]).abs() < 1e-4,
+                "Mismatch at point {i}: cpu={cpu}, gpu={}",
+                gpu[i]
+            );
+        }
+    }
+
+    #[test]
     fn gpu_mesh_extracts_supported_subset() {
         let shape: Arc<dyn Sdf> = Arc::new(Union::new(
-            Arc::new(Translate::new(Arc::new(Sphere::new(3.0)), Vec3::new(1.0, 0.0, 0.0))),
+            Arc::new(Translate::new(
+                Arc::new(Sphere::new(3.0)),
+                Vec3::new(1.0, 0.0, 0.0),
+            )),
             Arc::new(SdfBox::new(Vec3::new(1.5, 1.0, 0.75))),
         ));
         let ir = lower_sdf_ir(shape.as_ref()).expect("IR lowering");
-        let mesh = extract_mesh_gpu(&ir, Vec3::new(-6.0, -6.0, -6.0), Vec3::new(6.0, 6.0, 6.0), MeshQuality::Draft, false)
-            .expect("GPU mesh extraction");
-        assert!(!mesh.vertices.is_empty(), "GPU mesh extractor should produce vertices");
-        assert_eq!(mesh.indices.len() % 3, 0, "GPU mesh output should be triangle-indexed");
+        let mesh = extract_mesh_gpu(
+            &ir,
+            Vec3::new(-6.0, -6.0, -6.0),
+            Vec3::new(6.0, 6.0, 6.0),
+            MeshQuality::Draft,
+            false,
+        )
+        .expect("GPU mesh extraction");
+        assert!(
+            !mesh.vertices.is_empty(),
+            "GPU mesh extractor should produce vertices"
+        );
+        assert_eq!(
+            mesh.indices.len() % 3,
+            0,
+            "GPU mesh output should be triangle-indexed"
+        );
     }
 
     #[test]
     fn gpu_grid_section_sampling_supports_unlowerable_trees() {
         let shape: Arc<dyn Sdf> = Arc::new(GyroidLattice::new(8.0, 1.0));
-        assert!(lower_sdf_ir(shape.as_ref()).is_none(), "Gyroid lattice should force sampled-grid fallback");
-        let grid = compute_sdf_grid(shape.as_ref(), Vec3::new(-5.0, -5.0, -5.0), Vec3::new(5.0, 5.0, 5.0), 48);
-        let gpu = sample_section_from_grid_gpu(&grid, SectionPlane::Xz, 0.0, -4.0, 4.0, -4.0, 4.0, 31, 31)
-            .expect("GPU grid-backed section sampling");
+        assert!(
+            lower_sdf_ir(shape.as_ref()).is_none(),
+            "Gyroid lattice should force sampled-grid fallback"
+        );
+        let grid = compute_sdf_grid(
+            shape.as_ref(),
+            Vec3::new(-5.0, -5.0, -5.0),
+            Vec3::new(5.0, 5.0, 5.0),
+            48,
+        );
+        let gpu = sample_section_from_grid_gpu(
+            &grid,
+            SectionPlane::Xz,
+            0.0,
+            -4.0,
+            4.0,
+            -4.0,
+            4.0,
+            31,
+            31,
+        )
+        .expect("GPU grid-backed section sampling");
         assert_eq!(gpu.len(), 31 * 31);
-        assert!(gpu.iter().all(|d| d.is_finite()), "Grid-backed section sampling should stay finite");
+        assert!(
+            gpu.iter().all(|d| d.is_finite()),
+            "Grid-backed section sampling should stay finite"
+        );
     }
 
     #[test]
@@ -2180,21 +2881,33 @@ mod tests {
         let bounds_min = Vec3::new(-5.0, -5.0, -5.0);
         let bounds_max = Vec3::new(5.0, 5.0, 5.0);
         let cell_resolution = 28u32;
-        let vertex_grid = compute_sdf_grid(shape.as_ref(), bounds_min, bounds_max, cell_resolution + 1);
+        let vertex_grid =
+            compute_sdf_grid(shape.as_ref(), bounds_min, bounds_max, cell_resolution + 1);
         let mesh = extract_mesh_from_vertex_grid_gpu(
             bounds_min,
             bounds_max,
             cell_resolution,
             &vertex_grid.data,
             false,
-        ).expect("GPU mesh extraction from sampled grid");
-        assert!(!mesh.vertices.is_empty(), "Sampled-grid GPU mesh extractor should produce vertices");
-        assert_eq!(mesh.indices.len() % 3, 0, "Sampled-grid GPU mesh output should be triangle-indexed");
+        )
+        .expect("GPU mesh extraction from sampled grid");
+        assert!(
+            !mesh.vertices.is_empty(),
+            "Sampled-grid GPU mesh extractor should produce vertices"
+        );
+        assert_eq!(
+            mesh.indices.len() % 3,
+            0,
+            "Sampled-grid GPU mesh output should be triangle-indexed"
+        );
     }
 
     #[test]
     fn lower_bend_and_twist_trees() {
         let bent: Arc<dyn Sdf> = Arc::new(Bend::new(Arc::new(Sphere::new(3.0)), Vec3::Y, 0.08));
-        assert!(lower_sdf_ir(bent.as_ref()).is_some(), "Bend should now lower into GPU IR");
+        assert!(
+            lower_sdf_ir(bent.as_ref()).is_some(),
+            "Bend should now lower into GPU IR"
+        );
     }
 }

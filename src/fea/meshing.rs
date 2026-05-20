@@ -7,13 +7,13 @@
 //
 // Node indices in the output mesh are 1-based (CalculiX convention).
 
-use glam::Vec3;
 use crate::sdf::Sdf;
+use glam::Vec3;
 use rayon::prelude::*;
 
 pub struct TetMesh {
     /// World-space positions of all nodes (0-indexed internally).
-    pub nodes:    Vec<Vec3>,
+    pub nodes: Vec<Vec3>,
     /// Four 0-based node indices per element.
     pub elements: Vec<[usize; 4]>,
 }
@@ -34,14 +34,14 @@ const FREUDENTHAL: [[usize; 4]; 6] = [
 ///
 /// Returns `Err` if the mesh is empty or has too few nodes.
 pub fn voxel_tet_mesh(
-    sdf:         &dyn Sdf,
-    bounds_min:  Vec3,
-    bounds_max:  Vec3,
-    resolution:  u32,
+    sdf: &dyn Sdf,
+    bounds_min: Vec3,
+    bounds_max: Vec3,
+    resolution: u32,
 ) -> Result<TetMesh, String> {
-    let res   = resolution as usize;
-    let span  = bounds_max - bounds_min;
-    let step  = span / (res as f32 - 1.0).max(1.0);
+    let res = resolution as usize;
+    let span = bounds_max - bounds_min;
+    let step = span / (res as f32 - 1.0).max(1.0);
 
     // Evaluate SDF in parallel on all grid nodes.
     let total = res * res * res;
@@ -51,11 +51,8 @@ pub fn voxel_tet_mesh(
             let ix = idx % res;
             let iy = (idx / res) % res;
             let iz = idx / (res * res);
-            let p  = bounds_min + Vec3::new(
-                ix as f32 * step.x,
-                iy as f32 * step.y,
-                iz as f32 * step.z,
-            );
+            let p =
+                bounds_min + Vec3::new(ix as f32 * step.x, iy as f32 * step.y, iz as f32 * step.z);
             sdf.distance(p)
         })
         .collect();
@@ -67,17 +64,22 @@ pub fn voxel_tet_mesh(
         for iy in 0..res - 1 {
             for ix in 0..res - 1 {
                 let corners: [usize; 8] = [
-                    nidx(ix,   iy,   iz  ),
-                    nidx(ix+1, iy,   iz  ),
-                    nidx(ix,   iy+1, iz  ),
-                    nidx(ix+1, iy+1, iz  ),
-                    nidx(ix,   iy,   iz+1),
-                    nidx(ix+1, iy,   iz+1),
-                    nidx(ix,   iy+1, iz+1),
-                    nidx(ix+1, iy+1, iz+1),
+                    nidx(ix, iy, iz),
+                    nidx(ix + 1, iy, iz),
+                    nidx(ix, iy + 1, iz),
+                    nidx(ix + 1, iy + 1, iz),
+                    nidx(ix, iy, iz + 1),
+                    nidx(ix + 1, iy, iz + 1),
+                    nidx(ix, iy + 1, iz + 1),
+                    nidx(ix + 1, iy + 1, iz + 1),
                 ];
                 for pat in &FREUDENTHAL {
-                    let tet = [corners[pat[0]], corners[pat[1]], corners[pat[2]], corners[pat[3]]];
+                    let tet = [
+                        corners[pat[0]],
+                        corners[pat[1]],
+                        corners[pat[2]],
+                        corners[pat[3]],
+                    ];
                     if tet.iter().all(|&ni| distances[ni] < 0.0) {
                         elements.push(tet);
                     }
@@ -89,13 +91,18 @@ pub fn voxel_tet_mesh(
     if elements.is_empty() {
         return Err(
             "No solid elements found. Check that the SDF has interior volume \
-             and increase mesh resolution.".into()
+             and increase mesh resolution."
+                .into(),
         );
     }
 
     // Compact: drop unreferenced nodes, build remapping.
     let mut used = vec![false; total];
-    for tet in &elements { for &ni in tet { used[ni] = true; } }
+    for tet in &elements {
+        for &ni in tet {
+            used[ni] = true;
+        }
+    }
 
     let mut old_to_new = vec![usize::MAX; total];
     let mut nodes: Vec<Vec3> = Vec::new();
@@ -105,26 +112,43 @@ pub fn voxel_tet_mesh(
             let iy = (i / res) % res;
             let iz = i / (res * res);
             old_to_new[i] = nodes.len();
-            nodes.push(bounds_min + Vec3::new(
-                ix as f32 * step.x,
-                iy as f32 * step.y,
-                iz as f32 * step.z,
-            ));
+            nodes.push(
+                bounds_min + Vec3::new(ix as f32 * step.x, iy as f32 * step.y, iz as f32 * step.z),
+            );
         }
     }
 
-    let elements: Vec<[usize; 4]> = elements.iter()
-        .map(|t| [old_to_new[t[0]], old_to_new[t[1]], old_to_new[t[2]], old_to_new[t[3]]])
+    let elements: Vec<[usize; 4]> = elements
+        .iter()
+        .map(|t| {
+            [
+                old_to_new[t[0]],
+                old_to_new[t[1]],
+                old_to_new[t[2]],
+                old_to_new[t[3]],
+            ]
+        })
         .collect();
 
     if nodes.len() < 4 {
-        return Err(format!("Too few nodes ({}) — increase mesh resolution.", nodes.len()));
+        return Err(format!(
+            "Too few nodes ({}) — increase mesh resolution.",
+            nodes.len()
+        ));
     }
 
     // Validate: check for degenerate tets (all 4 nodes identical).
-    let degenerate = elements.iter().filter(|t| {
-        t[0] == t[1] || t[0] == t[2] || t[0] == t[3] || t[1] == t[2] || t[1] == t[3] || t[2] == t[3]
-    }).count();
+    let degenerate = elements
+        .iter()
+        .filter(|t| {
+            t[0] == t[1]
+                || t[0] == t[2]
+                || t[0] == t[3]
+                || t[1] == t[2]
+                || t[1] == t[3]
+                || t[2] == t[3]
+        })
+        .count();
     if degenerate > 0 {
         return Err(format!(
             "{degenerate} degenerate tetrahedra found — mesh is not suitable for FEA."

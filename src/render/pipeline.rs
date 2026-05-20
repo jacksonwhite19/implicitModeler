@@ -1,9 +1,9 @@
 // Render pipeline setup
 
+use super::camera::Camera;
+use crate::mesh::{Mesh, Vertex};
 use eframe::wgpu;
 use wgpu::util::DeviceExt;
-use crate::mesh::{Mesh, Vertex};
-use super::camera::Camera;
 
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -146,17 +146,21 @@ impl RenderState {
             return;
         }
 
-        self.vertex_buffer = Some(device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Vertex Buffer"),
-            contents: bytemuck::cast_slice(&mesh.vertices),
-            usage: wgpu::BufferUsages::VERTEX,
-        }));
+        self.vertex_buffer = Some(
+            device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Vertex Buffer"),
+                contents: bytemuck::cast_slice(&mesh.vertices),
+                usage: wgpu::BufferUsages::VERTEX,
+            }),
+        );
 
-        self.index_buffer = Some(device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Index Buffer"),
-            contents: bytemuck::cast_slice(&mesh.indices),
-            usage: wgpu::BufferUsages::INDEX,
-        }));
+        self.index_buffer = Some(
+            device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Index Buffer"),
+                contents: bytemuck::cast_slice(&mesh.indices),
+                usage: wgpu::BufferUsages::INDEX,
+            }),
+        );
 
         self.num_indices = mesh.indices.len() as u32;
     }

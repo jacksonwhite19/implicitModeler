@@ -2,15 +2,15 @@
 // No new Sdf structs — every function returns an Arc<dyn Sdf> assembled from
 // the existing primitive/transform/boolean toolkit.
 
-use glam::{Vec3, Quat};
+use crate::sdf::Sdf;
+use crate::sdf::booleans::{Intersect, SmoothUnion, Subtract, Union};
+use crate::sdf::patterns::PolarArray;
+use crate::sdf::primitives::{Cylinder, SdfBox, Sphere};
+use crate::sdf::query::bounding_points;
+use crate::sdf::transforms::{Offset, Rotate, Translate};
+use glam::{Quat, Vec3};
 use std::f32::consts::FRAC_PI_2;
 use std::sync::Arc;
-use crate::sdf::Sdf;
-use crate::sdf::primitives::{Sphere, SdfBox, Cylinder};
-use crate::sdf::transforms::{Translate, Rotate, Offset};
-use crate::sdf::booleans::{Union, Subtract, Intersect, SmoothUnion};
-use crate::sdf::patterns::PolarArray;
-use crate::sdf::query::bounding_points;
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
 
@@ -136,7 +136,7 @@ pub fn bulkhead_at_station(
     }
 
     let fuse_r = estimate_radius_at(&fuselage, world_x);
-    let hole_r  = fuse_r * hole_radius_fraction;
+    let hole_r = fuse_r * hole_radius_fraction;
     // Place holes at 60 % of the fuselage radius (centroid of a thin ring).
     let hole_radial = fuse_r * 0.6;
 
@@ -164,8 +164,16 @@ pub fn lightening_hole_pattern(
     const BIG: f32 = 10_000.0;
 
     let (hole_cyl, polar_axis, offset_vec) = match axis {
-        0 => (cylinder_along_x(hole_radius, BIG), Vec3::X, Vec3::new(0.0, radial_pos, 0.0)),
-        1 => (cylinder_along_y(hole_radius, BIG), Vec3::Y, Vec3::new(radial_pos, 0.0, 0.0)),
+        0 => (
+            cylinder_along_x(hole_radius, BIG),
+            Vec3::X,
+            Vec3::new(0.0, radial_pos, 0.0),
+        ),
+        1 => (
+            cylinder_along_y(hole_radius, BIG),
+            Vec3::Y,
+            Vec3::new(radial_pos, 0.0, 0.0),
+        ),
         _ => (
             Arc::new(Cylinder::new(hole_radius, BIG)) as Arc<dyn Sdf>,
             Vec3::Z,
@@ -193,19 +201,19 @@ pub fn rod_mount(
     boss_diameter: f32,
 ) -> Arc<dyn Sdf> {
     let (bx, fuse_r) = find_bulkhead_centre(&bulkhead);
-    let r_pos      = fuse_r * radial_fraction;
-    let angle_rad  = angle_degrees.to_radians();
-    let boss_y     = r_pos * angle_rad.cos();
-    let boss_z     = r_pos * angle_rad.sin();
+    let r_pos = fuse_r * radial_fraction;
+    let angle_rad = angle_degrees.to_radians();
+    let boss_y = r_pos * angle_rad.cos();
+    let boss_z = r_pos * angle_rad.sin();
 
     // Boss: short cylinder along X (perpendicular to bulkhead face).
     let boss_half_h = boss_diameter; // height = 2 × diameter
-    let boss_cyl    = cylinder_along_x(boss_diameter * 0.5, boss_half_h);
-    let boss        = Arc::new(Translate::new(boss_cyl, Vec3::new(bx, boss_y, boss_z)));
+    let boss_cyl = cylinder_along_x(boss_diameter * 0.5, boss_half_h);
+    let boss = Arc::new(Translate::new(boss_cyl, Vec3::new(bx, boss_y, boss_z)));
 
     // Rod through-hole along X.
     let hole_cyl = cylinder_along_x(rod_diameter * 0.5, 10_000.0);
-    let hole     = Arc::new(Translate::new(hole_cyl, Vec3::new(bx, boss_y, boss_z)));
+    let hole = Arc::new(Translate::new(hole_cyl, Vec3::new(bx, boss_y, boss_z)));
 
     let with_boss = Arc::new(Union::new(bulkhead, boss));
     Arc::new(Subtract::new(with_boss, hole))
@@ -227,7 +235,7 @@ pub fn motor_arm(
     outer_diameter: f32,
     inner_diameter: f32,
 ) -> Arc<dyn Sdf> {
-    let fuse_r  = estimate_radius_at(&fuselage, 0.5);
+    let fuse_r = estimate_radius_at(&fuselage, 0.5);
     let outer_r = outer_diameter * 0.5;
     let inner_r = inner_diameter * 0.5;
     let half_len = length * 0.5;
@@ -235,7 +243,7 @@ pub fn motor_arm(
     // Hollow tube aligned along Y at the origin.
     let outer_cyl = cylinder_along_y(outer_r, half_len);
     let inner_cyl = cylinder_along_y(inner_r, half_len);
-    let hollow    = Arc::new(Subtract::new(outer_cyl, inner_cyl));
+    let hollow = Arc::new(Subtract::new(outer_cyl, inner_cyl));
 
     // Translate so the tube spans Y ∈ [fuse_r, fuse_r + length].
     let arm_along_y = Arc::new(Translate::new(
@@ -246,10 +254,7 @@ pub fn motor_arm(
     // Rotate around X axis to the requested angle in the YZ plane.
     // Rotate::new(shape, Q) physically rotates the shape by Q.
     let angle_rad = angle_degrees.to_radians();
-    let arm_rotated = Arc::new(Rotate::new(
-        arm_along_y,
-        Quat::from_rotation_x(angle_rad),
-    ));
+    let arm_rotated = Arc::new(Rotate::new(arm_along_y, Quat::from_rotation_x(angle_rad)));
 
     // Move to midspan (X = 0.5).
     let arm_at_x: Arc<dyn Sdf> = Arc::new(Translate::new(arm_rotated, Vec3::new(0.5, 0.0, 0.0)));
@@ -279,7 +284,7 @@ pub fn motor_mount(
     bolt_diameter: f32,
 ) -> Arc<dyn Sdf> {
     // Tip of the arm: probe the tube wall at multiple Z offsets (axis is hollow/exterior).
-    let tip_y     = find_arm_tip_y(&arm, 0.5);
+    let tip_y = find_arm_tip_y(&arm, 0.5);
     let half_side = motor_size_mm * 0.5;
 
     // Square plate in the XZ plane at (0.5, tip_y, 0).
@@ -292,10 +297,10 @@ pub fn motor_mount(
 
     // Bolt holes: 4 cylinders along Y in a PolarArray centred on the mount.
     // Build hole at (bolt_pattern, 0, 0) relative to mount centre, PolarArray around Y, then translate.
-    let bolt_hole  = cylinder_along_y(bolt_diameter * 0.5, 10_000.0);
+    let bolt_hole = cylinder_along_y(bolt_diameter * 0.5, 10_000.0);
     let bolt_local = Arc::new(Translate::new(bolt_hole, Vec3::new(bolt_pattern, 0.0, 0.0)));
-    let bolt_ring  = Arc::new(PolarArray::new(bolt_local, 4, Vec3::Y));
-    let bolts      = Arc::new(Translate::new(bolt_ring, Vec3::new(0.5, tip_y, 0.0)));
+    let bolt_ring = Arc::new(PolarArray::new(bolt_local, 4, Vec3::Y));
+    let bolts = Arc::new(Translate::new(bolt_ring, Vec3::new(0.5, tip_y, 0.0)));
 
     let plate_drilled = Arc::new(Subtract::new(plate, bolts));
     Arc::new(Union::new(arm, plate_drilled))
@@ -324,15 +329,18 @@ pub fn generate_mounts_sdf(
         let tray = Arc::new(Subtract::new(Arc::clone(&tray_outer), Arc::clone(&keepout)));
 
         // Tab region: expanded by wall + tab, clipped to the parent's near-surface zone.
-        let tab_vol   = Arc::new(Offset::new(Arc::clone(&keepout), wall_thickness + tab_width));
+        let tab_vol = Arc::new(Offset::new(
+            Arc::clone(&keepout),
+            wall_thickness + tab_width,
+        ));
         let near_parent = Arc::new(Offset::new(Arc::clone(&parent), tab_width));
-        let tabs_raw  = Arc::new(Intersect::new(tab_vol, near_parent));
-        let tabs      = Arc::new(Subtract::new(tabs_raw, Arc::clone(&keepout)));
+        let tabs_raw = Arc::new(Intersect::new(tab_vol, near_parent));
+        let tabs = Arc::new(Subtract::new(tabs_raw, Arc::clone(&keepout)));
 
         let mount = Arc::new(Union::new(tray, tabs));
 
         result = Some(match result {
-            None    => mount,
+            None => mount,
             Some(p) => Arc::new(Union::new(p, mount)),
         });
     }
@@ -347,11 +355,7 @@ use rayon::prelude::*;
 
 /// Check whether a keepout volume intersects the bulkhead plane at `plane_x`
 /// on a 32×32 grid within [-fuse_r, fuse_r] in Y and Z.
-pub fn keepout_intersects_plane(
-    keepout: &Arc<dyn Sdf>,
-    plane_x: f32,
-    fuse_r: f32,
-) -> bool {
+pub fn keepout_intersects_plane(keepout: &Arc<dyn Sdf>, plane_x: f32, fuse_r: f32) -> bool {
     const RES: usize = 32;
     (0..RES * RES).into_par_iter().any(|idx| {
         let iy = idx / RES;
@@ -495,23 +499,27 @@ pub fn cable_hole_at(
 
 // ── Conformal lattice convenience wrappers ────────────────────────────────────
 
-use crate::sdf::lattice::ConformalGyroid;
-use crate::sdf::field::primitives::SdfField;
 use crate::sdf::field::gradients::RadialField;
+use crate::sdf::field::primitives::SdfField;
+use crate::sdf::lattice::ConformalGyroid;
 
 /// Fill a wing volume with a conformal gyroid lattice, automatically masked to
 /// the interior by shelling the wing inward by `1.5 * thickness` so struts
 /// never intersect the outer skin.
 pub fn wing_lattice(wing: Arc<dyn Sdf>, cell_size: f32, thickness: f32) -> Arc<dyn Sdf> {
     let inset_mask: Arc<dyn Sdf> = Arc::new(Offset::new(Arc::clone(&wing), -(1.5 * thickness)));
-    Arc::new(ConformalGyroid::with_region_mask(wing, cell_size, thickness, inset_mask))
+    Arc::new(ConformalGyroid::with_region_mask(
+        wing, cell_size, thickness, inset_mask,
+    ))
 }
 
 /// Fill a fuselage volume with a conformal gyroid lattice, automatically masked
 /// inward by `1.5 * thickness` to preserve skin integrity.
 pub fn fuselage_lattice(fuselage: Arc<dyn Sdf>, cell_size: f32, thickness: f32) -> Arc<dyn Sdf> {
     let inset_mask: Arc<dyn Sdf> = Arc::new(Offset::new(Arc::clone(&fuselage), -(1.5 * thickness)));
-    Arc::new(ConformalGyroid::with_region_mask(fuselage, cell_size, thickness, inset_mask))
+    Arc::new(ConformalGyroid::with_region_mask(
+        fuselage, cell_size, thickness, inset_mask,
+    ))
 }
 
 /// Fill a fuselage with a density-graded conformal gyroid lattice.
@@ -534,19 +542,19 @@ pub fn fuselage_lattice_graded(
     let approx_r = 50.0_f32; // conservative — radial_field clamps anyway
     let density_field: Arc<dyn crate::sdf::field::Field> = A::new(RadialField::new(
         glam::Vec3::ZERO,
-        0.0,          // inner_r: at centre
-        approx_r,     // outer_r: at (approximate) skin
+        0.0,                               // inner_r: at centre
+        approx_r,                          // outer_r: at (approximate) skin
         inner_cell_size / outer_cell_size, // inner_val → divides out, so cell = outer_cell
-        1.0,          // outer_val → cell = outer_cell
+        1.0,                               // outer_val → cell = outer_cell
     ));
     let _ = sdf_field; // sdf_field not needed — radial by distance from origin suffices
     let inset_mask: Arc<dyn Sdf> = A::new(Offset::new(Arc::clone(&fuselage), -(1.5 * thickness)));
     Arc::new(ConformalGyroid {
-        parent:        fuselage,
-        cell_size:     outer_cell_size,
+        parent: fuselage,
+        cell_size: outer_cell_size,
         thickness,
         density_field: Some(density_field),
-        region_mask:   Some(inset_mask),
+        region_mask: Some(inset_mask),
     })
 }
 
@@ -555,9 +563,9 @@ pub fn fuselage_lattice_graded(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sdf::aerospace::fuselage::LoftedFuselage;
     use crate::sdf::aerospace::CrossSection;
     use crate::sdf::aerospace::Section2D;
+    use crate::sdf::aerospace::fuselage::LoftedFuselage;
 
     fn make_fuselage() -> Arc<dyn Sdf> {
         let pairs: Vec<(f32, Arc<dyn Section2D>)> = vec![
@@ -573,10 +581,18 @@ mod tests {
         let fuse = make_fuselage();
         // At midspan (x=0.5) the circle radius is 1.0.
         let r = estimate_radius_at(&fuse, 0.5);
-        assert!((r - 1.0).abs() < 0.05, "expected radius ≈ 1.0 at midspan, got {}", r);
+        assert!(
+            (r - 1.0).abs() < 0.05,
+            "expected radius ≈ 1.0 at midspan, got {}",
+            r
+        );
         // At nose/tail the radius should be ~0.3.
         let r_nose = estimate_radius_at(&fuse, 0.0);
-        assert!(r_nose < 0.5, "nose radius should be smaller, got {}", r_nose);
+        assert!(
+            r_nose < 0.5,
+            "nose radius should be smaller, got {}",
+            r_nose
+        );
     }
 
     #[test]
@@ -584,14 +600,20 @@ mod tests {
         let fuse = make_fuselage();
         let bk = bulkhead_at_station(Arc::clone(&fuse), 0.5, 0.02, 0, 0.0);
         // Centre of bulkhead (x=0.5, y=0, z=0) should be inside.
-        assert!(bk.distance(Vec3::new(0.5, 0.0, 0.0)) < 0.0,
-            "bulkhead centre should be inside");
+        assert!(
+            bk.distance(Vec3::new(0.5, 0.0, 0.0)) < 0.0,
+            "bulkhead centre should be inside"
+        );
         // Far outside should be positive.
-        assert!(bk.distance(Vec3::new(0.5, 5.0, 0.0)) > 0.0,
-            "point far from bulkhead should be outside");
+        assert!(
+            bk.distance(Vec3::new(0.5, 5.0, 0.0)) > 0.0,
+            "point far from bulkhead should be outside"
+        );
         // Off the station along X should be outside.
-        assert!(bk.distance(Vec3::new(0.9, 0.0, 0.0)) > 0.0,
-            "point off-station should be outside");
+        assert!(
+            bk.distance(Vec3::new(0.9, 0.0, 0.0)) > 0.0,
+            "point off-station should be outside"
+        );
     }
 
     #[test]
@@ -599,14 +621,16 @@ mod tests {
         let fuse = make_fuselage();
         let bk = bulkhead_at_station(Arc::clone(&fuse), 0.5, 0.02, 8, 0.3);
         // Centre should still be inside (hole_radius_fraction 0.3 leaves material at origin).
-        assert!(bk.distance(Vec3::new(0.5, 0.0, 0.0)) < 0.0,
-            "centre with holes should be inside");
+        assert!(
+            bk.distance(Vec3::new(0.5, 0.0, 0.0)) < 0.0,
+            "centre with holes should be inside"
+        );
     }
 
     #[test]
     fn test_lightening_hole_pattern_subtracts() {
         let fuse = make_fuselage();
-        let bk_no_holes  = bulkhead_at_station(Arc::clone(&fuse), 0.5, 0.02, 0, 0.0);
+        let bk_no_holes = bulkhead_at_station(Arc::clone(&fuse), 0.5, 0.02, 0, 0.0);
         let bk_with_holes = lightening_hole_pattern(bk_no_holes, 4, 0.5, 0.1, 0);
         // Point at hole location (x=0.5, y=0.5, z=0) should be outside after drilling.
         let d = bk_with_holes.distance(Vec3::new(0.5, 0.5, 0.0));
@@ -620,43 +644,65 @@ mod tests {
         let arm = motor_arm(Arc::clone(&fuse), 0.0, 2.0, 0.12, 0.09);
         // Tube wall at midspan of the arm should be inside.
         let d = arm.distance(Vec3::new(0.5, 2.5, 0.05));
-        assert!(d < 0.0, "arm tube wall at Y=2.5, Z=0.05 should be inside, got {}", d);
+        assert!(
+            d < 0.0,
+            "arm tube wall at Y=2.5, Z=0.05 should be inside, got {}",
+            d
+        );
         // The hollow axis is outside the tube.
         let d_axis = arm.distance(Vec3::new(0.5, 2.5, 0.0));
-        assert!(d_axis > 0.0, "arm axis (hollow) should be outside, got {}", d_axis);
+        assert!(
+            d_axis > 0.0,
+            "arm axis (hollow) should be outside, got {}",
+            d_axis
+        );
         // A point far beyond the arm tip should be outside.
         let d_far = arm.distance(Vec3::new(0.5, 10.0, 0.0));
-        assert!(d_far > 0.0, "beyond arm tip should be outside, got {}", d_far);
+        assert!(
+            d_far > 0.0,
+            "beyond arm tip should be outside, got {}",
+            d_far
+        );
     }
 
     #[test]
     fn test_motor_arm_can_be_composed() {
         let fuse = make_fuselage();
-        let arm  = motor_arm(Arc::clone(&fuse), 0.0, 2.0, 0.12, 0.09);
+        let arm = motor_arm(Arc::clone(&fuse), 0.0, 2.0, 0.12, 0.09);
         let arm2 = motor_arm(Arc::clone(&fuse), 180.0, 2.0, 0.12, 0.09);
         // Result is a valid SdfHandle that can be further combined.
         let both = Arc::new(Union::new(arm, arm2));
         // Each arm tube wall should be reachable (Z=0.05 is in the wall for outer_r=0.06).
-        assert!(both.distance(Vec3::new(0.5,  2.5, 0.05)) < 0.0, "+Y arm wall should be inside");
-        assert!(both.distance(Vec3::new(0.5, -2.5, 0.05)) < 0.0, "-Y arm wall should be inside");
+        assert!(
+            both.distance(Vec3::new(0.5, 2.5, 0.05)) < 0.0,
+            "+Y arm wall should be inside"
+        );
+        assert!(
+            both.distance(Vec3::new(0.5, -2.5, 0.05)) < 0.0,
+            "-Y arm wall should be inside"
+        );
     }
 
     #[test]
     fn test_motor_mount_plate_at_tip() {
-        let fuse  = make_fuselage();
-        let arm   = motor_arm(Arc::clone(&fuse), 0.0, 2.0, 0.12, 0.09);
+        let fuse = make_fuselage();
+        let arm = motor_arm(Arc::clone(&fuse), 0.0, 2.0, 0.12, 0.09);
         let mount = motor_mount(arm, 0.3, 0.05, 0.12, 0.03);
         // Plate centre is at y ≈ 3.0, half_side = 0.15, plate_thickness = 0.05.
         // A point slightly inside the plate (y = 2.98) should be inside.
         let d = mount.distance(Vec3::new(0.5, 2.98, 0.0));
-        assert!(d < 0.0, "motor mount plate interior should be inside, got {}", d);
+        assert!(
+            d < 0.0,
+            "motor mount plate interior should be inside, got {}",
+            d
+        );
     }
 
     #[test]
     fn test_rod_mount_valid() {
         let fuse = make_fuselage();
-        let bk   = bulkhead_at_station(Arc::clone(&fuse), 0.5, 0.02, 0, 0.0);
-        let rm   = rod_mount(bk, 0.0, 0.6, 0.04, 0.08);
+        let bk = bulkhead_at_station(Arc::clone(&fuse), 0.5, 0.02, 0, 0.0);
+        let rm = rod_mount(bk, 0.0, 0.6, 0.04, 0.08);
         // Result must be a valid SDF (query does not panic).
         let _d = rm.distance(Vec3::new(0.5, 0.0, 0.0));
     }
@@ -667,14 +713,21 @@ mod tests {
         let result = generate_mounts_sdf(vec![], Arc::clone(&fuse), 0.1, 0.2);
         // Placeholder should be always-outside.
         let d = result.distance(Vec3::new(0.5, 0.0, 0.0));
-        assert!(d > 0.0, "empty mount result should be outside everywhere, got {}", d);
+        assert!(
+            d > 0.0,
+            "empty mount result should be outside everywhere, got {}",
+            d
+        );
     }
 
     #[test]
     fn test_generate_mounts_creates_tray() {
         let fuse = make_fuselage();
         let battery_geom: Arc<dyn Sdf> = Arc::new(SdfBox::new(Vec3::new(0.2, 0.1, 0.075)));
-        let battery_geom_placed: Arc<dyn Sdf> = Arc::new(Translate::new(Arc::clone(&battery_geom), Vec3::new(0.5, 0.0, -0.3)));
+        let battery_geom_placed: Arc<dyn Sdf> = Arc::new(Translate::new(
+            Arc::clone(&battery_geom),
+            Vec3::new(0.5, 0.0, -0.3),
+        ));
         let keepout = Arc::new(Offset::new(Arc::clone(&battery_geom_placed), 0.02));
         let mounts = generate_mounts_sdf(
             vec![(battery_geom_placed, keepout)],

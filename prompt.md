@@ -1,62 +1,67 @@
-# BWB EDF Vehicle Prompt
+```markdown
+### Implementation Task: Dyadic Canonical Interval Mapping
 
-Design a sleek blended-wing-body EDF aircraft with these constraints and proportions:
+**Objective:** Transition from point-keyed edges to canonical dyadic integer intervals to eliminate topological gaps at resolution transitions (T-junctions).
 
-- Configuration: blended flying wing / lifting body with a very smooth body-wing transition
-- Mission: internal-EDF loitering platform
-- Wingspan: 800 mm
-- Overall length: 500 mm
-- Maximum body width: 172 mm
-- Maximum body height: 95 mm
-- General shape: balanced BWB, narrow and wide centerbody, no separate tube fuselage
-- Wing planform: one continuous swept wing, not cranked, not double-diamond
-- Wing sweep: 39 degrees
-- Wing root chord: 310 mm
-- Wing tip chord: 62 mm
-- Wing section: use a reasonable tailless-friendly section
-- Visual intent: sleek, clean, integrated UAV
+#### 1. Dyadic Coordinate System
+Implement a global integer coordinate system based on the octree's maximum depth ($D=10$).
+*   **Coordinate Scaling:** Map the entire bounding box of your geometry into an integer space of $[0, 2^{10}]$. Every leaf corner and edge boundary must now be represented as an exact `u16` or `i32` coordinate.
+*   **EdgeKey Refactor:** Redefine the key to include the spatial interval.
+    ```rust
+    // Represents a unique, canonical 1D interval along an edge
+    #[derive(Hash, PartialEq, Eq)]
+    struct EdgeKey {
+        axis: u8,
+        start: [u16; 3],
+        end: [u16; 3], // Allows for specific sub-intervals at T-junctions
+    }
+    
 
-Tail:
+```
 
-- Tail type: practical V-tail
-- Tail placement: aft corners of the body
-- Tail size: about 30% larger than the previous medium baseline
-- V-tail span: about 179 mm
-- V-tail root chord: about 107 mm
-- V-tail tip chord: about 55 mm
-- V-tail sweep: moderate
+#### 2. Canonical Interval Registration
 
-Inlet and ducting:
+Modify the registry pass to decompose coarse edges into fine segments:
 
-- Dorsal inlet
-- Inlet style: conformal rounded rectangle, raised above the upper mold line
-- Inlet outer mouth sized proportionally to body width
-- Inlet inner mouth follows the same rounded-rectangle family, not an ellipse
-- Inlet face should be clean and open, with no sealing cap or artifact
-- Lower lip of inlet should sit above the fuselage crown
-- Duct should begin at the dorsal inlet and descend relatively quickly
-- Early duct path should not crest above the inlet face
-- Duct should be a real through-body duct, not just a scoop or shell on top
-- Internal outlet: circular 70 mm duct
-- Do not model the EDF hardware itself
+* **Decomposition Logic:** When a leaf of depth $N$ registers its edges, it must check for overlapping edges from neighbors of depth $>N$.
+* **Split Rule:** If a leaf is coarser than its neighbor, it must register its edges by splitting them into segments that match the neighbor's dyadic boundaries. This ensures the `HashMap` contains the smallest common sub-intervals shared by all adjacent cells.
+* **Ownership Integrity:** Every `EdgeKey` entry must now map to exactly 4 `LeafIDs`. Any key that does not is mathematically guaranteed to be a structural crack.
 
-Structure:
+#### 3. Quadrant-Based Face Emission
 
-- Hollow shell
-- Shell thickness: about 1.6 mm baseline, but lightweight
-- Include medium-density internal structure
-- Add wing ribs
-- Add fuselage bulkheads
-- Structure should be trimmed correctly around the duct
-- Do not model electronics, EDF hardware, payloads, or landing gear
-- Do not model control surfaces
+Refactor emission to derive the 4 owners from topology, not spatial probing:
 
-Modeling priorities:
+* **Deterministic Quad Generation:** Instead of searching for owners, use the `EdgeKey`'s `start` and `end` coordinates to identify the 4 dual cells that share this edge.
+* **Failure Log:** If an `EdgeKey` does not have 4 associated `LeafIDs`, log it to `output.md` as:
+```markdown
+### Emitter Mismatch (Structural)
+- Key: {axis, start, end}
+- Found Owners: [List of LeafIDs]
+- Expected: 4
 
-- Clean external BWB silhouette
-- Strong, believable body-wing blending
-- Continuous swept wing
-- Proper dorsal inlet and internal duct continuity
-- Smooth internal duct path
-- Practical printable shell and internal structure
-- Avoid weird cranked, diamond, or faceted wing geometry
+
+```
+
+
+
+```
+
+#### 4. Post-Emission: Engineering Audit (output.md)
+Update the engineering analysis section to explicitly evaluate the topological closure:
+*   **Metric:** Report the percentage of `EdgeKeys` with 4 owners.
+*   **Topology Check:** After emission, if `boundary_edges > 0` before any repair pass, log the specific `EdgeKey` instances that failed to stitch.
+*   **Resolution Floor Analysis:** Evaluate if the dyadic mapping eliminated the Y-truncation and resolved the thin-wall correctly.
+
+#### 5. Verification Goal
+*   Run the shell test again:
+    `cargo run --release --bin benchmark_wing_export -- --script "C:\Users\Jackson\Desktop\02_Projects\09b_Implicit_CAD_claude\dual_contouring\test_scripts\rectangular_prism_shell_400x650x200_2mm.rhai"`
+*   **Success Criteria:**
+    1. `connected_components` == 1.
+    2. Primary `boundary_edges` == 0 (without requiring patch/repair).
+    3. `output.md` confirms 100% of crossing edges have 4 incident owners.
+
+```
+
+```
+
+```

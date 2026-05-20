@@ -1,9 +1,9 @@
 // Propulsion analysis: thrust curves, power curves, and performance limits.
 #![allow(dead_code)] // Propulsion result fields — not all displayed in current UI
 
-use crate::aero::propulsion_db::{MotorSpec, PropSpec};
-use crate::aero::flight_condition::FlightCondition;
 use crate::aero::drag::DragPolarResult;
+use crate::aero::flight_condition::FlightCondition;
+use crate::aero::propulsion_db::{MotorSpec, PropSpec};
 
 /// Complete propulsion system configuration.
 #[derive(Clone, Debug)]
@@ -293,7 +293,11 @@ mod tests {
         let setup = test_setup();
         let fc = FlightCondition::new(15.0, 0.0, 0.0);
         let result = compute_propulsion(&setup, &fc, 10.0, None);
-        assert!(result.static_thrust_n > 0.0, "static thrust={}", result.static_thrust_n);
+        assert!(
+            result.static_thrust_n > 0.0,
+            "static thrust={}",
+            result.static_thrust_n
+        );
     }
 
     #[test]

@@ -1,8 +1,8 @@
 // Field arithmetic operations
 
+use super::Field;
 use glam::Vec3;
 use std::sync::Arc;
-use super::Field;
 
 /// Add two fields
 pub struct FieldAdd {
@@ -23,9 +23,7 @@ impl Field for FieldAdd {
 
     fn bounds(&self) -> Option<(f32, f32)> {
         match (self.a.bounds(), self.b.bounds()) {
-            (Some((a_min, a_max)), Some((b_min, b_max))) => {
-                Some((a_min + b_min, a_max + b_max))
-            }
+            (Some((a_min, a_max)), Some((b_min, b_max))) => Some((a_min + b_min, a_max + b_max)),
             _ => None,
         }
     }
@@ -52,12 +50,7 @@ impl Field for FieldMultiply {
         match (self.a.bounds(), self.b.bounds()) {
             (Some((a_min, a_max)), Some((b_min, b_max))) => {
                 // For multiplication, need all four combinations
-                let products = [
-                    a_min * b_min,
-                    a_min * b_max,
-                    a_max * b_min,
-                    a_max * b_max,
-                ];
+                let products = [a_min * b_min, a_min * b_max, a_max * b_min, a_max * b_max];
                 let min = products.iter().fold(f32::INFINITY, |a, &b| a.min(b));
                 let max = products.iter().fold(f32::NEG_INFINITY, |a, &b| a.max(b));
                 Some((min, max))

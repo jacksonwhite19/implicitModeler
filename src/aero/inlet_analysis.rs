@@ -37,9 +37,8 @@ pub fn compute_inlet_performance(
     let l_over_d = duct_length_m / diameter_m.max(1e-6);
 
     // Sovran-Klomp pressure recovery correlation
-    let eta_p = (1.0
-        - 0.035 * (area_ratio - 1.0).max(0.0).powf(1.3) * l_over_d.powf(-0.27))
-    .clamp(0.80, 1.0);
+    let eta_p = (1.0 - 0.035 * (area_ratio - 1.0).max(0.0).powf(1.3) * l_over_d.powf(-0.27))
+        .clamp(0.80, 1.0);
 
     // DC60 distortion (S-duct contribution from bend angle)
     let dc60 = 0.03 * (bend_angle_deg / 30.0).powi(2) * (area_ratio - 1.0).max(0.0);

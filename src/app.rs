@@ -1,30 +1,37 @@
 // Application state and UI layout
 
-use eframe::{egui, egui_wgpu, wgpu};
-use std::sync::{Arc, RwLock};
-use std::collections::HashMap;
-use glam::Vec3;
+use crate::analysis::thickness::{ThicknessResult, compute_thickness};
+use crate::components::{ComponentInstance, ComponentRegistry};
+use crate::export::{ExportBackend, ExportSettings, TargetResolution};
+use crate::library::LibraryManager;
+use crate::mesh::{Mesh, MeshQuality};
+use crate::project::{Axis, SectionPlane, SectionView};
+use crate::render::{
+    AxesRenderer, Camera, GridRenderer, RaymarchRenderer, RenderState, SdfGrid, SectionUniforms,
+    StandardView, ThicknessUniforms, WireframeRenderer,
+};
+use crate::scripting;
+use crate::scripting::MassPoint;
 use crate::sdf::Sdf;
 use crate::sdf::profiles::SplineProfile;
-use crate::scripting;
-use crate::mesh::{Mesh, MeshQuality};
-use crate::render::{Camera, StandardView, RenderState, GridRenderer, AxesRenderer, WireframeRenderer, RaymarchRenderer, SdfGrid, SectionUniforms, ThicknessUniforms};
-use crate::analysis::thickness::{compute_thickness, ThicknessResult};
-use crate::project::{SectionView, SectionPlane, Axis};
-use crate::components::{ComponentRegistry, ComponentInstance};
-use crate::scripting::MassPoint;
-use crate::ui::spline_editor::{SplineEditorState, show_spline_editor};
-use crate::ui::spine_editor::{SpineEditorState, show_spine_editor};
-use crate::ui::project_tree::{ProjectTree, show_project_tree, find_name_in_script,
-                               count_occurrences, rename_in_script};
-use crate::undo::{AppState, UndoHistory, ScriptTextCommand, SplineShapeResetCommand,
-                  LongitudinalSpineEditCommand, RenameCommand};
 use crate::sdf::spine::LongitudinalSplines;
 use crate::settings::AppSettings;
-use crate::library::LibraryManager;
-use crate::ui::library_panel::{LibraryPanelState, show_library_panel};
 use crate::ui::examples;
-use crate::ui::project_wizard::{show_wizard, WizardState};
+use crate::ui::library_panel::{LibraryPanelState, show_library_panel};
+use crate::ui::project_tree::{
+    ProjectTree, count_occurrences, find_name_in_script, rename_in_script, show_project_tree,
+};
+use crate::ui::project_wizard::{WizardState, show_wizard};
+use crate::ui::spine_editor::{SpineEditorState, show_spine_editor};
+use crate::ui::spline_editor::{SplineEditorState, show_spline_editor};
+use crate::undo::{
+    AppState, LongitudinalSpineEditCommand, RenameCommand, ScriptTextCommand,
+    SplineShapeResetCommand, UndoHistory,
+};
+use eframe::{egui, egui_wgpu, wgpu};
+use glam::Vec3;
+use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
 
 struct ScriptEvalSuccess {
     sdf: Arc<dyn Sdf>,
@@ -49,14 +56,32 @@ struct ScriptEvalResponse {
 }
 
 #[derive(Clone, Copy, PartialEq, Default)]
-pub enum FEAOverlayMode { #[default] None, Stress, Displacement }
+pub enum FEAOverlayMode {
+    #[default]
+    None,
+    Stress,
+    Displacement,
+}
 
 #[derive(Clone, Copy, PartialEq, Default)]
 #[allow(dead_code)] // Arbitrary variant is matched but not constructed via a UI button yet
-pub enum SplitAxisUi { #[default] Z, X, Y, Arbitrary }
+pub enum SplitAxisUi {
+    #[default]
+    Z,
+    X,
+    Y,
+    Arbitrary,
+}
 
 #[derive(Clone, Copy, PartialEq, Default)]
-pub enum SplitAlignUi { #[default] None, Pins, Groove, Dovetail, BoltHoles }
+pub enum SplitAlignUi {
+    #[default]
+    None,
+    Pins,
+    Groove,
+    Dovetail,
+    BoltHoles,
+}
 
 #[derive(Clone, Copy, PartialEq, Default)]
 enum ComponentSelectionMode {
@@ -67,7 +92,7 @@ enum ComponentSelectionMode {
 
 pub struct App {
     /// All user-editable state (participates in undo/redo).
-    state:       AppState,
+    state: AppState,
     /// Undo/redo history stack.
     undo_history: UndoHistory,
     /// Feedback text for status bar (shown 3 s after undo/redo).
@@ -97,6 +122,7 @@ pub struct App {
     resolution: u32,
     smooth_normals: bool,
     mesh_quality: MeshQuality,
+    export_settings: ExportSettings,
     show_wireframe: bool,
 
     // Project management
@@ -127,7 +153,6 @@ pub struct App {
     save_component_category: String,
     save_component_description: String,
 
-
     // Mass / CG analysis
     density_g_per_cm3: f32,
     mass_points: Vec<MassPoint>,
@@ -138,6 +163,9 @@ pub struct App {
     export_in_progress: bool,
     export_progress: String,
     export_receiver: Option<std::sync::mpsc::Receiver<String>>,
+    export_dialog_open: bool,
+    pending_export_path: Option<String>,
+    pending_export_is_obj: bool,
 
     // Spline cross-section profiles (editor state lives in self.state.profiles)
     /// Thread-safe runtime view shared with the Rhai engine.
@@ -155,80 +183,80 @@ pub struct App {
     section_view: SectionView,
 
     // Wall thickness analysis
-    thickness_max_display:   f32,
-    thickness_running:       bool,
-    thickness_result:        Option<ThicknessResult>,
-    thickness_overlay_on:    bool,
-    thickness_receiver:      Option<std::sync::mpsc::Receiver<ThicknessResult>>,
+    thickness_max_display: f32,
+    thickness_running: bool,
+    thickness_result: Option<ThicknessResult>,
+    thickness_overlay_on: bool,
+    thickness_receiver: Option<std::sync::mpsc::Receiver<ThicknessResult>>,
     /// Set when new thickness data should be uploaded to the GPU on the next frame.
-    thickness_needs_upload:  bool,
+    thickness_needs_upload: bool,
 
     // FEA integration (setup populated by scripts lives in self.state.fea_setup)
-    fea_config:              crate::fea::FEAConfig,
-    fea_running:             bool,
-    fea_log:                 Vec<String>,
-    fea_result:              Option<Box<crate::fea::FEAGridResult>>,
-    fea_overlay_mode:        FEAOverlayMode,
-    fea_receiver:            Option<std::sync::mpsc::Receiver<crate::fea::FEAMessage>>,
-    fea_needs_upload:        bool,
+    fea_config: crate::fea::FEAConfig,
+    fea_running: bool,
+    fea_log: Vec<String>,
+    fea_result: Option<Box<crate::fea::FEAGridResult>>,
+    fea_overlay_mode: FEAOverlayMode,
+    fea_receiver: Option<std::sync::mpsc::Receiver<crate::fea::FEAMessage>>,
+    fea_needs_upload: bool,
     /// Cached stress field for use by re-run scripts.
-    fea_stress_field:        Option<Arc<dyn crate::sdf::field::Field>>,
+    fea_stress_field: Option<Arc<dyn crate::sdf::field::Field>>,
     /// Cached displacement field for use by re-run scripts.
-    fea_displacement_field:  Option<Arc<dyn crate::sdf::field::Field>>,
+    fea_displacement_field: Option<Arc<dyn crate::sdf::field::Field>>,
     /// Pre-computed BC visualization geometry (recomputed each script eval).
-    fea_viz:                 Option<crate::fea::FEAVizData>,
+    fea_viz: Option<crate::fea::FEAVizData>,
     /// Whether to draw BC overlays in the viewport.
-    fea_show_conditions:     bool,
+    fea_show_conditions: bool,
 
     // Application settings
-    settings:                AppSettings,
+    settings: AppSettings,
     /// Whether the Settings modal is open.
-    settings_open:           bool,
+    settings_open: bool,
 
     // Floating panel visibility
-    section_view_open:       bool,
-    thickness_open:          bool,
-    fea_open:                bool,
+    section_view_open: bool,
+    thickness_open: bool,
+    fea_open: bool,
 
     // Project tree panel
-    project_tree:            ProjectTree,
+    project_tree: ProjectTree,
     /// Character offset in script_text to place the cursor on the next frame.
-    pending_cursor_offset:   Option<usize>,
+    pending_cursor_offset: Option<usize>,
     /// Line number (0-indexed) to scroll the editor to on the next frame.
-    pending_scroll_line:     Option<usize>,
+    pending_scroll_line: Option<usize>,
 
     // Measurement tools
-    measure_open:            bool,
-    measurements:            crate::analysis::MeasurementResults,
-    measure_density:         f32,   // g/cm³
-    measurements_stale:      bool,
-    measure_running:         bool,
-    measure_receiver:        Option<std::sync::mpsc::Receiver<(f32, f32, glam::Vec3)>>,
-    cs_axis:                 crate::project::Axis,
-    cs_position:             f32,
-    cs_running:              bool,
-    cs_receiver:             Option<std::sync::mpsc::Receiver<f32>>,
+    measure_open: bool,
+    measurements: crate::analysis::MeasurementResults,
+    measure_density: f32, // g/cm³
+    measurements_stale: bool,
+    measure_running: bool,
+    measure_receiver: Option<std::sync::mpsc::Receiver<(f32, f32, glam::Vec3)>>,
+    cs_axis: crate::project::Axis,
+    cs_position: f32,
+    cs_running: bool,
+    cs_receiver: Option<std::sync::mpsc::Receiver<f32>>,
     /// Which point is being picked: Some(0) = A, Some(1) = B.
-    pick_mode:               Option<u8>,
-    point_a:                 Option<glam::Vec3>,
-    point_b:                 Option<glam::Vec3>,
-    dist_kind:               crate::analysis::DistanceMeasureKind,
+    pick_mode: Option<u8>,
+    point_a: Option<glam::Vec3>,
+    point_b: Option<glam::Vec3>,
+    dist_kind: crate::analysis::DistanceMeasureKind,
     /// Custom projection vector (user-editable, normalized on use).
-    custom_proj_vec:         glam::Vec3,
-    show_cg_marker:          bool,
+    custom_proj_vec: glam::Vec3,
+    show_cg_marker: bool,
     /// Last known viewport rect, used for viewport picking.
-    last_viewport_rect:      egui::Rect,
+    last_viewport_rect: egui::Rect,
     /// Next auto-label index for saved distance measurements.
-    distance_label_idx:      usize,
+    distance_label_idx: usize,
 
     // Script editor enhancements
     /// Autocomplete popup state.
-    autocomplete_state:      crate::ui::AutocompleteState,
+    autocomplete_state: crate::ui::AutocompleteState,
     /// Scroll offset of the code editor last frame (used for autocomplete positioning).
-    last_editor_scroll_y:    f32,
+    last_editor_scroll_y: f32,
 
     // Dimensions panel
-    dimensions_state:        crate::ui::DimensionsState,
+    dimensions_state: crate::ui::DimensionsState,
     /// Set to true when a dimension changes; triggers re-eval on next frame.
     dimensions_pending_eval: bool,
 
@@ -239,98 +267,102 @@ pub struct App {
     current_layups: Vec<Arc<crate::sdf::aerospace::composite::CompositeLayup>>,
 
     // Print analysis
-    print_analysis_open:     bool,
+    print_analysis_open: bool,
     print_analysis_settings: crate::analysis::print_analysis::PrintAnalysisSettings,
-    print_analysis_result:   Option<crate::analysis::print_analysis::PrintAnalysisResult>,
-    print_analysis_running:  bool,
-    print_analysis_receiver: Option<std::sync::mpsc::Receiver<crate::analysis::print_analysis::PrintAnalysisResult>>,
-    print_overhang_overlay:  bool,
+    print_analysis_result: Option<crate::analysis::print_analysis::PrintAnalysisResult>,
+    print_analysis_running: bool,
+    print_analysis_receiver:
+        Option<std::sync::mpsc::Receiver<crate::analysis::print_analysis::PrintAnalysisResult>>,
+    print_overhang_overlay: bool,
     print_overhang_needs_upload: bool,
 
     // Split body tool
-    split_axis:         SplitAxisUi,
-    split_offset:       f32,
-    split_align_type:   SplitAlignUi,
-    split_pin_radius:   f32,
-    split_pin_height:   f32,
-    split_pin_count:    usize,
-    split_pattern_r:    f32,
+    split_axis: SplitAxisUi,
+    split_offset: f32,
+    split_align_type: SplitAlignUi,
+    split_pin_radius: f32,
+    split_pin_height: f32,
+    split_pin_count: usize,
+    split_pattern_r: f32,
     split_groove_width: f32,
     split_groove_height: f32,
     split_dovetail_angle: f32,
-    split_bolt_radius:  f32,
-    split_boss_radius:  f32,
-    split_bolt_count:   usize,
-    split_preview:      Option<(std::sync::Arc<dyn crate::sdf::Sdf>, std::sync::Arc<dyn crate::sdf::Sdf>)>,
-    split_fit_result:   Option<crate::sdf::print::SplitFitResult>,
+    split_bolt_radius: f32,
+    split_boss_radius: f32,
+    split_bolt_count: usize,
+    split_preview: Option<(
+        std::sync::Arc<dyn crate::sdf::Sdf>,
+        std::sync::Arc<dyn crate::sdf::Sdf>,
+    )>,
+    split_fit_result: Option<crate::sdf::print::SplitFitResult>,
 
     // Tolerance compensation
-    tolerance_settings:   crate::sdf::print::ToleranceSettings,
-    tolerance_preset:     crate::sdf::print::TolerancePreset,
+    tolerance_settings: crate::sdf::print::ToleranceSettings,
+    tolerance_preset: crate::sdf::print::TolerancePreset,
     /// Whether to wrap geometry in ToleranceCompensated automatically at export time.
-    tolerance_on_export:  bool,
+    tolerance_on_export: bool,
 
     // Reference points from script evaluation
     current_ref_points: Vec<crate::scripting::ReferencePoint>,
-    show_ref_points:    bool,
-    show_dim_lines:     bool,
+    show_ref_points: bool,
+    show_dim_lines: bool,
 
     // Project-local component library
-    library_manager:     Option<LibraryManager>,
+    library_manager: Option<LibraryManager>,
     library_panel_state: LibraryPanelState,
 
     // Aerodynamic analysis (Phase 26)
-    current_flight_condition:    Option<crate::aero::FlightCondition>,
+    current_flight_condition: Option<crate::aero::FlightCondition>,
     current_lifting_line_result: Option<crate::aero::LiftingLineResult>,
     /// UI inputs for flight condition panel.
-    aero_airspeed_ms:            f32,
-    aero_altitude_m:             f32,
-    aero_aoa_deg:                f32,
-    aero_panel_open:             bool,
+    aero_airspeed_ms: f32,
+    aero_altitude_m: f32,
+    aero_aoa_deg: f32,
+    aero_panel_open: bool,
 
     // Aerodynamic analysis (Phase 27) — stability and drag polar
-    current_neutral_point:       Option<crate::aero::NeutralPointResult>,
-    current_static_margin:       Option<crate::aero::StaticMarginResult>,
-    current_trim_result:         Option<crate::aero::TrimResult>,
-    current_drag_polar:          Option<crate::aero::DragPolarResult>,
+    current_neutral_point: Option<crate::aero::NeutralPointResult>,
+    current_static_margin: Option<crate::aero::StaticMarginResult>,
+    current_trim_result: Option<crate::aero::TrimResult>,
+    current_drag_polar: Option<crate::aero::DragPolarResult>,
     /// CG x-position input (mm) for stability panel.
-    aero_cg_x_mm:                f32,
+    aero_cg_x_mm: f32,
     /// Aircraft weight (N) for trim and performance.
-    aero_weight_n:               f32,
+    aero_weight_n: f32,
 
     // Cell-based script execution (Phase 28)
     /// Parsed cells from the current script_text.
     script_cells: Vec<scripting::ScriptCell>,
 
     // Phase 30 — CG sensitivity and interference analysis
-    current_cg_sensitivity:       Option<crate::analysis::CgSensitivityResult>,
-    current_interference_result:  Option<crate::analysis::InterferenceResult>,
+    current_cg_sensitivity: Option<crate::analysis::CgSensitivityResult>,
+    current_interference_result: Option<crate::analysis::InterferenceResult>,
 
     // Version control
-    version_control:     crate::version_control::VersionControlState,
-    vc_panel_open:       bool,
-    vc_discard_confirm:  bool,
-    vc_commit_message:   String,
-    vc_new_branch_name:  String,
-    vc_new_branch_desc:  String,
+    version_control: crate::version_control::VersionControlState,
+    vc_panel_open: bool,
+    vc_discard_confirm: bool,
+    vc_commit_message: String,
+    vc_new_branch_name: String,
+    vc_new_branch_desc: String,
     vc_new_branch_dialog: bool,
-    vc_panel_state:      crate::ui::VCPanelState,
+    vc_panel_state: crate::ui::VCPanelState,
 
     // Help / function reference panel
-    help_panel_open:     bool,
-    help_state:          crate::ui::HelpSearchState,
+    help_panel_open: bool,
+    help_state: crate::ui::HelpSearchState,
     /// Byte offset of the script editor cursor (updated each frame for "Insert at Cursor").
-    script_cursor_byte:  usize,
+    script_cursor_byte: usize,
 
     // Example browser / tab system
     /// Indices into examples::EXAMPLES for open read-only example tabs.
-    open_example_tabs:     Vec<usize>,
+    open_example_tabs: Vec<usize>,
     /// None = Main Script active; Some(idx) = example tab active.
-    active_example_tab:    Option<usize>,
+    active_example_tab: Option<usize>,
     /// Search string for the example browser dropdown.
-    example_search:        String,
+    example_search: String,
     /// Pending copy-to-main action from right-click context menu.
-    pending_copy_example:  Option<usize>,
+    pending_copy_example: Option<usize>,
     component_preview_parts: Vec<(String, Arc<dyn Sdf>)>,
     selected_component_part: Option<String>,
     component_selection_mode: ComponentSelectionMode,
@@ -340,6 +372,7 @@ pub struct App {
 impl App {
     pub fn new(_cc: &eframe::CreationContext) -> Self {
         let default_script = Self::get_default_example();
+        let settings = AppSettings::load();
         let mut app = Self {
             state: AppState::new(default_script.clone()),
             undo_history: UndoHistory::default(),
@@ -361,6 +394,7 @@ impl App {
             resolution: 96,
             smooth_normals: true,
             mesh_quality: MeshQuality::Normal,
+            export_settings: settings.export.clone(),
             show_wireframe: false,
             current_file_path: None,
             status_message: None,
@@ -372,6 +406,9 @@ impl App {
             export_in_progress: false,
             export_progress: String::new(),
             export_receiver: None,
+            export_dialog_open: false,
+            pending_export_path: None,
+            pending_export_is_obj: false,
             last_auto_save: std::time::Instant::now(),
             auto_save_interval: std::time::Duration::from_secs(30),
             component_registry: {
@@ -379,8 +416,8 @@ impl App {
 
                 // Try multiple locations for components directory
                 let paths_to_try = vec![
-                    "components",  // Current directory
-                    "./components", // Explicitly current directory
+                    "components",    // Current directory
+                    "./components",  // Explicitly current directory
                     "../components", // Parent directory
                 ];
 
@@ -396,7 +433,9 @@ impl App {
                 }
 
                 if !loaded {
-                    eprintln!("⚠ No components found. Create components/ directory with .json files");
+                    eprintln!(
+                        "⚠ No components found. Create components/ directory with .json files"
+                    );
                     if let Ok(cwd) = std::env::current_dir() {
                         eprintln!("  Current directory: {}", cwd.display());
                     }
@@ -419,116 +458,117 @@ impl App {
             spine_editor_open: false,
             spine_fuselage_length: 10.0,
             section_view: SectionView::default(),
-            thickness_max_display:  10.0,
-            thickness_running:      false,
-            thickness_result:       None,
-            thickness_overlay_on:   false,
-            thickness_receiver:     None,
+            thickness_max_display: 10.0,
+            thickness_running: false,
+            thickness_result: None,
+            thickness_overlay_on: false,
+            thickness_receiver: None,
             thickness_needs_upload: false,
-            fea_config:             crate::fea::FEAConfig::default(),
-            fea_running:            false,
-            fea_log:                Vec::new(),
-            fea_result:             None,
-            fea_overlay_mode:       FEAOverlayMode::None,
-            fea_receiver:           None,
-            fea_needs_upload:       false,
-            fea_stress_field:       None,
+            fea_config: crate::fea::FEAConfig::default(),
+            fea_running: false,
+            fea_log: Vec::new(),
+            fea_result: None,
+            fea_overlay_mode: FEAOverlayMode::None,
+            fea_receiver: None,
+            fea_needs_upload: false,
+            fea_stress_field: None,
             fea_displacement_field: None,
-            fea_viz:                None,
-            fea_show_conditions:    true,
-            settings:               AppSettings::load(),
-            settings_open:          false,
-            section_view_open:      false,
-            thickness_open:         false,
-            fea_open:               false,
-            project_tree:           ProjectTree::default(),
-            pending_cursor_offset:  None,
-            pending_scroll_line:    None,
-            measure_open:           false,
-            measurements:           crate::analysis::MeasurementResults::default(),
-            measure_density:        1.24,
-            measurements_stale:     false,
-            measure_running:        false,
-            measure_receiver:       None,
-            cs_axis:                crate::project::Axis::X,
-            cs_position:            0.0,
-            cs_running:             false,
-            cs_receiver:            None,
-            pick_mode:              None,
-            point_a:                None,
-            point_b:                None,
-            dist_kind:              crate::analysis::DistanceMeasureKind::Distance3D,
-            custom_proj_vec:        glam::Vec3::X,
-            show_cg_marker:         false,
-            last_viewport_rect:     egui::Rect::NOTHING,
-            distance_label_idx:     1,
-            autocomplete_state:     crate::ui::AutocompleteState::default(),
-            last_editor_scroll_y:   0.0,
-            dimensions_state:        crate::ui::DimensionsState::default(),
+            fea_viz: None,
+            fea_show_conditions: true,
+            settings,
+            settings_open: false,
+            section_view_open: false,
+            thickness_open: false,
+            fea_open: false,
+            project_tree: ProjectTree::default(),
+            pending_cursor_offset: None,
+            pending_scroll_line: None,
+            measure_open: false,
+            measurements: crate::analysis::MeasurementResults::default(),
+            measure_density: 1.24,
+            measurements_stale: false,
+            measure_running: false,
+            measure_receiver: None,
+            cs_axis: crate::project::Axis::X,
+            cs_position: 0.0,
+            cs_running: false,
+            cs_receiver: None,
+            pick_mode: None,
+            point_a: None,
+            point_b: None,
+            dist_kind: crate::analysis::DistanceMeasureKind::Distance3D,
+            custom_proj_vec: glam::Vec3::X,
+            show_cg_marker: false,
+            last_viewport_rect: egui::Rect::NOTHING,
+            distance_label_idx: 1,
+            autocomplete_state: crate::ui::AutocompleteState::default(),
+            last_editor_scroll_y: 0.0,
+            dimensions_state: crate::ui::DimensionsState::default(),
             dimensions_pending_eval: false,
-            mesh_cache:              Arc::new(std::sync::Mutex::new(scripting::MeshCache::new())),
-            current_layups:          Vec::new(),
-            print_analysis_open:     false,
-            print_analysis_settings: crate::analysis::print_analysis::PrintAnalysisSettings::default(),
-            print_analysis_result:   None,
-            print_analysis_running:  false,
+            mesh_cache: Arc::new(std::sync::Mutex::new(scripting::MeshCache::new())),
+            current_layups: Vec::new(),
+            print_analysis_open: false,
+            print_analysis_settings:
+                crate::analysis::print_analysis::PrintAnalysisSettings::default(),
+            print_analysis_result: None,
+            print_analysis_running: false,
             print_analysis_receiver: None,
-            print_overhang_overlay:  false,
+            print_overhang_overlay: false,
             print_overhang_needs_upload: false,
-            split_axis:          SplitAxisUi::Z,
-            split_offset:        0.0,
-            split_align_type:    SplitAlignUi::None,
-            split_pin_radius:    1.5,
-            split_pin_height:    3.0,
-            split_pin_count:     4,
-            split_pattern_r:     8.0,
-            split_groove_width:  10.0,
+            split_axis: SplitAxisUi::Z,
+            split_offset: 0.0,
+            split_align_type: SplitAlignUi::None,
+            split_pin_radius: 1.5,
+            split_pin_height: 3.0,
+            split_pin_count: 4,
+            split_pattern_r: 8.0,
+            split_groove_width: 10.0,
             split_groove_height: 3.0,
             split_dovetail_angle: 15.0,
-            split_bolt_radius:   1.5,
-            split_boss_radius:   3.0,
-            split_bolt_count:    4,
-            split_preview:       None,
-            split_fit_result:    None,
-            tolerance_settings:  crate::sdf::print::ToleranceSettings::default(),
-            tolerance_preset:    crate::sdf::print::TolerancePreset::StandardFDM,
+            split_bolt_radius: 1.5,
+            split_boss_radius: 3.0,
+            split_bolt_count: 4,
+            split_preview: None,
+            split_fit_result: None,
+            tolerance_settings: crate::sdf::print::ToleranceSettings::default(),
+            tolerance_preset: crate::sdf::print::TolerancePreset::StandardFDM,
             tolerance_on_export: false,
-            current_ref_points:  Vec::new(),
-            show_ref_points:     true,
-            show_dim_lines:      false,
-            library_manager:     None,
+            current_ref_points: Vec::new(),
+            show_ref_points: true,
+            show_dim_lines: false,
+            library_manager: None,
             library_panel_state: LibraryPanelState::default(),
-            current_flight_condition:    None,
+            current_flight_condition: None,
             current_lifting_line_result: None,
-            aero_airspeed_ms:            50.0,
-            aero_altitude_m:             0.0,
-            aero_aoa_deg:                5.0,
-            aero_panel_open:             false,
-            current_neutral_point:       None,
-            current_static_margin:       None,
-            current_trim_result:         None,
-            current_drag_polar:          None,
-            aero_cg_x_mm:               100.0,
-            aero_weight_n:              10.0,
-            script_cells:               Vec::new(),
-            current_cg_sensitivity:       None,
-            current_interference_result:  None,
-            version_control:     crate::version_control::VersionControlState::new_with_root(
-                &AppState::new(default_script.clone())
+            aero_airspeed_ms: 50.0,
+            aero_altitude_m: 0.0,
+            aero_aoa_deg: 5.0,
+            aero_panel_open: false,
+            current_neutral_point: None,
+            current_static_margin: None,
+            current_trim_result: None,
+            current_drag_polar: None,
+            aero_cg_x_mm: 100.0,
+            aero_weight_n: 10.0,
+            script_cells: Vec::new(),
+            current_cg_sensitivity: None,
+            current_interference_result: None,
+            version_control: crate::version_control::VersionControlState::new_with_root(
+                &AppState::new(default_script.clone()),
             ),
-            vc_panel_open:       false,
-            vc_discard_confirm:  false,
-            vc_commit_message:   String::new(),
-            vc_new_branch_name:  String::new(),
-            vc_new_branch_desc:  String::new(),
+            vc_panel_open: false,
+            vc_discard_confirm: false,
+            vc_commit_message: String::new(),
+            vc_new_branch_name: String::new(),
+            vc_new_branch_desc: String::new(),
             vc_new_branch_dialog: false,
-            vc_panel_state:      crate::ui::VCPanelState::default(),
-            help_panel_open:     false,
-            help_state:          crate::ui::HelpSearchState::new(),
-            script_cursor_byte:  0,
-            open_example_tabs:   Vec::new(),
-            active_example_tab:  None,
-            example_search:      String::new(),
+            vc_panel_state: crate::ui::VCPanelState::default(),
+            help_panel_open: false,
+            help_state: crate::ui::HelpSearchState::new(),
+            script_cursor_byte: 0,
+            open_example_tabs: Vec::new(),
+            active_example_tab: None,
+            example_search: String::new(),
             pending_copy_example: None,
             component_preview_parts: Vec::new(),
             selected_component_part: None,
@@ -555,7 +595,6 @@ impl App {
             ("Primitives", "Torus", "torus(15.0, 3.0)"),
             ("Primitives", "Cone", "cone(5.0, 10.0)"),
             ("Primitives", "Plane", "plane(0.0, 0.0, 1.0, 0.0)"),
-
             // Operations
             ("Operations", "Union", "union(<a>, <b>)"),
             ("Operations", "Subtract", "subtract(<base>, <hole>)"),
@@ -563,39 +602,98 @@ impl App {
             ("Operations", "Smooth Union", "smooth_union(<a>, <b>, 2.0)"),
             ("Operations", "Offset", "offset(<shape>, 2.0)"),
             ("Operations", "Shell", "shell(<shape>, 1.0)"),
-
             // Transforms
-            ("Transforms", "Translate", "translate(<shape>, 0.0, 0.0, 0.0)"),
+            (
+                "Transforms",
+                "Translate",
+                "translate(<shape>, 0.0, 0.0, 0.0)",
+            ),
             ("Transforms", "Rotate", "rotate(<shape>, 0.0, 0.0, 45.0)"),
             ("Transforms", "Scale", "scale(<shape>, 1.0, 1.0, 1.0)"),
-
             // Patterns (examples)
-            ("Patterns", "Bracket (base with holes)", "let base = box_(40.0, 20.0, 10.0);\nlet hole = cylinder(4.0, 12.0);\nlet hole = translate(hole, 10.0, 5.0, 0.0);\nsubtract(base, hole)"),
-            ("Patterns", "Smooth blend", "let s1 = sphere(8.0);\nlet s2 = translate(sphere(8.0), 10.0, 0.0, 0.0);\nsmooth_union(s1, s2, 3.0)"),
-            ("Patterns", "Hollow shape", "let t = torus(15.0, 3.0);\nshell(t, 1.0)"),
-
+            (
+                "Patterns",
+                "Bracket (base with holes)",
+                "let base = box_(40.0, 20.0, 10.0);\nlet hole = cylinder(4.0, 12.0);\nlet hole = translate(hole, 10.0, 5.0, 0.0);\nsubtract(base, hole)",
+            ),
+            (
+                "Patterns",
+                "Smooth blend",
+                "let s1 = sphere(8.0);\nlet s2 = translate(sphere(8.0), 10.0, 0.0, 0.0);\nsmooth_union(s1, s2, 3.0)",
+            ),
+            (
+                "Patterns",
+                "Hollow shape",
+                "let t = torus(15.0, 3.0);\nshell(t, 1.0)",
+            ),
             // Arrays & Mirrors
-            ("Arrays", "Linear Array (X)", "linear_array(<shape>, 4, 10.0, 0.0, 0.0)"),
-            ("Arrays", "Linear Array (Y)", "linear_array(<shape>, 4, 0.0, 10.0, 0.0)"),
+            (
+                "Arrays",
+                "Linear Array (X)",
+                "linear_array(<shape>, 4, 10.0, 0.0, 0.0)",
+            ),
+            (
+                "Arrays",
+                "Linear Array (Y)",
+                "linear_array(<shape>, 4, 0.0, 10.0, 0.0)",
+            ),
             ("Arrays", "Polar Array (Z)", "polar_array(<shape>, 6)"),
-            ("Arrays", "Polar Array (custom axis)", "polar_array_axis(<shape>, 6, 0.0, 0.0, 1.0)"),
+            (
+                "Arrays",
+                "Polar Array (custom axis)",
+                "polar_array_axis(<shape>, 6, 0.0, 0.0, 1.0)",
+            ),
             ("Arrays", "Mirror X", "mirror_x(<shape>)"),
             ("Arrays", "Mirror Y", "mirror_y(<shape>)"),
             ("Arrays", "Mirror Z", "mirror_z(<shape>)"),
-
             // Constraint Design (scratchpad pattern)
-            ("Constraints", "component(sdf, margin)", "let bat = component(box_(80.0, 30.0, 20.0), 5.0);\nlet bat = place(bat, 0.0, 0.0, 0.0);\ngeometry(bat)"),
-            ("Constraints", "component_named(name, sdf, margin, mass)", "let bat = component_named(\"battery\", box_(80.0, 30.0, 20.0), 5.0, 180.0);\nlet bat = place(bat, 0.0, 0.0, 0.0);\ngeometry(bat)"),
-            ("Constraints", "keepout(comp)", "let c = component(sphere(10.0), 3.0);\nlet c = place(c, 0.0, 0.0, 0.0);\nkeepout(c)"),
-            ("Constraints", "smooth_subtract", "smooth_subtract(<base>, <tool>, 5.0)"),
-            ("Constraints", "Fuselage wraps battery", "// Battery defines the fuselage envelope\nlet bat = component_named(\"battery\", box_(80.0, 30.0, 20.0), 5.0, 180.0);\nlet bat = place(bat, 0.0, 0.0, 0.0);\nlet shell = offset(keepout(bat), 2.0);\nlet aero = fuselage_parametric(120.0, 50.0, 0.7, 0.5);\nsmooth_union(aero, shell, 10.0)"),
+            (
+                "Constraints",
+                "component(sdf, margin)",
+                "let bat = component(box_(80.0, 30.0, 20.0), 5.0);\nlet bat = place(bat, 0.0, 0.0, 0.0);\ngeometry(bat)",
+            ),
+            (
+                "Constraints",
+                "component_named(name, sdf, margin, mass)",
+                "let bat = component_named(\"battery\", box_(80.0, 30.0, 20.0), 5.0, 180.0);\nlet bat = place(bat, 0.0, 0.0, 0.0);\ngeometry(bat)",
+            ),
+            (
+                "Constraints",
+                "keepout(comp)",
+                "let c = component(sphere(10.0), 3.0);\nlet c = place(c, 0.0, 0.0, 0.0);\nkeepout(c)",
+            ),
+            (
+                "Constraints",
+                "smooth_subtract",
+                "smooth_subtract(<base>, <tool>, 5.0)",
+            ),
+            (
+                "Constraints",
+                "Fuselage wraps battery",
+                "// Battery defines the fuselage envelope\nlet bat = component_named(\"battery\", box_(80.0, 30.0, 20.0), 5.0, 180.0);\nlet bat = place(bat, 0.0, 0.0, 0.0);\nlet shell = offset(keepout(bat), 2.0);\nlet aero = fuselage_parametric(120.0, 50.0, 0.7, 0.5);\nsmooth_union(aero, shell, 10.0)",
+            ),
             // Legacy mass_at
-            ("Constraints", "mass_at (standalone)", "mass_at(150.0, 0.0, 0.0, 0.0);\nsphere(5.0)"),
-
+            (
+                "Constraints",
+                "mass_at (standalone)",
+                "mass_at(150.0, 0.0, 0.0, 0.0);\nsphere(5.0)",
+            ),
             // Scripting helpers
-            ("Scripting", "User function", "fn make_part(r) {\n    sphere(r)\n}\nmake_part(10.0)"),
-            ("Scripting", "For loop (union)", "let result = sphere(3.0);\nfor i in 1..5 {\n    let s = translate(sphere(2.0), i * 8.0, 0.0, 0.0);\n    result = union(result, s);\n}\nresult"),
-            ("Scripting", "to_rad / PI", "let r = 20.0 * sin(PI / 6.0);\nsphere(r)"),
+            (
+                "Scripting",
+                "User function",
+                "fn make_part(r) {\n    sphere(r)\n}\nmake_part(10.0)",
+            ),
+            (
+                "Scripting",
+                "For loop (union)",
+                "let result = sphere(3.0);\nfor i in 1..5 {\n    let s = translate(sphere(2.0), i * 8.0, 0.0, 0.0);\n    result = union(result, s);\n}\nresult",
+            ),
+            (
+                "Scripting",
+                "to_rad / PI",
+                "let r = 20.0 * sin(PI / 6.0);\nsphere(r)",
+            ),
             ("Scripting", "clamp", "clamp(<value>, 0.0, 1.0)"),
             ("Scripting", "lerp", "lerp(<a>, <b>, 0.5)"),
         ]
@@ -820,7 +918,9 @@ smooth_union(aero, shell, 12.0)
                 let head_state = head_commit.state.clone();
                 self.version_control.working_changes =
                     crate::version_control::operations::has_working_changes(
-                        &self.state, &head_state);
+                        &self.state,
+                        &head_state,
+                    );
             }
         }
     }
@@ -871,7 +971,11 @@ smooth_union(aero, shell, 12.0)
         self.update_vc_working_changes();
     }
 
-    fn start_background_script_eval(&mut self, script: String, cells: Option<Vec<scripting::ScriptCell>>) {
+    fn start_background_script_eval(
+        &mut self,
+        script: String,
+        cells: Option<Vec<scripting::ScriptCell>>,
+    ) {
         use std::time::Instant;
 
         self.script_eval_job_id = self.script_eval_job_id.wrapping_add(1);
@@ -889,14 +993,26 @@ smooth_union(aero, shell, 12.0)
         let sf = self.fea_stress_field.clone();
         let df = self.fea_displacement_field.clone();
         let dimensions = self.state.dimensions.clone();
-        let project_dir = self.current_file_path.as_deref().and_then(|p| p.parent()).map(|p| p.to_path_buf());
-        let library_sources = self.library_manager.as_ref()
+        let project_dir = self
+            .current_file_path
+            .as_deref()
+            .and_then(|p| p.parent())
+            .map(|p| p.to_path_buf());
+        let library_sources = self
+            .library_manager
+            .as_ref()
             .map(|m| m.module_sources())
             .unwrap_or_default();
         let mesh_cache = Arc::clone(&self.mesh_cache);
-        let viewport_resolution = self.resolution.clamp(48, 256);
-        let is_component_script = self.current_file_path.as_ref()
-            .and_then(|p| p.parent().and_then(|parent| parent.file_name()).map(|n| n == "components"))
+        let viewport_resolution = self.resolution.clamp(48, 512);
+        let is_component_script = self
+            .current_file_path
+            .as_ref()
+            .and_then(|p| {
+                p.parent()
+                    .and_then(|parent| parent.file_name())
+                    .map(|n| n == "components")
+            })
             .unwrap_or(false);
         let (tx, rx) = std::sync::mpsc::channel();
         self.script_eval_receiver = Some(rx);
@@ -909,7 +1025,8 @@ smooth_union(aero, shell, 12.0)
                     &mut worker_cells,
                     Some(profiles_ref),
                     Some(splines_ref),
-                    sf, df,
+                    sf,
+                    df,
                     &dimensions,
                     project_dir.as_deref(),
                     Some(mesh_cache),
@@ -919,10 +1036,12 @@ smooth_union(aero, shell, 12.0)
                 let outcome = if let Some(result) = result_opt {
                     build_script_eval_success(result, viewport_resolution, eval_time_ms, Vec::new())
                 } else {
-                    let err_msg = worker_cells.iter()
+                    let err_msg = worker_cells
+                        .iter()
                         .filter_map(|c| {
                             if let scripting::CellStatus::Error { message, line } = &c.status {
-                                let line_info = line.map(|l| format!(" (line {})", l)).unwrap_or_default();
+                                let line_info =
+                                    line.map(|l| format!(" (line {})", l)).unwrap_or_default();
                                 Some(format!("[{}]{}: {}", c.name, line_info, message))
                             } else {
                                 None
@@ -932,13 +1051,18 @@ smooth_union(aero, shell, 12.0)
                         .join("\n");
                     Err(err_msg)
                 };
-                ScriptEvalResponse { job_id, cells: Some(worker_cells), outcome }
+                ScriptEvalResponse {
+                    job_id,
+                    cells: Some(worker_cells),
+                    outcome,
+                }
             } else {
                 let outcome = match scripting::evaluate_script_full(
                     &script,
                     Some(profiles_ref),
                     Some(splines_ref),
-                    sf.clone(), df.clone(),
+                    sf.clone(),
+                    df.clone(),
                     &dimensions,
                     project_dir.as_deref(),
                     Some(Arc::clone(&mesh_cache)),
@@ -956,7 +1080,8 @@ smooth_union(aero, shell, 12.0)
                             project_dir.as_deref(),
                             Some(Arc::clone(&mesh_cache)),
                             &library_sources,
-                        ).unwrap_or_else(|_| {
+                        )
+                        .unwrap_or_else(|_| {
                             if is_component_script {
                                 scripting::evaluate_component_preview_parts(
                                     &script,
@@ -968,16 +1093,26 @@ smooth_union(aero, shell, 12.0)
                                     project_dir.as_deref(),
                                     Some(Arc::clone(&mesh_cache)),
                                     &library_sources,
-                                ).unwrap_or_default()
+                                )
+                                .unwrap_or_default()
                             } else {
                                 Vec::new()
                             }
                         });
-                        build_script_eval_success(result, viewport_resolution, eval_time_ms, component_preview_parts)
+                        build_script_eval_success(
+                            result,
+                            viewport_resolution,
+                            eval_time_ms,
+                            component_preview_parts,
+                        )
                     }
                     Err(e) => Err(e),
                 };
-                ScriptEvalResponse { job_id, cells: None, outcome }
+                ScriptEvalResponse {
+                    job_id,
+                    cells: None,
+                    outcome,
+                }
             };
             let _ = tx.send(response);
         });
@@ -990,7 +1125,11 @@ smooth_union(aero, shell, 12.0)
             self.selected_component_part = None;
             self.selected_component_bounds = None;
         } else if let Some(selected) = self.selected_component_part.clone() {
-            if !self.component_preview_parts.iter().any(|(name, _)| *name == selected) {
+            if !self
+                .component_preview_parts
+                .iter()
+                .any(|(name, _)| *name == selected)
+            {
                 self.selected_component_part = None;
                 self.selected_component_bounds = None;
             }
@@ -1003,17 +1142,22 @@ smooth_union(aero, shell, 12.0)
         }
 
         if should_frame_camera {
-            if let Some((tight_min, tight_max)) = crate::pipeline::tight_bounds_from_grid(&success.sdf_grid) {
+            if let Some((tight_min, tight_max)) =
+                crate::pipeline::tight_bounds_from_grid(&success.sdf_grid)
+            {
                 self.camera.frame_bounds(tight_min, tight_max);
             } else {
-                self.camera.frame_bounds(success.bounds_min, success.bounds_max);
+                self.camera
+                    .frame_bounds(success.bounds_min, success.bounds_max);
             }
         }
 
         self.state.fea_setup = success.fea_setup;
         if !self.state.fea_setup.is_empty() {
             self.fea_viz = Some(crate::fea::compute_fea_viz(
-                &self.state.fea_setup, success.bounds_min, success.bounds_max,
+                &self.state.fea_setup,
+                success.bounds_min,
+                success.bounds_max,
             ));
         } else {
             self.fea_viz = None;
@@ -1032,8 +1176,8 @@ smooth_union(aero, shell, 12.0)
             self.measurements_stale = true;
         }
         if self.print_analysis_result.is_some() {
-            self.print_analysis_result       = None;
-            self.print_overhang_overlay      = false;
+            self.print_analysis_result = None;
+            self.print_overhang_overlay = false;
             self.print_overhang_needs_upload = false;
         }
 
@@ -1053,15 +1197,30 @@ smooth_union(aero, shell, 12.0)
 
     fn set_component_preview_selection(&mut self, selected: Option<String>, jump_to_code: bool) {
         self.selected_component_part = selected.clone();
-        let viewport_resolution = self.resolution.clamp(48, 256);
+        let viewport_resolution = self.resolution.clamp(48, 512);
 
         if let Some(name) = selected.clone() {
-            let selected_sdf = self.component_preview_parts.iter()
+            let selected_sdf = self
+                .component_preview_parts
+                .iter()
                 .find(|(n, _)| *n == name)
                 .map(|(_, sdf)| Arc::clone(sdf));
 
             if let Some(part_sdf) = selected_sdf {
-                let (part_min, part_max) = crate::pipeline::auto_bounds(part_sdf.as_ref());
+                let part_bounds = {
+                    let bbox = crate::sdf::query::bounding_points(part_sdf.as_ref());
+                    let size = (bbox.max - bbox.min).abs();
+                    if size.max_element().is_finite()
+                        && size.max_element() > 0.0
+                        && size.max_element() < 5000.0
+                    {
+                        let pad = size.max(glam::Vec3::splat(1.0)) * 0.08 + glam::Vec3::splat(1.0);
+                        (bbox.min - pad, bbox.max + pad)
+                    } else {
+                        crate::pipeline::auto_bounds(part_sdf.as_ref())
+                    }
+                };
+                let (part_min, part_max) = part_bounds;
                 self.selected_component_bounds = Some((part_min, part_max));
 
                 let display_sdf = match self.component_selection_mode {
@@ -1070,9 +1229,19 @@ smooth_union(aero, shell, 12.0)
                 };
 
                 if let Some(sdf) = display_sdf {
-                    let (bounds_min, bounds_max) = crate::pipeline::auto_bounds(sdf.as_ref());
+                    let (bounds_min, bounds_max) = if matches!(
+                        self.component_selection_mode,
+                        ComponentSelectionMode::Isolate
+                    ) {
+                        part_bounds
+                    } else {
+                        crate::pipeline::auto_bounds(sdf.as_ref())
+                    };
                     self.current_sdf_grid = Some(crate::pipeline::compute_sdf_grid_cached_arc(
-                        &sdf, bounds_min, bounds_max, viewport_resolution,
+                        &sdf,
+                        bounds_min,
+                        bounds_max,
+                        viewport_resolution,
                     ));
                 }
 
@@ -1085,7 +1254,9 @@ smooth_union(aero, shell, 12.0)
                     name
                 ));
                 if jump_to_code {
-                    if let Some((offset, line)) = find_name_in_script(&self.state.script_text, &name) {
+                    if let Some((offset, line)) =
+                        find_name_in_script(&self.state.script_text, &name)
+                    {
                         self.pending_cursor_offset = Some(offset);
                         self.pending_scroll_line = Some(line);
                     }
@@ -1095,7 +1266,10 @@ smooth_union(aero, shell, 12.0)
             self.selected_component_bounds = None;
             let (bounds_min, bounds_max) = crate::pipeline::auto_bounds(sdf.as_ref());
             self.current_sdf_grid = Some(crate::pipeline::compute_sdf_grid_cached_arc(
-                &sdf, bounds_min, bounds_max, viewport_resolution,
+                &sdf,
+                bounds_min,
+                bounds_max,
+                viewport_resolution,
             ));
             self.status_message = Some("Showing full preview".to_string());
         }
@@ -1110,15 +1284,22 @@ smooth_union(aero, shell, 12.0)
         let splines_ref = Arc::new(self.state.splines.clone());
         let sf = self.fea_stress_field.clone();
         let df = self.fea_displacement_field.clone();
-        let project_dir = self.current_file_path.as_deref().and_then(|p| p.parent()).map(|p| p.to_path_buf());
-        let library_sources = self.library_manager.as_ref()
+        let project_dir = self
+            .current_file_path
+            .as_deref()
+            .and_then(|p| p.parent())
+            .map(|p| p.to_path_buf());
+        let library_sources = self
+            .library_manager
+            .as_ref()
             .map(|m| m.module_sources())
             .unwrap_or_default();
         match scripting::evaluate_script_full(
             script,
             Some(profiles_ref),
             Some(splines_ref),
-            sf, df,
+            sf,
+            df,
             &self.state.dimensions,
             project_dir.as_deref(),
             Some(Arc::clone(&self.mesh_cache)),
@@ -1131,18 +1312,21 @@ smooth_union(aero, shell, 12.0)
                 // Extract CG/mass data before moving sdf out of result
                 let cg = result.center_of_gravity();
                 let mass_points = result.mass_points;
-                self.state.fea_setup    = result.fea_setup;
-                self.current_layups     = result.layups;
+                self.state.fea_setup = result.fea_setup;
+                self.current_layups = result.layups;
                 self.current_ref_points = result.reference_points;
                 let sdf = result.sdf;
 
                 // Compute bounds once, reuse for both SDF grid and mesh.
                 let start_mesh = Instant::now();
                 let (bounds_min, bounds_max) = crate::pipeline::auto_bounds(sdf.as_ref());
-                let viewport_resolution = self.resolution.clamp(48, 256);
+                let viewport_resolution = self.resolution.clamp(48, 512);
 
                 let sdf_grid = crate::pipeline::compute_sdf_grid_cached_arc(
-                    &sdf, bounds_min, bounds_max, viewport_resolution,
+                    &sdf,
+                    bounds_min,
+                    bounds_max,
+                    viewport_resolution,
                 );
                 let mesh_time = start_mesh.elapsed().as_secs_f64() * 1000.0;
 
@@ -1160,7 +1344,9 @@ smooth_union(aero, shell, 12.0)
 
                 // Frame camera on tight bounds of negative (interior) voxels.
                 if should_frame_camera {
-                    if let Some((tight_min, tight_max)) = crate::pipeline::tight_bounds_from_grid(&sdf_grid) {
+                    if let Some((tight_min, tight_max)) =
+                        crate::pipeline::tight_bounds_from_grid(&sdf_grid)
+                    {
                         self.camera.frame_bounds(tight_min, tight_max);
                     } else {
                         self.camera.frame_bounds(bounds_min, bounds_max);
@@ -1170,7 +1356,9 @@ smooth_union(aero, shell, 12.0)
                 // Pre-compute FEA BC visualization geometry (cheap 20³ sample).
                 if !self.state.fea_setup.is_empty() {
                     self.fea_viz = Some(crate::fea::compute_fea_viz(
-                        &self.state.fea_setup, bounds_min, bounds_max,
+                        &self.state.fea_setup,
+                        bounds_min,
+                        bounds_max,
                     ));
                 } else {
                     self.fea_viz = None;
@@ -1190,8 +1378,8 @@ smooth_union(aero, shell, 12.0)
 
                 // Print analysis results are stale when the model changes.
                 if self.print_analysis_result.is_some() {
-                    self.print_analysis_result       = None;
-                    self.print_overhang_overlay      = false;
+                    self.print_analysis_result = None;
+                    self.print_overhang_overlay = false;
                     self.print_overhang_needs_upload = false;
                 }
 
@@ -1227,8 +1415,14 @@ smooth_union(aero, shell, 12.0)
         let splines_ref = Arc::new(self.state.splines.clone());
         let sf = self.fea_stress_field.clone();
         let df = self.fea_displacement_field.clone();
-        let project_dir = self.current_file_path.as_deref().and_then(|p| p.parent()).map(|p| p.to_path_buf());
-        let library_sources = self.library_manager.as_ref()
+        let project_dir = self
+            .current_file_path
+            .as_deref()
+            .and_then(|p| p.parent())
+            .map(|p| p.to_path_buf());
+        let library_sources = self
+            .library_manager
+            .as_ref()
             .map(|m| m.module_sources())
             .unwrap_or_default();
 
@@ -1237,7 +1431,8 @@ smooth_union(aero, shell, 12.0)
             &mut self.script_cells,
             Some(profiles_ref),
             Some(splines_ref),
-            sf, df,
+            sf,
+            df,
             &self.state.dimensions,
             project_dir.as_deref(),
             Some(Arc::clone(&self.mesh_cache)),
@@ -1251,17 +1446,20 @@ smooth_union(aero, shell, 12.0)
                 let should_frame_camera = self.current_sdf_grid.is_none();
                 let cg = result.center_of_gravity();
                 let mass_points = result.mass_points;
-                self.state.fea_setup    = result.fea_setup;
-                self.current_layups     = result.layups;
+                self.state.fea_setup = result.fea_setup;
+                self.current_layups = result.layups;
                 self.current_ref_points = result.reference_points;
                 let sdf = result.sdf;
 
                 let start_mesh = Instant::now();
                 let (bounds_min, bounds_max) = crate::pipeline::auto_bounds(sdf.as_ref());
-                let viewport_resolution = self.resolution.clamp(48, 256);
+                let viewport_resolution = self.resolution.clamp(48, 512);
 
                 let sdf_grid = crate::pipeline::compute_sdf_grid_cached_arc(
-                    &sdf, bounds_min, bounds_max, viewport_resolution,
+                    &sdf,
+                    bounds_min,
+                    bounds_max,
+                    viewport_resolution,
                 );
                 let mesh_time = start_mesh.elapsed().as_secs_f64() * 1000.0;
 
@@ -1276,7 +1474,9 @@ smooth_union(aero, shell, 12.0)
                 }
 
                 if should_frame_camera {
-                    if let Some((tight_min, tight_max)) = crate::pipeline::tight_bounds_from_grid(&sdf_grid) {
+                    if let Some((tight_min, tight_max)) =
+                        crate::pipeline::tight_bounds_from_grid(&sdf_grid)
+                    {
                         self.camera.frame_bounds(tight_min, tight_max);
                     } else {
                         self.camera.frame_bounds(bounds_min, bounds_max);
@@ -1285,7 +1485,9 @@ smooth_union(aero, shell, 12.0)
 
                 if !self.state.fea_setup.is_empty() {
                     self.fea_viz = Some(crate::fea::compute_fea_viz(
-                        &self.state.fea_setup, bounds_min, bounds_max,
+                        &self.state.fea_setup,
+                        bounds_min,
+                        bounds_max,
                     ));
                 } else {
                     self.fea_viz = None;
@@ -1302,8 +1504,8 @@ smooth_union(aero, shell, 12.0)
                     self.measurements_stale = true;
                 }
                 if self.print_analysis_result.is_some() {
-                    self.print_analysis_result       = None;
-                    self.print_overhang_overlay      = false;
+                    self.print_analysis_result = None;
+                    self.print_overhang_overlay = false;
                     self.print_overhang_needs_upload = false;
                 }
 
@@ -1318,10 +1520,13 @@ smooth_union(aero, shell, 12.0)
             }
             None => {
                 // Build error message from failed cells.
-                let err_msg = self.script_cells.iter()
+                let err_msg = self
+                    .script_cells
+                    .iter()
                     .filter_map(|c| {
                         if let scripting::CellStatus::Error { message, line } = &c.status {
-                            let line_info = line.map(|l| format!(" (line {})", l)).unwrap_or_default();
+                            let line_info =
+                                line.map(|l| format!(" (line {})", l)).unwrap_or_default();
                             Some(format!("[{}]{}: {}", c.name, line_info, message))
                         } else {
                             None
@@ -1339,11 +1544,15 @@ smooth_union(aero, shell, 12.0)
     }
 
     fn apply_workflow_constraints(&mut self) -> usize {
-        let applied = self.workflow_config.as_ref()
-            .map(|cfg| crate::project::apply_assembly_constraints(
-                &mut self.state.dimensions,
-                &cfg.assembly_constraints,
-            ))
+        let applied = self
+            .workflow_config
+            .as_ref()
+            .map(|cfg| {
+                crate::project::apply_assembly_constraints(
+                    &mut self.state.dimensions,
+                    &cfg.assembly_constraints,
+                )
+            })
             .unwrap_or(0);
         if applied > 0 {
             self.dimensions_pending_eval = true;
@@ -1357,10 +1566,17 @@ smooth_union(aero, shell, 12.0)
             return;
         };
 
-        use crate::aero::{compute_drag_polar, compute_neutral_point, compute_static_margin, compute_trim, FlightCondition, PolarDatabase};
+        use crate::aero::{
+            FlightCondition, PolarDatabase, compute_drag_polar, compute_neutral_point,
+            compute_static_margin, compute_trim,
+        };
         use crate::sdf::query::bounding_points;
 
-        let fc = FlightCondition::new(self.aero_airspeed_ms, self.aero_altitude_m, self.aero_aoa_deg);
+        let fc = FlightCondition::new(
+            self.aero_airspeed_ms,
+            self.aero_altitude_m,
+            self.aero_aoa_deg,
+        );
         let db = PolarDatabase::new();
         let np = compute_neutral_point(&sdf, &sdf, &sdf, &db, &fc);
         let bbox = bounding_points(sdf.as_ref());
@@ -1379,20 +1595,19 @@ smooth_union(aero, shell, 12.0)
         self.current_flight_condition = Some(fc);
 
         if !self.mass_points.is_empty() {
-            let comps: Vec<(String, glam::Vec3, f32)> = self.mass_points
+            let comps: Vec<(String, glam::Vec3, f32)> = self
+                .mass_points
                 .iter()
                 .map(|m| (m.name.clone(), m.position, m.mass_g))
                 .collect();
             let fwd = np.neutral_point_x_mm - 0.25 * mac;
-            self.current_cg_sensitivity = Some(
-                crate::analysis::compute_cg_sensitivity(
-                    &comps,
-                    &self.state.dimensions,
-                    np.neutral_point_x_mm,
-                    mac,
-                    fwd,
-                )
-            );
+            self.current_cg_sensitivity = Some(crate::analysis::compute_cg_sensitivity(
+                &comps,
+                &self.state.dimensions,
+                np.neutral_point_x_mm,
+                mac,
+                fwd,
+            ));
         }
     }
 
@@ -1409,14 +1624,19 @@ smooth_union(aero, shell, 12.0)
     }
 
     fn save_project_as(&mut self) {
-        let save_script = self.current_file_path
+        let save_script = self
+            .current_file_path
             .as_ref()
             .map(|p| Self::is_rhai_path(p.as_path()))
             .unwrap_or(false);
         let dialog = rfd::FileDialog::new()
             .add_filter("Rhai Script", &["rhai"])
             .add_filter("Implicit CAD Project", &["icad"])
-            .set_file_name(if save_script { "script.rhai" } else { "project.icad" });
+            .set_file_name(if save_script {
+                "script.rhai"
+            } else {
+                "project.icad"
+            });
         if let Some(path) = dialog.save_file() {
             if save_script || Self::is_rhai_path(&path) {
                 self.save_script_to_path(path);
@@ -1457,7 +1677,11 @@ smooth_union(aero, shell, 12.0)
             self.smooth_normals,
             self.show_wireframe,
             [self.camera.eye.x, self.camera.eye.y, self.camera.eye.z],
-            [self.camera.target.x, self.camera.target.y, self.camera.target.z],
+            [
+                self.camera.target.x,
+                self.camera.target.y,
+                self.camera.target.z,
+            ],
             profiles_opt,
             splines_opt,
             section_opt,
@@ -1497,7 +1721,8 @@ smooth_union(aero, shell, 12.0)
                         self.current_file_path = Some(path.clone());
                         self.status_message = Some(format!("Loaded script {}", path.display()));
                         self.undo_history.clear();
-                        self.version_control = crate::version_control::VersionControlState::new_with_root(&self.state);
+                        self.version_control =
+                            crate::version_control::VersionControlState::new_with_root(&self.state);
                         if let Some(dir) = path.parent() {
                             let lib_dir = dir.join("lib");
                             let mut mgr = LibraryManager::new(lib_dir);
@@ -1619,11 +1844,82 @@ smooth_union(aero, shell, 12.0)
         self.dimensions_pending_eval = true;
     }
 
+    fn render_export_settings_ui(ui: &mut egui::Ui, settings: &mut ExportSettings) {
+        ui.label("Backend Strategy:");
+        ui.radio_value(
+            &mut settings.backend,
+            ExportBackend::UniformMarchingCubes,
+            ExportBackend::UniformMarchingCubes.label(),
+        );
+        ui.radio_value(
+            &mut settings.backend,
+            ExportBackend::UniformDualContouring,
+            ExportBackend::UniformDualContouring.label(),
+        );
+        ui.radio_value(
+            &mut settings.backend,
+            ExportBackend::AdaptiveDualContouring,
+            ExportBackend::AdaptiveDualContouring.label(),
+        );
+
+        ui.separator();
+        ui.label("Target Leaf Cell Size:");
+        let mut current_size = settings.resolution.millimeters();
+        ui.horizontal(|ui| {
+            for size in [0.5_f32, 1.0, 2.0, 5.0] {
+                if ui
+                    .selectable_label(
+                        (current_size - size).abs() < f32::EPSILON,
+                        format!("{size:.1} mm"),
+                    )
+                    .clicked()
+                {
+                    current_size = size;
+                }
+            }
+        });
+        ui.add(
+            egui::Slider::new(&mut current_size, 0.25..=10.0)
+                .text("mm")
+                .suffix(" mm")
+                .logarithmic(true),
+        );
+        settings.resolution = TargetResolution::ExactMm(current_size.max(0.02));
+
+        ui.horizontal(|ui| {
+            ui.label("Bounds padding:");
+            ui.add(
+                egui::DragValue::new(&mut settings.bounding_box_padding)
+                    .speed(0.1)
+                    .range(0.0..=100.0)
+                    .suffix(" mm"),
+            );
+        });
+        ui.checkbox(
+            &mut settings.surface_projection.enabled,
+            "Surface smoothing (project vertices to SDF)",
+        );
+        if settings.surface_projection.enabled {
+            ui.horizontal(|ui| {
+                ui.label("Projection iterations:");
+                ui.add(
+                    egui::DragValue::new(&mut settings.surface_projection.iterations)
+                        .speed(1)
+                        .range(1..=12),
+                );
+            });
+        }
+    }
+
     /// Detect the SDF's spatial extent. Returns a tight asymmetric bounding box so that
     /// marching-cubes voxels are distributed proportionally across each axis.
     fn start_export_async(&mut self, path: String, is_obj: bool) {
-        let Some(ref sdf) = self.current_sdf else { return };
-        let Some(ref grid) = self.current_sdf_grid else { return };
+        let Some(ref sdf) = self.current_sdf else {
+            return;
+        };
+        let Some(ref grid) = self.current_sdf_grid else {
+            return;
+        };
 
         // Optionally wrap with tolerance compensation.
         let sdf: Arc<dyn crate::sdf::Sdf> = if self.tolerance_on_export {
@@ -1637,23 +1933,46 @@ smooth_union(aero, shell, 12.0)
         let bounds_min = grid.bounds_min;
         let bounds_max = grid.bounds_max;
         let smooth = self.smooth_normals;
-        let quality = self.mesh_quality;
+        let export_settings = self.export_settings.clone();
+        self.settings.export = export_settings.clone();
+        self.settings.save();
 
         let (tx, rx) = std::sync::mpsc::channel::<String>();
         self.export_receiver = Some(rx);
         self.export_in_progress = true;
-        self.export_progress = format!("Building mesh at {} quality…", quality.label());
+        self.export_progress = format!(
+            "Building {} mesh at {:.2} mm...",
+            export_settings.backend.label(),
+            export_settings.target_cell_mm()
+        );
 
         std::thread::spawn(move || {
-            tx.send(format!("Building {} mesh ({:.2} mm cells)…", quality.label(), quality.target_cell_size_mm())).ok();
+            tx.send(format!(
+                "Building {} mesh ({:.2} mm cells)...",
+                export_settings.backend.label(),
+                export_settings.target_cell_mm()
+            ))
+            .ok();
 
-            let mesh = crate::export::build_export_mesh(sdf.as_ref(), bounds_min, bounds_max, quality, smooth);
+            let result = crate::export::build_export_mesh_with_settings(
+                sdf.as_ref(),
+                bounds_min,
+                bounds_max,
+                &export_settings,
+                smooth,
+            );
+            let mesh = result.mesh;
             let tri_count = mesh.indices.len() / 3;
 
-            tx.send(format!("Writing {} ({} triangles)…",
-                std::path::Path::new(&path).file_name()
-                    .and_then(|n| n.to_str()).unwrap_or(&path),
-                tri_count)).ok();
+            tx.send(format!(
+                "Writing {} ({} triangles)...",
+                std::path::Path::new(&path)
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or(&path),
+                tri_count
+            ))
+            .ok();
 
             let result = if is_obj {
                 crate::export::export_obj(&mesh, &path)
@@ -1662,15 +1981,109 @@ smooth_union(aero, shell, 12.0)
             };
 
             match result {
-                Ok(_) => tx.send(format!("✓ Saved {} — {} triangles", path, tri_count)).ok(),
-                Err(e) => tx.send(format!("✗ Export failed: {}", e)).ok(),
+                Ok(_) => tx
+                    .send(format!("Saved {} - {} triangles", path, tri_count))
+                    .ok(),
+                Err(e) => tx.send(format!("Export failed: {}", e)).ok(),
             };
         });
     }
 
+    fn queue_export_dialog(&mut self, path: String, is_obj: bool) {
+        self.pending_export_path = Some(path);
+        self.pending_export_is_obj = is_obj;
+        self.export_dialog_open = true;
+    }
+
+    fn open_export_dialog(&mut self, is_obj: bool) {
+        self.pending_export_path = None;
+        self.pending_export_is_obj = is_obj;
+        self.export_dialog_open = true;
+    }
+
+    fn render_export_dialog(&mut self, ctx: &egui::Context) {
+        if !self.export_dialog_open {
+            return;
+        }
+
+        let title = if self.pending_export_is_obj {
+            "Export OBJ Settings"
+        } else {
+            "Export STL Settings"
+        };
+        let mut open = self.export_dialog_open;
+        egui::Window::new(title)
+            .open(&mut open)
+            .collapsible(false)
+            .resizable(false)
+            .default_width(360.0)
+            .show(ctx, |ui| {
+                if let Some(path) = &self.pending_export_path {
+                    ui.label(
+                        std::path::Path::new(path)
+                            .file_name()
+                            .and_then(|name| name.to_str())
+                            .unwrap_or(path),
+                    );
+                } else {
+                    ui.label("Choose backend and cell size before selecting the output file.");
+                }
+                ui.separator();
+                Self::render_export_settings_ui(ui, &mut self.export_settings);
+                ui.separator();
+                ui.horizontal(|ui| {
+                    let export_label = if self.pending_export_path.is_some() {
+                        "Start Export"
+                    } else {
+                        "Choose Save Location & Export"
+                    };
+                    if ui
+                        .add_enabled(
+                            self.current_sdf.is_some() && !self.export_in_progress,
+                            egui::Button::new(export_label),
+                        )
+                        .clicked()
+                    {
+                        let is_obj = self.pending_export_is_obj;
+                        let path = if let Some(path) = self.pending_export_path.clone() {
+                            Some(path)
+                        } else {
+                            let (filter, ext, file_name) = if is_obj {
+                                ("OBJ", "obj", "output.obj")
+                            } else {
+                                ("STL", "stl", "output.stl")
+                            };
+                            rfd::FileDialog::new()
+                                .add_filter(filter, &[ext])
+                                .set_file_name(file_name)
+                                .save_file()
+                                .map(|path| path.to_string_lossy().to_string())
+                        };
+                        if let Some(path) = path {
+                            self.pending_export_path = None;
+                            self.export_dialog_open = false;
+                            self.start_export_async(path, is_obj);
+                        }
+                    }
+                    if ui.button("Cancel").clicked() {
+                        self.pending_export_path = None;
+                        self.export_dialog_open = false;
+                    }
+                });
+            });
+        self.export_dialog_open = open;
+        if !self.export_dialog_open {
+            self.pending_export_path = None;
+        }
+    }
+
     fn start_export_package_async(&mut self, output_dir: String) {
-        let Some(ref sdf) = self.current_sdf else { return };
-        let Some(ref grid) = self.current_sdf_grid else { return };
+        let Some(ref sdf) = self.current_sdf else {
+            return;
+        };
+        let Some(ref grid) = self.current_sdf_grid else {
+            return;
+        };
 
         let sdf: Arc<dyn crate::sdf::Sdf> = if self.tolerance_on_export {
             Arc::new(crate::sdf::print::ToleranceCompensated::new(
@@ -1684,8 +2097,12 @@ smooth_union(aero, shell, 12.0)
         let bounds_min = grid.bounds_min;
         let bounds_max = grid.bounds_max;
         let smooth = self.smooth_normals;
-        let quality = self.mesh_quality;
-        let project_name = self.current_file_path.as_ref()
+        let export_settings = self.export_settings.clone();
+        self.settings.export = export_settings.clone();
+        self.settings.save();
+        let project_name = self
+            .current_file_path
+            .as_ref()
             .and_then(|p| p.file_stem())
             .and_then(|s| s.to_str())
             .unwrap_or("implicit_cad_project")
@@ -1694,17 +2111,38 @@ smooth_union(aero, shell, 12.0)
         let (tx, rx) = std::sync::mpsc::channel::<String>();
         self.export_receiver = Some(rx);
         self.export_in_progress = true;
-        self.export_progress = "Building manufacturing package…".to_string();
+        self.export_progress = "Building manufacturing package...".to_string();
 
         std::thread::spawn(move || {
-            tx.send(format!("Building package mesh ({:.2} mm cells)…", quality.target_cell_size_mm())).ok();
-            let mesh = crate::export::build_export_mesh(sdf.as_ref(), bounds_min, bounds_max, quality, smooth);
-            match crate::export::export_manufacturing_package(&mesh, &project_name, std::path::Path::new(&output_dir)) {
+            tx.send(format!(
+                "Building package mesh with {} ({:.2} mm cells)...",
+                export_settings.backend.label(),
+                export_settings.target_cell_mm()
+            ))
+            .ok();
+            let result = crate::export::build_export_mesh_with_settings(
+                sdf.as_ref(),
+                bounds_min,
+                bounds_max,
+                &export_settings,
+                smooth,
+            );
+            let mesh = result.mesh;
+            match crate::export::export_manufacturing_package(
+                &mesh,
+                &project_name,
+                std::path::Path::new(&output_dir),
+            ) {
                 Ok(pkg) => {
-                    tx.send(format!("✓ Package saved to {} ({} STL file(s))", output_dir, pkg.stl_files.len())).ok();
+                    tx.send(format!(
+                        "Package saved to {} ({} STL file(s))",
+                        output_dir,
+                        pkg.stl_files.len()
+                    ))
+                    .ok();
                 }
                 Err(e) => {
-                    tx.send(format!("✗ Package export failed: {}", e)).ok();
+                    tx.send(format!("Package export failed: {}", e)).ok();
                 }
             }
         });
@@ -1772,7 +2210,10 @@ fn build_script_eval_success(
     let start_mesh = std::time::Instant::now();
     let (bounds_min, bounds_max) = crate::pipeline::auto_bounds(sdf.as_ref());
     let sdf_grid = crate::pipeline::compute_sdf_grid_cached_arc(
-        &sdf, bounds_min, bounds_max, viewport_resolution,
+        &sdf,
+        bounds_min,
+        bounds_max,
+        viewport_resolution,
     );
     let mesh_time_ms = start_mesh.elapsed().as_secs_f64() * 1000.0;
 
@@ -1794,7 +2235,8 @@ fn build_script_eval_success(
         bounds_max,
         eval_time_ms,
         mesh_time_ms,
-        component_preview_parts: component_preview_parts.into_iter()
+        component_preview_parts: component_preview_parts
+            .into_iter()
             .map(|p| (p.name, p.sdf))
             .collect(),
     })
@@ -1862,7 +2304,9 @@ impl eframe::App for App {
                         self.status_message = Some(msg.clone());
                     }
                     self.export_progress = msg;
-                    if finished { done = true; }
+                    if finished {
+                        done = true;
+                    }
                 }
             }
             if done {
@@ -1876,14 +2320,14 @@ impl eframe::App for App {
         if self.measure_running {
             if let Some(ref rx) = self.measure_receiver {
                 if let Ok((vol, sa, com)) = rx.try_recv() {
-                    let mass = vol / 1000.0 * self.measure_density;  // mm³ → cm³ → g
-                    self.measurements.volume_mm3       = Some(vol);
+                    let mass = vol / 1000.0 * self.measure_density; // mm³ → cm³ → g
+                    self.measurements.volume_mm3 = Some(vol);
                     self.measurements.surface_area_mm2 = Some(sa);
-                    self.measurements.center_of_mass   = Some(com);
-                    self.measurements.print_mass_g     = Some(mass);
-                    self.measurements_stale            = false;
-                    self.measure_running               = false;
-                    self.measure_receiver              = None;
+                    self.measurements.center_of_mass = Some(com);
+                    self.measurements.print_mass_g = Some(mass);
+                    self.measurements_stale = false;
+                    self.measure_running = false;
+                    self.measure_receiver = None;
                 }
             }
             ctx.request_repaint_after(std::time::Duration::from_millis(100));
@@ -1897,12 +2341,12 @@ impl eframe::App for App {
                     self.measurements.cross_sections.push(
                         crate::analysis::CrossSectionMeasurement {
                             label,
-                            axis:     self.cs_axis.clone(),
+                            axis: self.cs_axis.clone(),
                             position: self.cs_position,
                             area_mm2: area,
-                        }
+                        },
                     );
-                    self.cs_running  = false;
+                    self.cs_running = false;
                     self.cs_receiver = None;
                 }
             }
@@ -1916,16 +2360,16 @@ impl eframe::App for App {
             if let Some(ref rx) = self.thickness_receiver {
                 if let Ok(r) = rx.try_recv() {
                     result = Some(r);
-                    done   = true;
+                    done = true;
                 }
             }
             if done {
-                self.thickness_running  = false;
+                self.thickness_running = false;
                 self.thickness_receiver = None;
                 if let Some(r) = result {
-                    self.thickness_result       = Some(r);
+                    self.thickness_result = Some(r);
                     self.thickness_needs_upload = true;
-                    self.thickness_overlay_on   = true;
+                    self.thickness_overlay_on = true;
                 }
             }
             ctx.request_repaint_after(std::time::Duration::from_millis(100));
@@ -1939,7 +2383,7 @@ impl eframe::App for App {
                 loop {
                     match rx.try_recv() {
                         Ok(msg) => messages.push(msg),
-                        Err(_)  => break,
+                        Err(_) => break,
                     }
                 }
             }
@@ -1958,13 +2402,13 @@ impl eframe::App for App {
                         let bmin = result.bounds_min;
                         let bmax = result.bounds_max;
                         self.fea_stress_field = Some(Arc::new(crate::fea::GridField {
-                            data:       Arc::new(result.von_mises.clone()),
+                            data: Arc::new(result.von_mises.clone()),
                             bounds_min: bmin,
                             bounds_max: bmax,
                             resolution: res,
                         }));
                         self.fea_displacement_field = Some(Arc::new(crate::fea::GridField {
-                            data:       Arc::new(result.displacement.clone()),
+                            data: Arc::new(result.displacement.clone()),
                             bounds_min: bmin,
                             bounds_max: bmax,
                             resolution: res,
@@ -1973,16 +2417,16 @@ impl eframe::App for App {
                             "✓ FEA complete. Max stress: {:.2} MPa, Max disp: {:.4} mm",
                             result.max_von_mises, result.max_displacement,
                         ));
-                        self.fea_overlay_mode  = FEAOverlayMode::Stress;
-                        self.fea_result        = Some(result);
-                        self.fea_needs_upload  = true;
+                        self.fea_overlay_mode = FEAOverlayMode::Stress;
+                        self.fea_result = Some(result);
+                        self.fea_needs_upload = true;
                         done = true;
                     }
                 }
             }
             if done {
-                self.fea_running   = false;
-                self.fea_receiver  = None;
+                self.fea_running = false;
+                self.fea_receiver = None;
             }
             ctx.request_repaint_after(std::time::Duration::from_millis(100));
         }
@@ -1994,16 +2438,16 @@ impl eframe::App for App {
             if let Some(ref rx) = self.print_analysis_receiver {
                 if let Ok(r) = rx.try_recv() {
                     result = Some(r);
-                    done   = true;
+                    done = true;
                 }
             }
             if done {
-                self.print_analysis_running  = false;
+                self.print_analysis_running = false;
                 self.print_analysis_receiver = None;
                 if let Some(r) = result {
-                    self.print_analysis_result       = Some(r);
+                    self.print_analysis_result = Some(r);
                     self.print_overhang_needs_upload = true;
-                    self.print_overhang_overlay      = true;
+                    self.print_overhang_overlay = true;
                 }
             }
             ctx.request_repaint_after(std::time::Duration::from_millis(100));
@@ -2014,7 +2458,9 @@ impl eframe::App for App {
             self.help_panel_open = !self.help_panel_open;
         }
 
-        if ctx.input(|i| i.key_pressed(egui::Key::F5) || (i.modifiers.ctrl && i.key_pressed(egui::Key::R))) {
+        if ctx.input(|i| {
+            i.key_pressed(egui::Key::F5) || (i.modifiers.ctrl && i.key_pressed(egui::Key::R))
+        }) {
             self.execute_script();
         }
 
@@ -2030,8 +2476,7 @@ impl eframe::App for App {
 
         // Undo (Ctrl+Z) — consume key so egui TextEdit does NOT handle it.
         let ctrl_z = ctx.input_mut(|i| {
-            i.consume_key(egui::Modifiers::CTRL, egui::Key::Z) &&
-            !i.modifiers.shift
+            i.consume_key(egui::Modifiers::CTRL, egui::Key::Z) && !i.modifiers.shift
         });
         if ctrl_z {
             self.undo_app();
@@ -2039,9 +2484,10 @@ impl eframe::App for App {
 
         // Redo (Ctrl+Y or Ctrl+Shift+Z)
         let ctrl_y = ctx.input_mut(|i| {
-            i.consume_key(egui::Modifiers::CTRL, egui::Key::Y) ||
-            (i.modifiers.ctrl && i.modifiers.shift &&
-             i.consume_key(egui::Modifiers::CTRL | egui::Modifiers::SHIFT, egui::Key::Z))
+            i.consume_key(egui::Modifiers::CTRL, egui::Key::Y)
+                || (i.modifiers.ctrl
+                    && i.modifiers.shift
+                    && i.consume_key(egui::Modifiers::CTRL | egui::Modifiers::SHIFT, egui::Key::Z))
         });
         if ctrl_y {
             self.redo_app();
@@ -2105,18 +2551,24 @@ impl eframe::App for App {
                     let can_undo = self.undo_history.can_undo();
                     let undo_label = match self.undo_history.undo_description() {
                         Some(d) => format!("Undo: {}  Ctrl+Z", d),
-                        None    => "Nothing to undo".to_owned(),
+                        None => "Nothing to undo".to_owned(),
                     };
-                    if ui.add_enabled(can_undo, egui::Button::new(undo_label)).clicked() {
+                    if ui
+                        .add_enabled(can_undo, egui::Button::new(undo_label))
+                        .clicked()
+                    {
                         self.undo_app();
                         ui.close_menu();
                     }
                     let can_redo = self.undo_history.can_redo();
                     let redo_label = match self.undo_history.redo_description() {
                         Some(d) => format!("Redo: {}  Ctrl+Shift+Z", d),
-                        None    => "Nothing to redo".to_owned(),
+                        None => "Nothing to redo".to_owned(),
                     };
-                    if ui.add_enabled(can_redo, egui::Button::new(redo_label)).clicked() {
+                    if ui
+                        .add_enabled(can_redo, egui::Button::new(redo_label))
+                        .clicked()
+                    {
                         self.redo_app();
                         ui.close_menu();
                     }
@@ -2129,49 +2581,97 @@ impl eframe::App for App {
                         }
                         for (i, d) in descs.iter().enumerate() {
                             let is_top = i == 0;
-                            let text = egui::RichText::new(format!("{}  {}", if is_top { "▶" } else { "  " }, d));
-                            ui.label(if is_top { text.strong() } else { text.color(egui::Color32::GRAY) });
+                            let text = egui::RichText::new(format!(
+                                "{}  {}",
+                                if is_top { "▶" } else { "  " },
+                                d
+                            ));
+                            ui.label(if is_top {
+                                text.strong()
+                            } else {
+                                text.color(egui::Color32::GRAY)
+                            });
                         }
                     });
                 });
 
-                // Export menu — generates mesh on-demand at the chosen quality
+                // Export menu — generates mesh on-demand with explicit backend and cell size.
                 ui.menu_button("Export", |ui| {
-                    ui.label("Quality:");
-                    for &q in MeshQuality::all() {
-                        if ui.selectable_label(self.mesh_quality == q, q.label()).clicked() {
-                            self.mesh_quality = q;
-                        }
-                    }
+                    Self::render_export_settings_ui(ui, &mut self.export_settings);
                     ui.separator();
-                    ui.checkbox(&mut self.tolerance_on_export, "Apply tolerance compensation");
+                    ui.checkbox(
+                        &mut self.tolerance_on_export,
+                        "Apply tolerance compensation",
+                    );
                     if !self.tolerance_on_export {
-                        ui.colored_label(egui::Color32::from_rgb(200, 160, 40),
-                            "⚠ Tolerance compensation not applied");
+                        ui.colored_label(
+                            egui::Color32::from_rgb(200, 160, 40),
+                            "⚠ Tolerance compensation not applied",
+                        );
                     }
                     ui.separator();
                     let has_sdf = self.current_sdf.is_some() && !self.export_in_progress;
-                    if ui.add_enabled(has_sdf, egui::Button::new("Export STL…")).clicked() {
-                        if let Some(path) = rfd::FileDialog::new()
-                            .add_filter("STL", &["stl"])
-                            .set_file_name("output.stl")
-                            .save_file()
-                        {
-                            self.start_export_async(path.to_str().unwrap_or("output.stl").to_string(), false);
-                        }
+                    if ui.add_enabled(has_sdf, egui::Button::new("STL")).clicked() {
+                        self.open_export_dialog(false);
                         ui.close_menu();
                     }
-                    if ui.add_enabled(has_sdf, egui::Button::new("Export OBJ…")).clicked() {
-                        if let Some(path) = rfd::FileDialog::new()
-                            .add_filter("OBJ", &["obj"])
-                            .set_file_name("output.obj")
-                            .save_file()
-                        {
-                            self.start_export_async(path.to_str().unwrap_or("output.obj").to_string(), true);
-                        }
+                    if ui.add_enabled(has_sdf, egui::Button::new("OBJ")).clicked() {
+                        self.open_export_dialog(true);
                         ui.close_menu();
                     }
-                    if ui.add_enabled(has_sdf, egui::Button::new("Export Package…")).clicked() {
+                    ui.separator();
+                    /*
+                    if false {
+                        ui.add_enabled_ui(has_sdf, |ui| {
+                            ui.menu_button("Export STL…", |ui| {
+                                ui.set_min_width(360.0);
+                                ui.strong("Export STL Mesh Size");
+                                ui.label("Select the target cell size before choosing a file.");
+                                ui.separator();
+                                Self::render_export_settings_ui(ui, &mut self.export_settings);
+                                ui.separator();
+                                if ui.button("Choose Save Location & Export").clicked() {
+                                    if let Some(path) = rfd::FileDialog::new()
+                                        .add_filter("STL", &["stl"])
+                                        .set_file_name("output.stl")
+                                        .save_file()
+                                    {
+                                        self.start_export_async(
+                                            path.to_string_lossy().to_string(),
+                                            false,
+                                        );
+                                    }
+                                    ui.close_menu();
+                                }
+                            });
+                            ui.menu_button("Export OBJ…", |ui| {
+                                ui.set_min_width(360.0);
+                                ui.strong("Export OBJ Mesh Size");
+                                ui.label("Select the target cell size before choosing a file.");
+                                ui.separator();
+                                Self::render_export_settings_ui(ui, &mut self.export_settings);
+                                ui.separator();
+                                if ui.button("Choose Save Location & Export").clicked() {
+                                    if let Some(path) = rfd::FileDialog::new()
+                                        .add_filter("OBJ", &["obj"])
+                                        .set_file_name("output.obj")
+                                        .save_file()
+                                    {
+                                        self.start_export_async(
+                                            path.to_string_lossy().to_string(),
+                                            true,
+                                        );
+                                    }
+                                    ui.close_menu();
+                                }
+                            });
+                        });
+                    }
+                    */
+                    if ui
+                        .add_enabled(has_sdf, egui::Button::new("Export Package…"))
+                        .clicked()
+                    {
                         if let Some(path) = rfd::FileDialog::new().pick_folder() {
                             self.start_export_package_async(path.to_string_lossy().to_string());
                         }
@@ -2216,11 +2716,15 @@ impl eframe::App for App {
                 ui.separator();
 
                 ui.label("Viewport");
-                if ui.add(
-                    egui::Slider::new(&mut self.resolution, 16..=256)
-                        .logarithmic(true)
-                        .text("Res")
-                ).changed() && self.current_sdf.is_some() {
+                if ui
+                    .add(
+                        egui::Slider::new(&mut self.resolution, 16..=512)
+                            .logarithmic(true)
+                            .text("Res"),
+                    )
+                    .changed()
+                    && self.current_sdf.is_some()
+                {
                     self.execute_script();
                 }
 
@@ -2230,7 +2734,10 @@ impl eframe::App for App {
                     .selected_text(format!("Mesh {}", self.mesh_quality.label()))
                     .show_ui(ui, |ui| {
                         for &q in MeshQuality::all() {
-                            if ui.selectable_label(self.mesh_quality == q, q.label()).clicked() {
+                            if ui
+                                .selectable_label(self.mesh_quality == q, q.label())
+                                .clicked()
+                            {
                                 self.mesh_quality = q;
                             }
                         }
@@ -2238,26 +2745,56 @@ impl eframe::App for App {
 
                 ui.separator();
 
-                let sv_label = if self.section_view_open { "✂ Section ✓" } else { "✂ Section" };
-                if ui.button(sv_label).clicked() { self.section_view_open = !self.section_view_open; }
+                let sv_label = if self.section_view_open {
+                    "✂ Section ✓"
+                } else {
+                    "✂ Section"
+                };
+                if ui.button(sv_label).clicked() {
+                    self.section_view_open = !self.section_view_open;
+                }
 
-                let th_label = if self.thickness_open { "🔍 Thickness ✓" } else { "🔍 Thickness" };
-                if ui.button(th_label).clicked() { self.thickness_open = !self.thickness_open; }
+                let th_label = if self.thickness_open {
+                    "🔍 Thickness ✓"
+                } else {
+                    "🔍 Thickness"
+                };
+                if ui.button(th_label).clicked() {
+                    self.thickness_open = !self.thickness_open;
+                }
 
-                let fea_label = if self.fea_open { "🔬 FEA ✓" } else { "🔬 FEA" };
-                if ui.button(fea_label).clicked() { self.fea_open = !self.fea_open; }
+                let fea_label = if self.fea_open {
+                    "🔬 FEA ✓"
+                } else {
+                    "🔬 FEA"
+                };
+                if ui.button(fea_label).clicked() {
+                    self.fea_open = !self.fea_open;
+                }
 
-                let measure_label = if self.measure_open { "📐 Measure ✓" } else { "📐 Measure" };
+                let measure_label = if self.measure_open {
+                    "📐 Measure ✓"
+                } else {
+                    "📐 Measure"
+                };
                 if ui.button(measure_label).clicked() {
                     self.measure_open = !self.measure_open;
                 }
 
-                let pa_label = if self.print_analysis_open { "🖨 Print ✓" } else { "🖨 Print" };
+                let pa_label = if self.print_analysis_open {
+                    "🖨 Print ✓"
+                } else {
+                    "🖨 Print"
+                };
                 if ui.button(pa_label).clicked() {
                     self.print_analysis_open = !self.print_analysis_open;
                 }
 
-                let aero_label = if self.aero_panel_open { "✈ Aero ✓" } else { "✈ Aero" };
+                let aero_label = if self.aero_panel_open {
+                    "✈ Aero ✓"
+                } else {
+                    "✈ Aero"
+                };
                 if ui.button(aero_label).clicked() {
                     self.aero_panel_open = !self.aero_panel_open;
                 }
@@ -2283,14 +2820,22 @@ impl eframe::App for App {
                 ui.separator();
 
                 // Function reference help panel
-                if ui.button("?").on_hover_text("Function Reference (F1)").clicked() {
+                if ui
+                    .button("?")
+                    .on_hover_text("Function Reference (F1)")
+                    .clicked()
+                {
                     self.help_panel_open = !self.help_panel_open;
                 }
 
                 ui.separator();
 
                 // Quick-access run button in menu bar
-                let run_label = if self.is_processing { "⏳ Running…" } else { "▶ Run  F5" };
+                let run_label = if self.is_processing {
+                    "⏳ Running…"
+                } else {
+                    "▶ Run  F5"
+                };
                 if ui.button(run_label).clicked() && !self.is_processing {
                     self.execute_script();
                 }
@@ -2312,38 +2857,56 @@ impl eframe::App for App {
             ui.horizontal(|ui| {
                 if self.is_processing {
                     ui.spinner();
-                    ui.label(egui::RichText::new(
-                        self.processing_status.as_deref().unwrap_or("Evaluating…")
-                    ).color(egui::Color32::from_rgb(100, 180, 255)));
+                    ui.label(
+                        egui::RichText::new(
+                            self.processing_status.as_deref().unwrap_or("Evaluating…"),
+                        )
+                        .color(egui::Color32::from_rgb(100, 180, 255)),
+                    );
                 } else if self.export_in_progress {
                     ui.spinner();
-                    ui.label(egui::RichText::new(&self.export_progress)
-                        .color(egui::Color32::from_rgb(100, 180, 255)));
+                    ui.label(
+                        egui::RichText::new(&self.export_progress)
+                            .color(egui::Color32::from_rgb(100, 180, 255)),
+                    );
                 } else if let Some(ref msg) = self.error_message.clone() {
-                    ui.label(egui::RichText::new(format!("⚠ {}", msg))
-                        .color(egui::Color32::from_rgb(255, 100, 80)));
+                    ui.label(
+                        egui::RichText::new(format!("⚠ {}", msg))
+                            .color(egui::Color32::from_rgb(255, 100, 80)),
+                    );
                     if ui.small_button("✕").clicked() {
                         self.error_message = None;
                     }
                 } else if let Some(ref msg) = self.status_message.clone() {
-                    ui.label(egui::RichText::new(msg)
-                        .color(egui::Color32::from_rgb(120, 220, 120)));
+                    ui.label(
+                        egui::RichText::new(msg).color(egui::Color32::from_rgb(120, 220, 120)),
+                    );
                 } else {
                     ui.label(egui::RichText::new("Ready").weak());
                 }
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if let Some(ms) = self.eval_time_ms {
-                        ui.label(egui::RichText::new(format!("eval {:.0}ms", ms)).small().weak());
+                        ui.label(
+                            egui::RichText::new(format!("eval {:.0}ms", ms))
+                                .small()
+                                .weak(),
+                        );
                     }
                     if let Some(ms) = self.mesh_time_ms {
-                        ui.label(egui::RichText::new(format!("  grid {:.0}ms", ms)).small().weak());
+                        ui.label(
+                            egui::RichText::new(format!("  grid {:.0}ms", ms))
+                                .small()
+                                .weak(),
+                        );
                     }
                 });
             });
         });
 
-        if let Some((instance, project_name, project_path)) = show_wizard(ctx, &mut self.project_wizard) {
+        if let Some((instance, project_name, project_path)) =
+            show_wizard(ctx, &mut self.project_wizard)
+        {
             self.state.script_text = instance.script;
             self.state.dimensions = instance.dimensions;
             self.workflow_config = instance.workflow_config;
@@ -2383,12 +2946,13 @@ impl eframe::App for App {
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     let interaction = show_project_tree(ui, &mut self.project_tree);
 
-
                     // Jump to script definition on node click
                     if let Some(name) = interaction.jump_to_name {
-                        if let Some((offset, line)) = find_name_in_script(&self.state.script_text, &name) {
+                        if let Some((offset, line)) =
+                            find_name_in_script(&self.state.script_text, &name)
+                        {
                             self.pending_cursor_offset = Some(offset);
-                            self.pending_scroll_line   = Some(line);
+                            self.pending_scroll_line = Some(line);
                         }
                     }
 
@@ -2406,13 +2970,14 @@ impl eframe::App for App {
 
                     // Apply confirmed rename immediately
                     if let Some((old_name, new_name)) = interaction.confirmed_rename {
-                        let new_script = rename_in_script(&self.state.script_text, &old_name, &new_name);
+                        let new_script =
+                            rename_in_script(&self.state.script_text, &old_name, &new_name);
                         if new_script != self.state.script_text {
                             let cmd = Box::new(RenameCommand {
-                                old_name:      old_name.clone(),
-                                new_name:      new_name.clone(),
+                                old_name: old_name.clone(),
+                                new_name: new_name.clone(),
                                 script_before: self.state.script_text.clone(),
-                                script_after:  new_script.clone(),
+                                script_after: new_script.clone(),
                             });
                             self.state.script_text = new_script;
                             // Update profiles key if needed.
@@ -2453,7 +3018,10 @@ impl eframe::App for App {
                         ui.collapsing("Workflow Config", |ui| {
                             ui.label(format!("Template: {}", cfg.template_id));
                             ui.label(format!("Vehicle: {}", cfg.vehicle_type));
-                            ui.checkbox(&mut self.workflow_auto_apply_constraints, "Auto-apply assembly constraints");
+                            ui.checkbox(
+                                &mut self.workflow_auto_apply_constraints,
+                                "Auto-apply assembly constraints",
+                            );
 
                             let mut selected = cfg.manufacturing_preset.clone();
                             egui::ComboBox::from_id_salt("workflow_manufacturing_preset")
@@ -2466,18 +3034,27 @@ impl eframe::App for App {
                                         crate::project::ManufacturingPreset::BalsaHybrid,
                                         crate::project::ManufacturingPreset::MoldedShell,
                                     ] {
-                                        ui.selectable_value(&mut selected, preset.clone(), preset.label());
+                                        ui.selectable_value(
+                                            &mut selected,
+                                            preset.clone(),
+                                            preset.label(),
+                                        );
                                     }
                                 });
 
                             if selected != cfg.manufacturing_preset {
                                 cfg.manufacturing_preset = selected.clone();
-                                for (name, value) in crate::ui::templates::preset_dimension_defaults(&selected) {
+                                for (name, value) in
+                                    crate::ui::templates::preset_dimension_defaults(&selected)
+                                {
                                     self.state.dimensions.insert(name, value);
                                 }
-                                self.print_analysis_settings = crate::ui::templates::preset_print_analysis_settings(&selected);
-                                self.tolerance_settings = crate::ui::templates::preset_tolerance_settings(&selected);
-                                self.tolerance_preset = crate::sdf::print::TolerancePreset::StandardFDM;
+                                self.print_analysis_settings =
+                                    crate::ui::templates::preset_print_analysis_settings(&selected);
+                                self.tolerance_settings =
+                                    crate::ui::templates::preset_tolerance_settings(&selected);
+                                self.tolerance_preset =
+                                    crate::sdf::print::TolerancePreset::StandardFDM;
                                 workflow_apply_constraints = true;
                                 self.dimensions_pending_eval = true;
                             }
@@ -2505,9 +3082,12 @@ impl eframe::App for App {
                                             ui.checkbox(&mut constraint.enabled, "");
                                             ui.label(&constraint.label);
                                             ui.label(
-                                                egui::RichText::new(format!("-> {}", constraint.driven))
-                                                    .small()
-                                                    .color(egui::Color32::GRAY),
+                                                egui::RichText::new(format!(
+                                                    "-> {}",
+                                                    constraint.driven
+                                                ))
+                                                .small()
+                                                .color(egui::Color32::GRAY),
                                             );
                                         });
                                     }
@@ -2525,11 +3105,12 @@ impl eframe::App for App {
                                     }
                                 });
 
-                                let mfg = crate::analysis::workflow_summary::summarize_manufacturing(
-                                    self.thickness_result.as_ref(),
-                                    self.print_analysis_result.as_ref(),
-                                    &self.print_analysis_settings,
-                                );
+                                let mfg =
+                                    crate::analysis::workflow_summary::summarize_manufacturing(
+                                        self.thickness_result.as_ref(),
+                                        self.print_analysis_result.as_ref(),
+                                        &self.print_analysis_settings,
+                                    );
                                 let flight = crate::analysis::workflow_summary::summarize_flight(
                                     &self.mass_points,
                                     self.cg.map(|cg| cg.x),
@@ -2539,12 +3120,21 @@ impl eframe::App for App {
                                     self.current_cg_sensitivity.as_ref(),
                                 );
                                 let status_color = |status| match status {
-                                    crate::analysis::workflow_summary::SummaryStatus::Pass => egui::Color32::from_rgb(60, 180, 90),
-                                    crate::analysis::workflow_summary::SummaryStatus::Warning => egui::Color32::from_rgb(220, 170, 60),
-                                    crate::analysis::workflow_summary::SummaryStatus::Fail => egui::Color32::from_rgb(210, 70, 70),
+                                    crate::analysis::workflow_summary::SummaryStatus::Pass => {
+                                        egui::Color32::from_rgb(60, 180, 90)
+                                    }
+                                    crate::analysis::workflow_summary::SummaryStatus::Warning => {
+                                        egui::Color32::from_rgb(220, 170, 60)
+                                    }
+                                    crate::analysis::workflow_summary::SummaryStatus::Fail => {
+                                        egui::Color32::from_rgb(210, 70, 70)
+                                    }
                                 };
 
-                                ui.colored_label(status_color(mfg.status), format!("Manufacturing: {}", mfg.status.label()));
+                                ui.colored_label(
+                                    status_color(mfg.status),
+                                    format!("Manufacturing: {}", mfg.status.label()),
+                                );
                                 if let Some(min_wall) = mfg.min_wall_mm {
                                     ui.label(format!("Min wall: {:.2} mm", min_wall));
                                 }
@@ -2552,18 +3142,30 @@ impl eframe::App for App {
                                     ui.label(format!("Overhang area: {:.0} mm²", area));
                                 }
                                 if let Some(critical_area) = mfg.critical_overhang_area_mm2 {
-                                    ui.label(format!("Critical overhang area: {:.0} mm²", critical_area));
+                                    ui.label(format!(
+                                        "Critical overhang area: {:.0} mm²",
+                                        critical_area
+                                    ));
                                 }
                                 if mfg.issue_errors > 0 || mfg.issue_warnings > 0 {
-                                    ui.label(format!("Issues: {} errors, {} warnings", mfg.issue_errors, mfg.issue_warnings));
+                                    ui.label(format!(
+                                        "Issues: {} errors, {} warnings",
+                                        mfg.issue_errors, mfg.issue_warnings
+                                    ));
                                 }
                                 for note in mfg.notes.iter().take(2) {
                                     ui.label(note);
                                 }
 
                                 ui.separator();
-                                ui.colored_label(status_color(flight.status), format!("Flight: {}", flight.status.label()));
-                                ui.label(format!("Total component mass: {:.1} g", flight.total_mass_g));
+                                ui.colored_label(
+                                    status_color(flight.status),
+                                    format!("Flight: {}", flight.status.label()),
+                                );
+                                ui.label(format!(
+                                    "Total component mass: {:.1} g",
+                                    flight.total_mass_g
+                                ));
                                 if let Some(cg_x) = flight.cg_x_mm {
                                     ui.label(format!("CG x: {:.1} mm", cg_x));
                                 }
@@ -2617,7 +3219,8 @@ impl eframe::App for App {
                     }
                     if workflow_apply_constraints {
                         let applied = self.apply_workflow_constraints();
-                        workflow_status_message = Some(format!("Applied {} assembly constraints", applied));
+                        workflow_status_message =
+                            Some(format!("Applied {} assembly constraints", applied));
                     }
                     if workflow_run_checks {
                         if self.thickness_result.is_none() {
@@ -2631,7 +3234,9 @@ impl eframe::App for App {
                         workflow_status_message = Some("Updated workflow flight summary".into());
                     }
                     if let Some(idx) = variant_to_apply {
-                        let selected_variant = self.workflow_config.as_ref()
+                        let selected_variant = self
+                            .workflow_config
+                            .as_ref()
                             .and_then(|cfg| cfg.variants.get(idx).cloned());
                         if let Some(variant) = selected_variant {
                             self.state.dimensions = variant.dimensions.clone();
@@ -2639,7 +3244,8 @@ impl eframe::App for App {
                                 self.apply_workflow_constraints();
                             }
                             self.dimensions_pending_eval = true;
-                            workflow_status_message = Some(format!("Applied variant '{}'", variant.name));
+                            workflow_status_message =
+                                Some(format!("Applied variant '{}'", variant.name));
                         }
                     }
                     if save_variant {
@@ -2649,7 +3255,10 @@ impl eframe::App for App {
                                 cfg.variants.retain(|v| v.name != name);
                                 cfg.variants.push(crate::project::DesignVariant {
                                     name: name.to_string(),
-                                    description: self.workflow_variant_description.trim().to_string(),
+                                    description: self
+                                        .workflow_variant_description
+                                        .trim()
+                                        .to_string(),
                                     dimensions: self.state.dimensions.clone(),
                                 });
                                 workflow_status_message = Some(format!("Saved variant '{}'", name));
@@ -2660,7 +3269,8 @@ impl eframe::App for App {
                         if let Some(cfg) = &mut self.workflow_config {
                             if idx < cfg.variants.len() {
                                 let removed = cfg.variants.remove(idx);
-                                workflow_status_message = Some(format!("Deleted variant '{}'", removed.name));
+                                workflow_status_message =
+                                    Some(format!("Deleted variant '{}'", removed.name));
                             }
                         }
                     }
@@ -2674,17 +3284,26 @@ impl eframe::App for App {
                         ui.separator();
                         ui.collapsing("📦 Meshes", |ui| {
                             for (path, (_mtime, mesh)) in cache_guard.iter() {
-                                let filename = path.file_name()
+                                let filename = path
+                                    .file_name()
                                     .and_then(|n| n.to_str())
                                     .unwrap_or("(unknown)");
-                                use crate::mesh::import::validate_mesh;
-                                let v = validate_mesh(mesh);
-                                let icon = if v.has_open_boundary { "🔴" }
-                                           else if v.has_non_manifold { "🟡" }
-                                           else { "🟢" };
+                                use crate::mesh::analyze_triangle_mesh_quality;
+                                let v = analyze_triangle_mesh_quality(mesh);
+                                let icon = if v.boundary_edge_count > 0 {
+                                    "🔴"
+                                } else if v.non_manifold_edge_count > 0 {
+                                    "🟡"
+                                } else {
+                                    "🟢"
+                                };
                                 ui.label(format!(
-                                    "{} {} — {} tri",
-                                    icon, filename, mesh.triangle_count()
+                                    "{} {} — {} tri, {} boundary, {} non-manifold",
+                                    icon,
+                                    filename,
+                                    mesh.triangle_count(),
+                                    v.boundary_edge_count,
+                                    v.non_manifold_edge_count,
                                 ));
                             }
                         });
@@ -2695,12 +3314,8 @@ impl eframe::App for App {
                     // ── Library panel ─────────────────────────────────────────
                     if let Some(ref mut mgr) = self.library_manager {
                         ui.separator();
-                        let result = show_library_panel(
-                            ui,
-                            ctx,
-                            &mut self.library_panel_state,
-                            mgr,
-                        );
+                        let result =
+                            show_library_panel(ui, ctx, &mut self.library_panel_state, mgr);
                         if let Some(action) = result {
                             if action == "__NEW_COMPONENT__" {
                                 // Create new component with a default name
@@ -2709,7 +3324,8 @@ impl eframe::App for App {
                                         self.library_panel_state.editing_library = Some(path);
                                     }
                                     Err(e) => {
-                                        self.error_message = Some(format!("Failed to create component: {}", e));
+                                        self.error_message =
+                                            Some(format!("Failed to create component: {}", e));
                                     }
                                 }
                             } else {
@@ -2728,7 +3344,8 @@ impl eframe::App for App {
                                 let total_t: f32 = layup.layers.iter().map(|l| l.thickness).sum();
                                 ui.label(format!(
                                     "{} layers, {:.2} mm total wall",
-                                    layup.layers.len(), total_t
+                                    layup.layers.len(),
+                                    total_t
                                 ));
                                 egui::Grid::new(format!("layup_grid_{}", li))
                                     .num_columns(3)
@@ -2739,7 +3356,8 @@ impl eframe::App for App {
                                         ui.strong("t (mm)");
                                         ui.end_row();
                                         for layer in &layup.layers {
-                                            let label = if layer.is_core { "⬛ core" } else { "▪" };
+                                            let label =
+                                                if layer.is_core { "⬛ core" } else { "▪" };
                                             ui.label(format!("{} {}", label, &layer.name));
                                             ui.label(&layer.material.name);
                                             ui.label(format!("{:.2}", layer.thickness));
@@ -3710,24 +4328,31 @@ impl eframe::App for App {
                         .show(ui, |ui| {
                             ui.label(egui::RichText::new("Mesh generated at export time")
                                 .color(egui::Color32::GRAY).size(11.0));
-                            // Mesh quality selector for export
-                            ui.horizontal(|ui| {
-                                ui.label("Export Quality:");
-                                for &q in MeshQuality::all() {
-                                    let selected = self.mesh_quality == q;
-                                    if ui.selectable_label(selected, q.label()).clicked() {
-                                        self.mesh_quality = q;
-                                    }
-                                }
-                            });
+                            Self::render_export_settings_ui(ui, &mut self.export_settings);
                             ui.horizontal(|ui| {
                                 let has_sdf = self.current_sdf.is_some() && !self.export_in_progress;
-                                if ui.add_enabled(has_sdf, egui::Button::new("Export STL")).clicked() {
-                                    self.start_export_async("output.stl".to_string(), false);
-                                }
-                                if ui.add_enabled(has_sdf, egui::Button::new("Export OBJ")).clicked() {
-                                    self.start_export_async("output.obj".to_string(), true);
-                                }
+                                ui.add_enabled_ui(has_sdf, |ui| {
+                                    ui.menu_button("Export STL", |ui| {
+                                        ui.set_min_width(320.0);
+                                        ui.strong("Export STL Mesh Size");
+                                        Self::render_export_settings_ui(ui, &mut self.export_settings);
+                                        ui.separator();
+                                        if ui.button("Export to output.stl").clicked() {
+                                            self.start_export_async("output.stl".to_string(), false);
+                                            ui.close_menu();
+                                        }
+                                    });
+                                    ui.menu_button("Export OBJ", |ui| {
+                                        ui.set_min_width(320.0);
+                                        ui.strong("Export OBJ Mesh Size");
+                                        Self::render_export_settings_ui(ui, &mut self.export_settings);
+                                        ui.separator();
+                                        if ui.button("Export to output.obj").clicked() {
+                                            self.start_export_async("output.obj".to_string(), true);
+                                            ui.close_menu();
+                                        }
+                                    });
+                                });
                             });
                             ui.label("Files saved to current directory");
                         });
@@ -3747,6 +4372,8 @@ impl eframe::App for App {
                 });
             self.section_view_open = open;
         }
+
+        self.render_export_dialog(ctx);
 
         // Wall Thickness floating window
         if self.thickness_open {
@@ -3875,16 +4502,23 @@ impl App {
                     ui.add_space(5.0);
 
                     // Render parameter controls
-                    let mut param_names: Vec<String> = instance.param_values.keys().cloned().collect();
+                    let mut param_names: Vec<String> =
+                        instance.param_values.keys().cloned().collect();
                     param_names.sort(); // Alphabetical order
 
                     for param_name in param_names {
-                        if let Some(param_def) = instance.component_def.parameters.get(&param_name) {
+                        if let Some(param_def) = instance.component_def.parameters.get(&param_name)
+                        {
                             if let Some(param_value) = instance.param_values.get_mut(&param_name) {
                                 ui.horizontal(|ui| {
                                     ui.label(&param_name);
                                     if let Some(desc) = &param_def.description {
-                                        ui.label(egui::RichText::new(format!("({})", desc)).italics().small().color(egui::Color32::GRAY));
+                                        ui.label(
+                                            egui::RichText::new(format!("({})", desc))
+                                                .italics()
+                                                .small()
+                                                .color(egui::Color32::GRAY),
+                                        );
                                     }
                                 });
 
@@ -3892,12 +4526,16 @@ impl App {
                                     crate::components::ParamValue::Float(value) => {
                                         let min = param_def.min.unwrap_or(0.0) as f64;
                                         let max = param_def.max.unwrap_or(100.0) as f64;
-                                        ui.add(egui::Slider::new(value, min..=max).text(&param_name));
+                                        ui.add(
+                                            egui::Slider::new(value, min..=max).text(&param_name),
+                                        );
                                     }
                                     crate::components::ParamValue::Int(value) => {
                                         let min = param_def.min.unwrap_or(0.0) as i64;
                                         let max = param_def.max.unwrap_or(100.0) as i64;
-                                        ui.add(egui::Slider::new(value, min..=max).text(&param_name));
+                                        ui.add(
+                                            egui::Slider::new(value, min..=max).text(&param_name),
+                                        );
                                     }
                                     crate::components::ParamValue::Bool(value) => {
                                         ui.checkbox(value, "");
@@ -3935,8 +4573,11 @@ impl App {
                     Ok(script) => {
                         // Ensure existing script's last expression ends with ';'
                         // so the component becomes the new return value
-                        self.state.script_text = Self::terminate_last_expression(self.state.script_text.clone());
-                        if !self.state.script_text.is_empty() && !self.state.script_text.ends_with('\n') {
+                        self.state.script_text =
+                            Self::terminate_last_expression(self.state.script_text.clone());
+                        if !self.state.script_text.is_empty()
+                            && !self.state.script_text.ends_with('\n')
+                        {
                             self.state.script_text.push('\n');
                         }
                         self.state.script_text.push_str(&script);
@@ -3970,7 +4611,11 @@ impl App {
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
             .show(ctx, |ui| {
                 ui.label("Create a reusable component from the current script.");
-                ui.label(egui::RichText::new("Tip: Use #{param_name} in your script for parameters").small().italics());
+                ui.label(
+                    egui::RichText::new("Tip: Use #{param_name} in your script for parameters")
+                        .small()
+                        .italics(),
+                );
                 ui.add_space(10.0);
 
                 ui.horizontal(|ui| {
@@ -3994,10 +4639,13 @@ impl App {
 
                 ui.horizontal(|ui| {
                     if ui.button("💾 Save").clicked() {
-                        if !self.save_component_name.is_empty() && !self.save_component_category.is_empty() {
+                        if !self.save_component_name.is_empty()
+                            && !self.save_component_category.is_empty()
+                        {
                             should_save = true;
                         } else {
-                            self.status_message = Some("Name and category are required".to_string());
+                            self.status_message =
+                                Some("Name and category are required".to_string());
                         }
                     }
                     if ui.button("✗ Cancel").clicked() {
@@ -4036,7 +4684,9 @@ impl App {
     }
 
     fn show_settings_modal(&mut self, ctx: &egui::Context) {
-        if !self.settings_open { return; }
+        if !self.settings_open {
+            return;
+        }
 
         let mut open = self.settings_open;
         egui::Window::new("Settings")
@@ -4052,19 +4702,21 @@ impl App {
                 ui.label("Path to ccx binary (leave blank to auto-detect):");
 
                 let mut path_str = self.settings.ccx_path.clone().unwrap_or_default();
-                let changed = ui.horizontal(|ui| {
-                    let r = ui.add(
-                        egui::TextEdit::singleline(&mut path_str)
-                            .hint_text("Auto (bundled or PATH)")
-                            .desired_width(260.0),
-                    );
-                    if ui.button("Browse…").clicked() {
-                        if let Some(p) = rfd::FileDialog::new().pick_file() {
-                            path_str = p.to_string_lossy().into_owned();
+                let changed = ui
+                    .horizontal(|ui| {
+                        let r = ui.add(
+                            egui::TextEdit::singleline(&mut path_str)
+                                .hint_text("Auto (bundled or PATH)")
+                                .desired_width(260.0),
+                        );
+                        if ui.button("Browse…").clicked() {
+                            if let Some(p) = rfd::FileDialog::new().pick_file() {
+                                path_str = p.to_string_lossy().into_owned();
+                            }
                         }
-                    }
-                    r.changed()
-                }).inner;
+                        r.changed()
+                    })
+                    .inner;
 
                 if changed || !path_str.is_empty() {
                     self.settings.ccx_path = if path_str.trim().is_empty() {
@@ -4075,24 +4727,26 @@ impl App {
                 }
 
                 // Show resolved binary
-                let resolved = crate::fea::calculix::find_calculix(
-                    self.settings.ccx_path.as_deref()
-                );
+                let resolved =
+                    crate::fea::calculix::find_calculix(self.settings.ccx_path.as_deref());
                 ui.add_space(4.0);
                 match resolved {
                     Some(p) => ui.label(
                         egui::RichText::new(format!("Found: {}", p.display()))
-                            .small().color(egui::Color32::GREEN)
+                            .small()
+                            .color(egui::Color32::GREEN),
                     ),
                     None => ui.label(
                         egui::RichText::new("Not found — FEA will be unavailable")
-                            .small().color(egui::Color32::RED)
+                            .small()
+                            .color(egui::Color32::RED),
                     ),
                 };
 
                 ui.add_space(8.0);
                 ui.separator();
                 if ui.button("Save").clicked() {
+                    self.settings.export = self.export_settings.clone();
                     self.settings.save();
                     self.settings_open = false;
                 }
@@ -4126,8 +4780,8 @@ impl App {
     }
 
     fn save_current_script_as_component(&self) -> Result<String, String> {
-        use std::collections::HashMap;
         use crate::components::ComponentDef;
+        use std::collections::HashMap;
 
         // Create component directory if it doesn't exist
         let category_dir = format!("components/{}", self.save_component_category);
@@ -4149,17 +4803,14 @@ impl App {
 
         // Write to file
         let file_path = format!("{}/{}.json", category_dir, self.save_component_name);
-        std::fs::write(&file_path, json)
-            .map_err(|e| format!("Failed to write file: {}", e))?;
+        std::fs::write(&file_path, json).map_err(|e| format!("Failed to write file: {}", e))?;
 
         Ok(file_path)
     }
 
     fn render_3d_viewport(&mut self, ui: &mut egui::Ui) {
-        let (rect, response) = ui.allocate_exact_size(
-            ui.available_size(),
-            egui::Sense::click_and_drag(),
-        );
+        let (rect, response) =
+            ui.allocate_exact_size(ui.available_size(), egui::Sense::click_and_drag());
         self.last_viewport_rect = rect;
 
         response.context_menu(|ui| {
@@ -4196,18 +4847,27 @@ impl App {
         // Viewport picking for measurement point A/B
         if let Some(pick) = self.pick_mode {
             if response.clicked() && !self.is_dragging_left {
-                if let (Some(click_pos), Some(grid)) = (response.interact_pointer_pos(), &self.current_sdf_grid) {
+                if let (Some(click_pos), Some(grid)) =
+                    (response.interact_pointer_pos(), &self.current_sdf_grid)
+                {
                     let hit = self.unproject_and_march(click_pos, rect, grid.as_ref());
                     if let Some(p) = hit {
-                        if pick == 0 { self.point_a = Some(p); }
-                        else         { self.point_b = Some(p); }
+                        if pick == 0 {
+                            self.point_a = Some(p);
+                        } else {
+                            self.point_b = Some(p);
+                        }
                         self.pick_mode = None;
                     }
                 }
             }
-        }
-        else if response.clicked() && !self.is_dragging_left && !self.component_preview_parts.is_empty() {
-            if let (Some(click_pos), Some(grid)) = (response.interact_pointer_pos(), &self.current_sdf_grid) {
+        } else if response.clicked()
+            && !self.is_dragging_left
+            && !self.component_preview_parts.is_empty()
+        {
+            if let (Some(click_pos), Some(grid)) =
+                (response.interact_pointer_pos(), &self.current_sdf_grid)
+            {
                 if let Some(hit) = self.unproject_and_march(click_pos, rect, grid.as_ref()) {
                     let mut best_name: Option<String> = None;
                     let mut best_d = f32::INFINITY;
@@ -4244,23 +4904,34 @@ impl App {
         let sdf_grid = self.current_sdf_grid.clone();
         let show_wireframe = self.show_wireframe;
 
-        let section   = self.section_view_to_uniforms();
+        let section = self.section_view_to_uniforms();
         let thickness = self.thickness_uniforms();
 
         // Pass thickness grid data if a new upload is pending.
         // Overhang overlay takes priority when active.
-        let thickness_upload: Option<(Arc<Vec<f32>>, u32)> = if self.print_overhang_needs_upload && self.print_overhang_overlay {
-            self.print_analysis_result.as_ref().map(|r| {
-                (Arc::new(r.overhang.overhang_grid.clone()), r.overhang.resolution)
-            })
-        } else if self.thickness_needs_upload {
-            self.thickness_result.as_ref().map(|r| (Arc::clone(&r.analysis_grid), r.resolution))
-        } else {
-            None
-        };
-        if self.print_overhang_needs_upload { self.print_overhang_needs_upload = false; }
-        if self.thickness_needs_upload { self.thickness_needs_upload = false; }
-        let clear_thickness = !self.thickness_overlay_on && self.thickness_result.is_none()
+        let thickness_upload: Option<(Arc<Vec<f32>>, u32)> =
+            if self.print_overhang_needs_upload && self.print_overhang_overlay {
+                self.print_analysis_result.as_ref().map(|r| {
+                    (
+                        Arc::new(r.overhang.overhang_grid.clone()),
+                        r.overhang.resolution,
+                    )
+                })
+            } else if self.thickness_needs_upload {
+                self.thickness_result
+                    .as_ref()
+                    .map(|r| (Arc::clone(&r.analysis_grid), r.resolution))
+            } else {
+                None
+            };
+        if self.print_overhang_needs_upload {
+            self.print_overhang_needs_upload = false;
+        }
+        if self.thickness_needs_upload {
+            self.thickness_needs_upload = false;
+        }
+        let clear_thickness = !self.thickness_overlay_on
+            && self.thickness_result.is_none()
             && !self.print_overhang_overlay
             && self.fea_overlay_mode == FEAOverlayMode::None;
 
@@ -4268,25 +4939,37 @@ impl App {
         let fea_upload: Option<(Arc<Vec<f32>>, u32)> = if self.fea_needs_upload {
             if let Some(ref result) = self.fea_result {
                 let data = match self.fea_overlay_mode {
-                    FEAOverlayMode::Stress | FEAOverlayMode::None =>
-                        Arc::new(result.von_mises.clone()),
-                    FEAOverlayMode::Displacement =>
-                        Arc::new(result.displacement.clone()),
+                    FEAOverlayMode::Stress | FEAOverlayMode::None => {
+                        Arc::new(result.von_mises.clone())
+                    }
+                    FEAOverlayMode::Displacement => Arc::new(result.displacement.clone()),
                 };
                 Some((data, result.resolution))
-            } else { None }
-        } else { None };
-        if self.fea_needs_upload { self.fea_needs_upload = false; }
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+        if self.fea_needs_upload {
+            self.fea_needs_upload = false;
+        }
 
         let cb = CustomPaint {
-            camera, mesh, sdf_grid, show_wireframe, viewport_rect: rect,
-            section, thickness, thickness_upload, fea_upload, clear_thickness,
+            camera,
+            mesh,
+            sdf_grid,
+            show_wireframe,
+            viewport_rect: rect,
+            section,
+            thickness,
+            thickness_upload,
+            fea_upload,
+            clear_thickness,
         };
 
-        ui.painter().add(egui_wgpu::Callback::new_paint_callback(
-            rect,
-            cb,
-        ));
+        ui.painter()
+            .add(egui_wgpu::Callback::new_paint_callback(rect, cb));
 
         // Draw FEA BC overlays on top using egui painter (screen-space 2D).
         if self.fea_show_conditions {
@@ -4303,16 +4986,26 @@ impl App {
                 if let Some(s) = Self::project_to_screen(p, &self.camera, rect) {
                     painter.circle_filled(s, 6.0, egui::Color32::from_rgb(220, 60, 60));
                     painter.circle_stroke(s, 6.0, egui::Stroke::new(1.5, egui::Color32::WHITE));
-                    painter.text(s + egui::vec2(8.0, -8.0), egui::Align2::LEFT_BOTTOM,
-                        "A", egui::FontId::proportional(12.0), egui::Color32::from_rgb(220,60,60));
+                    painter.text(
+                        s + egui::vec2(8.0, -8.0),
+                        egui::Align2::LEFT_BOTTOM,
+                        "A",
+                        egui::FontId::proportional(12.0),
+                        egui::Color32::from_rgb(220, 60, 60),
+                    );
                 }
             }
             if let Some(p) = self.point_b {
                 if let Some(s) = Self::project_to_screen(p, &self.camera, rect) {
                     painter.circle_filled(s, 6.0, egui::Color32::from_rgb(60, 120, 220));
                     painter.circle_stroke(s, 6.0, egui::Stroke::new(1.5, egui::Color32::WHITE));
-                    painter.text(s + egui::vec2(8.0, -8.0), egui::Align2::LEFT_BOTTOM,
-                        "B", egui::FontId::proportional(12.0), egui::Color32::from_rgb(60,120,220));
+                    painter.text(
+                        s + egui::vec2(8.0, -8.0),
+                        egui::Align2::LEFT_BOTTOM,
+                        "B",
+                        egui::FontId::proportional(12.0),
+                        egui::Color32::from_rgb(60, 120, 220),
+                    );
                 }
             }
             if self.show_cg_marker {
@@ -4322,7 +5015,13 @@ impl App {
                 // Also draw script-defined CG if available.
                 if let Some(cg) = self.cg {
                     if self.measurements.center_of_mass != Some(cg) {
-                        Self::draw_cg_crosshair_color(&painter, cg, egui::Color32::from_rgb(255,200,0), &self.camera, rect);
+                        Self::draw_cg_crosshair_color(
+                            &painter,
+                            cg,
+                            egui::Color32::from_rgb(255, 200, 0),
+                            &self.camera,
+                            rect,
+                        );
                     }
                 }
             }
@@ -4344,10 +5043,11 @@ impl App {
 
             // Draw reference point overlays.
             if self.show_ref_points && !self.current_ref_points.is_empty() {
-                let ref_pts: Vec<_> = self.current_ref_points.iter()
+                let ref_pts: Vec<_> = self
+                    .current_ref_points
+                    .iter()
                     .filter_map(|pt| {
-                        Self::project_to_screen(pt.position, &self.camera, rect)
-                            .map(|s| (pt, s))
+                        Self::project_to_screen(pt.position, &self.camera, rect).map(|s| (pt, s))
                     })
                     .collect();
 
@@ -4358,7 +5058,11 @@ impl App {
                         (pt.color[2] * 255.0) as u8,
                     );
                     painter.circle_filled(*screen, 5.0, color);
-                    painter.circle_stroke(*screen, 5.0, egui::Stroke::new(1.0, egui::Color32::WHITE));
+                    painter.circle_stroke(
+                        *screen,
+                        5.0,
+                        egui::Stroke::new(1.0, egui::Color32::WHITE),
+                    );
                     painter.text(
                         *screen + egui::Vec2::new(8.0, -8.0),
                         egui::Align2::LEFT_BOTTOM,
@@ -4428,7 +5132,10 @@ impl App {
     fn draw_view_cube(&mut self, ui: &mut egui::Ui, viewport_rect: egui::Rect) {
         let panel_size = egui::vec2(124.0, 136.0);
         let panel_rect = egui::Rect::from_min_size(
-            egui::pos2(viewport_rect.left() + 14.0, viewport_rect.bottom() - panel_size.y - 14.0),
+            egui::pos2(
+                viewport_rect.left() + 14.0,
+                viewport_rect.bottom() - panel_size.y - 14.0,
+            ),
             panel_size,
         );
         let painter = ui.painter().with_clip_rect(viewport_rect);
@@ -4441,7 +5148,10 @@ impl App {
         painter.rect_stroke(
             panel_rect,
             10.0,
-            egui::Stroke::new(1.0, egui::Color32::from_rgba_unmultiplied(255, 255, 255, 48)),
+            egui::Stroke::new(
+                1.0,
+                egui::Color32::from_rgba_unmultiplied(255, 255, 255, 48),
+            ),
         );
         let cube_rect = egui::Rect::from_min_max(
             panel_rect.min + egui::vec2(10.0, 8.0),
@@ -4472,7 +5182,10 @@ impl App {
             painter.rect_stroke(
                 rect,
                 6.0,
-                egui::Stroke::new(1.0, egui::Color32::from_rgba_unmultiplied(255, 255, 255, 80)),
+                egui::Stroke::new(
+                    1.0,
+                    egui::Color32::from_rgba_unmultiplied(255, 255, 255, 80),
+                ),
             );
             painter.text(
                 rect.center(),
@@ -4507,21 +5220,24 @@ impl App {
 
         let vertices = [
             Vec3::new(-1.0, -1.0, -1.0),
-            Vec3::new( 1.0, -1.0, -1.0),
-            Vec3::new( 1.0,  1.0, -1.0),
-            Vec3::new(-1.0,  1.0, -1.0),
-            Vec3::new(-1.0, -1.0,  1.0),
-            Vec3::new( 1.0, -1.0,  1.0),
-            Vec3::new( 1.0,  1.0,  1.0),
-            Vec3::new(-1.0,  1.0,  1.0),
+            Vec3::new(1.0, -1.0, -1.0),
+            Vec3::new(1.0, 1.0, -1.0),
+            Vec3::new(-1.0, 1.0, -1.0),
+            Vec3::new(-1.0, -1.0, 1.0),
+            Vec3::new(1.0, -1.0, 1.0),
+            Vec3::new(1.0, 1.0, 1.0),
+            Vec3::new(-1.0, 1.0, 1.0),
         ];
 
-        let projected: Vec<(egui::Pos2, f32)> = vertices.iter().map(|v| {
-            let x = v.dot(right) * scale;
-            let y = -v.dot(up) * scale;
-            let z = v.dot(forward);
-            (egui::pos2(center.x + x, center.y + y), z)
-        }).collect();
+        let projected: Vec<(egui::Pos2, f32)> = vertices
+            .iter()
+            .map(|v| {
+                let x = v.dot(right) * scale;
+                let y = -v.dot(up) * scale;
+                let z = v.dot(forward);
+                (egui::pos2(center.x + x, center.y + y), z)
+            })
+            .collect();
 
         struct CubeFace {
             label: &'static str,
@@ -4581,23 +5297,36 @@ impl App {
         let mut hovered_view = None;
         let mut clicked_view = None;
 
-        let mut visible_faces: Vec<(f32, &CubeFace, Vec<egui::Pos2>)> = faces.iter()
+        let mut visible_faces: Vec<(f32, &CubeFace, Vec<egui::Pos2>)> = faces
+            .iter()
             .filter_map(|face| {
                 let facing = face.normal.dot(forward);
                 if facing <= 0.0 {
                     return None;
                 }
-                let poly: Vec<egui::Pos2> = face.indices.iter().map(|&idx| projected[idx].0).collect();
-                let depth = face.indices.iter().map(|&idx| projected[idx].1).sum::<f32>() / 4.0;
+                let poly: Vec<egui::Pos2> =
+                    face.indices.iter().map(|&idx| projected[idx].0).collect();
+                let depth = face
+                    .indices
+                    .iter()
+                    .map(|&idx| projected[idx].1)
+                    .sum::<f32>()
+                    / 4.0;
                 Some((depth, face, poly))
             })
             .collect();
         visible_faces.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
 
-        painter.rect_filled(cube_rect, 8.0, egui::Color32::from_rgba_unmultiplied(255, 255, 255, 10));
+        painter.rect_filled(
+            cube_rect,
+            8.0,
+            egui::Color32::from_rgba_unmultiplied(255, 255, 255, 10),
+        );
 
         for (_, face, poly) in &visible_faces {
-            let hovered = pointer_pos.map(|p| Self::point_in_polygon(p, poly)).unwrap_or(false);
+            let hovered = pointer_pos
+                .map(|p| Self::point_in_polygon(p, poly))
+                .unwrap_or(false);
             if hovered {
                 hovered_view = Some(face.view);
                 if pointer_clicked {
@@ -4615,7 +5344,10 @@ impl App {
             painter.add(egui::Shape::convex_polygon(
                 poly.clone(),
                 fill,
-                egui::Stroke::new(1.2, egui::Color32::from_rgba_unmultiplied(255, 255, 255, 120)),
+                egui::Stroke::new(
+                    1.2,
+                    egui::Color32::from_rgba_unmultiplied(255, 255, 255, 120),
+                ),
             ));
             let center = Self::polygon_center(poly);
             painter.text(
@@ -4628,14 +5360,26 @@ impl App {
         }
 
         let edges = [
-            (0usize, 1usize), (1, 2), (2, 3), (3, 0),
-            (4, 5), (5, 6), (6, 7), (7, 4),
-            (0, 4), (1, 5), (2, 6), (3, 7),
+            (0usize, 1usize),
+            (1, 2),
+            (2, 3),
+            (3, 0),
+            (4, 5),
+            (5, 6),
+            (6, 7),
+            (7, 4),
+            (0, 4),
+            (1, 5),
+            (2, 6),
+            (3, 7),
         ];
         for (a, b) in edges {
             painter.line_segment(
                 [projected[a].0, projected[b].0],
-                egui::Stroke::new(1.0, egui::Color32::from_rgba_unmultiplied(255, 255, 255, 70)),
+                egui::Stroke::new(
+                    1.0,
+                    egui::Color32::from_rgba_unmultiplied(255, 255, 255, 70),
+                ),
             );
         }
 
@@ -4692,7 +5436,8 @@ impl App {
             let pi = polygon[i];
             let pj = polygon[j];
             let intersects = ((pi.y > point.y) != (pj.y > point.y))
-                && (point.x < (pj.x - pi.x) * (point.y - pi.y) / ((pj.y - pi.y).abs().max(1e-6)) + pi.x);
+                && (point.x
+                    < (pj.x - pi.x) * (point.y - pi.y) / ((pj.y - pi.y).abs().max(1e-6)) + pi.x);
             if intersects {
                 inside = !inside;
             }
@@ -4715,25 +5460,29 @@ impl App {
     fn project_to_screen(p: Vec3, camera: &Camera, rect: egui::Rect) -> Option<egui::Pos2> {
         let vp = camera.view_projection();
         let clip = vp * glam::Vec4::new(p.x, p.y, p.z, 1.0);
-        if clip.w <= 0.0 { return None; }
-        let ndc_x =  clip.x / clip.w;
-        let ndc_y = -clip.y / clip.w;  // flip Y: egui Y goes down
-        if ndc_x.abs() > 1.5 || ndc_y.abs() > 1.5 { return None; }
+        if clip.w <= 0.0 {
+            return None;
+        }
+        let ndc_x = clip.x / clip.w;
+        let ndc_y = -clip.y / clip.w; // flip Y: egui Y goes down
+        if ndc_x.abs() > 1.5 || ndc_y.abs() > 1.5 {
+            return None;
+        }
         Some(egui::pos2(
             rect.left() + (ndc_x + 1.0) * 0.5 * rect.width(),
-            rect.top()  + (ndc_y + 1.0) * 0.5 * rect.height(),
+            rect.top() + (ndc_y + 1.0) * 0.5 * rect.height(),
         ))
     }
 
     /// Draw a 3-D arrow as a 2-D screen-space line + arrowhead.
     fn draw_arrow_3d(
-        painter:  &egui::Painter,
-        origin:   Vec3,
-        dir:      Vec3,      // normalized
-        length:   f32,
-        color:    egui::Color32,
-        camera:   &Camera,
-        rect:     egui::Rect,
+        painter: &egui::Painter,
+        origin: Vec3,
+        dir: Vec3, // normalized
+        length: f32,
+        color: egui::Color32,
+        camera: &Camera,
+        rect: egui::Rect,
     ) {
         let tip = origin + dir * length;
         let p0 = Self::project_to_screen(origin, camera, rect);
@@ -4742,10 +5491,12 @@ impl App {
             painter.line_segment([a, b], egui::Stroke::new(2.5, color));
             // Arrowhead: small filled triangle at tip
             let shaft = (a - b).normalized();
-            let perp  = egui::vec2(-shaft.y, shaft.x) * 5.0;
-            let head  = [b, b + shaft * 12.0 + perp, b + shaft * 12.0 - perp];
+            let perp = egui::vec2(-shaft.y, shaft.x) * 5.0;
+            let head = [b, b + shaft * 12.0 + perp, b + shaft * 12.0 - perp];
             painter.add(egui::Shape::convex_polygon(
-                head.to_vec(), color, egui::Stroke::NONE,
+                head.to_vec(),
+                color,
+                egui::Stroke::NONE,
             ));
         }
     }
@@ -4753,9 +5504,9 @@ impl App {
     /// Draw all FEA BC overlays.
     fn draw_fea_overlays(
         painter: &egui::Painter,
-        viz:     &crate::fea::FEAVizData,
-        camera:  &Camera,
-        rect:    egui::Rect,
+        viz: &crate::fea::FEAVizData,
+        camera: &Camera,
+        rect: egui::Rect,
     ) {
         // Arrow scale relative to viewport size
         let arrow_len = rect.size().min_elem() * 0.12;
@@ -4773,7 +5524,15 @@ impl App {
         // Force loads — yellow arrows from centroid
         let yellow = egui::Color32::from_rgba_unmultiplied(255, 220, 40, 230);
         for ((region, dir), _mag) in viz.force_loads.iter().zip(viz.force_magnitudes.iter()) {
-            Self::draw_arrow_3d(painter, region.centroid, *dir, arrow_len, yellow, camera, rect);
+            Self::draw_arrow_3d(
+                painter,
+                region.centroid,
+                *dir,
+                arrow_len,
+                yellow,
+                camera,
+                rect,
+            );
         }
 
         // Pressure loads — red dots
@@ -4792,16 +5551,38 @@ impl App {
             // Draw two tangential arrows indicating rotation direction
             let perp = axis.any_orthonormal_vector();
             let r = arrow_len * 0.5;
-            Self::draw_arrow_3d(painter, region.centroid + perp * r,
-                axis.cross(perp).normalize_or_zero(), arrow_len * 0.6, cyan, camera, rect);
-            Self::draw_arrow_3d(painter, region.centroid - perp * r,
-                -axis.cross(perp).normalize_or_zero(), arrow_len * 0.6, cyan, camera, rect);
+            Self::draw_arrow_3d(
+                painter,
+                region.centroid + perp * r,
+                axis.cross(perp).normalize_or_zero(),
+                arrow_len * 0.6,
+                cyan,
+                camera,
+                rect,
+            );
+            Self::draw_arrow_3d(
+                painter,
+                region.centroid - perp * r,
+                -axis.cross(perp).normalize_or_zero(),
+                arrow_len * 0.6,
+                cyan,
+                camera,
+                rect,
+            );
         }
 
         // Motor thrusts — green arrows
         let green = egui::Color32::from_rgba_unmultiplied(60, 200, 80, 230);
         for (region, dir) in &viz.motor_thrusts {
-            Self::draw_arrow_3d(painter, region.centroid, *dir, arrow_len, green, camera, rect);
+            Self::draw_arrow_3d(
+                painter,
+                region.centroid,
+                *dir,
+                arrow_len,
+                green,
+                camera,
+                rect,
+            );
         }
 
         // Gravity — large grey downward arrow in bottom-left corner of viewport
@@ -4812,10 +5593,11 @@ impl App {
             let end = corner + egui::vec2(grav_dir.x, -grav_dir.z) * shaft_px;
             painter.line_segment([corner, end], egui::Stroke::new(3.0, grey));
             let dir2d = (end - corner).normalized();
-            let perp  = egui::vec2(-dir2d.y, dir2d.x) * 6.0;
+            let perp = egui::vec2(-dir2d.y, dir2d.x) * 6.0;
             painter.add(egui::Shape::convex_polygon(
                 vec![end, end - dir2d * 14.0 + perp, end - dir2d * 14.0 - perp],
-                grey, egui::Stroke::NONE,
+                grey,
+                egui::Stroke::NONE,
             ));
             painter.text(
                 corner + egui::vec2(8.0, -10.0),
@@ -4832,40 +5614,43 @@ impl App {
     fn unproject_and_march(
         &self,
         screen_pos: egui::Pos2,
-        rect:       egui::Rect,
-        grid:       &crate::render::SdfGrid,
+        rect: egui::Rect,
+        grid: &crate::render::SdfGrid,
     ) -> Option<Vec3> {
         // Convert screen pos to NDC [-1, 1].
-        let nx =  (screen_pos.x - rect.left()) / rect.width()  * 2.0 - 1.0;
-        let ny = -((screen_pos.y - rect.top())  / rect.height() * 2.0 - 1.0);
+        let nx = (screen_pos.x - rect.left()) / rect.width() * 2.0 - 1.0;
+        let ny = -((screen_pos.y - rect.top()) / rect.height() * 2.0 - 1.0);
 
         // Unproject near and far planes through the inverse VP matrix.
         let inv_vp = self.camera.view_projection().inverse();
         let near4 = inv_vp * glam::Vec4::new(nx, ny, -1.0, 1.0);
-        let far4  = inv_vp * glam::Vec4::new(nx, ny,  1.0, 1.0);
+        let far4 = inv_vp * glam::Vec4::new(nx, ny, 1.0, 1.0);
         let near_w = Vec3::new(near4.x / near4.w, near4.y / near4.w, near4.z / near4.w);
-        let far_w  = Vec3::new(far4.x  / far4.w,  far4.y  / far4.w,  far4.z  / far4.w);
+        let far_w = Vec3::new(far4.x / far4.w, far4.y / far4.w, far4.z / far4.w);
         let dir = (far_w - near_w).normalize_or_zero();
-        if dir.length_squared() < 0.0001 { return None; }
+        if dir.length_squared() < 0.0001 {
+            return None;
+        }
         let max_dist = (far_w - near_w).length();
         crate::analysis::ray_march_grid(grid, near_w, dir, max_dist)
     }
 
-    fn draw_cg_crosshair(
-        painter: &egui::Painter,
-        cg:      Vec3,
-        camera:  &Camera,
-        rect:    egui::Rect,
-    ) {
-        Self::draw_cg_crosshair_color(painter, cg, egui::Color32::from_rgb(100, 220, 255), camera, rect);
+    fn draw_cg_crosshair(painter: &egui::Painter, cg: Vec3, camera: &Camera, rect: egui::Rect) {
+        Self::draw_cg_crosshair_color(
+            painter,
+            cg,
+            egui::Color32::from_rgb(100, 220, 255),
+            camera,
+            rect,
+        );
     }
 
     fn draw_cg_crosshair_color(
         painter: &egui::Painter,
-        cg:      Vec3,
-        color:   egui::Color32,
-        camera:  &Camera,
-        rect:    egui::Rect,
+        cg: Vec3,
+        color: egui::Color32,
+        camera: &Camera,
+        rect: egui::Rect,
     ) {
         let arm = 6.0f32;
         let axes = [
@@ -4904,13 +5689,23 @@ impl App {
             Vec3::new(bounds_max.x, bounds_max.y, bounds_max.z),
             Vec3::new(bounds_min.x, bounds_max.y, bounds_max.z),
         ];
-        let projected: Vec<Option<egui::Pos2>> = corners.iter()
+        let projected: Vec<Option<egui::Pos2>> = corners
+            .iter()
             .map(|&p| Self::project_to_screen(p, camera, rect))
             .collect();
         let edges = [
-            (0, 1), (1, 2), (2, 3), (3, 0),
-            (4, 5), (5, 6), (6, 7), (7, 4),
-            (0, 4), (1, 5), (2, 6), (3, 7),
+            (0, 1),
+            (1, 2),
+            (2, 3),
+            (3, 0),
+            (4, 5),
+            (5, 6),
+            (6, 7),
+            (7, 4),
+            (0, 4),
+            (1, 5),
+            (2, 6),
+            (3, 7),
         ];
         for (a, b) in edges {
             if let (Some(pa), Some(pb)) = (projected[a], projected[b]) {
@@ -4922,7 +5717,9 @@ impl App {
     // ── Measurement popup ─────────────────────────────────────────────────────
 
     fn show_measure_popup(&mut self, ctx: &egui::Context) {
-        if !self.measure_open { return; }
+        if !self.measure_open {
+            return;
+        }
 
         let mut open = true;
         egui::Window::new("📐 Measurements")
@@ -5302,10 +6099,16 @@ impl App {
             s += &format!("Surface Area: {:.2} cm²\n", sa / 100.0);
         }
         if let Some(com) = self.measurements.center_of_mass {
-            s += &format!("Center of Mass: ({:.1}, {:.1}, {:.1}) mm\n", com.x, com.y, com.z);
+            s += &format!(
+                "Center of Mass: ({:.1}, {:.1}, {:.1}) mm\n",
+                com.x, com.y, com.z
+            );
         }
         if let Some(mass) = self.measurements.print_mass_g {
-            s += &format!("Print Mass: {:.1} g (density {:.2} g/cm³)\n", mass, self.measure_density);
+            s += &format!(
+                "Print Mass: {:.1} g (density {:.2} g/cm³)\n",
+                mass, self.measure_density
+            );
         }
         if !self.measurements.cross_sections.is_empty() {
             s += "\n--- Cross-Sections ---\n";
@@ -5316,10 +6119,17 @@ impl App {
         if !self.measurements.point_distances.is_empty() {
             s += "\n--- Point Distances ---\n";
             for pd in &self.measurements.point_distances {
-                s += &format!("{}: {:.3} mm  A({:.1},{:.1},{:.1})  B({:.1},{:.1},{:.1})\n",
-                    pd.label, pd.primary_mm,
-                    pd.point_a.x, pd.point_a.y, pd.point_a.z,
-                    pd.point_b.x, pd.point_b.y, pd.point_b.z);
+                s += &format!(
+                    "{}: {:.3} mm  A({:.1},{:.1},{:.1})  B({:.1},{:.1},{:.1})\n",
+                    pd.label,
+                    pd.primary_mm,
+                    pd.point_a.x,
+                    pd.point_a.y,
+                    pd.point_a.z,
+                    pd.point_b.x,
+                    pd.point_b.y,
+                    pd.point_b.z
+                );
             }
         }
         s
@@ -5327,19 +6137,19 @@ impl App {
 }
 
 struct CustomPaint {
-    camera:           Camera,
-    mesh:             Option<Mesh>,
-    sdf_grid:         Option<Arc<SdfGrid>>,
-    show_wireframe:   bool,
-    viewport_rect:    egui::Rect,
-    section:          SectionUniforms,
-    thickness:        ThicknessUniforms,
+    camera: Camera,
+    mesh: Option<Mesh>,
+    sdf_grid: Option<Arc<SdfGrid>>,
+    show_wireframe: bool,
+    viewport_rect: egui::Rect,
+    section: SectionUniforms,
+    thickness: ThicknessUniforms,
     /// Some(data, resolution) when a new thickness texture must be uploaded this frame.
     thickness_upload: Option<(Arc<Vec<f32>>, u32)>,
     /// Some(data, resolution) when FEA stress/displacement data must be uploaded this frame.
-    fea_upload:       Option<(Arc<Vec<f32>>, u32)>,
+    fea_upload: Option<(Arc<Vec<f32>>, u32)>,
     /// True when the thickness overlay was just cleared and the dummy texture should be rebound.
-    clear_thickness:  bool,
+    clear_thickness: bool,
 }
 
 impl egui_wgpu::CallbackTrait for CustomPaint {
@@ -5390,12 +6200,20 @@ impl egui_wgpu::CallbackTrait for CustomPaint {
 
         // Sphere-tracing renderer
         let ppp = screen_descriptor.pixels_per_point;
-        let vp_offset = [self.viewport_rect.min.x * ppp, self.viewport_rect.min.y * ppp];
-        let vp_size   = [self.viewport_rect.width() * ppp, self.viewport_rect.height() * ppp];
+        let vp_offset = [
+            self.viewport_rect.min.x * ppp,
+            self.viewport_rect.min.y * ppp,
+        ];
+        let vp_size = [
+            self.viewport_rect.width() * ppp,
+            self.viewport_rect.height() * ppp,
+        ];
 
         let rm: &mut RaymarchRenderer = callback_resources.get_mut().unwrap();
         if let Some(ref grid) = self.sdf_grid {
-            let needs_upload = rm.last_grid.as_ref()
+            let needs_upload = rm
+                .last_grid
+                .as_ref()
                 .map(|last| !Arc::ptr_eq(last, grid))
                 .unwrap_or(true);
             if needs_upload {
@@ -5411,7 +6229,14 @@ impl egui_wgpu::CallbackTrait for CustomPaint {
         if self.clear_thickness {
             rm.clear_thickness(device);
         }
-        rm.update_uniforms(queue, &self.camera, vp_offset, vp_size, &self.section, &self.thickness);
+        rm.update_uniforms(
+            queue,
+            &self.camera,
+            vp_offset,
+            vp_size,
+            &self.section,
+            &self.thickness,
+        );
 
         Vec::new()
     }
@@ -5422,10 +6247,10 @@ impl egui_wgpu::CallbackTrait for CustomPaint {
         render_pass: &mut wgpu::RenderPass<'static>,
         callback_resources: &egui_wgpu::CallbackResources,
     ) {
-        let grid_renderer:      &GridRenderer      = callback_resources.get().unwrap();
-        let axes_renderer:      &AxesRenderer      = callback_resources.get().unwrap();
+        let grid_renderer: &GridRenderer = callback_resources.get().unwrap();
+        let axes_renderer: &AxesRenderer = callback_resources.get().unwrap();
         let wireframe_renderer: &WireframeRenderer = callback_resources.get().unwrap();
-        let raymarch_renderer:  &RaymarchRenderer  = callback_resources.get().unwrap();
+        let raymarch_renderer: &RaymarchRenderer = callback_resources.get().unwrap();
 
         // Grid first (background)
         grid_renderer.render(render_pass);
@@ -5438,7 +6263,8 @@ impl egui_wgpu::CallbackTrait for CustomPaint {
             let render_state: &RenderState = callback_resources.get().unwrap();
             render_pass.set_pipeline(&render_state.render_pipeline);
             render_pass.set_bind_group(0, &render_state.uniform_bind_group, &[]);
-            if let (Some(vb), Some(ib)) = (&render_state.vertex_buffer, &render_state.index_buffer) {
+            if let (Some(vb), Some(ib)) = (&render_state.vertex_buffer, &render_state.index_buffer)
+            {
                 render_pass.set_vertex_buffer(0, vb.slice(..));
                 render_pass.set_index_buffer(ib.slice(..), wgpu::IndexFormat::Uint32);
                 render_pass.draw_indexed(0..render_state.num_indices, 0, 0..1);
@@ -5462,14 +6288,14 @@ impl App {
         let a = sv.plane_a.as_ref();
         let b = sv.plane_b.as_ref();
         SectionUniforms {
-            plane_a_enabled:  a.map(|p| p.enabled).unwrap_or(false),
-            plane_a_axis:     a.map(|p| p.axis.to_index()).unwrap_or(0),
+            plane_a_enabled: a.map(|p| p.enabled).unwrap_or(false),
+            plane_a_axis: a.map(|p| p.axis.to_index()).unwrap_or(0),
             plane_a_position: a.map(|p| p.position).unwrap_or(0.0),
-            plane_a_flip:     a.map(|p| p.flip).unwrap_or(false),
-            plane_b_enabled:  b.map(|p| p.enabled).unwrap_or(false),
-            plane_b_axis:     b.map(|p| p.axis.to_index()).unwrap_or(0),
+            plane_a_flip: a.map(|p| p.flip).unwrap_or(false),
+            plane_b_enabled: b.map(|p| p.enabled).unwrap_or(false),
+            plane_b_axis: b.map(|p| p.axis.to_index()).unwrap_or(0),
             plane_b_position: b.map(|p| p.position).unwrap_or(0.0),
-            plane_b_flip:     b.map(|p| p.flip).unwrap_or(false),
+            plane_b_flip: b.map(|p| p.flip).unwrap_or(false),
         }
     }
 
@@ -5478,26 +6304,44 @@ impl App {
         if self.fea_overlay_mode != FEAOverlayMode::None && self.fea_result.is_some() {
             let (max_val, invert) = match self.fea_overlay_mode {
                 FEAOverlayMode::Stress => (
-                    self.fea_result.as_ref().map(|r| r.max_von_mises).unwrap_or(1.0).max(0.001),
-                    true,  // red = high stress, green = safe
+                    self.fea_result
+                        .as_ref()
+                        .map(|r| r.max_von_mises)
+                        .unwrap_or(1.0)
+                        .max(0.001),
+                    true, // red = high stress, green = safe
                 ),
                 FEAOverlayMode::Displacement => (
-                    self.fea_result.as_ref().map(|r| r.max_displacement).unwrap_or(1.0).max(0.001),
+                    self.fea_result
+                        .as_ref()
+                        .map(|r| r.max_displacement)
+                        .unwrap_or(1.0)
+                        .max(0.001),
                     false, // green = zero displacement, red = max
                 ),
                 FEAOverlayMode::None => unreachable!(),
             };
-            return ThicknessUniforms { enabled: true, min_display: 0.0, max_display: max_val, invert };
+            return ThicknessUniforms {
+                enabled: true,
+                min_display: 0.0,
+                max_display: max_val,
+                invert,
+            };
         }
         // Overhang overlay: values 1.0 (Good) … 4.0 (Critical).
         if self.print_overhang_overlay && self.print_analysis_result.is_some() {
-            return ThicknessUniforms { enabled: true, min_display: 1.0, max_display: 4.0, invert: false };
+            return ThicknessUniforms {
+                enabled: true,
+                min_display: 1.0,
+                max_display: 4.0,
+                invert: false,
+            };
         }
         ThicknessUniforms {
-            enabled:     self.thickness_overlay_on && self.thickness_result.is_some(),
+            enabled: self.thickness_overlay_on && self.thickness_result.is_some(),
             min_display: 0.0,
             max_display: self.thickness_max_display,
-            invert:      false,
+            invert: false,
         }
     }
 
@@ -5507,9 +6351,14 @@ impl App {
 
         // Pre-extract bounds so we can use them while holding mutable refs to planes.
         let (xlo, xhi, ylo, yhi, zlo, zhi) = if let Some(ref grid) = self.current_sdf_grid {
-            (grid.bounds_min.x, grid.bounds_max.x,
-             grid.bounds_min.y, grid.bounds_max.y,
-             grid.bounds_min.z, grid.bounds_max.z)
+            (
+                grid.bounds_min.x,
+                grid.bounds_max.x,
+                grid.bounds_min.y,
+                grid.bounds_max.y,
+                grid.bounds_min.z,
+                grid.bounds_max.z,
+            )
         } else {
             (-100.0, 100.0, -100.0, 100.0, -100.0, 100.0)
         };
@@ -5566,20 +6415,21 @@ impl App {
                 flip: false,
             });
         }
-
     }
 
     fn render_thickness_panel(&mut self, ui: &mut egui::Ui) {
         ui.heading("Wall Thickness");
         ui.separator();
 
-        ui.add(egui::Slider::new(&mut self.thickness_max_display, 0.5..=100.0)
-            .text("Max display (mm)"));
+        ui.add(
+            egui::Slider::new(&mut self.thickness_max_display, 0.5..=100.0)
+                .text("Max display (mm)"),
+        );
 
         ui.add_space(4.0);
 
         let has_grid = self.current_sdf_grid.is_some();
-        let running  = self.thickness_running;
+        let running = self.thickness_running;
 
         ui.horizontal(|ui| {
             let run_btn = ui.add_enabled(has_grid && !running, egui::Button::new("Run"));
@@ -5587,10 +6437,11 @@ impl App {
                 self.start_thickness_analysis();
             }
 
-            let clear_btn = ui.add_enabled(self.thickness_result.is_some(), egui::Button::new("Clear"));
+            let clear_btn =
+                ui.add_enabled(self.thickness_result.is_some(), egui::Button::new("Clear"));
             if clear_btn.clicked() {
-                self.thickness_result       = None;
-                self.thickness_overlay_on   = false;
+                self.thickness_result = None;
+                self.thickness_overlay_on = false;
                 self.thickness_needs_upload = false;
             }
         });
@@ -5610,11 +6461,15 @@ impl App {
             let min = result.min_thickness;
             let warn = min < self.thickness_max_display * 0.25;
             if warn {
-                ui.colored_label(egui::Color32::from_rgb(220, 60, 60),
-                    format!("⚠ Min: {:.2} mm", min));
+                ui.colored_label(
+                    egui::Color32::from_rgb(220, 60, 60),
+                    format!("⚠ Min: {:.2} mm", min),
+                );
             } else {
-                ui.colored_label(egui::Color32::from_rgb(60, 180, 60),
-                    format!("✓ Min: {:.2} mm", min));
+                ui.colored_label(
+                    egui::Color32::from_rgb(60, 180, 60),
+                    format!("✓ Min: {:.2} mm", min),
+                );
             }
             let loc = result.min_location;
             ui.label(format!("  at ({:.1}, {:.1}, {:.1})", loc.x, loc.y, loc.z));
@@ -5624,7 +6479,7 @@ impl App {
     }
 
     fn render_print_analysis_panel(&mut self, ui: &mut egui::Ui) {
-        use crate::analysis::print_analysis::{PrinterPreset, IssueType, IssueSeverity};
+        use crate::analysis::print_analysis::{IssueSeverity, IssueType, PrinterPreset};
 
         ui.heading("Print Analysis");
         ui.separator();
@@ -5634,11 +6489,11 @@ impl App {
             ui.label("Printer:");
             let current_preset = self.print_analysis_settings.preset.clone();
             let preset_name = |p: &PrinterPreset| match p {
-                PrinterPreset::GenericFDM    => "Generic FDM (220×220×250)",
-                PrinterPreset::BambuX1C     => "Bambu X1C (256×256×256)",
-                PrinterPreset::PrusaMK4     => "Prusa MK4 (250×210×220)",
-                PrinterPreset::Voron24_300  => "Voron 2.4 300 (300×300×300)",
-                PrinterPreset::Custom       => "Custom",
+                PrinterPreset::GenericFDM => "Generic FDM (220×220×250)",
+                PrinterPreset::BambuX1C => "Bambu X1C (256×256×256)",
+                PrinterPreset::PrusaMK4 => "Prusa MK4 (250×210×220)",
+                PrinterPreset::Voron24_300 => "Voron 2.4 300 (300×300×300)",
+                PrinterPreset::Custom => "Custom",
             };
             egui::ComboBox::from_id_salt("printer_preset")
                 .selected_text(preset_name(&current_preset))
@@ -5662,14 +6517,34 @@ impl App {
 
         // --- Settings ---
         ui.collapsing("Settings", |ui| {
-            ui.add(egui::Slider::new(&mut self.print_analysis_settings.overhang_threshold_deg, 20.0..=70.0)
-                .text("Overhang threshold (°)"));
-            ui.add(egui::Slider::new(&mut self.print_analysis_settings.min_wall_thickness, 0.2..=5.0)
-                .text("Min wall (mm)"));
-            ui.add(egui::Slider::new(&mut self.print_analysis_settings.min_feature_size, 0.1..=2.0)
-                .text("Min feature (mm)"));
-            ui.add(egui::Slider::new(&mut self.print_analysis_settings.max_aspect_ratio, 2.0..=20.0)
-                .text("Max aspect ratio"));
+            ui.add(
+                egui::Slider::new(
+                    &mut self.print_analysis_settings.overhang_threshold_deg,
+                    20.0..=70.0,
+                )
+                .text("Overhang threshold (°)"),
+            );
+            ui.add(
+                egui::Slider::new(
+                    &mut self.print_analysis_settings.min_wall_thickness,
+                    0.2..=5.0,
+                )
+                .text("Min wall (mm)"),
+            );
+            ui.add(
+                egui::Slider::new(
+                    &mut self.print_analysis_settings.min_feature_size,
+                    0.1..=2.0,
+                )
+                .text("Min feature (mm)"),
+            );
+            ui.add(
+                egui::Slider::new(
+                    &mut self.print_analysis_settings.max_aspect_ratio,
+                    2.0..=20.0,
+                )
+                .text("Max aspect ratio"),
+            );
             let bv = &mut self.print_analysis_settings.build_volume;
             ui.horizontal(|ui| {
                 ui.label("Build volume:");
@@ -5685,20 +6560,35 @@ impl App {
 
         // --- Run / Clear ---
         let has_grid = self.current_sdf_grid.is_some();
-        let running  = self.print_analysis_running;
+        let running = self.print_analysis_running;
         ui.horizontal(|ui| {
-            if ui.add_enabled(has_grid && !running, egui::Button::new("Run Print Analysis")).clicked() {
+            if ui
+                .add_enabled(
+                    has_grid && !running,
+                    egui::Button::new("Run Print Analysis"),
+                )
+                .clicked()
+            {
                 self.start_print_analysis();
             }
-            if ui.add_enabled(self.print_analysis_result.is_some(), egui::Button::new("Clear")).clicked() {
-                self.print_analysis_result       = None;
-                self.print_overhang_overlay      = false;
+            if ui
+                .add_enabled(
+                    self.print_analysis_result.is_some(),
+                    egui::Button::new("Clear"),
+                )
+                .clicked()
+            {
+                self.print_analysis_result = None;
+                self.print_overhang_overlay = false;
                 self.print_overhang_needs_upload = false;
             }
         });
 
         if running {
-            ui.horizontal(|ui| { ui.spinner(); ui.label("Analysing…"); });
+            ui.horizontal(|ui| {
+                ui.spinner();
+                ui.label("Analysing…");
+            });
         }
 
         if let Some(ref result) = self.print_analysis_result {
@@ -5712,9 +6602,18 @@ impl App {
             if self.print_overhang_overlay && !prev_overlay {
                 self.print_overhang_needs_upload = true;
             }
-            ui.label(format!("Overhang area: {:.1} mm²", result.overhang.overhang_area_mm2));
-            ui.label(format!("Critical area:  {:.1} mm²", result.overhang.critical_overhang_area_mm2));
-            ui.label(format!("Support vol est: {:.0} mm³", result.overhang.support_volume_estimate_mm3));
+            ui.label(format!(
+                "Overhang area: {:.1} mm²",
+                result.overhang.overhang_area_mm2
+            ));
+            ui.label(format!(
+                "Critical area:  {:.1} mm²",
+                result.overhang.critical_overhang_area_mm2
+            ));
+            ui.label(format!(
+                "Support vol est: {:.0} mm³",
+                result.overhang.support_volume_estimate_mm3
+            ));
 
             ui.add_space(6.0);
             ui.separator();
@@ -5728,7 +6627,9 @@ impl App {
                     "{}{} ({:.2},{:.2},{:.2})  score={:.2}",
                     if i == rec_idx { "★ " } else { "  " },
                     if cand.fits_build_volume { "✓" } else { "✗" },
-                    d.x, d.y, d.z,
+                    d.x,
+                    d.y,
+                    d.z,
                     cand.score
                 );
                 let color = if i == rec_idx {
@@ -5749,17 +6650,27 @@ impl App {
 
             // --- Feature / printability issues ---
             let issues = &result.features.issues;
-            let errors: usize   = issues.iter().filter(|i| matches!(i.severity, IssueSeverity::Error)).count();
-            let warnings: usize = issues.iter().filter(|i| matches!(i.severity, IssueSeverity::Warning)).count();
+            let errors: usize = issues
+                .iter()
+                .filter(|i| matches!(i.severity, IssueSeverity::Error))
+                .count();
+            let warnings: usize = issues
+                .iter()
+                .filter(|i| matches!(i.severity, IssueSeverity::Warning))
+                .count();
             ui.horizontal(|ui| {
                 ui.strong("Printability Issues");
                 if errors > 0 {
-                    ui.colored_label(egui::Color32::from_rgb(220, 60, 60),
-                        format!("{} errors", errors));
+                    ui.colored_label(
+                        egui::Color32::from_rgb(220, 60, 60),
+                        format!("{} errors", errors),
+                    );
                 }
                 if warnings > 0 {
-                    ui.colored_label(egui::Color32::from_rgb(220, 160, 40),
-                        format!("{} warnings", warnings));
+                    ui.colored_label(
+                        egui::Color32::from_rgb(220, 160, 40),
+                        format!("{} warnings", warnings),
+                    );
                 }
                 if errors == 0 && warnings == 0 {
                     ui.colored_label(egui::Color32::from_rgb(60, 200, 60), "✓ No issues");
@@ -5772,17 +6683,20 @@ impl App {
                 .show(ui, |ui| {
                     for issue in issues.iter().take(50) {
                         let (icon, color) = match issue.severity {
-                            IssueSeverity::Error   => ("✗", egui::Color32::from_rgb(220, 60, 60)),
+                            IssueSeverity::Error => ("✗", egui::Color32::from_rgb(220, 60, 60)),
                             IssueSeverity::Warning => ("⚠", egui::Color32::from_rgb(220, 160, 40)),
                         };
                         let type_str = match issue.issue_type {
-                            IssueType::ThinWall           => "ThinWall",
-                            IssueType::TinyFeature        => "TinyFeature",
-                            IssueType::HighAspectRatio    => "HighAspectRatio",
-                            IssueType::BridgeSpan         => "BridgeSpan",
+                            IssueType::ThinWall => "ThinWall",
+                            IssueType::TinyFeature => "TinyFeature",
+                            IssueType::HighAspectRatio => "HighAspectRatio",
+                            IssueType::BridgeSpan => "BridgeSpan",
                             IssueType::SharpInternalCorner => "SharpCorner",
                         };
-                        ui.colored_label(color, format!("{} [{}] {}", icon, type_str, issue.description));
+                        ui.colored_label(
+                            color,
+                            format!("{} [{}] {}", icon, type_str, issue.description),
+                        );
                     }
                     if issues.len() > 50 {
                         ui.label(format!("… and {} more", issues.len() - 50));
@@ -5815,10 +6729,10 @@ impl App {
                 ui.label("Preset:");
                 let cur = self.tolerance_preset.clone();
                 let label = match &cur {
-                    TolerancePreset::TightFit    => "Tight Fit (0.1 mm)",
+                    TolerancePreset::TightFit => "Tight Fit (0.1 mm)",
                     TolerancePreset::StandardFDM => "Standard FDM (0.15 mm)",
-                    TolerancePreset::LooseFit    => "Loose Fit (0.2 mm)",
-                    TolerancePreset::Custom      => "Custom",
+                    TolerancePreset::LooseFit => "Loose Fit (0.2 mm)",
+                    TolerancePreset::Custom => "Custom",
                 };
                 egui::ComboBox::from_id_salt("tol_preset")
                     .selected_text(label)
@@ -5830,10 +6744,10 @@ impl App {
                             TolerancePreset::Custom,
                         ] {
                             let lbl = match &p {
-                                TolerancePreset::TightFit    => "Tight Fit (0.1 mm)",
+                                TolerancePreset::TightFit => "Tight Fit (0.1 mm)",
                                 TolerancePreset::StandardFDM => "Standard FDM (0.15 mm)",
-                                TolerancePreset::LooseFit    => "Loose Fit (0.2 mm)",
-                                TolerancePreset::Custom      => "Custom",
+                                TolerancePreset::LooseFit => "Loose Fit (0.2 mm)",
+                                TolerancePreset::Custom => "Custom",
                             };
                             if ui.selectable_label(cur == p, lbl).clicked() {
                                 self.tolerance_settings.apply_preset(&p);
@@ -5844,27 +6758,45 @@ impl App {
             });
 
             ui.add_space(4.0);
-            ui.add(egui::Slider::new(&mut self.tolerance_settings.external_offset_mm, -0.5..=0.5)
-                .text("External offset (mm)").step_by(0.01));
-            ui.add(egui::Slider::new(&mut self.tolerance_settings.internal_offset_mm, -0.5..=0.5)
-                .text("Internal offset (mm)").step_by(0.01));
-            ui.add(egui::Slider::new(&mut self.tolerance_settings.min_hole_diameter_mm, 0.5..=10.0)
-                .text("Small hole threshold (mm)"));
-            ui.add(egui::Slider::new(&mut self.tolerance_settings.small_hole_bonus_mm, 0.0..=0.3)
-                .text("Small hole bonus (mm)").step_by(0.01));
+            ui.add(
+                egui::Slider::new(&mut self.tolerance_settings.external_offset_mm, -0.5..=0.5)
+                    .text("External offset (mm)")
+                    .step_by(0.01),
+            );
+            ui.add(
+                egui::Slider::new(&mut self.tolerance_settings.internal_offset_mm, -0.5..=0.5)
+                    .text("Internal offset (mm)")
+                    .step_by(0.01),
+            );
+            ui.add(
+                egui::Slider::new(
+                    &mut self.tolerance_settings.min_hole_diameter_mm,
+                    0.5..=10.0,
+                )
+                .text("Small hole threshold (mm)"),
+            );
+            ui.add(
+                egui::Slider::new(&mut self.tolerance_settings.small_hole_bonus_mm, 0.0..=0.3)
+                    .text("Small hole bonus (mm)")
+                    .step_by(0.01),
+            );
 
             ui.add_space(4.0);
-            ui.checkbox(&mut self.tolerance_on_export,
-                "Apply tolerance compensation on export");
+            ui.checkbox(
+                &mut self.tolerance_on_export,
+                "Apply tolerance compensation on export",
+            );
             if self.tolerance_on_export {
-                ui.colored_label(egui::Color32::from_rgb(100, 180, 100),
-                    "✓ Geometry will be wrapped with tolerance offsets at export time");
+                ui.colored_label(
+                    egui::Color32::from_rgb(100, 180, 100),
+                    "✓ Geometry will be wrapped with tolerance offsets at export time",
+                );
             }
         });
     }
 
     fn render_split_body_section(&mut self, ui: &mut egui::Ui) {
-        use crate::sdf::print::{SplitPlane, AlignmentFeature, split_body, verify_split_fit};
+        use crate::sdf::print::{AlignmentFeature, SplitPlane, split_body, verify_split_fit};
         use std::sync::Arc;
 
         ui.collapsing("Split Body", |ui| {
@@ -5887,25 +6819,43 @@ impl App {
             } else {
                 (-100.0_f32, 100.0_f32)
             };
-            ui.add(egui::Slider::new(&mut self.split_offset, range.0..=range.1).text("Position (mm)"));
+            ui.add(
+                egui::Slider::new(&mut self.split_offset, range.0..=range.1).text("Position (mm)"),
+            );
 
             // --- Alignment type ---
             ui.horizontal(|ui| {
                 ui.label("Alignment:");
                 egui::ComboBox::from_id_salt("split_align")
                     .selected_text(match self.split_align_type {
-                        SplitAlignUi::None     => "None",
-                        SplitAlignUi::Pins     => "Pins & Sockets",
-                        SplitAlignUi::Groove   => "Tongue & Groove",
+                        SplitAlignUi::None => "None",
+                        SplitAlignUi::Pins => "Pins & Sockets",
+                        SplitAlignUi::Groove => "Tongue & Groove",
                         SplitAlignUi::Dovetail => "Dovetail",
                         SplitAlignUi::BoltHoles => "Bolt Holes",
                     })
                     .show_ui(ui, |ui| {
                         ui.selectable_value(&mut self.split_align_type, SplitAlignUi::None, "None");
-                        ui.selectable_value(&mut self.split_align_type, SplitAlignUi::Pins, "Pins & Sockets");
-                        ui.selectable_value(&mut self.split_align_type, SplitAlignUi::Groove, "Tongue & Groove");
-                        ui.selectable_value(&mut self.split_align_type, SplitAlignUi::Dovetail, "Dovetail");
-                        ui.selectable_value(&mut self.split_align_type, SplitAlignUi::BoltHoles, "Bolt Holes");
+                        ui.selectable_value(
+                            &mut self.split_align_type,
+                            SplitAlignUi::Pins,
+                            "Pins & Sockets",
+                        );
+                        ui.selectable_value(
+                            &mut self.split_align_type,
+                            SplitAlignUi::Groove,
+                            "Tongue & Groove",
+                        );
+                        ui.selectable_value(
+                            &mut self.split_align_type,
+                            SplitAlignUi::Dovetail,
+                            "Dovetail",
+                        );
+                        ui.selectable_value(
+                            &mut self.split_align_type,
+                            SplitAlignUi::BoltHoles,
+                            "Bolt Holes",
+                        );
                     });
             });
 
@@ -5913,25 +6863,58 @@ impl App {
             match self.split_align_type {
                 SplitAlignUi::None => {}
                 SplitAlignUi::Pins => {
-                    ui.add(egui::Slider::new(&mut self.split_pin_radius, 0.5..=5.0).text("Pin radius (mm)"));
-                    ui.add(egui::Slider::new(&mut self.split_pin_height, 1.0..=10.0).text("Pin height (mm)"));
+                    ui.add(
+                        egui::Slider::new(&mut self.split_pin_radius, 0.5..=5.0)
+                            .text("Pin radius (mm)"),
+                    );
+                    ui.add(
+                        egui::Slider::new(&mut self.split_pin_height, 1.0..=10.0)
+                            .text("Pin height (mm)"),
+                    );
                     ui.add(egui::Slider::new(&mut self.split_pin_count, 2..=8).text("Count"));
-                    ui.add(egui::Slider::new(&mut self.split_pattern_r, 2.0..=50.0).text("Pattern radius (mm)"));
+                    ui.add(
+                        egui::Slider::new(&mut self.split_pattern_r, 2.0..=50.0)
+                            .text("Pattern radius (mm)"),
+                    );
                 }
                 SplitAlignUi::Groove => {
-                    ui.add(egui::Slider::new(&mut self.split_groove_width, 2.0..=30.0).text("Width (mm)"));
-                    ui.add(egui::Slider::new(&mut self.split_groove_height, 1.0..=10.0).text("Height (mm)"));
+                    ui.add(
+                        egui::Slider::new(&mut self.split_groove_width, 2.0..=30.0)
+                            .text("Width (mm)"),
+                    );
+                    ui.add(
+                        egui::Slider::new(&mut self.split_groove_height, 1.0..=10.0)
+                            .text("Height (mm)"),
+                    );
                 }
                 SplitAlignUi::Dovetail => {
-                    ui.add(egui::Slider::new(&mut self.split_groove_width, 2.0..=30.0).text("Width (mm)"));
-                    ui.add(egui::Slider::new(&mut self.split_groove_height, 1.0..=10.0).text("Height (mm)"));
-                    ui.add(egui::Slider::new(&mut self.split_dovetail_angle, 5.0..=30.0).text("Angle (°)"));
+                    ui.add(
+                        egui::Slider::new(&mut self.split_groove_width, 2.0..=30.0)
+                            .text("Width (mm)"),
+                    );
+                    ui.add(
+                        egui::Slider::new(&mut self.split_groove_height, 1.0..=10.0)
+                            .text("Height (mm)"),
+                    );
+                    ui.add(
+                        egui::Slider::new(&mut self.split_dovetail_angle, 5.0..=30.0)
+                            .text("Angle (°)"),
+                    );
                 }
                 SplitAlignUi::BoltHoles => {
-                    ui.add(egui::Slider::new(&mut self.split_bolt_radius, 0.5..=5.0).text("Bolt radius (mm)"));
-                    ui.add(egui::Slider::new(&mut self.split_boss_radius, 1.0..=10.0).text("Boss radius (mm)"));
+                    ui.add(
+                        egui::Slider::new(&mut self.split_bolt_radius, 0.5..=5.0)
+                            .text("Bolt radius (mm)"),
+                    );
+                    ui.add(
+                        egui::Slider::new(&mut self.split_boss_radius, 1.0..=10.0)
+                            .text("Boss radius (mm)"),
+                    );
                     ui.add(egui::Slider::new(&mut self.split_bolt_count, 2..=8).text("Count"));
-                    ui.add(egui::Slider::new(&mut self.split_pattern_r, 2.0..=50.0).text("Pattern radius (mm)"));
+                    ui.add(
+                        egui::Slider::new(&mut self.split_pattern_r, 2.0..=50.0)
+                            .text("Pattern radius (mm)"),
+                    );
                 }
             }
 
@@ -5947,36 +6930,39 @@ impl App {
             let alignment: AlignmentFeature = match self.split_align_type {
                 SplitAlignUi::None => AlignmentFeature::None,
                 SplitAlignUi::Pins => AlignmentFeature::PinsAndSockets {
-                    pin_radius:       self.split_pin_radius,
-                    pin_height:       self.split_pin_height,
+                    pin_radius: self.split_pin_radius,
+                    pin_height: self.split_pin_height,
                     socket_clearance: 0.15,
-                    count:            self.split_pin_count,
-                    pattern_radius:   self.split_pattern_r,
+                    count: self.split_pin_count,
+                    pattern_radius: self.split_pattern_r,
                 },
                 SplitAlignUi::Groove => AlignmentFeature::TongueAndGroove {
-                    tongue_width:    self.split_groove_width,
-                    tongue_height:   self.split_groove_height,
+                    tongue_width: self.split_groove_width,
+                    tongue_height: self.split_groove_height,
                     groove_clearance: 0.15,
                 },
                 SplitAlignUi::Dovetail => AlignmentFeature::Dovetail {
-                    width:     self.split_groove_width,
-                    height:    self.split_groove_height,
+                    width: self.split_groove_width,
+                    height: self.split_groove_height,
                     angle_deg: self.split_dovetail_angle,
                     clearance: 0.15,
                 },
                 SplitAlignUi::BoltHoles => AlignmentFeature::BoltHoles {
-                    bolt_radius:    self.split_bolt_radius,
-                    boss_radius:    self.split_boss_radius,
-                    boss_height:    3.0,
-                    count:          self.split_bolt_count,
+                    bolt_radius: self.split_bolt_radius,
+                    boss_radius: self.split_boss_radius,
+                    boss_height: 3.0,
+                    count: self.split_bolt_count,
                     pattern_radius: self.split_pattern_r,
-                    countersink:    false,
+                    countersink: false,
                 },
             };
 
             ui.horizontal(|ui| {
                 let has_sdf = self.current_sdf.is_some();
-                if ui.add_enabled(has_sdf, egui::Button::new("Preview Split")).clicked() {
+                if ui
+                    .add_enabled(has_sdf, egui::Button::new("Preview Split"))
+                    .clicked()
+                {
                     if let Some(ref sdf) = self.current_sdf {
                         let result = split_body(Arc::clone(sdf), &plane, &alignment);
                         self.split_preview = Some((result.part_a, result.part_b));
@@ -5987,14 +6973,16 @@ impl App {
                     if ui.button("Verify Fit").clicked() {
                         if let Some(ref sdf) = self.current_sdf {
                             let result = split_body(Arc::clone(sdf), &plane, &alignment);
-                            let half_size = self.current_sdf_grid.as_ref()
+                            let half_size = self
+                                .current_sdf_grid
+                                .as_ref()
                                 .map(|g| (g.bounds_max - g.bounds_min).max_element() * 0.6)
                                 .unwrap_or(30.0);
                             self.split_fit_result = Some(verify_split_fit(&result, half_size));
                         }
                     }
                     if ui.button("Clear").clicked() {
-                        self.split_preview   = None;
+                        self.split_preview = None;
                         self.split_fit_result = None;
                     }
                 }
@@ -6011,31 +6999,41 @@ impl App {
                         ui.label(format!("  {}", w));
                     }
                 }
-                ui.label(format!("Interference: {:.3} mm³   Gap: {:.3} mm³",
-                    fit.interference_volume_mm3, fit.gap_volume_mm3));
+                ui.label(format!(
+                    "Interference: {:.3} mm³   Gap: {:.3} mm³",
+                    fit.interference_volume_mm3, fit.gap_volume_mm3
+                ));
             }
 
             // --- Preview info ---
             if let Some(ref _preview) = self.split_preview {
                 ui.add_space(4.0);
-                ui.colored_label(egui::Color32::from_rgb(100, 140, 220), "Part A (top/positive side)");
-                ui.colored_label(egui::Color32::from_rgb(220, 130, 60), "Part B (bottom/negative side)");
+                ui.colored_label(
+                    egui::Color32::from_rgb(100, 140, 220),
+                    "Part A (top/positive side)",
+                );
+                ui.colored_label(
+                    egui::Color32::from_rgb(220, 130, 60),
+                    "Part B (bottom/negative side)",
+                );
                 ui.label("Use split() in script to produce these as separate SdfHandles.");
             }
         });
     }
 
     fn start_print_analysis(&mut self) {
-        let Some(ref grid) = self.current_sdf_grid else { return };
-        let grid_clone    = Arc::clone(grid);
-        let settings      = self.print_analysis_settings.clone();
+        let Some(ref grid) = self.current_sdf_grid else {
+            return;
+        };
+        let grid_clone = Arc::clone(grid);
+        let settings = self.print_analysis_settings.clone();
         // Pass a thin-wall result if available for feature detection
         let thickness_opt = self.thickness_result.clone();
         let fea_stress: Option<Vec<f32>> = self.fea_result.as_ref().map(|r| r.von_mises.clone());
 
         let (tx, rx) = std::sync::mpsc::channel();
         self.print_analysis_receiver = Some(rx);
-        self.print_analysis_running  = true;
+        self.print_analysis_running = true;
 
         std::thread::spawn(move || {
             let result = crate::analysis::print_analysis::compute_print_analysis(
@@ -6049,13 +7047,15 @@ impl App {
     }
 
     fn start_thickness_analysis(&mut self) {
-        let Some(ref grid) = self.current_sdf_grid else { return };
-        let grid_clone     = Arc::clone(grid);
-        let max_display    = self.thickness_max_display;
+        let Some(ref grid) = self.current_sdf_grid else {
+            return;
+        };
+        let grid_clone = Arc::clone(grid);
+        let max_display = self.thickness_max_display;
 
         let (tx, rx) = std::sync::mpsc::channel::<ThicknessResult>();
         self.thickness_receiver = Some(rx);
-        self.thickness_running  = true;
+        self.thickness_running = true;
 
         std::thread::spawn(move || {
             let result = compute_thickness(&grid_clone, max_display);
@@ -6068,19 +7068,21 @@ impl App {
             self.error_message = Some("Run the script first to generate geometry.".into());
             return;
         };
-        let Some(ref grid) = self.current_sdf_grid else { return };
+        let Some(ref grid) = self.current_sdf_grid else {
+            return;
+        };
 
         self.fea_log.clear();
         self.fea_running = true;
 
         let pipeline = crate::fea::FEAPipeline {
-            sdf:          Arc::clone(sdf),
-            bounds_min:   grid.bounds_min,
-            bounds_max:   grid.bounds_max,
-            setup:        std::mem::take(&mut self.state.fea_setup),
-            config:       self.fea_config.clone(),
+            sdf: Arc::clone(sdf),
+            bounds_min: grid.bounds_min,
+            bounds_max: grid.bounds_max,
+            setup: std::mem::take(&mut self.state.fea_setup),
+            config: self.fea_config.clone(),
             ccx_override: self.settings.ccx_path.clone(),
-            layups:       self.current_layups.clone(),
+            layups: self.current_layups.clone(),
         };
 
         let (tx, rx) = std::sync::mpsc::channel::<crate::fea::FEAMessage>();
@@ -6100,7 +7102,9 @@ impl App {
         ui.add_enabled_ui(has_viz, |ui| {
             ui.checkbox(&mut self.fea_show_conditions, "Show FEA Conditions");
         });
-        if !has_viz { self.fea_show_conditions = false; }
+        if !has_viz {
+            self.fea_show_conditions = false;
+        }
 
         ui.separator();
 
@@ -6111,12 +7115,25 @@ impl App {
                 .selected_text(format!("{:?}", self.fea_config.material.preset))
                 .show_ui(ui, |ui| {
                     use crate::fea::MaterialPreset;
-                    for preset in [MaterialPreset::PLA, MaterialPreset::PETG, MaterialPreset::ABS,
-                                   MaterialPreset::CarbonFiber, MaterialPreset::Custom] {
+                    for preset in [
+                        MaterialPreset::PLA,
+                        MaterialPreset::PETG,
+                        MaterialPreset::ABS,
+                        MaterialPreset::CarbonFiber,
+                        MaterialPreset::Custom,
+                    ] {
                         let label = format!("{preset:?}");
-                        if ui.selectable_value(&mut self.fea_config.material.preset, preset.clone(), &label).clicked() {
+                        if ui
+                            .selectable_value(
+                                &mut self.fea_config.material.preset,
+                                preset.clone(),
+                                &label,
+                            )
+                            .clicked()
+                        {
                             if preset != MaterialPreset::Custom {
-                                self.fea_config.material = crate::fea::MaterialProperties::from_preset(preset);
+                                self.fea_config.material =
+                                    crate::fea::MaterialProperties::from_preset(preset);
                             }
                         }
                     }
@@ -6126,7 +7143,10 @@ impl App {
         // Mesh resolution
         ui.horizontal(|ui| {
             ui.label("Mesh resolution:");
-            ui.add(egui::Slider::new(&mut self.fea_config.mesh_resolution, 8..=64));
+            ui.add(egui::Slider::new(
+                &mut self.fea_config.mesh_resolution,
+                8..=64,
+            ));
         });
 
         ui.separator();
@@ -6136,10 +7156,13 @@ impl App {
         if self.fea_running {
             if ui.button("Cancel FEA").clicked() {
                 // Drop the receiver — the thread will finish but results are ignored
-                self.fea_receiver  = None;
-                self.fea_running   = false;
+                self.fea_receiver = None;
+                self.fea_running = false;
             }
-        } else if ui.add_enabled(has_sdf, egui::Button::new("Run FEA")).clicked() {
+        } else if ui
+            .add_enabled(has_sdf, egui::Button::new("Run FEA"))
+            .clicked()
+        {
             self.start_fea_analysis();
         }
 
@@ -6148,14 +7171,25 @@ impl App {
             ui.separator();
             ui.label(egui::RichText::new("Results").strong());
             ui.label(format!("Max Von Mises: {:.2} MPa", result.max_von_mises));
-            ui.label(format!("Max displacement: {:.4} mm", result.max_displacement));
+            ui.label(format!(
+                "Max displacement: {:.4} mm",
+                result.max_displacement
+            ));
 
             // Safety factor
             let yield_mpa = self.fea_config.material.yield_strength_mpa;
-            let sf = if result.max_von_mises > 0.0 { yield_mpa / result.max_von_mises } else { f32::INFINITY };
-            let sf_color = if sf >= 2.0 { egui::Color32::GREEN }
-                           else if sf >= 1.0 { egui::Color32::YELLOW }
-                           else { egui::Color32::RED };
+            let sf = if result.max_von_mises > 0.0 {
+                yield_mpa / result.max_von_mises
+            } else {
+                f32::INFINITY
+            };
+            let sf_color = if sf >= 2.0 {
+                egui::Color32::GREEN
+            } else if sf >= 1.0 {
+                egui::Color32::YELLOW
+            } else {
+                egui::Color32::RED
+            };
             ui.horizontal(|ui| {
                 ui.label("Safety factor:");
                 ui.colored_label(sf_color, format!("{sf:.2}"));
@@ -6167,10 +7201,14 @@ impl App {
             ui.horizontal(|ui| {
                 ui.selectable_value(&mut self.fea_overlay_mode, FEAOverlayMode::None, "Off");
                 ui.selectable_value(&mut self.fea_overlay_mode, FEAOverlayMode::Stress, "Stress");
-                ui.selectable_value(&mut self.fea_overlay_mode, FEAOverlayMode::Displacement, "Displacement");
+                ui.selectable_value(
+                    &mut self.fea_overlay_mode,
+                    FEAOverlayMode::Displacement,
+                    "Displacement",
+                );
             });
             if self.fea_overlay_mode != prev_mode && self.fea_overlay_mode != FEAOverlayMode::None {
-                self.fea_needs_upload = true;  // re-upload correct channel on mode change
+                self.fea_needs_upload = true; // re-upload correct channel on mode change
             }
 
             // Turning on FEA overlay turns off thickness overlay
@@ -6183,22 +7221,24 @@ impl App {
         if !self.fea_log.is_empty() {
             ui.separator();
             ui.label("Log:");
-            egui::ScrollArea::vertical().max_height(120.0).show(ui, |ui| {
-                for line in &self.fea_log {
-                    ui.label(egui::RichText::new(line).monospace().size(10.0));
-                }
-            });
+            egui::ScrollArea::vertical()
+                .max_height(120.0)
+                .show(ui, |ui| {
+                    for line in &self.fea_log {
+                        ui.label(egui::RichText::new(line).monospace().size(10.0));
+                    }
+                });
         }
 
         // Clear button
         if self.fea_result.is_some() {
             ui.separator();
             if ui.button("Clear Results").clicked() {
-                self.fea_result        = None;
-                self.fea_overlay_mode  = FEAOverlayMode::None;
-                self.fea_stress_field       = None;
+                self.fea_result = None;
+                self.fea_overlay_mode = FEAOverlayMode::None;
+                self.fea_stress_field = None;
                 self.fea_displacement_field = None;
-                self.fea_needs_upload  = false;
+                self.fea_needs_upload = false;
             }
         }
     }
@@ -6216,23 +7256,35 @@ impl App {
             .spacing([8.0, 4.0])
             .show(ui, |ui| {
                 ui.label("Airspeed (m/s):");
-                ui.add(egui::DragValue::new(&mut self.aero_airspeed_ms)
-                    .range(1.0..=400.0).speed(0.5));
+                ui.add(
+                    egui::DragValue::new(&mut self.aero_airspeed_ms)
+                        .range(1.0..=400.0)
+                        .speed(0.5),
+                );
                 ui.end_row();
 
                 ui.label("Altitude (m):");
-                ui.add(egui::DragValue::new(&mut self.aero_altitude_m)
-                    .range(0.0..=20000.0).speed(10.0));
+                ui.add(
+                    egui::DragValue::new(&mut self.aero_altitude_m)
+                        .range(0.0..=20000.0)
+                        .speed(10.0),
+                );
                 ui.end_row();
 
                 ui.label("AoA (deg):");
-                ui.add(egui::DragValue::new(&mut self.aero_aoa_deg)
-                    .range(-20.0..=25.0).speed(0.1));
+                ui.add(
+                    egui::DragValue::new(&mut self.aero_aoa_deg)
+                        .range(-20.0..=25.0)
+                        .speed(0.1),
+                );
                 ui.end_row();
 
                 // Density readout (computed from ISA).
                 let fc_preview = FlightCondition::new(
-                    self.aero_airspeed_ms, self.aero_altitude_m, self.aero_aoa_deg);
+                    self.aero_airspeed_ms,
+                    self.aero_altitude_m,
+                    self.aero_aoa_deg,
+                );
                 ui.label("Air density (kg/m³):");
                 ui.label(format!("{:.4}", fc_preview.air_density_kg_m3));
                 ui.end_row();
@@ -6245,11 +7297,14 @@ impl App {
 
         if ui.button("▶  Run Lifting Line").clicked() {
             if let Some(sdf) = self.current_sdf.clone() {
-                let fc  = FlightCondition::new(
-                    self.aero_airspeed_ms, self.aero_altitude_m, self.aero_aoa_deg);
-                let db  = PolarDatabase::new();
+                let fc = FlightCondition::new(
+                    self.aero_airspeed_ms,
+                    self.aero_altitude_m,
+                    self.aero_aoa_deg,
+                );
+                let db = PolarDatabase::new();
                 let res = solve_lifting_line(&sdf, &db, &fc, 20);
-                self.current_flight_condition    = Some(fc);
+                self.current_flight_condition = Some(fc);
                 self.current_lifting_line_result = Some(res);
             } else {
                 ui.label("⚠ No SDF loaded — run script first.");
@@ -6264,11 +7319,21 @@ impl App {
                 .num_columns(2)
                 .spacing([8.0, 4.0])
                 .show(ui, |ui| {
-                    ui.label("CL:");      ui.label(format!("{:.4}", res.cl_total));        ui.end_row();
-                    ui.label("CDi:");     ui.label(format!("{:.5}", res.cd_induced));      ui.end_row();
-                    ui.label("Oswald e:"); ui.label(format!("{:.4}", res.oswald_efficiency)); ui.end_row();
-                    ui.label("Lift (N):");  ui.label(format!("{:.2}", res.lift_total_n));  ui.end_row();
-                    ui.label("Di (N):");    ui.label(format!("{:.3}", res.induced_drag_total_n)); ui.end_row();
+                    ui.label("CL:");
+                    ui.label(format!("{:.4}", res.cl_total));
+                    ui.end_row();
+                    ui.label("CDi:");
+                    ui.label(format!("{:.5}", res.cd_induced));
+                    ui.end_row();
+                    ui.label("Oswald e:");
+                    ui.label(format!("{:.4}", res.oswald_efficiency));
+                    ui.end_row();
+                    ui.label("Lift (N):");
+                    ui.label(format!("{:.2}", res.lift_total_n));
+                    ui.end_row();
+                    ui.label("Di (N):");
+                    ui.label(format!("{:.3}", res.induced_drag_total_n));
+                    ui.end_row();
                 });
 
             // Stall warnings.
@@ -6277,7 +7342,10 @@ impl App {
             }
             if !res.stall_stations.is_empty() {
                 let label = if res.root_stall_first {
-                    format!("⚠ Stall at {} stations (root first)", res.stall_stations.len())
+                    format!(
+                        "⚠ Stall at {} stations (root first)",
+                        res.stall_stations.len()
+                    )
                 } else {
                     format!("⚠ Stall at {} stations", res.stall_stations.len())
                 };
@@ -6291,19 +7359,24 @@ impl App {
             ui.label("Spanwise CL distribution:");
             let n = res.span_stations.len();
             if n > 0 {
-                let cl_max = res.local_cl.iter().cloned().fold(0.0_f32, f32::max).max(0.1);
-                let bar_w  = (ui.available_width() / n as f32).max(2.0);
-                let bar_h  = 60.0;
+                let cl_max = res
+                    .local_cl
+                    .iter()
+                    .cloned()
+                    .fold(0.0_f32, f32::max)
+                    .max(0.1);
+                let bar_w = (ui.available_width() / n as f32).max(2.0);
+                let bar_h = 60.0;
                 let (resp, painter) = ui.allocate_painter(
                     egui::Vec2::new(ui.available_width(), bar_h),
                     egui::Sense::hover(),
                 );
                 let rect = resp.rect;
                 for i in 0..n {
-                    let x_frac  = i as f32 / n as f32;
+                    let x_frac = i as f32 / n as f32;
                     let cl_frac = (res.local_cl[i] / cl_max).clamp(0.0, 1.0);
-                    let margin  = res.stall_margin[i];
-                    let color   = if margin < 0.0 {
+                    let margin = res.stall_margin[i];
+                    let color = if margin < 0.0 {
                         egui::Color32::from_rgb(200, 50, 50)
                     } else if margin < 0.3 {
                         egui::Color32::from_rgb(200, 160, 30)
@@ -6314,14 +7387,17 @@ impl App {
                     let x1 = x0 + bar_w;
                     let y1 = rect.bottom();
                     let y0 = y1 - cl_frac * bar_h;
-                    painter.rect_filled(egui::Rect::from_min_max(
-                        egui::Pos2::new(x0, y0), egui::Pos2::new(x1, y1)), 0.0, color);
+                    painter.rect_filled(
+                        egui::Rect::from_min_max(egui::Pos2::new(x0, y0), egui::Pos2::new(x1, y1)),
+                        0.0,
+                        color,
+                    );
                 }
             }
 
             if ui.button("Clear").clicked() {
                 self.current_lifting_line_result = None;
-                self.current_flight_condition    = None;
+                self.current_flight_condition = None;
             }
         }
 
@@ -6334,8 +7410,11 @@ impl App {
             .spacing([8.0, 4.0])
             .show(ui, |ui| {
                 ui.label("CG x (mm):");
-                ui.add(egui::DragValue::new(&mut self.aero_cg_x_mm)
-                    .range(-1000.0..=5000.0).speed(1.0));
+                ui.add(
+                    egui::DragValue::new(&mut self.aero_cg_x_mm)
+                        .range(-1000.0..=5000.0)
+                        .speed(1.0),
+                );
                 ui.end_row();
             });
 
@@ -6343,15 +7422,18 @@ impl App {
             if let Some(sdf) = self.current_sdf.clone() {
                 use crate::aero::{PolarDatabase, compute_neutral_point, compute_static_margin};
                 use crate::sdf::query::bounding_points;
-                let fc   = FlightCondition::new(
-                    self.aero_airspeed_ms, self.aero_altitude_m, self.aero_aoa_deg);
-                let db   = PolarDatabase::new();
-                let np   = compute_neutral_point(&sdf, &sdf, &sdf, &db, &fc);
+                let fc = FlightCondition::new(
+                    self.aero_airspeed_ms,
+                    self.aero_altitude_m,
+                    self.aero_aoa_deg,
+                );
+                let db = PolarDatabase::new();
+                let np = compute_neutral_point(&sdf, &sdf, &sdf, &db, &fc);
                 let bbox = bounding_points(sdf.as_ref());
                 let root_chord = bbox.size.x;
-                let mac  = (root_chord + root_chord * 0.5) * 0.5;
-                let cg   = glam::Vec3::new(self.aero_cg_x_mm, 0.0, 0.0);
-                let sm   = compute_static_margin(&np, cg, mac);
+                let mac = (root_chord + root_chord * 0.5) * 0.5;
+                let cg = glam::Vec3::new(self.aero_cg_x_mm, 0.0, 0.0);
+                let sm = compute_static_margin(&np, cg, mac);
                 self.current_neutral_point = Some(np);
                 self.current_static_margin = Some(sm);
                 self.current_flight_condition = Some(fc);
@@ -6366,34 +7448,59 @@ impl App {
                     .num_columns(2)
                     .spacing([8.0, 4.0])
                     .show(ui, |ui| {
-                        ui.label("NP x (mm):"); ui.label(format!("{:.1}", np.neutral_point_x_mm)); ui.end_row();
-                        ui.label("Wing AC (mm):"); ui.label(format!("{:.1}", np.wing_ac_x_mm)); ui.end_row();
-                        ui.label("Tail AC (mm):"); ui.label(format!("{:.1}", np.htail_ac_x_mm)); ui.end_row();
-                        ui.label("CG (mm):"); ui.label(format!("{:.1}", sm.cg_x_mm)); ui.end_row();
-                        ui.label("Static Margin:"); ui.label(format!("{:.1}% MAC", sm.static_margin_mac * 100.0)); ui.end_row();
-                        ui.label("CG Range:"); ui.label(format!("{:.1}–{:.1} mm ({:.1} mm)", sm.cg_forward_limit_mm, sm.cg_aft_limit_mm, sm.cg_range_mm)); ui.end_row();
+                        ui.label("NP x (mm):");
+                        ui.label(format!("{:.1}", np.neutral_point_x_mm));
+                        ui.end_row();
+                        ui.label("Wing AC (mm):");
+                        ui.label(format!("{:.1}", np.wing_ac_x_mm));
+                        ui.end_row();
+                        ui.label("Tail AC (mm):");
+                        ui.label(format!("{:.1}", np.htail_ac_x_mm));
+                        ui.end_row();
+                        ui.label("CG (mm):");
+                        ui.label(format!("{:.1}", sm.cg_x_mm));
+                        ui.end_row();
+                        ui.label("Static Margin:");
+                        ui.label(format!("{:.1}% MAC", sm.static_margin_mac * 100.0));
+                        ui.end_row();
+                        ui.label("CG Range:");
+                        ui.label(format!(
+                            "{:.1}–{:.1} mm ({:.1} mm)",
+                            sm.cg_forward_limit_mm, sm.cg_aft_limit_mm, sm.cg_range_mm
+                        ));
+                        ui.end_row();
                     });
 
                 // Stability badge.
                 let (badge_color, badge_text) = match sm.stability_category {
-                    crate::aero::StabilityCategory::VeryStable => (egui::Color32::from_rgb(40, 160, 80),  "Very Stable"),
-                    crate::aero::StabilityCategory::Stable     => (egui::Color32::from_rgb(80, 200, 80),  "Stable"),
-                    crate::aero::StabilityCategory::Marginal   => (egui::Color32::from_rgb(200, 160, 30), "Marginal"),
-                    crate::aero::StabilityCategory::Neutral    => (egui::Color32::from_rgb(200, 100, 30), "Neutral"),
-                    crate::aero::StabilityCategory::Unstable   => (egui::Color32::from_rgb(200, 50, 50),  "Unstable"),
+                    crate::aero::StabilityCategory::VeryStable => {
+                        (egui::Color32::from_rgb(40, 160, 80), "Very Stable")
+                    }
+                    crate::aero::StabilityCategory::Stable => {
+                        (egui::Color32::from_rgb(80, 200, 80), "Stable")
+                    }
+                    crate::aero::StabilityCategory::Marginal => {
+                        (egui::Color32::from_rgb(200, 160, 30), "Marginal")
+                    }
+                    crate::aero::StabilityCategory::Neutral => {
+                        (egui::Color32::from_rgb(200, 100, 30), "Neutral")
+                    }
+                    crate::aero::StabilityCategory::Unstable => {
+                        (egui::Color32::from_rgb(200, 50, 50), "Unstable")
+                    }
                 };
                 ui.colored_label(badge_color, badge_text);
 
                 // CG position bar (painter-based, no egui_plot needed).
                 let bar_w = ui.available_width();
                 let bar_h = 18.0;
-                let (resp, painter) = ui.allocate_painter(
-                    egui::Vec2::new(bar_w, bar_h), egui::Sense::hover());
+                let (resp, painter) =
+                    ui.allocate_painter(egui::Vec2::new(bar_w, bar_h), egui::Sense::hover());
                 let rect = resp.rect;
                 let x_min_vis = sm.cg_forward_limit_mm - 20.0;
                 let x_max_vis = np.htail_ac_x_mm + 20.0;
-                let x_range   = (x_max_vis - x_min_vis).max(1.0);
-                let to_screen  = |x: f32| rect.left() + (x - x_min_vis) / x_range * rect.width();
+                let x_range = (x_max_vis - x_min_vis).max(1.0);
+                let to_screen = |x: f32| rect.left() + (x - x_min_vis) / x_range * rect.width();
 
                 // Background bar.
                 painter.rect_filled(rect, 2.0, egui::Color32::from_gray(40));
@@ -6401,13 +7508,22 @@ impl App {
                 let x0 = to_screen(sm.cg_forward_limit_mm).clamp(rect.left(), rect.right());
                 let x1 = to_screen(sm.cg_aft_limit_mm).clamp(rect.left(), rect.right());
                 painter.rect_filled(
-                    egui::Rect::from_min_max(egui::Pos2::new(x0, rect.top()), egui::Pos2::new(x1, rect.bottom())),
-                    0.0, egui::Color32::from_rgba_unmultiplied(80, 180, 80, 80));
+                    egui::Rect::from_min_max(
+                        egui::Pos2::new(x0, rect.top()),
+                        egui::Pos2::new(x1, rect.bottom()),
+                    ),
+                    0.0,
+                    egui::Color32::from_rgba_unmultiplied(80, 180, 80, 80),
+                );
                 // NP marker (blue line).
                 let xnp = to_screen(np.neutral_point_x_mm).clamp(rect.left(), rect.right());
                 painter.line_segment(
-                    [egui::Pos2::new(xnp, rect.top()), egui::Pos2::new(xnp, rect.bottom())],
-                    egui::Stroke::new(2.0, egui::Color32::from_rgb(100, 160, 255)));
+                    [
+                        egui::Pos2::new(xnp, rect.top()),
+                        egui::Pos2::new(xnp, rect.bottom()),
+                    ],
+                    egui::Stroke::new(2.0, egui::Color32::from_rgb(100, 160, 255)),
+                );
                 // CG marker (orange triangle).
                 let xcg = to_screen(sm.cg_x_mm).clamp(rect.left(), rect.right());
                 let mid_y = rect.center().y;
@@ -6432,28 +7548,36 @@ impl App {
             .spacing([8.0, 4.0])
             .show(ui, |ui| {
                 ui.label("Weight (N):");
-                ui.add(egui::DragValue::new(&mut self.aero_weight_n)
-                    .range(0.1..=10000.0).speed(0.1));
+                ui.add(
+                    egui::DragValue::new(&mut self.aero_weight_n)
+                        .range(0.1..=10000.0)
+                        .speed(0.1),
+                );
                 ui.end_row();
             });
 
         if ui.button("▶  Run Trim Analysis").clicked() {
             if let Some(sdf) = self.current_sdf.clone() {
-                use crate::aero::{PolarDatabase, compute_neutral_point, compute_static_margin, compute_trim};
+                use crate::aero::{
+                    PolarDatabase, compute_neutral_point, compute_static_margin, compute_trim,
+                };
                 use crate::sdf::query::bounding_points;
-                let fc   = FlightCondition::new(
-                    self.aero_airspeed_ms, self.aero_altitude_m, self.aero_aoa_deg);
-                let db   = PolarDatabase::new();
-                let np   = compute_neutral_point(&sdf, &sdf, &sdf, &db, &fc);
+                let fc = FlightCondition::new(
+                    self.aero_airspeed_ms,
+                    self.aero_altitude_m,
+                    self.aero_aoa_deg,
+                );
+                let db = PolarDatabase::new();
+                let np = compute_neutral_point(&sdf, &sdf, &sdf, &db, &fc);
                 let bbox = bounding_points(sdf.as_ref());
                 let root_chord = bbox.size.x;
-                let mac  = (root_chord + root_chord * 0.5) * 0.5;
-                let cg   = glam::Vec3::new(self.aero_cg_x_mm, 0.0, 0.0);
-                let sm   = compute_static_margin(&np, cg, mac);
+                let mac = (root_chord + root_chord * 0.5) * 0.5;
+                let cg = glam::Vec3::new(self.aero_cg_x_mm, 0.0, 0.0);
+                let sm = compute_static_margin(&np, cg, mac);
                 let trim = compute_trim(&np, &sm, &sdf, &sdf, &sdf, &db, &fc, self.aero_weight_n);
                 self.current_neutral_point = Some(np);
                 self.current_static_margin = Some(sm);
-                self.current_trim_result   = Some(trim);
+                self.current_trim_result = Some(trim);
                 self.current_flight_condition = Some(fc);
             } else {
                 ui.label("⚠ No SDF loaded — run script first.");
@@ -6465,15 +7589,26 @@ impl App {
                 .num_columns(2)
                 .spacing([8.0, 4.0])
                 .show(ui, |ui| {
-                    ui.label("Trim AoA:");  ui.label(format!("{:.1}°", trim.trim_aoa_deg)); ui.end_row();
-                    ui.label("Trim CL:");   ui.label(format!("{:.3}", trim.trim_cl)); ui.end_row();
-                    ui.label("Trim Speed:"); ui.label(format!("{:.1} m/s", trim.trim_airspeed_ms)); ui.end_row();
-                    ui.label("Stall Margin:"); ui.label(format!("{:.1}°", trim.trim_margin_deg)); ui.end_row();
+                    ui.label("Trim AoA:");
+                    ui.label(format!("{:.1}°", trim.trim_aoa_deg));
+                    ui.end_row();
+                    ui.label("Trim CL:");
+                    ui.label(format!("{:.3}", trim.trim_cl));
+                    ui.end_row();
+                    ui.label("Trim Speed:");
+                    ui.label(format!("{:.1} m/s", trim.trim_airspeed_ms));
+                    ui.end_row();
+                    ui.label("Stall Margin:");
+                    ui.label(format!("{:.1}°", trim.trim_margin_deg));
+                    ui.end_row();
                 });
             if trim.is_trimmed {
                 ui.colored_label(egui::Color32::from_rgb(60, 180, 60), "✓ Trim found");
             } else {
-                ui.colored_label(egui::Color32::from_rgb(200, 140, 30), "⚠ Approx trim (no zero crossing)");
+                ui.colored_label(
+                    egui::Color32::from_rgb(200, 140, 30),
+                    "⚠ Approx trim (no zero crossing)",
+                );
             }
         }
 
@@ -6484,10 +7619,14 @@ impl App {
         if ui.button("▶  Run Drag Polar").clicked() {
             if let Some(sdf) = self.current_sdf.clone() {
                 use crate::aero::{PolarDatabase, compute_drag_polar};
-                let fc     = FlightCondition::new(
-                    self.aero_airspeed_ms, self.aero_altitude_m, self.aero_aoa_deg);
-                let db     = PolarDatabase::new();
-                let result = compute_drag_polar(&sdf, &sdf, &sdf, &sdf, &db, &fc, Some(self.aero_weight_n));
+                let fc = FlightCondition::new(
+                    self.aero_airspeed_ms,
+                    self.aero_altitude_m,
+                    self.aero_aoa_deg,
+                );
+                let db = PolarDatabase::new();
+                let result =
+                    compute_drag_polar(&sdf, &sdf, &sdf, &sdf, &db, &fc, Some(self.aero_weight_n));
                 self.current_drag_polar = Some(result);
                 self.current_flight_condition = Some(fc);
             } else {
@@ -6500,14 +7639,30 @@ impl App {
                 .num_columns(2)
                 .spacing([8.0, 4.0])
                 .show(ui, |ui| {
-                    ui.label("CD0:");       ui.label(format!("{:.4}", dp.cd0)); ui.end_row();
-                    ui.label("k:");         ui.label(format!("{:.4}", dp.k)); ui.end_row();
-                    ui.label("L/D max:");   ui.label(format!("{:.1}", dp.ld_max)); ui.end_row();
-                    ui.label("Best glide:"); ui.label(format!("{:.1} m/s", dp.best_glide_airspeed_ms)); ui.end_row();
-                    ui.label("  Wing:");    ui.label(format!("{:.4}", dp.cd0_breakdown.wing)); ui.end_row();
-                    ui.label("  Fuselage:"); ui.label(format!("{:.4}", dp.cd0_breakdown.fuselage)); ui.end_row();
-                    ui.label("  H-tail:");  ui.label(format!("{:.4}", dp.cd0_breakdown.h_tail)); ui.end_row();
-                    ui.label("  V-tail:");  ui.label(format!("{:.4}", dp.cd0_breakdown.v_tail)); ui.end_row();
+                    ui.label("CD0:");
+                    ui.label(format!("{:.4}", dp.cd0));
+                    ui.end_row();
+                    ui.label("k:");
+                    ui.label(format!("{:.4}", dp.k));
+                    ui.end_row();
+                    ui.label("L/D max:");
+                    ui.label(format!("{:.1}", dp.ld_max));
+                    ui.end_row();
+                    ui.label("Best glide:");
+                    ui.label(format!("{:.1} m/s", dp.best_glide_airspeed_ms));
+                    ui.end_row();
+                    ui.label("  Wing:");
+                    ui.label(format!("{:.4}", dp.cd0_breakdown.wing));
+                    ui.end_row();
+                    ui.label("  Fuselage:");
+                    ui.label(format!("{:.4}", dp.cd0_breakdown.fuselage));
+                    ui.end_row();
+                    ui.label("  H-tail:");
+                    ui.label(format!("{:.4}", dp.cd0_breakdown.h_tail));
+                    ui.end_row();
+                    ui.label("  V-tail:");
+                    ui.label(format!("{:.4}", dp.cd0_breakdown.v_tail));
+                    ui.end_row();
                 });
 
             // Simple text table of polar points (no egui_plot dependency).
@@ -6518,8 +7673,12 @@ impl App {
                 .id_salt("drag_polar_scroll")
                 .show(ui, |ui| {
                     for (cl, cd) in &dp.polar_points {
-                        ui.label(format!("CL={:.3}  CD={:.5}  L/D={:.1}",
-                            cl, cd, if *cd > 0.0 { *cl / *cd } else { 0.0 }));
+                        ui.label(format!(
+                            "CL={:.3}  CD={:.5}  L/D={:.1}",
+                            cl,
+                            cd,
+                            if *cd > 0.0 { *cl / *cd } else { 0.0 }
+                        ));
                     }
                 });
         }
@@ -6533,9 +7692,9 @@ impl App {
             ui.separator();
             ui.heading("Flight Envelope Summary");
 
-            let sm   = self.current_static_margin.as_ref().unwrap();
+            let sm = self.current_static_margin.as_ref().unwrap();
             let trim = self.current_trim_result.as_ref().unwrap();
-            let dp   = self.current_drag_polar.as_ref().unwrap();
+            let dp = self.current_drag_polar.as_ref().unwrap();
 
             // Stall speed from CL_max.
             let db = PolarDatabase::new();
@@ -6543,14 +7702,15 @@ impl App {
                 use crate::sdf::query::bounding_points;
                 let bbox = bounding_points(sdf.as_ref());
                 let root_chord = bbox.size.x;
-                let mac  = (root_chord + root_chord * 0.5) * 0.5;
-                let b_m  = bbox.size.y / 1000.0;
+                let mac = (root_chord + root_chord * 0.5) * 0.5;
+                let b_m = bbox.size.y / 1000.0;
                 let s_m2 = b_m * mac / 1000.0;
-                let fc   = FlightCondition::new(self.aero_airspeed_ms, self.aero_altitude_m, 0.0);
-                let polar = db.get_interpolated("NACA 0012", fc.reynolds_for_chord(mac))
+                let fc = FlightCondition::new(self.aero_airspeed_ms, self.aero_altitude_m, 0.0);
+                let polar = db
+                    .get_interpolated("NACA 0012", fc.reynolds_for_chord(mac))
                     .or_else(|| db.get_interpolated("NACA 0012", 500_000.0));
                 if let Some(ref p) = polar {
-                    let rho  = fc.air_density_kg_m3;
+                    let rho = fc.air_density_kg_m3;
                     let v_stall = if s_m2 > 1e-9 && p.cl_max > 0.0 {
                         (2.0 * self.aero_weight_n / (rho * s_m2 * p.cl_max)).sqrt()
                     } else {
@@ -6564,7 +7724,10 @@ impl App {
                             ui.label(format!("{:.1} m/s  ({:.0} km/h)", v_stall, v_stall * 3.6));
                             ui.end_row();
                             ui.label("Best L/D:");
-                            ui.label(format!("{:.1} at {:.1} m/s", dp.ld_max, dp.best_glide_airspeed_ms));
+                            ui.label(format!(
+                                "{:.1} at {:.1} m/s",
+                                dp.ld_max, dp.best_glide_airspeed_ms
+                            ));
                             ui.end_row();
                             ui.label("Static Margin:");
                             let sm_pct = sm.static_margin_mac * 100.0;
@@ -6579,7 +7742,10 @@ impl App {
                             ui.label(format!("{:.1}°", trim.trim_aoa_deg));
                             ui.end_row();
                             ui.label("CG Range:");
-                            ui.label(format!("{:.1}–{:.1} mm", sm.cg_forward_limit_mm, sm.cg_aft_limit_mm));
+                            ui.label(format!(
+                                "{:.1}–{:.1} mm",
+                                sm.cg_forward_limit_mm, sm.cg_aft_limit_mm
+                            ));
                             ui.end_row();
                         });
                 }
@@ -6609,13 +7775,10 @@ impl App {
                 for comp in &result.component_sensitivities {
                     ui.horizontal(|ui| {
                         let bar_w = (comp.influence_fraction * 160.0).max(4.0);
-                        let (rect, _) = ui.allocate_exact_size(
-                            egui::vec2(bar_w, 10.0),
-                            egui::Sense::hover(),
-                        );
-                        ui.painter().rect_filled(
-                            rect, 2.0, egui::Color32::from_rgb(100, 150, 220),
-                        );
+                        let (rect, _) =
+                            ui.allocate_exact_size(egui::vec2(bar_w, 10.0), egui::Sense::hover());
+                        ui.painter()
+                            .rect_filled(rect, 2.0, egui::Color32::from_rgb(100, 150, 220));
                         ui.label(format!(
                             "{}: {:.0}%",
                             comp.component_name,
@@ -6690,9 +7853,11 @@ impl App {
 
                 for pair in &result.pairs {
                     let color = match pair.severity {
-                        crate::analysis::InterferenceSeverity::Critical  => egui::Color32::RED,
-                        crate::analysis::InterferenceSeverity::Moderate  => egui::Color32::from_rgb(220, 120, 0),
-                        crate::analysis::InterferenceSeverity::Minor     => egui::Color32::YELLOW,
+                        crate::analysis::InterferenceSeverity::Critical => egui::Color32::RED,
+                        crate::analysis::InterferenceSeverity::Moderate => {
+                            egui::Color32::from_rgb(220, 120, 0)
+                        }
+                        crate::analysis::InterferenceSeverity::Minor => egui::Color32::YELLOW,
                         crate::analysis::InterferenceSeverity::Negligible => egui::Color32::GRAY,
                     };
                     ui.colored_label(color, &pair.description);
@@ -6719,12 +7884,12 @@ impl App {
         ui.separator();
         if ui.button("Clear All Aero Results").clicked() {
             self.current_lifting_line_result = None;
-            self.current_flight_condition    = None;
-            self.current_neutral_point       = None;
-            self.current_static_margin       = None;
-            self.current_trim_result         = None;
-            self.current_drag_polar          = None;
-            self.current_cg_sensitivity      = None;
+            self.current_flight_condition = None;
+            self.current_neutral_point = None;
+            self.current_static_margin = None;
+            self.current_trim_result = None;
+            self.current_drag_polar = None;
+            self.current_cg_sensitivity = None;
             self.current_interference_result = None;
         }
     }

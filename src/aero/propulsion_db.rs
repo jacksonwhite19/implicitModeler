@@ -1,7 +1,7 @@
 // Propulsion database: motor specs, prop specs, and recommendation engine.
 #![allow(dead_code)] // Propulsion data model — not all methods called in current UI
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MotorSpec {
@@ -364,9 +364,8 @@ impl PropulsionDatabase {
                     let thrust_margin_score =
                         ((static_thrust_n - required_thrust_n) / required_thrust_n).clamp(0.0, 1.0);
                     let weight_score = (1.0 - (motor.weight_g / max_weight_g)).clamp(0.0, 1.0);
-                    let score = 0.4 * cruise_efficiency
-                        + 0.3 * thrust_margin_score
-                        + 0.3 * weight_score;
+                    let score =
+                        0.4 * cruise_efficiency + 0.3 * thrust_margin_score + 0.3 * weight_score;
 
                     candidates.push(MotorPropRecommendation {
                         motor: motor.clone(),
@@ -383,7 +382,11 @@ impl PropulsionDatabase {
         }
 
         // Sort by score descending, return top 5
-        candidates.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
+        candidates.sort_by(|a, b| {
+            b.score
+                .partial_cmp(&a.score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
         candidates.truncate(5);
         candidates
     }

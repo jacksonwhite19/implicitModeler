@@ -1,7 +1,7 @@
 // Gradient and spatial variation fields
 
-use glam::Vec3;
 use super::Field;
+use glam::Vec3;
 
 /// Linear gradient field between two points
 /// Interpolates from start_value at start_point to end_value at end_point
@@ -217,18 +217,15 @@ mod tests {
 
         // Points perpendicular to gradient line should project to nearest point on line
         let val = field.evaluate(Vec3::new(5.0, 100.0, 0.0));
-        assert!((val - 5.0).abs() < 0.01, "Perpendicular point should project to midpoint");
+        assert!(
+            (val - 5.0).abs() < 0.01,
+            "Perpendicular point should project to midpoint"
+        );
     }
 
     #[test]
     fn test_radial_field_spherical() {
-        let field = RadialField::new(
-            Vec3::ZERO,
-            0.0,
-            10.0,
-            0.0,
-            10.0,
-        );
+        let field = RadialField::new(Vec3::ZERO, 0.0, 10.0, 0.0, 10.0);
 
         // At center
         assert_eq!(field.evaluate(Vec3::ZERO), 0.0);
@@ -245,7 +242,11 @@ mod tests {
         let val_x = field.evaluate(Vec3::new(5.0, 0.0, 0.0));
         let val_y = field.evaluate(Vec3::new(0.0, 5.0, 0.0));
         let val_z = field.evaluate(Vec3::new(0.0, 0.0, 5.0));
-        let val_diag = field.evaluate(Vec3::new(5.0 / 3f32.sqrt(), 5.0 / 3f32.sqrt(), 5.0 / 3f32.sqrt()));
+        let val_diag = field.evaluate(Vec3::new(
+            5.0 / 3f32.sqrt(),
+            5.0 / 3f32.sqrt(),
+            5.0 / 3f32.sqrt(),
+        ));
 
         assert!((val_x - val_y).abs() < 0.01);
         assert!((val_y - val_z).abs() < 0.01);
@@ -282,13 +283,7 @@ mod tests {
 
     #[test]
     fn test_radial_field_offset_center() {
-        let field = RadialField::new(
-            Vec3::new(10.0, 20.0, 30.0),
-            0.0,
-            5.0,
-            0.0,
-            5.0,
-        );
+        let field = RadialField::new(Vec3::new(10.0, 20.0, 30.0), 0.0, 5.0, 0.0, 5.0);
 
         // At center
         assert_eq!(field.evaluate(Vec3::new(10.0, 20.0, 30.0)), 0.0);
@@ -366,12 +361,7 @@ mod tests {
     #[test]
     fn test_gradient_field_descending() {
         // Test gradient that goes from high to low
-        let field = GradientField::new(
-            Vec3::ZERO,
-            Vec3::new(10.0, 0.0, 0.0),
-            10.0,
-            0.0,
-        );
+        let field = GradientField::new(Vec3::ZERO, Vec3::new(10.0, 0.0, 0.0), 10.0, 0.0);
 
         assert_eq!(field.evaluate(Vec3::ZERO), 10.0);
         assert_eq!(field.evaluate(Vec3::new(10.0, 0.0, 0.0)), 0.0);

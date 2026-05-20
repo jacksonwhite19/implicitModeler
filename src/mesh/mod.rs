@@ -18,11 +18,14 @@ pub struct Mesh {
     pub indices: Vec<u32>,
 }
 
-pub mod marching_cubes;
 pub mod adaptive_mc;
+pub mod marching_cubes;
+pub mod transvoxel;
 pub use adaptive_mc::MeshQuality;
+pub mod quality;
+pub use quality::{MeshQualityReport, analyze_mesh_quality, analyze_triangle_mesh_quality};
 pub mod import;
-pub use import::{TriangleMesh, parse_stl, parse_obj};
+pub use import::{TriangleMesh, parse_obj, parse_stl};
 
 /// Compute signed mesh volume using the divergence theorem (signed tetrahedral volumes).
 /// Units match the scene units cubed (mm³ if scene is in mm).

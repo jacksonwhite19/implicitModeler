@@ -1,15 +1,16 @@
 // FEA module: voxel meshing → CalculiX → result fields.
 
-pub mod setup;
-pub mod meshing;
-pub mod inp;
-pub mod frd;
 pub mod calculix;
+pub mod frd;
+pub mod inp;
+pub mod meshing;
 pub mod pipeline;
+pub mod setup;
 pub mod viz;
 
-pub use setup::{FEASetup, FEAConfig, FEARegion, FEAAxisRegion, FEAForceRegion,
-                FEAPressureRegion, FEATorqueRegion, FEAMotorRegion,
-                MaterialPreset, MaterialProperties};
-pub use pipeline::{FEAPipeline, FEAGridResult, FEAMessage, GridField};
+pub use pipeline::{FEAGridResult, FEAMessage, FEAPipeline, GridField};
+pub use setup::{
+    FEAAxisRegion, FEAConfig, FEAForceRegion, FEAMotorRegion, FEAPressureRegion, FEARegion,
+    FEASetup, FEATorqueRegion, MaterialPreset, MaterialProperties,
+};
 pub use viz::{FEAVizData, compute_fea_viz};

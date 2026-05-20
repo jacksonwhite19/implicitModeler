@@ -1,8 +1,8 @@
 // Grid rendering for spatial reference
 
+use super::camera::Camera;
 use eframe::wgpu;
 use wgpu::util::DeviceExt;
-use super::camera::Camera;
 
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -149,12 +149,20 @@ impl GridRenderer {
             let pos = i as f32 * step;
 
             // Lines parallel to X axis
-            vertices.push(GridVertex { position: [-size, pos, 0.0] });
-            vertices.push(GridVertex { position: [size, pos, 0.0] });
+            vertices.push(GridVertex {
+                position: [-size, pos, 0.0],
+            });
+            vertices.push(GridVertex {
+                position: [size, pos, 0.0],
+            });
 
             // Lines parallel to Y axis
-            vertices.push(GridVertex { position: [pos, -size, 0.0] });
-            vertices.push(GridVertex { position: [pos, size, 0.0] });
+            vertices.push(GridVertex {
+                position: [pos, -size, 0.0],
+            });
+            vertices.push(GridVertex {
+                position: [pos, size, 0.0],
+            });
         }
 
         vertices

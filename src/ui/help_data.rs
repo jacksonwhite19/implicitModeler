@@ -31,38 +31,84 @@ impl FunctionStatus {
     pub fn note(self) -> Option<&'static str> {
         match self {
             FunctionStatus::Stable => None,
-            FunctionStatus::Experimental => Some("Experimental functions are implemented, but their behavior and output contracts may still change."),
-            FunctionStatus::Legacy => Some("Legacy functions remain for older scripts and examples. Prefer the newer canonical API when starting new work."),
+            FunctionStatus::Experimental => Some(
+                "Experimental functions are implemented, but their behavior and output contracts may still change.",
+            ),
+            FunctionStatus::Legacy => Some(
+                "Legacy functions remain for older scripts and examples. Prefer the newer canonical API when starting new work.",
+            ),
         }
     }
 }
 
 pub fn function_status(doc: &FunctionDoc) -> FunctionStatus {
     match doc.name {
-        "fea_fixed_face" | "fea_load_point" | "fea_gravity" | "fea_pressure"
-        | "tail_cone" | "wall_thickness_at" | "print_overhang_angle"
+        "fea_fixed_face"
+        | "fea_load_point"
+        | "fea_gravity"
+        | "fea_pressure"
+        | "tail_cone"
+        | "wall_thickness_at"
+        | "print_overhang_angle"
         | "conformal_inlet"
-        | "tolerance_compensate" | "add_alignment_features" => FunctionStatus::Legacy,
-        "cg_sensitivity" | "propulsion_analysis" | "rate_of_climb" | "glide_performance"
-        | "static_margin" | "neutral_point" | "trim_analysis" | "range_endurance" => FunctionStatus::Experimental,
-        "servo_tray" | "battery_cradle" | "fc_stack_mount" | "antenna_mount"
-        | "battery_hatch" | "fc_access_panel" | "attach_to_fuselage_station"
-        | "attach_to_trailing_edge" | "control_throw" | "pushrod_guide"
+        | "tolerance_compensate"
+        | "add_alignment_features" => FunctionStatus::Legacy,
+        "cg_sensitivity"
+        | "propulsion_analysis"
+        | "rate_of_climb"
+        | "glide_performance"
+        | "static_margin"
+        | "neutral_point"
+        | "trim_analysis"
+        | "range_endurance" => FunctionStatus::Experimental,
+        "servo_tray"
+        | "battery_cradle"
+        | "fc_stack_mount"
+        | "antenna_mount"
+        | "battery_hatch"
+        | "fc_access_panel"
+        | "attach_to_fuselage_station"
+        | "attach_to_trailing_edge"
+        | "control_throw"
+        | "pushrod_guide"
         | "pushrod_length" => FunctionStatus::Stable,
         _ if matches!(doc.name, "conformal_profile_inlet") => FunctionStatus::Experimental,
-        _ if matches!(doc.category, "Aerodynamic Analysis" | "Geometry Analysis") => FunctionStatus::Experimental,
+        _ if matches!(doc.category, "Aerodynamic Analysis" | "Geometry Analysis") => {
+            FunctionStatus::Experimental
+        }
         _ => FunctionStatus::Stable,
     }
 }
 
 pub static CATEGORIES: &[&str] = &[
-    "Primitives", "Booleans", "Transforms", "Assembly", "Math",
-    "Wing and Airfoil", "Wing Measurements", "Control Surfaces", "Nose and Tail",
-    "Inlets", "Structural", "Components", "Fasteners", "Fuselage and Sections",
-    "Fields", "Lattice", "Splines and Sweeps", "FEA and Loads", "Mesh Import",
-    "Composite Layup", "Print and Split", "Joints and Panels",
-    "Aerodynamic Analysis", "Geometry Analysis", "Points and Queries",
-    "Placement", "Instancing", "Propulsion",
+    "Primitives",
+    "Booleans",
+    "Transforms",
+    "Assembly",
+    "Math",
+    "Wing and Airfoil",
+    "Wing Measurements",
+    "Control Surfaces",
+    "Nose and Tail",
+    "Inlets",
+    "Structural",
+    "Components",
+    "Fasteners",
+    "Fuselage and Sections",
+    "Fields",
+    "Lattice",
+    "Splines and Sweeps",
+    "FEA and Loads",
+    "Mesh Import",
+    "Composite Layup",
+    "Print and Split",
+    "Joints and Panels",
+    "Aerodynamic Analysis",
+    "Geometry Analysis",
+    "Points and Queries",
+    "Placement",
+    "Instancing",
+    "Propulsion",
 ];
 
 pub static FUNCTION_DOCS: &[FunctionDoc] = &[
@@ -216,7 +262,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Scales body non-uniformly along each axis.",
         example: "let stretched = scale(sphere(50.0), 1.0, 2.0, 0.5);",
         returns: "SdfHandle",
-        notes: Some("Non-uniform scaling produces an approximate SDF. The Lipschitz condition may be violated for extreme scale ratios."),
+        notes: Some(
+            "Non-uniform scaling produces an approximate SDF. The Lipschitz condition may be violated for extreme scale ratios.",
+        ),
         tags: &["transform", "scale", "resize", "stretch"],
     },
     FunctionDoc {
@@ -256,7 +304,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Bends body around axis with given curvature radius.",
         example: "let curved_arm = bend(motor_arm(fuse, 0.0, 120.0, 10.0, 8.0), 1.0, 0.0, 0.0, 200.0);",
         returns: "SdfHandle",
-        notes: Some("Approximate SDF. Best for gradual bends with radius > 5\u{d7} body thickness."),
+        notes: Some(
+            "Approximate SDF. Best for gradual bends with radius > 5\u{d7} body thickness.",
+        ),
         tags: &["transform", "bend", "curve", "approximate"],
     },
     FunctionDoc {
@@ -469,8 +519,17 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Creates an elliptical fuselage with direct nose and tail length/bluntness controls, plus optional fairing between generated stations.",
         example: "let fuse = fuselage_elliptical(700.0, 175.0, 100.0, 130.0, 145.0, 0.85, 0.45, 0.7);",
         returns: "SdfHandle",
-        notes: Some("Use this when station-by-station lofting is too manual. `nose_bluntness` and `tail_bluntness` run from 0=sharper to 1=blunter. `smoothness=0` keeps the generated section sizes rigid."),
-        tags: &["fuselage", "elliptical", "nose", "tail", "parametric", "aircraft"],
+        notes: Some(
+            "Use this when station-by-station lofting is too manual. `nose_bluntness` and `tail_bluntness` run from 0=sharper to 1=blunter. `smoothness=0` keeps the generated section sizes rigid.",
+        ),
+        tags: &[
+            "fuselage",
+            "elliptical",
+            "nose",
+            "tail",
+            "parametric",
+            "aircraft",
+        ],
     },
     FunctionDoc {
         name: "fuselage",
@@ -661,7 +720,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Builds an aileron control surface over the absolute span range in mm and returns [control_surface, modified_parent].",
         example: "let parts = aileron(wing, 220.0, 368.0, 0.25, rounded_hinge(1.5, 0.5), no_linkage());",
         returns: "[control_surface, modified_parent]",
-        notes: Some("For a 400 mm half-span wing, 55%-92% corresponds to 220-368 mm. Legacy 4-argument usage accepts fraction-style inputs and returns only the isolated surface."),
+        notes: Some(
+            "For a 400 mm half-span wing, 55%-92% corresponds to 220-368 mm. Legacy 4-argument usage accepts fraction-style inputs and returns only the isolated surface.",
+        ),
         tags: &["aileron", "control surface", "wing", "cut"],
     },
     FunctionDoc {
@@ -943,7 +1004,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Creates a NACA submerged flush inlet pocket automatically positioned on the top surface of the fuselage. Returns the pocket shape — subtract from the fuselage to cut the inlet. The inlet uses a 7° ramp angle and tapered side walls.",
         example: "let inlet = naca_flush_inlet(30.0, 60.0, 18.0, fuse);\nlet fuse_with_inlet = subtract(fuse, inlet);",
         returns: "SdfHandle (inlet pocket volume, to be subtracted from fuselage)",
-        notes: Some("Width: lateral opening (mm). Length: streamwise extent (mm). Depth: maximum ramp depth (mm). The pocket is placed one-third along the fuselage on the +Z (top) surface."),
+        notes: Some(
+            "Width: lateral opening (mm). Length: streamwise extent (mm). Depth: maximum ramp depth (mm). The pocket is placed one-third along the fuselage on the +Z (top) surface.",
+        ),
         tags: &["naca inlet", "flush inlet", "scoop", "duct", "inlet"],
     },
     FunctionDoc {
@@ -953,7 +1016,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Creates a buried inlet: an elliptical surface scoop that blends into a cylindrical duct throat. Centred at origin, opening at +Z. Translate to position on the fuselage.",
         example: "let b = buried_inlet(30.0, 120.0, 90.0);\nlet b = translate(b, 120.0, 0.0, 0.0);\nlet fuse_cut = subtract(fuse, b);",
         returns: "SdfHandle",
-        notes: Some("throat_r: duct throat radius (mm). duct_length: duct depth below surface (mm). surface_offset: distance from origin to fuselage surface (mm) — use bbox_size(fuse).z / 2.0 for an approximation."),
+        notes: Some(
+            "throat_r: duct throat radius (mm). duct_length: duct depth below surface (mm). surface_offset: distance from origin to fuselage surface (mm) — use bbox_size(fuse).z / 2.0 for an approximation.",
+        ),
         tags: &["buried inlet", "scoop", "duct", "EDF", "inlet"],
     },
     FunctionDoc {
@@ -963,7 +1028,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Creates an S-shaped transition duct flowing in the +X direction. The centerline follows a sinusoidal curve offsetting by offset_y (Y) over the duct length. Cross-section tapers linearly from inlet_r to exit_r.",
         example: "let s = s_duct(30.0, 27.0, 200.0, -35.0);\nlet s = translate(s, 150.0, 0.0, 55.0);",
         returns: "SdfHandle",
-        notes: Some("Use union(fuse_cut, s) to add the duct volume inside the fuselage, or just visualize the duct geometry directly."),
+        notes: Some(
+            "Use union(fuse_cut, s) to add the duct volume inside the fuselage, or just visualize the duct geometry directly.",
+        ),
         tags: &["s-duct", "transition duct", "EDF", "buried inlet", "duct"],
     },
     // STRUCTURAL
@@ -1135,7 +1202,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Translates every SDF or point field inside an imported component map, preserving scalar metadata.",
         example: "let servo = servo_9g::component(); let placed = place_component(servo, 120.0, 0.0, -15.0);",
         returns: "Map",
-        notes: Some("Use this for file-imported component maps such as `servo::component()` results."),
+        notes: Some(
+            "Use this for file-imported component maps such as `servo::component()` results.",
+        ),
         tags: &["placement", "component", "map", "import"],
     },
     FunctionDoc {
@@ -1145,7 +1214,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Creates a granular bracket mount point descriptor for a component. Tier 1 points create direct host traces, tier 2 points optionally bridge into nearby tier 1 paths.",
         example: "let mp = mount_point(point(0.0, 12.0, 0.0), point(0.0, 1.0, 0.0), 1, 2.2);",
         returns: "Map",
-        notes: Some("Use these inside a component module's `mount_points` array. `normal` should point outward from the component face that should grow structure."),
+        notes: Some(
+            "Use these inside a component module's `mount_points` array. `normal` should point outward from the component face that should grow structure.",
+        ),
         tags: &["mount", "component", "granular", "mount_point", "bracket"],
     },
     FunctionDoc {
@@ -1155,7 +1226,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Sets the bracket-to-component pocket offset for a component map. Positive values add clearance, while negative values allow slight interference.",
         example: "let c = bracket_offset(ebox::component(), 0.5);",
         returns: "Map",
-        notes: Some("Clamped to -1.0 mm through 5.0 mm. This is a convenience helper that writes `pocket_offset_mm` into `bracket_config`."),
+        notes: Some(
+            "Clamped to -1.0 mm through 5.0 mm. This is a convenience helper that writes `pocket_offset_mm` into `bracket_config`.",
+        ),
         tags: &["mount", "component", "bracket", "offset", "clearance"],
     },
     FunctionDoc {
@@ -1165,7 +1238,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Sets bracket support density from 1 to 10. Higher values add more support branches from the tier-1 tray/cover and more opportunistic tier-2 connections without directly making supports thicker.",
         example: "let c = support_density(ebox::component(), 6);",
         returns: "Map",
-        notes: Some("Clamped to 1 through 10. This controls support count and face coverage, not primary support thickness. Thickness still comes from the component's mount-point `base_radius` values."),
+        notes: Some(
+            "Clamped to 1 through 10. This controls support count and face coverage, not primary support thickness. Thickness still comes from the component's mount-point `base_radius` values.",
+        ),
         tags: &["mount", "component", "density", "support", "bracket"],
     },
     FunctionDoc {
@@ -1175,7 +1250,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Sets the clearance between the component body and the generated tier-1 tray/cover.",
         example: "let c = tray_clearance(ebox::component(), 0.5);",
         returns: "Map",
-        notes: Some("Clamped to 0.0 through 5.0 mm. Use this for fit clearance between the component and its generated seating surface."),
+        notes: Some(
+            "Clamped to 0.0 through 5.0 mm. Use this for fit clearance between the component and its generated seating surface.",
+        ),
         tags: &["mount", "component", "tray", "clearance", "fit"],
     },
     FunctionDoc {
@@ -1185,7 +1262,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Sets the thickness of the generated tier-1 tray/cover material.",
         example: "let c = tray_thickness(ebox::component(), 1.2);",
         returns: "Map",
-        notes: Some("Clamped to 0.5 through 8.0 mm. This affects the tier-1 seating/cover layer, not the branch support member thickness."),
+        notes: Some(
+            "Clamped to 0.5 through 8.0 mm. This affects the tier-1 seating/cover layer, not the branch support member thickness.",
+        ),
         tags: &["mount", "component", "tray", "thickness", "seat"],
     },
     FunctionDoc {
@@ -1195,7 +1274,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Sets the generated tray style. Supported values are `shell`, `u_channel`, and `floor`.",
         example: "let c = tray_style(ebox::component(), \"u_channel\");",
         returns: "Map",
-        notes: Some("`shell` preserves the full tray seed region, `u_channel` caps the tray by wall height, and `floor` keeps only the bottom seating region."),
+        notes: Some(
+            "`shell` preserves the full tray seed region, `u_channel` caps the tray by wall height, and `floor` keeps only the bottom seating region.",
+        ),
         tags: &["mount", "component", "tray", "style", "seat"],
     },
     FunctionDoc {
@@ -1205,7 +1286,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Sets the maximum tray wall height above the component bottom face.",
         example: "let c = tray_wall_height(ebox::component(), 10.5);",
         returns: "Map",
-        notes: Some("Useful with `tray_style(..., \"u_channel\")` to stop side walls below the full component height."),
+        notes: Some(
+            "Useful with `tray_style(..., \"u_channel\")` to stop side walls below the full component height.",
+        ),
         tags: &["mount", "component", "tray", "wall", "height"],
     },
     FunctionDoc {
@@ -1215,7 +1298,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Adds a small upper lip to the generated tray where supported by the tray style.",
         example: "let c = tray_lip_height(ebox::component(), 1.0);",
         returns: "Map",
-        notes: Some("Clamped to 0.0 through 20.0 mm. This is mainly useful for shallow U-channel trays."),
+        notes: Some(
+            "Clamped to 0.0 through 20.0 mm. This is mainly useful for shallow U-channel trays.",
+        ),
         tags: &["mount", "component", "tray", "lip"],
     },
     FunctionDoc {
@@ -1225,7 +1310,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Expands the tray mask slightly outward before building the conformal tray shell.",
         example: "let c = tray_extend(ebox::component(), 0.8);",
         returns: "Map",
-        notes: Some("Use this to slightly widen or soften the tray perimeter without increasing the seating clearance itself."),
+        notes: Some(
+            "Use this to slightly widen or soften the tray perimeter without increasing the seating clearance itself.",
+        ),
         tags: &["mount", "component", "tray", "extend", "mask"],
     },
     FunctionDoc {
@@ -1235,7 +1322,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Hides a named SDF field in a returned component or mount map by replacing it with an empty SDF.",
         example: "let placed = hide_part(placed, \"component_physical\");",
         returns: "Map",
-        notes: Some("Useful for returned maps like `mount_component_granular(...)` results. Only affects SDF-valued fields such as `component_physical`, `bracket`, `assembly`, or stage outputs."),
+        notes: Some(
+            "Useful for returned maps like `mount_component_granular(...)` results. Only affects SDF-valued fields such as `component_physical`, `bracket`, `assembly`, or stage outputs.",
+        ),
         tags: &["visibility", "component", "hide", "map"],
     },
     FunctionDoc {
@@ -1245,7 +1334,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Hides multiple named SDF fields in a returned component or mount map.",
         example: "let placed = hide_parts(placed, [\"component_physical\", \"raw_bracket\"]);",
         returns: "Map",
-        notes: Some("This is the quickest way to declutter a demo without rewriting the final union expression."),
+        notes: Some(
+            "This is the quickest way to declutter a demo without rewriting the final union expression.",
+        ),
         tags: &["visibility", "component", "hide", "map"],
     },
     FunctionDoc {
@@ -1255,7 +1346,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Builds the new granular implicit bracket by tracing tier-1 and tier-2 mount-point paths toward sticky host structure while staying out of removable keepouts, then pocketing around the component body.",
         example: "let placed = mount_component_granular(fuselage_shell, ebox::component(), 110.0, 0.0, 12.0); placed.assembly",
         returns: "Map",
-        notes: Some("The component map must provide `physical`, `keepout`, and `mount_points`. Optional `service_keepout`, `swept_volume`, and `fastener_keepout` are treated as removable no-go regions. When `tray_seed` is present the generator builds a conformal tray shell from the component body and masks it by that seed region before branching support structure from the tray. If `fastener_keepout` is present it also generates local reinforcement pads around those keepouts. You can also provide a `bracket_config` map with fields such as `step_size_mm`, `max_path_iters`, `dilate_keepout_mm`, `pocket_offset_mm`, `host_blend_k`, `support_density`, `tray_clearance_mm`, `tray_thickness_mm`, `tray_style`, `tray_wall_height_mm`, `tray_lip_height_mm`, and `tray_extend_mm`, or use the convenience helpers. Returns `raw_bracket`, `tray`, `fastener_pads`, `cut_bracket`, `blended_bracket`, `bracket`, `assembly`, `component_physical`, `debug_paths`, and `debug_summary`."),
+        notes: Some(
+            "The component map must provide `physical`, `keepout`, and `mount_points`. Optional `service_keepout`, `swept_volume`, and `fastener_keepout` are treated as removable no-go regions. When `tray_seed` is present the generator builds a conformal tray shell from the component body and masks it by that seed region before branching support structure from the tray. If `fastener_keepout` is present it also generates local reinforcement pads around those keepouts. You can also provide a `bracket_config` map with fields such as `step_size_mm`, `max_path_iters`, `dilate_keepout_mm`, `pocket_offset_mm`, `host_blend_k`, `support_density`, `tray_clearance_mm`, `tray_thickness_mm`, `tray_style`, `tray_wall_height_mm`, `tray_lip_height_mm`, and `tray_extend_mm`, or use the convenience helpers. Returns `raw_bracket`, `tray`, `fastener_pads`, `cut_bracket`, `blended_bracket`, `bracket`, `assembly`, `component_physical`, `debug_paths`, and `debug_summary`.",
+        ),
         tags: &["mount", "component", "granular", "bracket", "assembly"],
     },
     FunctionDoc {
@@ -1427,7 +1520,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Lofts a fuselage through positioned stations while optionally fairing section sizes toward a smoother body.",
         example: "let fuse = lofted_fuselage_smooth([s0, s1, s2, s3], 0.65);",
         returns: "SdfHandle",
-        notes: Some("`smoothness=0` keeps frame stations rigid. Higher values increasingly smooth section sizes while preserving station positions."),
+        notes: Some(
+            "`smoothness=0` keeps frame stations rigid. Higher values increasingly smooth section sizes while preserving station positions.",
+        ),
         tags: &["fuselage", "loft", "stations", "body", "smooth", "fairing"],
     },
     FunctionDoc {
@@ -1669,7 +1764,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Creates a gyroid lattice conforming to parent SDF boundary via Newton iteration.",
         example: "let cg = conformal_gyroid(wing, 15.0, 1.2);",
         returns: "SdfHandle",
-        notes: Some("28 SDF evaluations per grid point. Use at 64\u{b3} resolution for interactive performance."),
+        notes: Some(
+            "28 SDF evaluations per grid point. Use at 64\u{b3} resolution for interactive performance.",
+        ),
         tags: &["lattice", "conformal", "gyroid", "surface-aligned"],
     },
     FunctionDoc {
@@ -1800,7 +1897,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Projects a guide spline onto the closest surface and offsets it along the local outward normal.",
         example: "let p = conformal_spline_path(fuse, [[220,0,70],[300,0,85],[360,0,78]], 10.0, 48);",
         returns: "PathHandle",
-        notes: Some("Useful for conformal inlets, fairings, and mold-line-following ducts. Positive offset moves outward from the surface."),
+        notes: Some(
+            "Useful for conformal inlets, fairings, and mold-line-following ducts. Positive offset moves outward from the surface.",
+        ),
         tags: &["path", "surface", "conformal", "offset", "spline"],
     },
     FunctionDoc {
@@ -1810,7 +1909,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Generates and saves a surface-aligned mouth profile from any base profile, returning [matched_profile, center_point]. The surface-facing side is chosen automatically from the local OML normal, so dorsal and side-mounted inlets use the same function.",
         example: "let trap = custom_profile([[-28,-18],[28,-18],[22,18],[-22,18]]); let data = conformal_profile(fuse, trap, point(155,0,92), point(1,0,0), 5.0, 64); let prof = data[0]; let center = data[1];",
         returns: "Array",
-        notes: Some("Use this when you want the app to keep a custom start shape but conform the surface-facing side to the OML. For dorsal inlets it modifies the lower side; for cheek/side inlets it modifies the inward-facing side automatically based on the local surface normal."),
+        notes: Some(
+            "Use this when you want the app to keep a custom start shape but conform the surface-facing side to the OML. For dorsal inlets it modifies the lower side; for cheek/side inlets it modifies the inward-facing side automatically based on the local surface normal.",
+        ),
         tags: &["profile", "conformal", "oml", "inlet", "custom"],
     },
     FunctionDoc {
@@ -1820,7 +1921,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Generates and saves a conformal profile while constraining the solve to a fixed X station. This is the easiest way to place fuselage inlets without snapping to nearby wings or other outboard geometry.",
         example: "let trap = custom_profile([[-28,-18],[28,-18],[22,18],[-22,18]]); let data = conformal_profile_x(fuse, trap, 155.0, 0.0, 92.0, point(1,0,0), 5.0, 64);",
         returns: "Array",
-        notes: Some("Use this when your duct flow is primarily along +X/-X and you want the mouth solve restricted to that fuselage station. Returns [matched_profile, center_point]."),
+        notes: Some(
+            "Use this when your duct flow is primarily along +X/-X and you want the mouth solve restricted to that fuselage station. Returns [matched_profile, center_point].",
+        ),
         tags: &["profile", "conformal", "oml", "x-station", "inlet"],
     },
     FunctionDoc {
@@ -1830,8 +1933,17 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Builds a complete duct system from a saved conformal mouth section at a fixed X station, then sweeps it along the supplied path with optional scheduled morphing. Returns [outer_body, duct_void, duct_shell, solved_outer_start_profile, solved_inner_start_profile, mouth_center_point].",
         example: "let parts = conformal_profile_duct_x(fuse, rounded_rect_profile(72,39,2), rounded_rect_profile(68,35,1), 155.0, 0.0, 92.0, point(1,0,0), 5.0, spline_path([[155,0,95],[230,0,95],[320,0,20],[430,0,0]]), circle_profile(35), circle_profile(33), 14.0, 24.0, 0.1, 0.9, 160);",
         returns: "Array",
-        notes: Some("This is the easiest high-level path for fuselage inlets: the mouth solve is constrained to the chosen X station, the path is automatically translated so it begins at the solved mouth center, and the inner start profile is derived from the matched outer profile so the lower lip stays consistent."),
-        tags: &["inlet", "duct", "conformal", "profile", "morph", "x-station"],
+        notes: Some(
+            "This is the easiest high-level path for fuselage inlets: the mouth solve is constrained to the chosen X station, the path is automatically translated so it begins at the solved mouth center, and the inner start profile is derived from the matched outer profile so the lower lip stays consistent.",
+        ),
+        tags: &[
+            "inlet",
+            "duct",
+            "conformal",
+            "profile",
+            "morph",
+            "x-station",
+        ],
     },
     FunctionDoc {
         name: "dual_conformal_profile_duct_x",
@@ -1840,7 +1952,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Builds two conformal ducts in one call. If the left and right paths remain separate, you get two standalone ducts. If they converge to the same end region, the SDF union naturally forms a merged duct without leaving an internal divider wall.",
         example: "let parts = dual_conformal_profile_duct_x(fuse, rounded_rect_profile(50,28,4), rounded_rect_profile(46,24,3), 150, 55, 40, 150, -55, 40, point(1,0,0), spline_path([[150,55,48],[240,45,32],[320,30,18]]), spline_path([[150,-55,48],[240,-45,32],[320,-30,18]]), circle_profile(28), circle_profile(26), 4, 14, 24, 0.2, 0.9, 160);",
         returns: "Array",
-        notes: Some("Returns [outer_body, duct_void, duct_shell, left_outer_start_profile, right_outer_start_profile, left_mouth_center, right_mouth_center]. Use different end paths for standalone branches or converge them to the same end region to make a bifurcated intake."),
+        notes: Some(
+            "Returns [outer_body, duct_void, duct_shell, left_outer_start_profile, right_outer_start_profile, left_mouth_center, right_mouth_center]. Use different end paths for standalone branches or converge them to the same end region to make a bifurcated intake.",
+        ),
         tags: &["dual", "inlet", "duct", "bifurcated", "conformal"],
     },
     FunctionDoc {
@@ -1850,7 +1964,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Builds a mirrored left/right conformal duct pair from one branch path. The right branch is mirrored about Y automatically.",
         example: "let parts = mirrored_dual_conformal_profile_duct_x(fuse, rounded_rect_profile(50,28,4), rounded_rect_profile(46,24,3), 150, 55, 40, point(1,0,0), spline_path([[150,55,48],[235,45,32],[320,20,12],[400,0,0]]), circle_profile(28), circle_profile(26), 4, 14, 24, 0.2, 0.9, 160);",
         returns: "Array",
-        notes: Some("Use this when the left and right branches are symmetric. The merge behavior is controlled by the branch path: if it ends near the centerline, the pair becomes a bifurcated inlet."),
+        notes: Some(
+            "Use this when the left and right branches are symmetric. The merge behavior is controlled by the branch path: if it ends near the centerline, the pair becomes a bifurcated inlet.",
+        ),
         tags: &["dual", "mirrored", "inlet", "duct", "conformal"],
     },
     FunctionDoc {
@@ -1860,7 +1976,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Legacy convenience wrapper that auto-builds a conformal intake fairing and duct from scalar inlet dimensions, returning [outer_fairing, duct_void].",
         example: "let parts = conformal_inlet(fuse, [[240,0,72],[300,0,88],[360,0,78]], 120, 62, 96, 42, 90, 10, 40, [460,0,0], [690,0,0]);",
         returns: "Array",
-        notes: Some("Prefer conformal_profile_inlet for new work. This wrapper keeps older scripts running but gives you less control over the fairing path, wall shape, and through-body duct shell."),
+        notes: Some(
+            "Prefer conformal_profile_inlet for new work. This wrapper keeps older scripts running but gives you less control over the fairing path, wall shape, and through-body duct shell.",
+        ),
         tags: &["inlet", "duct", "conformal", "fairing", "sweep"],
     },
     FunctionDoc {
@@ -1870,7 +1988,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Builds a robust conformal inlet using a surface-matched outer fairing plus an explicit internal duct path, returning [outer_fairing, duct_void, internal_shell].",
         example: "let parts = conformal_profile_inlet(fuse, [[240,0,72],[300,0,88],[360,0,78]], duct_path, rounded_rect_profile(70,50,8), circle_profile(39), rounded_rect_profile(66,46,7), circle_profile(35), 10, 4, 18, 24, 96);",
         returns: "Array",
-        notes: Some("`offset` controls the general guide-path stand-off from the surface. `face_clearance` explicitly controls how far above the OML the lowest outer inlet-face surface sits. `parts[0]` is the exposed fairing, `parts[1]` is the duct void to subtract, and `parts[2]` is the through-body internal duct shell to union back in after shelling. The older overload without `face_clearance` still works and treats `offset` as both values."),
+        notes: Some(
+            "`offset` controls the general guide-path stand-off from the surface. `face_clearance` explicitly controls how far above the OML the lowest outer inlet-face surface sits. `parts[0]` is the exposed fairing, `parts[1]` is the duct void to subtract, and `parts[2]` is the through-body internal duct shell to union back in after shelling. The older overload without `face_clearance` still works and treats `offset` as both values.",
+        ),
         tags: &["inlet", "duct", "conformal", "profile", "oml", "fairing"],
     },
     FunctionDoc {
@@ -1880,7 +2000,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Creates a true circular tube around a spline by evaluating distance to the refined closest point on the centerline.",
         example: "let tube = spline_tube_solid(spline_path([[0,0,46],[72,0,58],[248,0,8],[430,0,0]]), 94, 94, 96, 0.95);",
         returns: "SdfHandle",
-        notes: Some("Use this for smooth circular ducts and tubes when sweep-based channels wrinkle on curved paths."),
+        notes: Some(
+            "Use this for smooth circular ducts and tubes when sweep-based channels wrinkle on curved paths.",
+        ),
         tags: &["tube", "duct", "circular", "spline", "implicit"],
     },
     FunctionDoc {
@@ -1900,7 +2022,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Creates a smooth implicit solid duct around a centerline with a varying elliptical section.",
         example: "let duct = variable_duct_solid(spline_path([[0,0,40],[120,0,25],[260,0,0]]), 92, 90, 90, 90, 48, 0.9);",
         returns: "SdfHandle",
-        notes: Some("Higher smoothness biases toward fairer transitions over exact linear section interpolation."),
+        notes: Some(
+            "Higher smoothness biases toward fairer transitions over exact linear section interpolation.",
+        ),
         tags: &["duct", "s-duct", "smooth", "centerline", "implicit"],
     },
     FunctionDoc {
@@ -1910,7 +2034,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Creates a hollow duct body with open ends from a varying implicit duct field.",
         example: "let shell = variable_duct(path, 92, 90, 90, 90, 2.0, 48, 0.9);",
         returns: "SdfHandle",
-        notes: Some("The inner core is extended beyond both ends so the inlet and outlet remain open."),
+        notes: Some(
+            "The inner core is extended beyond both ends so the inlet and outlet remain open.",
+        ),
         tags: &["duct", "hollow", "s-duct", "implicit"],
     },
     FunctionDoc {
@@ -1930,7 +2056,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Creates a solid duct around a spline using arbitrary start and end 2D profiles.",
         example: "let body = profile_duct_solid(path, rounded_rect_profile(96,72,12), circle_profile(45), 160);",
         returns: "SdfHandle",
-        notes: Some("Uses the refined closest-point-on-centerline kernel with transported local frames."),
+        notes: Some(
+            "Uses the refined closest-point-on-centerline kernel with transported local frames.",
+        ),
         tags: &["duct", "profile", "custom", "inlet"],
     },
     FunctionDoc {
@@ -1940,7 +2068,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Creates a hollow arbitrary-profile duct with explicit inner and outer start/end sections.",
         example: "let shell = profile_duct(path, rounded_rect_profile(100,76,14), circle_profile(47), rounded_rect_profile(96,72,12), circle_profile(45), 70, 70, 160);",
         returns: "SdfHandle",
-        notes: Some("Use this for custom inlet mouths such as rounded rectangles or conformal-like sections when you want direct control of both walls."),
+        notes: Some(
+            "Use this for custom inlet mouths such as rounded rectangles or conformal-like sections when you want direct control of both walls.",
+        ),
         tags: &["duct", "profile", "custom", "hollow"],
     },
     FunctionDoc {
@@ -2122,7 +2252,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Imports STL or OBJ mesh as SDF using approximate voxel mode.",
         example: "let body = import_mesh(\"parts/fuselage_scan.stl\");",
         returns: "SdfHandle",
-        notes: Some("Uses 64\u{b3} voxel grid approximation. For accuracy use import_mesh_scaled with mode parameter."),
+        notes: Some(
+            "Uses 64\u{b3} voxel grid approximation. For accuracy use import_mesh_scaled with mode parameter.",
+        ),
         tags: &["mesh", "import", "stl", "obj", "scan"],
     },
     FunctionDoc {
@@ -2568,7 +2700,6 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         notes: None,
         tags: &["horn", "slot", "control surface", "servo", "linkage"],
     },
-
     // AERODYNAMIC ANALYSIS
     FunctionDoc {
         name: "get_polar",
@@ -2780,7 +2911,6 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         notes: None,
         tags: &["glide speed", "best glide", "performance"],
     },
-
     // GEOMETRY ANALYSIS
     FunctionDoc {
         name: "cg_sensitivity",
@@ -2789,8 +2919,82 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Computes CG position and sensitivity to component mass changes. Each component map requires {name, x, y, z, mass_g}. Returns CG envelope position and per-component influence fractions.",
         example: "let comps = [{\"name\": \"battery\", \"x\": 100.0, \"y\": 0.0, \"z\": 0.0, \"mass_g\": 200.0}];\nlet cgs = cg_sensitivity(comps, 150.0, 80.0);",
         returns: "Map {baseline_cg_x, baseline_cg_y, baseline_cg_z, baseline_static_margin_mac, percent_through_envelope, forward_limit_mm, aft_limit_mm, margin_to_forward_mm, margin_to_aft_mm, recommendations, component_sensitivities}",
-        notes: Some("component_sensitivities array contains {name, mass_g, influence_fraction, dcg_dx, forward_limit_mm, aft_limit_mm} per component."),
+        notes: Some(
+            "component_sensitivities array contains {name, mass_g, influence_fraction, dcg_dx, forward_limit_mm, aft_limit_mm} per component.",
+        ),
         tags: &["cg", "balance", "sensitivity", "stability", "mass"],
+    },
+    FunctionDoc {
+        name: "geometry_metrics",
+        category: "Geometry Analysis",
+        signature: "geometry_metrics(body: SdfHandle) -> Map",
+        description: "Computes optimizer-friendly geometry metrics such as disconnected body count, support-volume estimate, overhang area, and surface-area-to-volume ratio.",
+        example: "let m = geometry_metrics(airframe);\nprint(m.support_volume_ratio);",
+        returns: "Map {vertex_count, triangle_count, disconnected_body_count, support_volume_estimate_mm3, support_volume_ratio, overhang_area_mm2, critical_overhang_area_mm2, surface_area_to_volume_ratio}",
+        notes: Some(
+            "Uses a sampled SDF grid internally, so results are approximate but deterministic for a given geometry and resolution.",
+        ),
+        tags: &["validation", "metrics", "optimizer", "analysis"],
+    },
+    FunctionDoc {
+        name: "validate_geometry",
+        category: "Geometry Analysis",
+        signature: "validate_geometry(body: SdfHandle) -> Map",
+        description: "Runs a first-pass geometry validation with default thresholds and returns hard failures, warnings, penalties, and summary metrics.",
+        example: "let check = validate_geometry(airframe);\nif !check.valid { print(check.hard_failures); }",
+        returns: "Map {valid, hard_failures, warnings, penalties, metrics}",
+        notes: Some(
+            "Default checks include disconnected body count, minimum wall thickness, support-volume estimate, and high surface-area-to-volume ratios.",
+        ),
+        tags: &["validation", "optimizer", "sanity check", "analysis"],
+    },
+    FunctionDoc {
+        name: "validate_geometry",
+        category: "Geometry Analysis",
+        signature: "validate_geometry(body: SdfHandle, min_wall_mm: f64, max_bodies: i64, grid_resolution: i64) -> Map",
+        description: "Runs geometry validation with explicit thresholds for minimum wall thickness, allowed disconnected body count, and sampled-grid resolution.",
+        example: "let check = validate_geometry(airframe, 1.2, 1, 40);",
+        returns: "Map {valid, hard_failures, warnings, penalties, metrics}",
+        notes: Some(
+            "Use tighter thresholds for final candidate filtering and looser thresholds for exploratory optimization passes.",
+        ),
+        tags: &["validation", "optimizer", "wall thickness", "analysis"],
+    },
+    FunctionDoc {
+        name: "validate_assembly",
+        category: "Geometry Analysis",
+        signature: "validate_assembly(names: Array, keepouts: Array, parent: SdfHandle, max_overlap_mm3: f64) -> Map",
+        description: "Runs keepout-aware assembly validation and checks for overlap between placed component keepouts as well as keepouts extending outside the parent boundary.",
+        example: "let a = validate_assembly([\"battery\", \"esc\"], [battery_keepout, esc_keepout], fuse_shell, 50.0);",
+        returns: "Map {valid, total_interference_count, has_critical_interference, outside_parent, warnings, details}",
+        notes: Some(
+            "Use this for optimizer rejection of packaging failures. `max_overlap_mm3` lets you tolerate tiny numerical overlaps while rejecting real collisions.",
+        ),
+        tags: &["assembly", "validation", "interference", "packaging"],
+    },
+    FunctionDoc {
+        name: "airframe_metrics",
+        category: "Geometry Analysis",
+        signature: "airframe_metrics(wing: SdfHandle, htail: SdfHandle, vtail: SdfHandle, fuse: SdfHandle) -> Map",
+        description: "Computes high-level aircraft geometry metrics such as wing area, span, MAC, aspect ratio, tail volume coefficients, and fuselage size.",
+        example: "let af = airframe_metrics(wing, htail, vtail, fuse);\nprint(af.wing_aspect_ratio);",
+        returns: "Map {wing_area_mm2, wing_span_mm, wing_mac_mm, wing_aspect_ratio, horizontal_tail_area_mm2, vertical_tail_area_mm2, horizontal_tail_volume, vertical_tail_volume, ...}",
+        notes: Some(
+            "Useful for optimizer objectives and constraints before running a more expensive aerodynamic solver.",
+        ),
+        tags: &["airframe", "wing", "tail volume", "MAC", "optimizer"],
+    },
+    FunctionDoc {
+        name: "duct_continuity",
+        category: "Geometry Analysis",
+        signature: "duct_continuity(duct: SdfHandle, axis: i64, start: f64, end: f64, stations: i64) -> Map",
+        description: "Samples duct cross-sectional area along the chosen axis and reports minimum area, pinch ratio, pinch count, and per-station sample data.",
+        example: "let d = duct_continuity(duct_shell, 0, 150.0, 420.0, 24);\nif !d.valid { print(\"duct pinched\"); }",
+        returns: "Map {valid, min_area_mm2, max_area_mm2, mean_area_mm2, pinch_ratio, pinch_count, samples}",
+        notes: Some(
+            "Axis is 0=X, 1=Y, 2=Z. This is a practical continuity check for optimizer rejection of warped or collapsed inlets/ducts.",
+        ),
+        tags: &["duct", "inlet", "continuity", "pinch", "optimizer"],
     },
     FunctionDoc {
         name: "interference_check",
@@ -2799,7 +3003,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Checks all component keepout volumes for pairwise interference and verifies components fit within the parent boundary.",
         example: "let result = interference_check([\"battery\", \"esc\"], [batt_vol, esc_vol], fuse_interior);\nif result.has_critical_interference { print(\"Conflict!\"); }",
         returns: "Map {total_interference_count, has_critical_interference, pairs, outside_parent}",
-        notes: Some("pairs array contains {component_a, component_b, volume_mm3, severity, description}."),
+        notes: Some(
+            "pairs array contains {component_a, component_b, volume_mm3, severity, description}.",
+        ),
         tags: &["interference", "collision", "keepout", "assembly"],
     },
     FunctionDoc {
@@ -2812,7 +3018,6 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         notes: None,
         tags: &["interference", "collision", "assembly"],
     },
-
     // POINTS AND QUERIES
     FunctionDoc {
         name: "point",
@@ -2982,7 +3187,13 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         example: "let d = sdf_distance_p(fuse, probe_pt);",
         returns: "f64",
         notes: Some("Useful for checking actual clearance or penetration at sampled points."),
-        tags: &["distance", "signed distance", "clearance", "penetration", "query"],
+        tags: &[
+            "distance",
+            "signed distance",
+            "clearance",
+            "penetration",
+            "query",
+        ],
     },
     FunctionDoc {
         name: "sdf_distance",
@@ -2992,7 +3203,13 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         example: "let d = sdf_distance(fuse, 180.0, 0.0, 72.0);",
         returns: "f64",
         notes: Some("Use sdf_distance_p when you already have a PointHandle."),
-        tags: &["distance", "signed distance", "clearance", "penetration", "query"],
+        tags: &[
+            "distance",
+            "signed distance",
+            "clearance",
+            "penetration",
+            "query",
+        ],
     },
     FunctionDoc {
         name: "furthest_point",
@@ -3151,10 +3368,11 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Translates `body` to the named reference point position plus (dx,dy,dz) offset.",
         example: "let s = place_at_ref(servo, \"servo_mount\", 0.0, 2.0, 0.0);",
         returns: "SdfHandle",
-        notes: Some("If the named ref_point was not registered this script run, applies only the (dx,dy,dz) offset."),
+        notes: Some(
+            "If the named ref_point was not registered this script run, applies only the (dx,dy,dz) offset.",
+        ),
         tags: &["place", "ref point", "translate", "assembly"],
     },
-
     // PLACEMENT
     FunctionDoc {
         name: "place_behind",
@@ -3216,7 +3434,6 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         notes: None,
         tags: &["attach", "trailing edge", "wing", "flap", "placement"],
     },
-
     // INSTANCING
     FunctionDoc {
         name: "instance",
@@ -3225,7 +3442,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Creates multiple instances of `body` at the given transforms. Each transform is a Map with optional keys: tx, ty, tz (translation mm), rx, ry, rz (rotation degrees), sx, sy, sz (scale, default 1.0).",
         example: "let bolts = instance(bolt, [\n  #{tx: 10.0, ty: 10.0},\n  #{tx: -10.0, ty: 10.0},\n  #{tx: 10.0, ty: -10.0},\n  #{tx: -10.0, ty: -10.0}\n]);",
         returns: "SdfHandle (union of all instances)",
-        notes: Some("All instances are merged into a single SDF union. Apply, scale, rotate, then translate per instance."),
+        notes: Some(
+            "All instances are merged into a single SDF union. Apply, scale, rotate, then translate per instance.",
+        ),
         tags: &["instance", "copy", "array", "pattern"],
     },
     FunctionDoc {
@@ -3248,7 +3467,6 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         notes: None,
         tags: &["instance", "path", "spline", "distribute"],
     },
-
     // PROPULSION
     FunctionDoc {
         name: "motor",
@@ -3397,7 +3615,9 @@ pub static FUNCTION_DOCS: &[FunctionDoc] = &[
         description: "Returns the top 5 motor+prop+battery combinations scored by efficiency, thrust margin, and weight. Each result includes motor_name, prop_name, cells, static_thrust_n, cruise_efficiency, estimated_endurance_min, and score.",
         example: "let recs = recommend_motor_prop(15.0, 18.0, 300.0);\nprint(recs[0].motor_name);",
         returns: "Array of Maps {motor_name, prop_name, cells, static_thrust_n, cruise_thrust_n, cruise_efficiency, estimated_endurance_min, score}",
-        notes: Some("Requires 1.2× thrust margin. Score weights: efficiency 40%, thrust margin 30%, weight 30%."),
+        notes: Some(
+            "Requires 1.2× thrust margin. Score weights: efficiency 40%, thrust margin 30%, weight 30%.",
+        ),
         tags: &["recommend", "motor", "prop", "selection", "optimization"],
     },
 ];
@@ -3418,10 +3638,25 @@ mod tests {
             notes: None,
             tags: &[],
         };
-        assert_eq!(function_status(&make("servo_tray", "Components")), FunctionStatus::Stable);
-        assert_eq!(function_status(&make("battery_hatch", "Joints and Panels")), FunctionStatus::Stable);
-        assert_eq!(function_status(&make("glide_performance", "Aerodynamic Analysis")), FunctionStatus::Experimental);
-        assert_eq!(function_status(&make("cg_sensitivity", "Geometry Analysis")), FunctionStatus::Experimental);
-        assert_eq!(function_status(&make("tolerance_compensate", "Print and Split")), FunctionStatus::Legacy);
+        assert_eq!(
+            function_status(&make("servo_tray", "Components")),
+            FunctionStatus::Stable
+        );
+        assert_eq!(
+            function_status(&make("battery_hatch", "Joints and Panels")),
+            FunctionStatus::Stable
+        );
+        assert_eq!(
+            function_status(&make("glide_performance", "Aerodynamic Analysis")),
+            FunctionStatus::Experimental
+        );
+        assert_eq!(
+            function_status(&make("cg_sensitivity", "Geometry Analysis")),
+            FunctionStatus::Experimental
+        );
+        assert_eq!(
+            function_status(&make("tolerance_compensate", "Print and Split")),
+            FunctionStatus::Legacy
+        );
     }
 }

@@ -4,17 +4,17 @@
 // Detects circular holes by grouping axis-aligned face clusters, fitting circles
 // to boundary vertex loops, and estimating depth via bounding-box marching.
 
-use glam::Vec3;
 use crate::mesh::import::TriangleMesh;
+use glam::Vec3;
 use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
 pub struct DetectedHole {
-    pub position:   Vec3,   // center of hole entry face
-    pub direction:  Vec3,   // axis direction (normal of cluster)
-    pub radius:     f32,    // detected radius
-    pub depth:      f32,    // estimated depth
-    pub confidence: f32,    // 0–1
+    pub position: Vec3,  // center of hole entry face
+    pub direction: Vec3, // axis direction (normal of cluster)
+    pub radius: f32,     // detected radius
+    pub depth: f32,      // estimated depth
+    pub confidence: f32, // 0–1
 }
 
 // ── Primary axis classification ───────────────────────────────────────────────
@@ -23,9 +23,12 @@ pub struct DetectedHole {
 fn primary_axis(normal: Vec3) -> Option<Vec3> {
     const THRESHOLD: f32 = 0.9;
     let axes = [
-        Vec3::X, Vec3::NEG_X,
-        Vec3::Y, Vec3::NEG_Y,
-        Vec3::Z, Vec3::NEG_Z,
+        Vec3::X,
+        Vec3::NEG_X,
+        Vec3::Y,
+        Vec3::NEG_Y,
+        Vec3::Z,
+        Vec3::NEG_Z,
     ];
     axes.iter()
         .filter_map(|&a| {
@@ -44,8 +47,8 @@ fn axis_key(a: Vec3) -> (i8, i8, i8) {
 
 struct Cluster {
     triangle_indices: Vec<usize>,
-    centroid:         Vec3,
-    normal:           Vec3,
+    centroid: Vec3,
+    normal: Vec3,
 }
 
 /// Merge triangles into positional clusters within a single axis-group.
@@ -89,7 +92,11 @@ fn cluster_triangles(
 /// approach: center = mean, radius = mean distance.
 fn fit_circle(pts: &[Vec3], plane_normal: Vec3) -> (Vec3, f32, f32) {
     // Build two orthogonal axes perpendicular to plane_normal.
-    let up = if plane_normal.abs().dot(Vec3::Y) < 0.9 { Vec3::Y } else { Vec3::Z };
+    let up = if plane_normal.abs().dot(Vec3::Y) < 0.9 {
+        Vec3::Y
+    } else {
+        Vec3::Z
+    };
     let ax = plane_normal.cross(up).normalize_or_zero();
     let ay = plane_normal.cross(ax).normalize_or_zero();
 
@@ -101,14 +108,21 @@ fn fit_circle(pts: &[Vec3], plane_normal: Vec3) -> (Vec3, f32, f32) {
     // Use the plane-projected mean of the 3D points as center.
     let center3d = ax * mean2d_x + ay * mean2d_y;
 
-    let dists: Vec<f32> = pts.iter().map(|p| {
-        let px = p.dot(ax) - mean2d_x;
-        let py = p.dot(ay) - mean2d_y;
-        (px * px + py * py).sqrt()
-    }).collect();
+    let dists: Vec<f32> = pts
+        .iter()
+        .map(|p| {
+            let px = p.dot(ax) - mean2d_x;
+            let py = p.dot(ay) - mean2d_y;
+            (px * px + py * py).sqrt()
+        })
+        .collect();
 
     let mean_r = dists.iter().sum::<f32>() / dists.len() as f32;
-    let variance = dists.iter().map(|d| (d - mean_r) * (d - mean_r)).sum::<f32>() / dists.len() as f32;
+    let variance = dists
+        .iter()
+        .map(|d| (d - mean_r) * (d - mean_r))
+        .sum::<f32>()
+        / dists.len() as f32;
     let residual = variance.sqrt();
 
     (center3d, mean_r, residual)
@@ -142,12 +156,7 @@ fn boundary_vertices(mesh: &TriangleMesh, tri_indices: &[usize]) -> Vec<u32> {
 
 /// Estimate depth by marching from `position` along `-direction` and counting
 /// steps while still inside the mesh AABB.
-fn estimate_depth(
-    position: Vec3,
-    direction: Vec3,
-    bounds_min: Vec3,
-    bounds_max: Vec3,
-) -> f32 {
+fn estimate_depth(position: Vec3, direction: Vec3, bounds_min: Vec3, bounds_max: Vec3) -> f32 {
     let step = 1.0_f32;
     let max_steps = 60_usize;
     let margin = 1.0_f32;
@@ -157,9 +166,12 @@ fn estimate_depth(
 
     for i in 1..=max_steps {
         let p = position + dir * (i as f32 * step);
-        if p.x >= bounds_min.x - margin && p.x <= bounds_max.x + margin
-            && p.y >= bounds_min.y - margin && p.y <= bounds_max.y + margin
-            && p.z >= bounds_min.z - margin && p.z <= bounds_max.z + margin
+        if p.x >= bounds_min.x - margin
+            && p.x <= bounds_max.x + margin
+            && p.y >= bounds_min.y - margin
+            && p.y <= bounds_max.y + margin
+            && p.z >= bounds_min.z - margin
+            && p.z <= bounds_max.z + margin
         {
             count += 1;
         } else {
@@ -186,7 +198,10 @@ pub fn detect_mounting_holes(
     for (i, (tri, &normal)) in mesh.triangles.iter().zip(mesh.normals.iter()).enumerate() {
         if let Some(axis) = primary_axis(normal) {
             let centroid = mesh.triangle_centroid(i);
-            axis_groups.entry(axis_key(axis)).or_default().push((i, centroid));
+            axis_groups
+                .entry(axis_key(axis))
+                .or_default()
+                .push((i, centroid));
         }
         let _ = tri;
     }
@@ -208,7 +223,8 @@ pub fn detect_mounting_holes(
                 continue;
             }
 
-            let bv_pts: Vec<Vec3> = bv_indices.iter()
+            let bv_pts: Vec<Vec3> = bv_indices
+                .iter()
                 .map(|&i| mesh.vertices[i as usize])
                 .collect();
 
@@ -227,14 +243,21 @@ pub fn detect_mounting_holes(
             }
 
             // Step 8: Roundness check.
-            let up = if normal.abs().dot(Vec3::Y) < 0.9 { Vec3::Y } else { Vec3::Z };
+            let up = if normal.abs().dot(Vec3::Y) < 0.9 {
+                Vec3::Y
+            } else {
+                Vec3::Z
+            };
             let ax2 = normal.cross(up).normalize_or_zero();
             let ay2 = normal.cross(ax2).normalize_or_zero();
-            let dists: Vec<f32> = bv_pts.iter().map(|p| {
-                let dx = p.dot(ax2) - position.dot(ax2);
-                let dy = p.dot(ay2) - position.dot(ay2);
-                (dx * dx + dy * dy).sqrt()
-            }).collect();
+            let dists: Vec<f32> = bv_pts
+                .iter()
+                .map(|p| {
+                    let dx = p.dot(ax2) - position.dot(ax2);
+                    let dy = p.dot(ay2) - position.dot(ay2);
+                    (dx * dx + dy * dy).sqrt()
+                })
+                .collect();
             let min_d = dists.iter().cloned().fold(f32::MAX, f32::min);
             let max_d = dists.iter().cloned().fold(0.0_f32, f32::max);
             let roundness = if max_d > 1e-5 { min_d / max_d } else { 0.0 };
@@ -243,12 +266,7 @@ pub fn detect_mounting_holes(
             }
 
             // Step 9: Depth estimation.
-            let depth = estimate_depth(
-                position,
-                normal,
-                mesh.bounds_min,
-                mesh.bounds_max,
-            );
+            let depth = estimate_depth(position, normal, mesh.bounds_min, mesh.bounds_max);
 
             // Step 10: Mounting hole filter.
             if depth < 1.5 * radius {
@@ -274,7 +292,11 @@ pub fn detect_mounting_holes(
     }
 
     // Sort by radius descending.
-    holes.sort_by(|a, b| b.radius.partial_cmp(&a.radius).unwrap_or(std::cmp::Ordering::Equal));
+    holes.sort_by(|a, b| {
+        b.radius
+            .partial_cmp(&a.radius)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     holes
 }
 
@@ -291,14 +313,14 @@ mod tests {
         let mesh = TriangleMesh {
             vertices: vec![
                 Vec3::new(-10.0, -10.0, 0.0),
-                Vec3::new( 10.0, -10.0, 0.0),
-                Vec3::new( 10.0,  10.0, 0.0),
-                Vec3::new(-10.0,  10.0, 0.0),
+                Vec3::new(10.0, -10.0, 0.0),
+                Vec3::new(10.0, 10.0, 0.0),
+                Vec3::new(-10.0, 10.0, 0.0),
             ],
             triangles: vec![[0, 1, 2], [0, 2, 3]],
             normals: vec![Vec3::Z, Vec3::Z],
             bounds_min: Vec3::new(-10.0, -10.0, 0.0),
-            bounds_max: Vec3::new( 10.0,  10.0, 0.0),
+            bounds_max: Vec3::new(10.0, 10.0, 0.0),
         };
         let holes = detect_mounting_holes(&mesh, 1.0, 5.0);
         // No assertion on count — must not panic, and a flat square has no circular holes.

@@ -1,9 +1,9 @@
 // Tolerance compensation: shifts SDF isosurfaces to account for FDM process
 // inaccuracies. External surfaces shrink slightly; holes grow slightly.
 
-use std::sync::Arc;
-use glam::Vec3;
 use crate::sdf::Sdf;
+use glam::Vec3;
+use std::sync::Arc;
 
 // ── ToleranceSettings ────────────────────────────────────────────────────────
 
@@ -16,22 +16,22 @@ use crate::sdf::Sdf;
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct ToleranceSettings {
     /// Shift applied to external surfaces (negative = shrink part, positive = grow).
-    pub external_offset_mm:   f32,
+    pub external_offset_mm: f32,
     /// Shift applied to internal surface boundaries (positive = larger holes = clearance fit).
-    pub internal_offset_mm:   f32,
+    pub internal_offset_mm: f32,
     /// Holes whose diameter is below this receive an extra bonus (mm).
     pub min_hole_diameter_mm: f32,
     /// Additional compensation added to small holes.
-    pub small_hole_bonus_mm:  f32,
+    pub small_hole_bonus_mm: f32,
 }
 
 impl Default for ToleranceSettings {
     fn default() -> Self {
         Self {
-            external_offset_mm:   -0.1,
-            internal_offset_mm:    0.15,
-            min_hole_diameter_mm:  3.0,
-            small_hole_bonus_mm:   0.05,
+            external_offset_mm: -0.1,
+            internal_offset_mm: 0.15,
+            min_hole_diameter_mm: 3.0,
+            small_hole_bonus_mm: 0.05,
         }
     }
 }
@@ -49,19 +49,19 @@ impl ToleranceSettings {
     pub fn apply_preset(&mut self, preset: &TolerancePreset) {
         match preset {
             TolerancePreset::TightFit => {
-                self.external_offset_mm   = -0.05;
-                self.internal_offset_mm   =  0.10;
-                self.small_hole_bonus_mm  =  0.03;
+                self.external_offset_mm = -0.05;
+                self.internal_offset_mm = 0.10;
+                self.small_hole_bonus_mm = 0.03;
             }
             TolerancePreset::StandardFDM => {
-                self.external_offset_mm   = -0.10;
-                self.internal_offset_mm   =  0.15;
-                self.small_hole_bonus_mm  =  0.05;
+                self.external_offset_mm = -0.10;
+                self.internal_offset_mm = 0.15;
+                self.small_hole_bonus_mm = 0.05;
             }
             TolerancePreset::LooseFit => {
-                self.external_offset_mm   = -0.15;
-                self.internal_offset_mm   =  0.20;
-                self.small_hole_bonus_mm  =  0.08;
+                self.external_offset_mm = -0.15;
+                self.internal_offset_mm = 0.20;
+                self.small_hole_bonus_mm = 0.08;
             }
             TolerancePreset::Custom => {}
         }
@@ -73,7 +73,7 @@ impl ToleranceSettings {
 /// Wraps any SDF and adjusts the isosurface position near surfaces to compensate
 /// for FDM manufacturing tolerance.
 pub struct ToleranceCompensated {
-    pub child:    Arc<dyn Sdf>,
+    pub child: Arc<dyn Sdf>,
     pub settings: ToleranceSettings,
 }
 
@@ -91,7 +91,10 @@ impl Sdf for ToleranceCompensated {
         let d = self.child.distance(p);
 
         // Only apply compensation within a narrow band around the surface.
-        let max_offset = self.settings.internal_offset_mm.abs()
+        let max_offset = self
+            .settings
+            .internal_offset_mm
+            .abs()
             .max(self.settings.external_offset_mm.abs())
             .max(self.settings.small_hole_bonus_mm)
             + 0.5;
@@ -102,12 +105,12 @@ impl Sdf for ToleranceCompensated {
 
         // Compute the outward gradient (points from solid into void).
         let nx = self.child.distance(p + Vec3::X * GRAD_EPS)
-               - self.child.distance(p - Vec3::X * GRAD_EPS);
+            - self.child.distance(p - Vec3::X * GRAD_EPS);
         let ny = self.child.distance(p + Vec3::Y * GRAD_EPS)
-               - self.child.distance(p - Vec3::Y * GRAD_EPS);
+            - self.child.distance(p - Vec3::Y * GRAD_EPS);
         let nz = self.child.distance(p + Vec3::Z * GRAD_EPS)
-               - self.child.distance(p - Vec3::Z * GRAD_EPS);
-        let nlen = (nx*nx + ny*ny + nz*nz).sqrt();
+            - self.child.distance(p - Vec3::Z * GRAD_EPS);
+        let nlen = (nx * nx + ny * ny + nz * nz).sqrt();
         if nlen < 1e-6 {
             return d;
         }
@@ -121,8 +124,12 @@ impl Sdf for ToleranceCompensated {
 
         let raw_offset = if is_internal {
             // Estimate void radius for small-hole bonus.
-            let void_r = estimate_void_radius_along(&self.child, p, outward,
-                                                    self.settings.min_hole_diameter_mm);
+            let void_r = estimate_void_radius_along(
+                &self.child,
+                p,
+                outward,
+                self.settings.min_hole_diameter_mm,
+            );
             let bonus = if void_r < self.settings.min_hole_diameter_mm * 0.5 {
                 self.settings.small_hole_bonus_mm
             } else {
@@ -175,8 +182,8 @@ fn estimate_void_radius_along(sdf: &Arc<dyn Sdf>, p: Vec3, outward: Vec3, max_r:
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sdf::primitives::{Sphere, SdfBox};
     use crate::sdf::booleans::Subtract;
+    use crate::sdf::primitives::{SdfBox, Sphere};
 
     fn default_settings() -> ToleranceSettings {
         ToleranceSettings::default()
@@ -187,10 +194,10 @@ mod tests {
         let r = 10.0_f32;
         let sphere: Arc<dyn Sdf> = Arc::new(Sphere::new(r));
         let settings = ToleranceSettings {
-            external_offset_mm:   -0.1,
-            internal_offset_mm:    0.15,
-            min_hole_diameter_mm:  3.0,
-            small_hole_bonus_mm:   0.05,
+            external_offset_mm: -0.1,
+            internal_offset_mm: 0.15,
+            min_hole_diameter_mm: 3.0,
+            small_hole_bonus_mm: 0.05,
         };
         let comp = ToleranceCompensated::new(Arc::clone(&sphere), settings);
 
@@ -200,7 +207,8 @@ mod tests {
         assert!(
             d_at_orig_surface > 0.0,
             "at r={} the compensated sphere surface should be inside (positive outside), got {}",
-            r, d_at_orig_surface
+            r,
+            d_at_orig_surface
         );
 
         // At r-0.2 (clearly inside original sphere but close to new surface) check
@@ -209,7 +217,8 @@ mod tests {
         assert!(
             d_at_new_surface.abs() < 0.15,
             "near expected new surface (r={}) distance should be small, got {}",
-            r - 0.1, d_at_new_surface
+            r - 0.1,
+            d_at_new_surface
         );
     }
 
@@ -242,10 +251,10 @@ mod tests {
         let with_hole: Arc<dyn Sdf> = Arc::new(Subtract::new(box_sdf, tiny_hole));
 
         let settings = ToleranceSettings {
-            external_offset_mm:   -0.1,
-            internal_offset_mm:    0.15,
-            min_hole_diameter_mm:  3.0,
-            small_hole_bonus_mm:   0.05,
+            external_offset_mm: -0.1,
+            internal_offset_mm: 0.15,
+            min_hole_diameter_mm: 3.0,
+            small_hole_bonus_mm: 0.05,
         };
         let comp = ToleranceCompensated::new(with_hole, settings);
 

@@ -1,15 +1,15 @@
 // New Project Wizard UI
 #![allow(dead_code)] // Not yet wired into the main UI
 
+use super::templates::{TemplateInstance, get_templates, instantiate_project};
 use eframe::egui;
 use std::collections::HashMap;
-use super::templates::{get_templates, instantiate_project, TemplateInstance};
 
 pub struct WizardState {
-    pub open:         bool,
-    pub step:         usize,    // 0 = template, 1 = params, 2 = location
-    pub selected:     usize,    // template index
-    pub params:       HashMap<String, f64>,
+    pub open: bool,
+    pub step: usize,     // 0 = template, 1 = params, 2 = location
+    pub selected: usize, // template index
+    pub params: HashMap<String, f64>,
     pub project_name: String,
     pub project_path: String,
 }
@@ -17,10 +17,10 @@ pub struct WizardState {
 impl Default for WizardState {
     fn default() -> Self {
         Self {
-            open:         false,
-            step:         0,
-            selected:     0,
-            params:       HashMap::new(),
+            open: false,
+            step: 0,
+            selected: 0,
+            params: HashMap::new(),
             project_name: "Untitled".to_string(),
             project_path: String::new(),
         }
@@ -48,7 +48,10 @@ pub fn show_wizard(
         .show(ui_ctx, |ui| {
             // Step indicator
             ui.horizontal(|ui| {
-                for (i, label) in ["1. Template", "2. Parameters", "3. Location"].iter().enumerate() {
+                for (i, label) in ["1. Template", "2. Parameters", "3. Location"]
+                    .iter()
+                    .enumerate()
+                {
                     if i == state.step {
                         ui.strong(*label);
                     } else {
@@ -96,12 +99,13 @@ pub fn show_wizard(
                                         });
                                     });
                                 });
-                                if ui.interact(
-                                    ui.min_rect(),
-                                    egui::Id::new(("tmpl", i)),
-                                    egui::Sense::click(),
-                                )
-                                .clicked()
+                                if ui
+                                    .interact(
+                                        ui.min_rect(),
+                                        egui::Id::new(("tmpl", i)),
+                                        egui::Sense::click(),
+                                    )
+                                    .clicked()
                                 {
                                     state.selected = i;
                                     state.params.clear();
@@ -132,21 +136,23 @@ pub fn show_wizard(
                     if tmpl.params.is_empty() {
                         ui.label("No parameters for this template.");
                     } else {
-                        egui::Grid::new("params_grid").num_columns(2).show(ui, |ui| {
-                            for param in tmpl.params {
-                                ui.label(param.label);
-                                let val = state
-                                    .params
-                                    .entry(param.name.to_string())
-                                    .or_insert(param.default);
-                                ui.add(
-                                    egui::DragValue::new(val)
-                                        .range(param.min..=param.max)
-                                        .speed(1.0),
-                                );
-                                ui.end_row();
-                            }
-                        });
+                        egui::Grid::new("params_grid")
+                            .num_columns(2)
+                            .show(ui, |ui| {
+                                for param in tmpl.params {
+                                    ui.label(param.label);
+                                    let val = state
+                                        .params
+                                        .entry(param.name.to_string())
+                                        .or_insert(param.default);
+                                    ui.add(
+                                        egui::DragValue::new(val)
+                                            .range(param.min..=param.max)
+                                            .speed(1.0),
+                                    );
+                                    ui.end_row();
+                                }
+                            });
                     }
                     ui.add_space(8.0);
                     ui.horizontal(|ui| {
@@ -161,14 +167,16 @@ pub fn show_wizard(
                 2 => {
                     ui.label("Project details:");
                     ui.add_space(8.0);
-                    egui::Grid::new("location_grid").num_columns(2).show(ui, |ui| {
-                        ui.label("Project name:");
-                        ui.text_edit_singleline(&mut state.project_name);
-                        ui.end_row();
-                        ui.label("Save location:");
-                        ui.text_edit_singleline(&mut state.project_path);
-                        ui.end_row();
-                    });
+                    egui::Grid::new("location_grid")
+                        .num_columns(2)
+                        .show(ui, |ui| {
+                            ui.label("Project name:");
+                            ui.text_edit_singleline(&mut state.project_name);
+                            ui.end_row();
+                            ui.label("Save location:");
+                            ui.text_edit_singleline(&mut state.project_path);
+                            ui.end_row();
+                        });
                     ui.add_space(8.0);
                     ui.horizontal(|ui| {
                         if ui.button("← Back").clicked() {
@@ -176,7 +184,8 @@ pub fn show_wizard(
                         }
                         if ui.button("✓ Create Project").clicked() {
                             let templates = get_templates();
-                            let instance = instantiate_project(&templates[state.selected], &state.params);
+                            let instance =
+                                instantiate_project(&templates[state.selected], &state.params);
                             result = Some((
                                 instance,
                                 state.project_name.clone(),

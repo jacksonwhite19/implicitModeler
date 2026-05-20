@@ -2,13 +2,13 @@
 
 pub mod operations;
 
-use std::collections::HashMap;
-use std::hash::{Hash, Hasher, DefaultHasher};
-use serde::{Serialize, Deserialize};
-use indexmap::IndexMap;
-use crate::ui::spline_editor::SplineEditorState;
 use crate::sdf::spine::LongitudinalSplines;
+use crate::ui::spline_editor::SplineEditorState;
 use crate::undo::AppState;
+use indexmap::IndexMap;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::hash::{DefaultHasher, Hash, Hasher};
 
 // ── CommitId ──────────────────────────────────────────────────────────────────
 
@@ -109,7 +109,8 @@ impl VersionControlState {
         let timestamp = chrono::Utc::now();
         let ts_str = timestamp.to_rfc3339();
         let dims_str = format!("{:?}", app_state.dimensions);
-        let root_id = CommitId::generate(&ts_str, "Initial commit", &app_state.script_text, &dims_str);
+        let root_id =
+            CommitId::generate(&ts_str, "Initial commit", &app_state.script_text, &dims_str);
 
         let root_commit = Commit {
             id: root_id.clone(),

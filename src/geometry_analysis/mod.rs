@@ -4,9 +4,5 @@
 pub mod cg_sensitivity;
 pub mod interference;
 
-pub use cg_sensitivity::{
-    CgSensitivityResult, compute_cg_sensitivity,
-};
-pub use interference::{
-    InterferenceResult, InterferenceSeverity,
-};
+pub use cg_sensitivity::{CgSensitivityResult, compute_cg_sensitivity};
+pub use interference::{InterferenceResult, InterferenceSeverity};

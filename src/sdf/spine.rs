@@ -24,7 +24,9 @@ impl AxisCurve {
     pub fn new(control_points: Vec<[f32; 2]>) -> Self {
         let mut pts = control_points;
         pts.sort_by(|a, b| a[0].partial_cmp(&b[0]).unwrap_or(std::cmp::Ordering::Equal));
-        Self { control_points: pts }
+        Self {
+            control_points: pts,
+        }
     }
 
     /// Evaluate the curve at span position `x`.  Returns `None` if there are
@@ -33,24 +35,40 @@ impl AxisCurve {
     pub fn eval(&self, x: f32) -> Option<f32> {
         let pts = &self.control_points;
         let n = pts.len();
-        if n == 0 { return None; }
-        if n == 1 { return Some(pts[0][1]); }
+        if n == 0 {
+            return None;
+        }
+        if n == 1 {
+            return Some(pts[0][1]);
+        }
 
         // Clamp outside range
-        if x <= pts[0][0]         { return Some(pts[0][1]); }
-        if x >= pts[n - 1][0]     { return Some(pts[n - 1][1]); }
+        if x <= pts[0][0] {
+            return Some(pts[0][1]);
+        }
+        if x >= pts[n - 1][0] {
+            return Some(pts[n - 1][1]);
+        }
 
         // Find the surrounding segment
         let seg = pts.windows(2).position(|w| w[1][0] >= x).unwrap_or(n - 2);
         let x0 = pts[seg][0];
         let x1 = pts[seg + 1][0];
-        let t = if (x1 - x0).abs() < 1e-10 { 0.0 } else { (x - x0) / (x1 - x0) };
+        let t = if (x1 - x0).abs() < 1e-10 {
+            0.0
+        } else {
+            (x - x0) / (x1 - x0)
+        };
 
         // Catmull-Rom ghost points at the ends
-        let p0 = if seg == 0     { pts[0][1]     } else { pts[seg - 1][1] };
+        let p0 = if seg == 0 { pts[0][1] } else { pts[seg - 1][1] };
         let p1 = pts[seg][1];
         let p2 = pts[seg + 1][1];
-        let p3 = if seg + 2 < n  { pts[seg + 2][1] } else { pts[n - 1][1] };
+        let p3 = if seg + 2 < n {
+            pts[seg + 2][1]
+        } else {
+            pts[n - 1][1]
+        };
 
         Some(catmull_rom_scalar(p0, p1, p2, p3, t))
     }
@@ -60,9 +78,9 @@ fn catmull_rom_scalar(p0: f32, p1: f32, p2: f32, p3: f32, t: f32) -> f32 {
     let t2 = t * t;
     let t3 = t2 * t;
     0.5 * ((2.0 * p1)
-         + (-p0 + p2) * t
-         + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t2
-         + (-p0 + 3.0 * p1 - 3.0 * p2 + p3) * t3)
+        + (-p0 + p2) * t
+        + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t2
+        + (-p0 + 3.0 * p1 - 3.0 * p2 + p3) * t3)
 }
 
 // ── Constraint curves ────────────────────────────────────────────────────────
@@ -132,7 +150,7 @@ impl LongitudinalSplines {
                 let scale_z = new_height / ref_height;
                 let ref_center_z = (ref_keel_z + ref_deck_z) * 0.5;
                 let new_center_z = (keel_z + deck_z) * 0.5;
-                out.scale_z  = scale_z;
+                out.scale_z = scale_z;
                 out.offset_z = new_center_z - ref_center_z * scale_z;
             }
         } else if let Some(keel_z) = have_keel {
@@ -171,15 +189,20 @@ impl LongitudinalSplines {
 /// `scale_*` = 1.0 and `offset_*` = 0.0 → identity (no constraint applied).
 #[derive(Clone, Copy, Debug)]
 pub struct SectionTransform {
-    pub scale_y:  f32,
-    pub scale_z:  f32,
+    pub scale_y: f32,
+    pub scale_z: f32,
     pub offset_y: f32,
     pub offset_z: f32,
 }
 
 impl SectionTransform {
     pub fn identity() -> Self {
-        Self { scale_y: 1.0, scale_z: 1.0, offset_y: 0.0, offset_z: 0.0 }
+        Self {
+            scale_y: 1.0,
+            scale_z: 1.0,
+            offset_y: 0.0,
+            offset_z: 0.0,
+        }
     }
 
     /// Apply to a 2-D cross-section point `[y, z]`.
@@ -192,8 +215,8 @@ impl SectionTransform {
 
     /// True when this is effectively the identity transform.
     pub fn is_identity(&self) -> bool {
-        (self.scale_y  - 1.0).abs() < 1e-6
-            && (self.scale_z  - 1.0).abs() < 1e-6
+        (self.scale_y - 1.0).abs() < 1e-6
+            && (self.scale_z - 1.0).abs() < 1e-6
             && self.offset_y.abs() < 1e-6
             && self.offset_z.abs() < 1e-6
     }
@@ -216,7 +239,7 @@ mod tests {
     fn test_axis_curve_clamp() {
         let c = AxisCurve::new(vec![[0.0, 3.0], [1.0, 7.0]]);
         assert!((c.eval(-1.0).unwrap() - 3.0).abs() < 1e-4);
-        assert!((c.eval(2.0).unwrap()  - 7.0).abs() < 1e-4);
+        assert!((c.eval(2.0).unwrap() - 7.0).abs() < 1e-4);
     }
 
     #[test]
@@ -231,7 +254,7 @@ mod tests {
         let mut splines = LongitudinalSplines::default();
         // Keel at z=-2, deck at z=2  (reference: keel=-1, deck=1)
         splines.spine.keel = Some(AxisCurve::new(vec![[0.0, -2.0], [1.0, -2.0]]));
-        splines.spine.deck = Some(AxisCurve::new(vec![[0.0,  2.0], [1.0,  2.0]]));
+        splines.spine.deck = Some(AxisCurve::new(vec![[0.0, 2.0], [1.0, 2.0]]));
         let t = splines.section_transform(0.5, -1.0, 1.0, 1.0);
         // scale_z should be 2: new_height=4, ref_height=2
         assert!((t.scale_z - 2.0).abs() < 1e-4, "scale_z={}", t.scale_z);

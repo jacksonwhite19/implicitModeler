@@ -1,8 +1,8 @@
 // SDF boolean operations
 
-use std::sync::Arc;
-use glam::Vec3;
 use crate::sdf::Sdf;
+use glam::Vec3;
+use std::sync::Arc;
 
 /// Union of two SDFs
 pub struct Union {
@@ -18,6 +18,7 @@ impl Union {
 
 impl Sdf for Union {
     fn distance(&self, point: Vec3) -> f32 {
+        crate::sdf::sdf_profile_node_visit();
         self.a.distance(point).min(self.b.distance(point))
     }
 }
@@ -36,6 +37,7 @@ impl Subtract {
 
 impl Sdf for Subtract {
     fn distance(&self, point: Vec3) -> f32 {
+        crate::sdf::sdf_profile_node_visit();
         self.a.distance(point).max(-self.b.distance(point))
     }
 }
@@ -54,6 +56,7 @@ impl Intersect {
 
 impl Sdf for Intersect {
     fn distance(&self, point: Vec3) -> f32 {
+        crate::sdf::sdf_profile_node_visit();
         self.a.distance(point).max(self.b.distance(point))
     }
 }
@@ -79,6 +82,7 @@ impl SmoothUnion {
 
 impl Sdf for SmoothUnion {
     fn distance(&self, point: Vec3) -> f32 {
+        crate::sdf::sdf_profile_node_visit();
         let d1 = self.a.distance(point);
         let d2 = self.b.distance(point);
         Self::smin(d1, d2, self.smoothness)
@@ -107,6 +111,7 @@ impl SmoothIntersect {
 
 impl Sdf for SmoothIntersect {
     fn distance(&self, point: Vec3) -> f32 {
+        crate::sdf::sdf_profile_node_visit();
         let d1 = self.a.distance(point);
         let d2 = self.b.distance(point);
         Self::smax(d1, d2, self.k)
@@ -130,6 +135,7 @@ impl SmoothSubtract {
 
 impl Sdf for SmoothSubtract {
     fn distance(&self, point: Vec3) -> f32 {
+        crate::sdf::sdf_profile_node_visit();
         let d1 = self.tool.distance(point);
         let d2 = self.base.distance(point);
         let h = (0.5 - 0.5 * (d2 + d1) / self.k).clamp(0.0, 1.0);
@@ -154,7 +160,10 @@ mod tests {
         let union = Union::new(sphere1.clone(), sphere2.clone());
 
         let dist_origin = union.distance(Vec3::new(0.0, 0.0, 0.0));
-        assert!(dist_origin < 0.0, "Point at origin should be inside at least one sphere");
+        assert!(
+            dist_origin < 0.0,
+            "Point at origin should be inside at least one sphere"
+        );
 
         // Point far away should be outside both
         let dist_far = union.distance(Vec3::new(10.0, 10.0, 10.0));
@@ -173,11 +182,17 @@ mod tests {
 
         // Point at origin should be in the hole (positive distance, since sphere is removed)
         let dist_origin = subtract.distance(Vec3::new(0.0, 0.0, 0.0));
-        assert!(dist_origin > 0.0, "Point at origin should be in the removed sphere (hole)");
+        assert!(
+            dist_origin > 0.0,
+            "Point at origin should be in the removed sphere (hole)"
+        );
 
         // Point in a corner of the box should still be inside
         let dist_corner = subtract.distance(Vec3::new(4.0, 4.0, 4.0));
-        assert!(dist_corner < 0.0, "Point in corner should still be inside the box");
+        assert!(
+            dist_corner < 0.0,
+            "Point in corner should still be inside the box"
+        );
     }
 
     #[test]
@@ -190,7 +205,10 @@ mod tests {
 
         // Point at origin should be inside both (distance < 0)
         let dist_origin = intersect.distance(Vec3::new(0.0, 0.0, 0.0));
-        assert!(dist_origin < 0.0, "Point at origin should be inside intersection");
+        assert!(
+            dist_origin < 0.0,
+            "Point at origin should be inside intersection"
+        );
 
         // Point far away should be outside
         let dist_far = intersect.distance(Vec3::new(10.0, 0.0, 0.0));
@@ -221,12 +239,17 @@ mod tests {
             let p = Vec3::new(x, 0.0, 0.0);
             let (a1, b1) = make();
             let (a2, b2) = make();
-            let d_hard   = Intersect::new(a1, b1).distance(p);
+            let d_hard = Intersect::new(a1, b1).distance(p);
             let d_smooth = SmoothIntersect::new(a2, b2, k).distance(p);
-            assert!(d_smooth >= d_hard - 1e-5,
-                "smooth >= hard at x={x}: hard={d_hard}, smooth={d_smooth}");
-            assert!(d_smooth - d_hard <= max_excess + 1e-4,
-                "excess <= k/4 at x={x}: excess={}, max_excess={max_excess}", d_smooth - d_hard);
+            assert!(
+                d_smooth >= d_hard - 1e-5,
+                "smooth >= hard at x={x}: hard={d_hard}, smooth={d_smooth}"
+            );
+            assert!(
+                d_smooth - d_hard <= max_excess + 1e-4,
+                "excess <= k/4 at x={x}: excess={}, max_excess={max_excess}",
+                d_smooth - d_hard
+            );
         }
 
         // Property 3: at x=10, both sphere distances are ~7; |a-b|=0 < k, so the
@@ -234,15 +257,17 @@ mod tests {
         // Check a point where the two input distances differ by more than k so that
         // smooth == hard.  Use two *different* sized spheres for this sub-test.
         {
-            let big   = Arc::new(Sphere::new(5.0));   // d at x=3: -2
-            let small = Arc::new(Sphere::new(1.0));   // d at x=3: +2  → |diff|=4 >> k=0.5
-            let big2  = Arc::new(Sphere::new(5.0));
+            let big = Arc::new(Sphere::new(5.0)); // d at x=3: -2
+            let small = Arc::new(Sphere::new(1.0)); // d at x=3: +2  → |diff|=4 >> k=0.5
+            let big2 = Arc::new(Sphere::new(5.0));
             let small2 = Arc::new(Sphere::new(1.0));
             let p = Vec3::new(3.0, 0.0, 0.0);
-            let d_hard   = Intersect::new(big, small).distance(p);
+            let d_hard = Intersect::new(big, small).distance(p);
             let d_smooth = SmoothIntersect::new(big2, small2, k).distance(p);
-            assert!((d_smooth - d_hard).abs() < 1e-4,
-                "When inputs differ >> k, smooth should equal hard; hard={d_hard}, smooth={d_smooth}");
+            assert!(
+                (d_smooth - d_hard).abs() < 1e-4,
+                "When inputs differ >> k, smooth should equal hard; hard={d_hard}, smooth={d_smooth}"
+            );
         }
     }
 }

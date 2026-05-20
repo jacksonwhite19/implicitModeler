@@ -38,7 +38,11 @@ impl ComponentRegistry {
         Ok(loaded_count)
     }
 
-    fn load_from_directory_recursive(&mut self, dir: &Path, count: &mut usize) -> Result<(), io::Error> {
+    fn load_from_directory_recursive(
+        &mut self,
+        dir: &Path,
+        count: &mut usize,
+    ) -> Result<(), io::Error> {
         for entry in fs::read_dir(dir)? {
             let entry = entry?;
             let path = entry.path();
@@ -54,7 +58,11 @@ impl ComponentRegistry {
                         *count += 1;
                     }
                     Err(e) => {
-                        eprintln!("Warning: Failed to load component from {}: {}", path.display(), e);
+                        eprintln!(
+                            "Warning: Failed to load component from {}: {}",
+                            path.display(),
+                            e
+                        );
                     }
                 }
             }
@@ -76,7 +84,8 @@ impl ComponentRegistry {
         let category = component.category.clone();
 
         // Add to category index
-        self.categories.entry(category.clone())
+        self.categories
+            .entry(category.clone())
             .or_insert_with(Vec::new)
             .push(name.clone());
 
@@ -99,9 +108,11 @@ impl ComponentRegistry {
 
     /// List components in a category
     pub fn list_by_category(&self, category: &str) -> Vec<&ComponentDef> {
-        self.categories.get(category)
+        self.categories
+            .get(category)
             .map(|names| {
-                names.iter()
+                names
+                    .iter()
                     .filter_map(|n| self.components.get(n))
                     .collect()
             })
@@ -144,7 +155,10 @@ mod tests {
 
         assert_eq!(registry.count(), 1);
         assert!(registry.get("test_component").is_some());
-        assert_eq!(registry.get("test_component").unwrap().name, "test_component");
+        assert_eq!(
+            registry.get("test_component").unwrap().name,
+            "test_component"
+        );
     }
 
     #[test]
@@ -198,13 +212,16 @@ mod tests {
 
         // Create a test component JSON file
         let mut params = HashMap::new();
-        params.insert("radius".to_string(), ParameterDef {
-            param_type: ParamType::Float,
-            default: ParamValue::Float(10.0),
-            min: Some(1.0),
-            max: Some(100.0),
-            description: None,
-        });
+        params.insert(
+            "radius".to_string(),
+            ParameterDef {
+                param_type: ParamType::Float,
+                default: ParamValue::Float(10.0),
+                min: Some(1.0),
+                max: Some(100.0),
+                description: None,
+            },
+        );
 
         let component = ComponentDef {
             name: "test_sphere".to_string(),

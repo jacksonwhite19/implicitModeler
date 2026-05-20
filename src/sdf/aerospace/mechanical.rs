@@ -3,14 +3,14 @@
 // These compose existing SDF primitives to produce common fastener and
 // machining features: bolt circles, countersinks, counterbores, slots, etc.
 
-use std::sync::Arc;
 use glam::{Vec2, Vec3, Vec3Swizzles};
+use std::sync::Arc;
 
 use crate::sdf::Sdf;
-use crate::sdf::primitives::{Cylinder, SdfBox, Torus};
-use crate::sdf::booleans::{Union, Subtract};
-use crate::sdf::transforms::Translate;
+use crate::sdf::booleans::{Subtract, Union};
 use crate::sdf::patterns::PolarArray;
+use crate::sdf::primitives::{Cylinder, SdfBox, Torus};
+use crate::sdf::transforms::Translate;
 
 // ── Capped cone (cone frustum) SDF ───────────────────────────────────────────
 //
@@ -18,14 +18,14 @@ use crate::sdf::patterns::PolarArray;
 // to z = +h (radius r2). Follows the Inigo Quilez sd_capped_cone formula.
 
 pub struct CappedCone {
-    pub r1: f32,   // radius at z = -h (bottom)
-    pub r2: f32,   // radius at z = +h (top)
-    pub h:  f32,   // half height
+    pub r1: f32, // radius at z = -h (bottom)
+    pub r2: f32, // radius at z = +h (top)
+    pub h: f32,  // half height
 }
 
 impl Sdf for CappedCone {
     fn distance(&self, p: Vec3) -> f32 {
-        let q  = Vec2::new(p.xy().length(), p.z);
+        let q = Vec2::new(p.xy().length(), p.z);
         let k1 = Vec2::new(self.r2, self.h);
         let k2 = Vec2::new(self.r2 - self.r1, 2.0 * self.h);
 
@@ -33,10 +33,14 @@ impl Sdf for CappedCone {
             q.x - q.x.min(if q.y < 0.0 { self.r1 } else { self.r2 }),
             q.y.abs() - self.h,
         );
-        let t  = ((k1 - q).dot(k2) / k2.dot(k2)).clamp(0.0, 1.0);
+        let t = ((k1 - q).dot(k2) / k2.dot(k2)).clamp(0.0, 1.0);
         let cb = q - k1 + k2 * t;
 
-        let s = if cb.x < 0.0 && ca.y < 0.0 { -1.0_f32 } else { 1.0_f32 };
+        let s = if cb.x < 0.0 && ca.y < 0.0 {
+            -1.0_f32
+        } else {
+            1.0_f32
+        };
         s * ca.dot(ca).min(cb.dot(cb)).sqrt()
     }
 }
@@ -46,12 +50,12 @@ impl Sdf for CappedCone {
 /// A polar array of vertical through-cylinders centered on a pattern circle.
 /// Ready to subtract from a plate or boss.
 pub fn bolt_circle(
-    hole_radius:    f32,
+    hole_radius: f32,
     pattern_radius: f32,
-    count:          usize,
-    depth:          f32,
+    count: usize,
+    depth: f32,
 ) -> Arc<dyn Sdf> {
-    let cyl    = Arc::new(Cylinder::new(hole_radius, depth / 2.0));
+    let cyl = Arc::new(Cylinder::new(hole_radius, depth / 2.0));
     let offset = Arc::new(Translate::new(cyl, Vec3::new(pattern_radius, 0.0, 0.0)));
     Arc::new(PolarArray::new(offset, count, Vec3::Z))
 }
@@ -61,12 +65,7 @@ pub fn bolt_circle(
 /// Four cylinders at the corners of a rectangle, centered at origin.
 /// x_spacing and y_spacing are centre-to-centre distances.
 /// Common FC pattern: bolt_square(1.5, 30.5, 30.5, 5.0)
-pub fn bolt_rect(
-    hole_radius: f32,
-    x_spacing:   f32,
-    y_spacing:   f32,
-    depth:       f32,
-) -> Arc<dyn Sdf> {
+pub fn bolt_rect(hole_radius: f32, x_spacing: f32, y_spacing: f32, depth: f32) -> Arc<dyn Sdf> {
     let corner = |dx: f32, dy: f32| -> Arc<dyn Sdf> {
         Arc::new(Translate::new(
             Arc::new(Cylinder::new(hole_radius, depth / 2.0)),
@@ -75,19 +74,14 @@ pub fn bolt_rect(
     };
     let hx = x_spacing / 2.0;
     let hy = y_spacing / 2.0;
-    let ab = Arc::new(Union::new(corner(hx, hy),  corner(-hx,  hy)));
+    let ab = Arc::new(Union::new(corner(hx, hy), corner(-hx, hy)));
     let cd = Arc::new(Union::new(corner(hx, -hy), corner(-hx, -hy)));
     Arc::new(Union::new(ab, cd))
 }
 
 /// Alias for bolt_rect — kept because bolt_square is the common name for
 /// square FC patterns (e.g. 30.5×30.5).
-pub fn bolt_square(
-    hole_radius: f32,
-    x_spacing:   f32,
-    y_spacing:   f32,
-    depth:       f32,
-) -> Arc<dyn Sdf> {
+pub fn bolt_square(hole_radius: f32, x_spacing: f32, y_spacing: f32, depth: f32) -> Arc<dyn Sdf> {
     bolt_rect(hole_radius, x_spacing, y_spacing, depth)
 }
 
@@ -102,13 +96,17 @@ pub fn bolt_square(
 ///     z = -(head_depth + shaft_depth).
 pub fn countersink(
     shaft_radius: f32,
-    head_radius:  f32,
-    head_depth:   f32,
-    shaft_depth:  f32,
+    head_radius: f32,
+    head_depth: f32,
+    shaft_depth: f32,
 ) -> Arc<dyn Sdf> {
     // Frustum: r1 = shaft_radius at bottom, r2 = head_radius at top, half_h = head_depth/2
     let frustum = Arc::new(Translate::new(
-        Arc::new(CappedCone { r1: shaft_radius, r2: head_radius, h: head_depth / 2.0 }),
+        Arc::new(CappedCone {
+            r1: shaft_radius,
+            r2: head_radius,
+            h: head_depth / 2.0,
+        }),
         Vec3::new(0.0, 0.0, -head_depth / 2.0),
     ));
     let shaft = Arc::new(Translate::new(
@@ -126,9 +124,9 @@ pub fn countersink(
 /// pilot hole, both co-axial along Z, top of bore at z = 0.
 pub fn counterbore(
     shaft_radius: f32,
-    bore_radius:  f32,
-    bore_depth:   f32,
-    shaft_depth:  f32,
+    bore_radius: f32,
+    bore_depth: f32,
+    shaft_depth: f32,
 ) -> Arc<dyn Sdf> {
     let bore = Arc::new(Translate::new(
         Arc::new(Cylinder::new(bore_radius, bore_depth / 2.0)),
@@ -156,8 +154,11 @@ pub fn slot(width: f32, length: f32, depth: f32) -> Arc<dyn Sdf> {
     )));
     // Two semicircular end caps.
     let cap: Arc<dyn Sdf> = Arc::new(Cylinder::new(width / 2.0, depth / 2.0));
-    let cap_l = Arc::new(Translate::new(Arc::clone(&cap), Vec3::new( inner_len / 2.0, 0.0, 0.0)));
-    let cap_r = Arc::new(Translate::new(cap,              Vec3::new(-inner_len / 2.0, 0.0, 0.0)));
+    let cap_l = Arc::new(Translate::new(
+        Arc::clone(&cap),
+        Vec3::new(inner_len / 2.0, 0.0, 0.0),
+    ));
+    let cap_r = Arc::new(Translate::new(cap, Vec3::new(-inner_len / 2.0, 0.0, 0.0)));
     Arc::new(Union::new(bar, Arc::new(Union::new(cap_l, cap_r))))
 }
 
@@ -184,8 +185,8 @@ pub fn chamfer_edge(body: Arc<dyn Sdf>, distance: f32) -> Arc<dyn Sdf> {
 pub fn thread_hole(radius: f32, pitch: f32, depth: f32) -> Arc<dyn Sdf> {
     let hole: Arc<dyn Sdf> = Arc::new(Cylinder::new(radius, depth / 2.0));
     let n_grooves = ((depth / pitch).floor() as usize).max(1);
-    let minor_r   = pitch * 0.12;          // groove depth
-    let groove_r  = radius + minor_r * 0.5; // torus major radius sits just at the wall
+    let minor_r = pitch * 0.12; // groove depth
+    let groove_r = radius + minor_r * 0.5; // torus major radius sits just at the wall
 
     let mut result = hole;
     for i in 0..n_grooves {
@@ -207,10 +208,10 @@ pub fn thread_hole(radius: f32, pitch: f32, depth: f32) -> Arc<dyn Sdf> {
 /// frame body or to subtract from a standoff block.
 /// Common patterns: 20, 25.5, 30.5 mm.
 pub fn fc_mount(pattern_mm: f32, hole_radius: f32, plate_thickness: f32) -> Arc<dyn Sdf> {
-    let pad    = hole_radius * 3.0;
-    let half   = pattern_mm / 2.0 + pad;
+    let pad = hole_radius * 3.0;
+    let half = pattern_mm / 2.0 + pad;
     let plate: Arc<dyn Sdf> = Arc::new(SdfBox::new(Vec3::new(half, half, plate_thickness / 2.0)));
-    let holes  = bolt_square(hole_radius, pattern_mm, pattern_mm, plate_thickness * 2.0);
+    let holes = bolt_square(hole_radius, pattern_mm, pattern_mm, plate_thickness * 2.0);
     Arc::new(Subtract::new(plate, holes))
 }
 
@@ -240,11 +241,11 @@ pub fn motor_mount_pattern(motor_size_mm: f32, hole_radius: f32, depth: f32) -> 
 
 fn motor_pcd(stator_mm: f32) -> f32 {
     match stator_mm as u32 {
-        ..=22  => 9.0,
+        ..=22 => 9.0,
         23..=24 => 12.0,
         25..=28 => 12.0,
         29..=35 => 16.0,
         36..=42 => 19.0,
-        _       => stator_mm * 0.4,
+        _ => stator_mm * 0.4,
     }
 }

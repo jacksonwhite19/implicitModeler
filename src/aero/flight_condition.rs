@@ -4,30 +4,30 @@
 /// Dynamic flight state with ISA atmosphere lookup.
 #[derive(Clone, Debug)]
 pub struct FlightCondition {
-    pub airspeed_ms:        f32,
-    pub air_density_kg_m3:  f32,
-    pub altitude_m:         f32,
-    pub aoa_deg:            f32,
-    pub sideslip_deg:       f32,
+    pub airspeed_ms: f32,
+    pub air_density_kg_m3: f32,
+    pub altitude_m: f32,
+    pub aoa_deg: f32,
+    pub sideslip_deg: f32,
     /// q = 0.5 * rho * V²  (Pa).
     pub dynamic_pressure_pa: f32,
     /// ρ·V/μ where μ = 1.789e-5 Pa·s.
-    pub reynolds_per_meter:  f32,
+    pub reynolds_per_meter: f32,
 }
 
 impl FlightCondition {
     /// Construct from airspeed, altitude and angle of attack.
     pub fn new(airspeed_ms: f32, altitude_m: f32, aoa_deg: f32) -> Self {
         let rho = Self::isa_density(altitude_m);
-        let mu  = 1.789e-5_f32;
+        let mu = 1.789e-5_f32;
         Self {
             airspeed_ms,
-            air_density_kg_m3:   rho,
+            air_density_kg_m3: rho,
             altitude_m,
             aoa_deg,
-            sideslip_deg:        0.0,
+            sideslip_deg: 0.0,
             dynamic_pressure_pa: 0.5 * rho * airspeed_ms * airspeed_ms,
-            reynolds_per_meter:  rho * airspeed_ms / mu,
+            reynolds_per_meter: rho * airspeed_ms / mu,
         }
     }
 
@@ -76,7 +76,7 @@ mod tests {
     #[test]
     fn test_reynolds_for_chord() {
         let fc = FlightCondition::new(50.0, 0.0, 0.0);
-        let re = fc.reynolds_for_chord(100.0);  // 100 mm chord
+        let re = fc.reynolds_for_chord(100.0); // 100 mm chord
         // Re = rho*V*c/mu = 1.225 * 50 * 0.1 / 1.789e-5 ≈ 342 000
         assert!(re > 300_000.0 && re < 400_000.0, "Re = {re}");
     }

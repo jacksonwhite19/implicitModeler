@@ -1,7 +1,8 @@
 // SDF trait and core types
 
-use std::any::Any;
 use glam::Vec3;
+use std::any::Any;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 /// Trait for signed distance field evaluation
 pub trait Sdf: Any + Send + Sync {
@@ -10,26 +11,47 @@ pub trait Sdf: Any + Send + Sync {
     fn distance(&self, point: Vec3) -> f32;
 }
 
-pub mod primitives;
-pub mod booleans;
-pub mod transforms;
-pub mod patterns;
+static SDF_PROFILE_ENABLED: AtomicBool = AtomicBool::new(false);
+static SDF_PROFILE_NODE_VISITS: AtomicU64 = AtomicU64::new(0);
+
+pub fn sdf_profile_set_enabled(enabled: bool) {
+    SDF_PROFILE_ENABLED.store(enabled, Ordering::Relaxed);
+}
+
+pub fn sdf_profile_reset() {
+    SDF_PROFILE_NODE_VISITS.store(0, Ordering::Relaxed);
+}
+
+pub fn sdf_profile_node_visit() {
+    if SDF_PROFILE_ENABLED.load(Ordering::Relaxed) {
+        SDF_PROFILE_NODE_VISITS.fetch_add(1, Ordering::Relaxed);
+    }
+}
+
+pub fn sdf_profile_node_visits() -> u64 {
+    SDF_PROFILE_NODE_VISITS.load(Ordering::Relaxed)
+}
+
 pub mod aerospace;
+pub mod booleans;
 pub mod field;
-pub mod profiles;
-pub mod spine;
 pub mod lattice;
-pub mod sweep;
 pub mod mesh_import;
+pub mod patterns;
+pub mod primitives;
 pub mod print;
+pub mod profiles;
 pub mod query;
+pub mod spine;
+pub mod sweep;
+pub mod transforms;
 
 #[cfg(test)]
 mod integration_tests {
     use super::*;
-    use std::sync::Arc;
-    use primitives::{SdfBox, Sphere};
     use booleans::Subtract;
+    use primitives::{SdfBox, Sphere};
+    use std::sync::Arc;
     use transforms::Translate;
 
     #[test]
@@ -46,12 +68,18 @@ mod integration_tests {
         // Point at (3, 0, 0) - center of the hole
         // Should be inside the removed volume (positive distance)
         let dist_hole_center = result.distance(Vec3::new(3.0, 0.0, 0.0));
-        assert!(dist_hole_center > 0.0, "Center of hole should have positive distance");
+        assert!(
+            dist_hole_center > 0.0,
+            "Center of hole should have positive distance"
+        );
 
         // Point at (-4, 0, 0) - inside the box, far from the hole
         // Should be inside the remaining box (negative distance)
         let dist_inside_box = result.distance(Vec3::new(-4.0, 0.0, 0.0));
-        assert!(dist_inside_box < 0.0, "Point inside box away from hole should be negative");
+        assert!(
+            dist_inside_box < 0.0,
+            "Point inside box away from hole should be negative"
+        );
 
         // Point far outside
         let dist_outside = result.distance(Vec3::new(20.0, 20.0, 20.0));

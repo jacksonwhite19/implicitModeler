@@ -2,10 +2,10 @@
 // for FDM-style 3D printing.
 #![allow(dead_code)] // Result struct fields not all displayed in the current UI
 
+use crate::analysis::thickness::ThicknessResult;
+use crate::render::SdfGrid;
 use glam::Vec3;
 use rayon::prelude::*;
-use crate::render::SdfGrid;
-use crate::analysis::thickness::ThicknessResult;
 
 // ---------------------------------------------------------------------------
 // Serde helpers for glam::Vec3 (stored as [f32; 3])
@@ -292,16 +292,31 @@ fn candidate_directions() -> Vec<Vec3> {
     dirs.push(-Vec3::Z);
     // 12 edge midpoints
     for &(a, b, c) in &[
-        (1.0_f32, 1.0, 0.0), (1.0, -1.0, 0.0), (-1.0, 1.0, 0.0), (-1.0, -1.0, 0.0),
-        (1.0, 0.0, 1.0), (1.0, 0.0, -1.0), (-1.0, 0.0, 1.0), (-1.0, 0.0, -1.0),
-        (0.0, 1.0, 1.0), (0.0, 1.0, -1.0), (0.0, -1.0, 1.0), (0.0, -1.0, -1.0),
+        (1.0_f32, 1.0, 0.0),
+        (1.0, -1.0, 0.0),
+        (-1.0, 1.0, 0.0),
+        (-1.0, -1.0, 0.0),
+        (1.0, 0.0, 1.0),
+        (1.0, 0.0, -1.0),
+        (-1.0, 0.0, 1.0),
+        (-1.0, 0.0, -1.0),
+        (0.0, 1.0, 1.0),
+        (0.0, 1.0, -1.0),
+        (0.0, -1.0, 1.0),
+        (0.0, -1.0, -1.0),
     ] {
         dirs.push(Vec3::new(a, b, c).normalize());
     }
     // 8 vertex directions
     for &(a, b, c) in &[
-        (1.0_f32, 1.0, 1.0), (1.0, 1.0, -1.0), (1.0, -1.0, 1.0), (1.0, -1.0, -1.0),
-        (-1.0, 1.0, 1.0), (-1.0, 1.0, -1.0), (-1.0, -1.0, 1.0), (-1.0, -1.0, -1.0),
+        (1.0_f32, 1.0, 1.0),
+        (1.0, 1.0, -1.0),
+        (1.0, -1.0, 1.0),
+        (1.0, -1.0, -1.0),
+        (-1.0, 1.0, 1.0),
+        (-1.0, 1.0, -1.0),
+        (-1.0, -1.0, 1.0),
+        (-1.0, -1.0, -1.0),
     ] {
         dirs.push(Vec3::new(a, b, c).normalize());
     }
@@ -419,10 +434,7 @@ pub fn compute_orientation_advisor(
                 0.0
             };
 
-            let mut score = 1.0
-                - surface_ratio * 0.5
-                - volume_ratio * 0.3
-                + layer_line_score * 0.2;
+            let mut score = 1.0 - surface_ratio * 0.5 - volume_ratio * 0.3 + layer_line_score * 0.2;
             if !fits {
                 score *= 0.1;
             }
@@ -440,7 +452,11 @@ pub fn compute_orientation_advisor(
         })
         .collect();
 
-    candidates.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
+    candidates.sort_by(|a, b| {
+        b.score
+            .partial_cmp(&a.score)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     candidates.truncate(6);
 
     OrientationResult {
@@ -599,8 +615,12 @@ pub fn compute_feature_detection(
                 let p = sp.position + build_dir * (k as f32 * step);
                 // Map p back to a grid index in the thickness result
                 let uvw = (p - tr.bounds_min) / (tr.bounds_max - tr.bounds_min);
-                if uvw.x < 0.0 || uvw.y < 0.0 || uvw.z < 0.0
-                    || uvw.x >= 1.0 || uvw.y >= 1.0 || uvw.z >= 1.0
+                if uvw.x < 0.0
+                    || uvw.y < 0.0
+                    || uvw.z < 0.0
+                    || uvw.x >= 1.0
+                    || uvw.y >= 1.0
+                    || uvw.z >= 1.0
                 {
                     break;
                 }
@@ -651,7 +671,10 @@ pub fn compute_feature_detection(
         if !overhang_pts.is_empty() {
             // Sort by X then Y for a crude sweep; estimate max span via bounding box of clusters
             overhang_pts.sort_by(|a, b| {
-                a.position.x.partial_cmp(&b.position.x).unwrap_or(std::cmp::Ordering::Equal)
+                a.position
+                    .x
+                    .partial_cmp(&b.position.x)
+                    .unwrap_or(std::cmp::Ordering::Equal)
             });
 
             // Compute overall bounding box of overhang points projected perpendicular to build_dir
@@ -764,7 +787,12 @@ mod tests {
                 }
             }
         }
-        SdfGrid { data, resolution, bounds_min, bounds_max }
+        SdfGrid {
+            data,
+            resolution,
+            bounds_min,
+            bounds_max,
+        }
     }
 
     /// Build a fake SdfGrid for a flat plate: SDF = |z| - half_thickness
@@ -785,7 +813,12 @@ mod tests {
                 }
             }
         }
-        SdfGrid { data, resolution, bounds_min, bounds_max }
+        SdfGrid {
+            data,
+            resolution,
+            bounds_min,
+            bounds_max,
+        }
     }
 
     /// Build a fake SdfGrid for a vertical cylinder: SDF = sqrt(x^2+y^2) - radius (capped along z)
@@ -814,7 +847,12 @@ mod tests {
                 }
             }
         }
-        SdfGrid { data, resolution, bounds_min, bounds_max }
+        SdfGrid {
+            data,
+            resolution,
+            bounds_min,
+            bounds_max,
+        }
     }
 
     #[test]
@@ -868,7 +906,8 @@ mod tests {
         };
         let surface_pts = extract_surface_points(&grid);
 
-        let features = compute_feature_detection(&surface_pts, Some(&thickness_result), &settings, &grid);
+        let features =
+            compute_feature_detection(&surface_pts, Some(&thickness_result), &settings, &grid);
 
         let thin_wall_errors: Vec<_> = features
             .issues
@@ -895,7 +934,10 @@ mod tests {
             ..Default::default()
         };
         let surface_pts = extract_surface_points(&grid);
-        assert!(!surface_pts.is_empty(), "cylinder should have surface points");
+        assert!(
+            !surface_pts.is_empty(),
+            "cylinder should have surface points"
+        );
 
         let result = compute_orientation_advisor(&surface_pts, &grid, &settings, None);
         assert!(

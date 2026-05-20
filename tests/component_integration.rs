@@ -1,8 +1,8 @@
 // Integration tests for component system
-use implicit_cad::components::{ComponentRegistry, ComponentInstance};
-use implicit_cad::scripting;
 use glam::Vec3;
+use implicit_cad::components::{ComponentInstance, ComponentRegistry};
 use implicit_cad::mesh::marching_cubes;
+use implicit_cad::scripting;
 
 #[test]
 fn test_load_all_default_components() {
@@ -23,7 +23,11 @@ fn test_load_all_default_components() {
     }
 
     assert!(loaded, "Failed to load components from any path");
-    assert!(registry.count() >= 7, "Expected at least 7 default components, found {}", registry.count());
+    assert!(
+        registry.count() >= 7,
+        "Expected at least 7 default components, found {}",
+        registry.count()
+    );
 }
 
 #[test]
@@ -41,7 +45,8 @@ fn test_all_components_execute() {
     }
 
     // Get all components
-    let all_components: Vec<_> = registry.list_categories()
+    let all_components: Vec<_> = registry
+        .list_categories()
         .iter()
         .flat_map(|cat| registry.list_by_category(cat))
         .collect();
@@ -57,16 +62,27 @@ fn test_all_components_execute() {
 
         // Generate script
         let script_result = instance.generate_script();
-        assert!(script_result.is_ok(), "Failed to generate script for {}: {:?}",
-                component.name, script_result.err());
+        assert!(
+            script_result.is_ok(),
+            "Failed to generate script for {}: {:?}",
+            component.name,
+            script_result.err()
+        );
 
         let script = script_result.unwrap();
-        eprintln!("  Generated script: {}", script.lines().take(2).collect::<Vec<_>>().join(" "));
+        eprintln!(
+            "  Generated script: {}",
+            script.lines().take(2).collect::<Vec<_>>().join(" ")
+        );
 
         // Execute script
         let eval_result = scripting::evaluate_script(&script);
-        assert!(eval_result.is_ok(), "Failed to execute script for {}: {:?}",
-                component.name, eval_result.err());
+        assert!(
+            eval_result.is_ok(),
+            "Failed to execute script for {}: {:?}",
+            component.name,
+            eval_result.err()
+        );
 
         let sdf = eval_result.unwrap().sdf;
 
@@ -76,8 +92,11 @@ fn test_all_components_execute() {
         let mesh = marching_cubes::extract_mesh(sdf.as_ref(), bounds_min, bounds_max, 32, false);
 
         // Verify mesh has vertices (not empty)
-        assert!(!mesh.vertices.is_empty(),
-                "Component {} produced empty mesh", component.name);
+        assert!(
+            !mesh.vertices.is_empty(),
+            "Component {} produced empty mesh",
+            component.name
+        );
 
         eprintln!("  ✓ Produced mesh with {} vertices", mesh.vertices.len());
     }
@@ -102,11 +121,16 @@ fn test_component_parameters_customizable() {
         let mut instance = ComponentInstance::new(fuselage.clone());
 
         // Modify a parameter
-        instance.set_param("length".to_string(),
-                          implicit_cad::components::ParamValue::Float(80.0));
+        instance.set_param(
+            "length".to_string(),
+            implicit_cad::components::ParamValue::Float(80.0),
+        );
 
         let script = instance.generate_script().unwrap();
-        assert!(script.contains("80"), "Script should contain custom length value");
+        assert!(
+            script.contains("80"),
+            "Script should contain custom length value"
+        );
 
         // Verify it still executes
         let sdf = scripting::evaluate_script(&script).unwrap().sdf;
@@ -132,8 +156,8 @@ fn test_nested_component_expansion_syntax() {
     }
 
     // Create a test component with nested reference
-    use std::collections::HashMap;
     use implicit_cad::components::ComponentDef;
+    use std::collections::HashMap;
 
     let test_component = ComponentDef {
         name: "test_nested".to_string(),
@@ -149,10 +173,19 @@ fn test_nested_component_expansion_syntax() {
     // Should successfully expand the nested reference
     if result.is_ok() {
         let script = result.unwrap();
-        assert!(!script.contains("@{"), "Nested references should be expanded");
-        assert!(script.contains("fuselage_parametric"), "Should contain expanded fuselage code");
+        assert!(
+            !script.contains("@{"),
+            "Nested references should be expanded"
+        );
+        assert!(
+            script.contains("fuselage_parametric"),
+            "Should contain expanded fuselage code"
+        );
         eprintln!("Nested expansion successful: {}", script);
     } else {
-        eprintln!("Nested expansion not yet fully implemented: {:?}", result.err());
+        eprintln!(
+            "Nested expansion not yet fully implemented: {:?}",
+            result.err()
+        );
     }
 }

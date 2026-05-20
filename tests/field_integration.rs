@@ -1,7 +1,7 @@
 // Integration tests for field-driven operations
 
-use implicit_cad::scripting::evaluate_script;
 use glam::Vec3;
+use implicit_cad::scripting::evaluate_script;
 
 #[test]
 fn test_constant_field_script() {
@@ -14,7 +14,8 @@ fn test_constant_field_script() {
     let result = evaluate_script(script);
     assert!(result.is_ok(), "Constant field script should succeed");
 
-    if let Ok(r) = result { let sdf = r.sdf;
+    if let Ok(r) = result {
+        let sdf = r.sdf;
         // Should behave like regular offset
         let dist = sdf.distance(Vec3::new(12.0, 0.0, 0.0));
         assert!(dist.abs() < 0.1, "Distance should be ~0 at radius 12");
@@ -32,7 +33,8 @@ fn test_radial_field_script() {
     let result = evaluate_script(script);
     assert!(result.is_ok(), "Radial field script should succeed");
 
-    if let Ok(r) = result { let sdf = r.sdf;
+    if let Ok(r) = result {
+        let sdf = r.sdf;
         // Verify it produces valid distance values
         let dist = sdf.distance(Vec3::ZERO);
         assert!(dist.is_finite());
@@ -72,7 +74,8 @@ fn test_gyroid_lattice_script() {
     let result = evaluate_script(script);
     assert!(result.is_ok(), "Gyroid lattice script should succeed");
 
-    if let Ok(r) = result { let sdf = r.sdf;
+    if let Ok(r) = result {
+        let sdf = r.sdf;
         // Verify lattice produces finite values
         let dist = sdf.distance(Vec3::new(5.0, 5.0, 5.0));
         assert!(dist.is_finite());
@@ -88,7 +91,8 @@ fn test_cubic_lattice_script() {
     let result = evaluate_script(script);
     assert!(result.is_ok(), "Cubic lattice script should succeed");
 
-    if let Ok(r) = result { let sdf = r.sdf;
+    if let Ok(r) = result {
+        let sdf = r.sdf;
         let dist = sdf.distance(Vec3::ZERO);
         assert!(dist.is_finite());
     }
@@ -126,7 +130,8 @@ fn test_lattice_in_box_script() {
     let result = evaluate_script(script);
     assert!(result.is_ok(), "Lattice in box script should succeed");
 
-    if let Ok(r) = result { let sdf = r.sdf;
+    if let Ok(r) = result {
+        let sdf = r.sdf;
         // Inside box and near lattice structure
         let dist = sdf.distance(Vec3::ZERO);
         assert!(dist.is_finite());

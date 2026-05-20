@@ -4,12 +4,12 @@
 // FEASetup.  All units are consistent with the project's mm convention:
 //   length = mm,  force = N,  pressure = MPa (= N/mm²),  stress = MPa.
 
+use crate::fea::meshing::TetMesh;
+use crate::fea::setup::{FEASetup, MaterialProperties};
+use glam::Vec3;
 use std::collections::HashMap;
 use std::fmt::Write;
 use std::sync::Arc;
-use glam::Vec3;
-use crate::fea::meshing::TetMesh;
-use crate::fea::setup::{FEASetup, MaterialProperties};
 
 /// Write a CalculiX .inp file and return it as a String.
 ///
@@ -17,11 +17,11 @@ use crate::fea::setup::{FEASetup, MaterialProperties};
 /// materials to element sets.  Elements whose centroid falls outside any layer
 /// get the global `material` fallback.
 pub fn write_inp(
-    mesh:     &TetMesh,
-    setup:    &FEASetup,
+    mesh: &TetMesh,
+    setup: &FEASetup,
     material: &MaterialProperties,
     job_name: &str,
-    layups:   &[Arc<crate::sdf::aerospace::composite::CompositeLayup>],
+    layups: &[Arc<crate::sdf::aerospace::composite::CompositeLayup>],
 ) -> Result<String, String> {
     let mut s = String::new();
 
@@ -40,8 +40,16 @@ pub fn write_inp(
     // ── Elements (C3D4, 1-based) ─────────────────────────────────────────────
     writeln!(s, "*ELEMENT, TYPE=C3D4, ELSET=EALL").ok();
     for (i, tet) in mesh.elements.iter().enumerate() {
-        writeln!(s, "{}, {}, {}, {}, {}",
-            i + 1, tet[0] + 1, tet[1] + 1, tet[2] + 1, tet[3] + 1).ok();
+        writeln!(
+            s,
+            "{}, {}, {}, {}, {}",
+            i + 1,
+            tet[0] + 1,
+            tet[1] + 1,
+            tet[2] + 1,
+            tet[3] + 1
+        )
+        .ok();
     }
     writeln!(s).ok();
 
@@ -51,12 +59,24 @@ pub fn write_inp(
     // Build node-set membership for every named region.
     let all_regions: Vec<(String, &dyn crate::sdf::Sdf)> = {
         let mut v: Vec<(String, &dyn crate::sdf::Sdf)> = Vec::new();
-        for r in &setup.fixed_supports  { v.push((r.name.clone(), r.sdf.as_ref())); }
-        for r in &setup.fixed_axes      { v.push((r.name.clone(), r.sdf.as_ref())); }
-        for r in &setup.force_loads     { v.push((r.name.clone(), r.sdf.as_ref())); }
-        for r in &setup.pressure_loads  { v.push((r.name.clone(), r.sdf.as_ref())); }
-        for r in &setup.torque_loads    { v.push((r.name.clone(), r.sdf.as_ref())); }
-        for r in &setup.motor_thrusts   { v.push((r.name.clone(), r.sdf.as_ref())); }
+        for r in &setup.fixed_supports {
+            v.push((r.name.clone(), r.sdf.as_ref()));
+        }
+        for r in &setup.fixed_axes {
+            v.push((r.name.clone(), r.sdf.as_ref()));
+        }
+        for r in &setup.force_loads {
+            v.push((r.name.clone(), r.sdf.as_ref()));
+        }
+        for r in &setup.pressure_loads {
+            v.push((r.name.clone(), r.sdf.as_ref()));
+        }
+        for r in &setup.torque_loads {
+            v.push((r.name.clone(), r.sdf.as_ref()));
+        }
+        for r in &setup.motor_thrusts {
+            v.push((r.name.clone(), r.sdf.as_ref()));
+        }
         v
     };
 
@@ -71,7 +91,9 @@ pub fn write_inp(
     }
 
     for (name, nodes) in &nsets {
-        if nodes.is_empty() { continue; }
+        if nodes.is_empty() {
+            continue;
+        }
         writeln!(s, "*NSET, NSET={name}").ok();
         for chunk in nodes.chunks(16) {
             let line: Vec<String> = chunk.iter().map(|n| n.to_string()).collect();
@@ -91,36 +113,57 @@ pub fn write_inp(
         let mut fallback_elset: Vec<usize> = Vec::new();
 
         for (ei, tet) in mesh.elements.iter().enumerate() {
-            let centroid = (mesh.nodes[tet[0]] + mesh.nodes[tet[1]]
-                           + mesh.nodes[tet[2]] + mesh.nodes[tet[3]]) / 4.0;
+            let centroid =
+                (mesh.nodes[tet[0]] + mesh.nodes[tet[1]] + mesh.nodes[tet[2]] + mesh.nodes[tet[3]])
+                    / 4.0;
             match layup.layer_at(centroid) {
                 Some(li) => layer_elsets[li].push(ei + 1),
-                None     => fallback_elset.push(ei + 1),
+                None => fallback_elset.push(ei + 1),
             }
         }
 
         // Emit element sets.
         for (li, els) in layer_elsets.iter().enumerate() {
-            if els.is_empty() { continue; }
+            if els.is_empty() {
+                continue;
+            }
             writeln!(s, "*ELSET, ELSET=LAYER{}", li + 1).ok();
             for chunk in els.chunks(16) {
-                writeln!(s, "{}", chunk.iter().map(|e| e.to_string())
-                    .collect::<Vec<_>>().join(", ")).ok();
+                writeln!(
+                    s,
+                    "{}",
+                    chunk
+                        .iter()
+                        .map(|e| e.to_string())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )
+                .ok();
             }
             writeln!(s).ok();
         }
         if !fallback_elset.is_empty() {
             writeln!(s, "*ELSET, ELSET=LAYER_FB").ok();
             for chunk in fallback_elset.chunks(16) {
-                writeln!(s, "{}", chunk.iter().map(|e| e.to_string())
-                    .collect::<Vec<_>>().join(", ")).ok();
+                writeln!(
+                    s,
+                    "{}",
+                    chunk
+                        .iter()
+                        .map(|e| e.to_string())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )
+                .ok();
             }
             writeln!(s).ok();
         }
 
         // Emit per-layer materials.
         for (li, layer) in layup.layers.iter().enumerate() {
-            if layer_elsets[li].is_empty() { continue; }
+            if layer_elsets[li].is_empty() {
+                continue;
+            }
             let mat_name = format!("MAT_L{}", li + 1);
             let m = &layer.material;
             writeln!(s, "*MATERIAL, NAME={mat_name}").ok();
@@ -132,7 +175,13 @@ pub fn write_inp(
             // ρ_tonne_mm3 = ρ_g_cm3 × 1e-9
             writeln!(s, "{:.4e}", m.density_g_cm3 as f64 * 1e-9).ok();
             writeln!(s).ok();
-            writeln!(s, "*SOLID SECTION, ELSET=LAYER{}, MATERIAL={}", li + 1, mat_name).ok();
+            writeln!(
+                s,
+                "*SOLID SECTION, ELSET=LAYER{}, MATERIAL={}",
+                li + 1,
+                mat_name
+            )
+            .ok();
             writeln!(s).ok();
         }
 
@@ -140,7 +189,12 @@ pub fn write_inp(
         if !fallback_elset.is_empty() {
             writeln!(s, "*MATERIAL, NAME=MAT").ok();
             writeln!(s, "*ELASTIC").ok();
-            writeln!(s, "{:.1}, {:.4}", material.youngs_modulus_mpa, material.poisson_ratio).ok();
+            writeln!(
+                s,
+                "{:.1}, {:.4}",
+                material.youngs_modulus_mpa, material.poisson_ratio
+            )
+            .ok();
             writeln!(s, "*DENSITY").ok();
             writeln!(s, "{:.4e}", material.density_tonne_per_mm3).ok();
             writeln!(s).ok();
@@ -151,7 +205,12 @@ pub fn write_inp(
         // Single-material mode (original behaviour).
         writeln!(s, "*MATERIAL, NAME=MAT").ok();
         writeln!(s, "*ELASTIC").ok();
-        writeln!(s, "{:.1}, {:.4}", material.youngs_modulus_mpa, material.poisson_ratio).ok();
+        writeln!(
+            s,
+            "{:.1}, {:.4}",
+            material.youngs_modulus_mpa, material.poisson_ratio
+        )
+        .ok();
         writeln!(s, "*DENSITY").ok();
         writeln!(s, "{:.4e}", material.density_tonne_per_mm3).ok();
         writeln!(s).ok();
@@ -182,9 +241,15 @@ pub fn write_inp(
         for r in &setup.fixed_axes {
             let key = sanitise_name(&r.name);
             if nsets.get(&key).map(|v| !v.is_empty()).unwrap_or(false) {
-                if r.constrain_x { writeln!(s, "{key}, 1, 1").ok(); }
-                if r.constrain_y { writeln!(s, "{key}, 2, 2").ok(); }
-                if r.constrain_z { writeln!(s, "{key}, 3, 3").ok(); }
+                if r.constrain_x {
+                    writeln!(s, "{key}, 1, 1").ok();
+                }
+                if r.constrain_y {
+                    writeln!(s, "{key}, 2, 2").ok();
+                }
+                if r.constrain_z {
+                    writeln!(s, "{key}, 3, 3").ok();
+                }
             }
         }
         writeln!(s).ok();
@@ -194,16 +259,24 @@ pub fn write_inp(
     for r in &setup.force_loads {
         let key = sanitise_name(&r.name);
         if let Some(nodes) = nsets.get(&key) {
-            if nodes.is_empty() { continue; }
+            if nodes.is_empty() {
+                continue;
+            }
             let n = nodes.len() as f32;
             let fx = r.force.x / n;
             let fy = r.force.y / n;
             let fz = r.force.z / n;
             writeln!(s, "*CLOAD").ok();
             for &ni in nodes {
-                if fx.abs() > 1e-9 { writeln!(s, "{ni}, 1, {fx:.6}").ok(); }
-                if fy.abs() > 1e-9 { writeln!(s, "{ni}, 2, {fy:.6}").ok(); }
-                if fz.abs() > 1e-9 { writeln!(s, "{ni}, 3, {fz:.6}").ok(); }
+                if fx.abs() > 1e-9 {
+                    writeln!(s, "{ni}, 1, {fx:.6}").ok();
+                }
+                if fy.abs() > 1e-9 {
+                    writeln!(s, "{ni}, 2, {fy:.6}").ok();
+                }
+                if fz.abs() > 1e-9 {
+                    writeln!(s, "{ni}, 3, {fz:.6}").ok();
+                }
             }
             writeln!(s).ok();
         }
@@ -213,7 +286,9 @@ pub fn write_inp(
     for r in &setup.motor_thrusts {
         let key = sanitise_name(&r.name);
         if let Some(nodes) = nsets.get(&key) {
-            if nodes.is_empty() { continue; }
+            if nodes.is_empty() {
+                continue;
+            }
             let n = nodes.len() as f32;
             let d = r.direction.normalize_or_zero();
             let fx = d.x * r.thrust_n / n;
@@ -222,9 +297,15 @@ pub fn write_inp(
             writeln!(s, "** Motor thrust: {}", r.name).ok();
             writeln!(s, "*CLOAD").ok();
             for &ni in nodes {
-                if fx.abs() > 1e-9 { writeln!(s, "{ni}, 1, {fx:.6}").ok(); }
-                if fy.abs() > 1e-9 { writeln!(s, "{ni}, 2, {fy:.6}").ok(); }
-                if fz.abs() > 1e-9 { writeln!(s, "{ni}, 3, {fz:.6}").ok(); }
+                if fx.abs() > 1e-9 {
+                    writeln!(s, "{ni}, 1, {fx:.6}").ok();
+                }
+                if fy.abs() > 1e-9 {
+                    writeln!(s, "{ni}, 2, {fy:.6}").ok();
+                }
+                if fz.abs() > 1e-9 {
+                    writeln!(s, "{ni}, 3, {fz:.6}").ok();
+                }
             }
             writeln!(s).ok();
             // Torque as couple: equal and opposite forces perpendicular to axis.
@@ -238,7 +319,9 @@ pub fn write_inp(
     for r in &setup.torque_loads {
         let key = sanitise_name(&r.name);
         if let Some(nodes) = nsets.get(&key) {
-            if nodes.is_empty() { continue; }
+            if nodes.is_empty() {
+                continue;
+            }
             let d = r.axis.normalize_or_zero();
             write_torque_couple(&mut s, nodes, &mesh.nodes, d, r.magnitude);
         }
@@ -250,8 +333,12 @@ pub fn write_inp(
         if mag > 1e-6 {
             let gn = g / mag;
             writeln!(s, "*DLOAD").ok();
-            writeln!(s, "EALL, GRAV, {mag:.4}, {:.6}, {:.6}, {:.6}",
-                gn.x, gn.y, gn.z).ok();
+            writeln!(
+                s,
+                "EALL, GRAV, {mag:.4}, {:.6}, {:.6}, {:.6}",
+                gn.x, gn.y, gn.z
+            )
+            .ok();
             writeln!(s).ok();
         }
     }
@@ -260,7 +347,9 @@ pub fn write_inp(
     for r in &setup.pressure_loads {
         let key = sanitise_name(&r.name);
         if let Some(nodes) = nsets.get(&key) {
-            if nodes.is_empty() { continue; }
+            if nodes.is_empty() {
+                continue;
+            }
             // Estimate inward normals via SDF gradient at each node.
             let n_count = nodes.len() as f32;
             let area_per_node = 1.0_f32; // unit area approximation
@@ -275,9 +364,15 @@ pub fn write_inp(
                 let nn = Vec3::new(nx, ny, nz).normalize_or_zero();
                 // Inward = -normal; force = pressure × area × inward_normal
                 let f = -nn * r.magnitude * area_per_node / n_count;
-                if f.x.abs() > 1e-9 { writeln!(s, "{ni}, 1, {:.6}", f.x).ok(); }
-                if f.y.abs() > 1e-9 { writeln!(s, "{ni}, 2, {:.6}", f.y).ok(); }
-                if f.z.abs() > 1e-9 { writeln!(s, "{ni}, 3, {:.6}", f.z).ok(); }
+                if f.x.abs() > 1e-9 {
+                    writeln!(s, "{ni}, 1, {:.6}", f.x).ok();
+                }
+                if f.y.abs() > 1e-9 {
+                    writeln!(s, "{ni}, 2, {:.6}", f.y).ok();
+                }
+                if f.z.abs() > 1e-9 {
+                    writeln!(s, "{ni}, 3, {:.6}", f.z).ok();
+                }
             }
             writeln!(s).ok();
         }
@@ -297,43 +392,62 @@ pub fn write_inp(
 
 /// Distribute a torque `moment_nmm` about `axis` as a couple across `nodes`.
 fn write_torque_couple(
-    s:          &mut String,
-    nodes:      &[usize],
-    positions:  &[Vec3],
-    axis:       Vec3,
+    s: &mut String,
+    nodes: &[usize],
+    positions: &[Vec3],
+    axis: Vec3,
     moment_nmm: f32,
 ) {
-    if nodes.is_empty() { return; }
+    if nodes.is_empty() {
+        return;
+    }
     // Compute centroid of the region.
-    let centroid: Vec3 = nodes.iter()
-        .map(|&ni| positions[ni - 1])
-        .sum::<Vec3>() / nodes.len() as f32;
+    let centroid: Vec3 =
+        nodes.iter().map(|&ni| positions[ni - 1]).sum::<Vec3>() / nodes.len() as f32;
 
     // For each node, force = (moment / total_radius²) × (axis × r)
     // where r = node_pos - centroid, projected onto the plane perpendicular to axis.
-    let total_r2: f32 = nodes.iter().map(|&ni| {
-        let r = positions[ni - 1] - centroid;
-        let r_perp = r - axis * r.dot(axis);
-        r_perp.length_squared()
-    }).sum();
-    if total_r2 < 1e-12 { return; }
+    let total_r2: f32 = nodes
+        .iter()
+        .map(|&ni| {
+            let r = positions[ni - 1] - centroid;
+            let r_perp = r - axis * r.dot(axis);
+            r_perp.length_squared()
+        })
+        .sum();
+    if total_r2 < 1e-12 {
+        return;
+    }
 
     writeln!(s, "*CLOAD").ok();
     for &ni in nodes {
         let r = positions[ni - 1] - centroid;
         let r_perp = r - axis * r.dot(axis);
         let f = axis.cross(r_perp) * (moment_nmm / total_r2);
-        if f.x.abs() > 1e-9 { writeln!(s, "{ni}, 1, {:.6}", f.x).ok(); }
-        if f.y.abs() > 1e-9 { writeln!(s, "{ni}, 2, {:.6}", f.y).ok(); }
-        if f.z.abs() > 1e-9 { writeln!(s, "{ni}, 3, {:.6}", f.z).ok(); }
+        if f.x.abs() > 1e-9 {
+            writeln!(s, "{ni}, 1, {:.6}", f.x).ok();
+        }
+        if f.y.abs() > 1e-9 {
+            writeln!(s, "{ni}, 2, {:.6}", f.y).ok();
+        }
+        if f.z.abs() > 1e-9 {
+            writeln!(s, "{ni}, 3, {:.6}", f.z).ok();
+        }
     }
     writeln!(s).ok();
 }
 
 /// Replace characters illegal in CalculiX set names with underscores.
 fn sanitise_name(name: &str) -> String {
-    let s: String = name.chars()
-        .map(|c| if c.is_alphanumeric() || c == '_' { c } else { '_' })
+    let s: String = name
+        .chars()
+        .map(|c| {
+            if c.is_alphanumeric() || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect();
     if s.is_empty() { "UNNAMED".into() } else { s }
 }
@@ -341,52 +455,63 @@ fn sanitise_name(name: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::Arc;
-    use glam::Vec3;
+    use crate::fea::setup::{FEAForceRegion, FEARegion, MaterialProperties};
     use crate::sdf::primitives::Sphere;
-    use crate::fea::setup::{FEARegion, FEAForceRegion, MaterialProperties};
+    use glam::Vec3;
+    use std::sync::Arc;
 
     fn make_mesh() -> TetMesh {
         let sphere: Arc<dyn crate::sdf::Sdf> = Arc::new(Sphere::new(3.0));
         crate::fea::meshing::voxel_tet_mesh(
             sphere.as_ref(),
-            Vec3::splat(-4.0), Vec3::splat(4.0), 10,
-        ).unwrap()
+            Vec3::splat(-4.0),
+            Vec3::splat(4.0),
+            10,
+        )
+        .unwrap()
     }
 
     #[test]
     fn inp_node_count_matches_mesh() {
-        let mesh  = make_mesh();
+        let mesh = make_mesh();
         let setup = FEASetup::default();
-        let mat   = MaterialProperties::default();
-        let inp   = write_inp(&mesh, &setup, &mat, "test", &[]).unwrap();
+        let mat = MaterialProperties::default();
+        let inp = write_inp(&mesh, &setup, &mat, "test", &[]).unwrap();
 
         // Count *NODE section lines — skip blanks (the section ends with an empty line).
-        let node_lines = inp.lines()
+        let node_lines = inp
+            .lines()
             .skip_while(|l| !l.starts_with("*NODE"))
             .skip(1)
             .take_while(|l| !l.starts_with('*'))
             .filter(|l| !l.trim().is_empty())
             .count();
-        assert_eq!(node_lines, mesh.nodes.len(),
-            "Node section line count must match mesh node count");
+        assert_eq!(
+            node_lines,
+            mesh.nodes.len(),
+            "Node section line count must match mesh node count"
+        );
     }
 
     #[test]
     fn inp_element_count_matches_mesh() {
-        let mesh  = make_mesh();
+        let mesh = make_mesh();
         let setup = FEASetup::default();
-        let mat   = MaterialProperties::default();
-        let inp   = write_inp(&mesh, &setup, &mat, "test", &[]).unwrap();
+        let mat = MaterialProperties::default();
+        let inp = write_inp(&mesh, &setup, &mat, "test", &[]).unwrap();
 
-        let elem_lines = inp.lines()
+        let elem_lines = inp
+            .lines()
             .skip_while(|l| !l.starts_with("*ELEMENT"))
             .skip(1)
             .take_while(|l| !l.starts_with('*'))
             .filter(|l| !l.trim().is_empty())
             .count();
-        assert_eq!(elem_lines, mesh.elements.len(),
-            "Element section line count must match mesh element count");
+        assert_eq!(
+            elem_lines,
+            mesh.elements.len(),
+            "Element section line count must match mesh element count"
+        );
     }
 
     #[test]
@@ -396,13 +521,15 @@ mod tests {
         let mut setup = FEASetup::default();
         setup.fixed_supports.push(FEARegion {
             name: "base".to_string(),
-            sdf:  support_sdf,
+            sdf: support_sdf,
         });
         let mat = MaterialProperties::default();
         let inp = write_inp(&mesh, &setup, &mat, "test", &[]).unwrap();
 
-        assert!(inp.contains("base, ENCASTRE"),
-            "ENCASTRE boundary condition must appear in .inp for fixed_support");
+        assert!(
+            inp.contains("base, ENCASTRE"),
+            "ENCASTRE boundary condition must appear in .inp for fixed_support"
+        );
     }
 
     #[test]
@@ -411,29 +538,30 @@ mod tests {
         let force_sdf: Arc<dyn crate::sdf::Sdf> = Arc::new(Sphere::new(1.5));
         let mut setup = FEASetup::default();
         setup.force_loads.push(FEAForceRegion {
-            name:  "tip_load".to_string(),
-            sdf:   force_sdf,
+            name: "tip_load".to_string(),
+            sdf: force_sdf,
             force: Vec3::new(0.0, 0.0, -100.0),
         });
         let mat = MaterialProperties::default();
         let inp = write_inp(&mesh, &setup, &mat, "test", &[]).unwrap();
 
         // There must be at least one CLOAD line for DOF 3 (Z force).
-        let has_cload_z = inp.lines()
+        let has_cload_z = inp
+            .lines()
             .any(|l| l.contains(", 3,") && !l.starts_with('*') && !l.starts_with("**"));
         assert!(has_cload_z, "Z-direction CLOAD entries must appear in .inp");
     }
 
     #[test]
     fn inp_step_output_requests_present() {
-        let mesh  = make_mesh();
+        let mesh = make_mesh();
         let setup = FEASetup::default();
-        let mat   = MaterialProperties::default();
-        let inp   = write_inp(&mesh, &setup, &mat, "test", &[]).unwrap();
+        let mat = MaterialProperties::default();
+        let inp = write_inp(&mesh, &setup, &mat, "test", &[]).unwrap();
 
-        assert!(inp.contains("*STEP"),        ".inp must contain *STEP");
-        assert!(inp.contains("*STATIC"),      ".inp must contain *STATIC");
-        assert!(inp.contains("*END STEP"),    ".inp must contain *END STEP");
-        assert!(inp.contains("*NODE FILE"),   ".inp must request node output");
+        assert!(inp.contains("*STEP"), ".inp must contain *STEP");
+        assert!(inp.contains("*STATIC"), ".inp must contain *STATIC");
+        assert!(inp.contains("*END STEP"), ".inp must contain *END STEP");
+        assert!(inp.contains("*NODE FILE"), ".inp must request node output");
     }
 }

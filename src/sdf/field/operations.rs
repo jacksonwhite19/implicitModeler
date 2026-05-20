@@ -1,9 +1,9 @@
 // Field-driven SDF operations
 
+use super::Field;
+use crate::sdf::Sdf;
 use glam::Vec3;
 use std::sync::Arc;
-use crate::sdf::Sdf;
-use super::Field;
 
 /// Variable thickness offset - offsets an SDF by an amount driven by a field
 pub struct OffsetByField {
@@ -83,9 +83,9 @@ impl Sdf for BlendByField {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sdf::primitives::Sphere;
-    use crate::sdf::field::primitives::ConstantField;
     use crate::sdf::field::gradients::RadialField;
+    use crate::sdf::field::primitives::ConstantField;
+    use crate::sdf::primitives::Sphere;
 
     #[test]
     fn test_offset_by_field_constant() {

@@ -68,8 +68,11 @@ impl ParameterDef {
     pub fn validate(&self, value: &ParamValue) -> Result<(), String> {
         // Type check
         if value.param_type() != self.param_type {
-            return Err(format!("Type mismatch: expected {:?}, got {:?}",
-                             self.param_type, value.param_type()));
+            return Err(format!(
+                "Type mismatch: expected {:?}, got {:?}",
+                self.param_type,
+                value.param_type()
+            ));
         }
 
         // Range validation for numeric types
@@ -125,7 +128,10 @@ mod tests {
         assert_eq!(ParamValue::Float(5.5).to_script_string(), "5.5");
         assert_eq!(ParamValue::Int(42).to_script_string(), "42");
         assert_eq!(ParamValue::Bool(true).to_script_string(), "true");
-        assert_eq!(ParamValue::String("test".to_string()).to_script_string(), "\"test\"");
+        assert_eq!(
+            ParamValue::String("test".to_string()).to_script_string(),
+            "\"test\""
+        );
     }
 
     #[test]
@@ -160,13 +166,16 @@ mod tests {
     #[test]
     fn test_component_def_serialization() {
         let mut params = HashMap::new();
-        params.insert("length".to_string(), ParameterDef {
-            param_type: ParamType::Float,
-            default: ParamValue::Float(60.0),
-            min: Some(30.0),
-            max: Some(120.0),
-            description: Some("Total length".to_string()),
-        });
+        params.insert(
+            "length".to_string(),
+            ParameterDef {
+                param_type: ParamType::Float,
+                default: ParamValue::Float(60.0),
+                min: Some(30.0),
+                max: Some(120.0),
+                description: Some("Total length".to_string()),
+            },
+        );
 
         let component = ComponentDef {
             name: "test_component".to_string(),

@@ -30,7 +30,10 @@ impl ComponentInstance {
 
     /// Create a component instance with custom parameter values
     #[allow(dead_code)] // Part of component instance API
-    pub fn with_params(component_def: ComponentDef, param_values: HashMap<String, ParamValue>) -> Self {
+    pub fn with_params(
+        component_def: ComponentDef,
+        param_values: HashMap<String, ParamValue>,
+    ) -> Self {
         Self {
             component_def,
             param_values,
@@ -46,7 +49,10 @@ impl ComponentInstance {
     /// Validate all parameter values against definitions
     pub fn validate(&self) -> Result<(), String> {
         for (name, value) in &self.param_values {
-            let def = self.component_def.parameters.get(name)
+            let def = self
+                .component_def
+                .parameters
+                .get(name)
                 .ok_or(format!("Unknown parameter: {}", name))?;
 
             def.validate(value)?;
@@ -63,7 +69,7 @@ impl ComponentInstance {
 
         // Substitute parameters #{param_name} → value
         for (param_name, param_value) in &self.param_values {
-            let placeholder = format!("#{{{}}}",  param_name);
+            let placeholder = format!("#{{{}}}", param_name);
             let value_str = param_value.to_script_string();
             script = script.replace(&placeholder, &value_str);
         }
@@ -78,7 +84,10 @@ impl ComponentInstance {
 
     /// Generate script with nested component expansion (Step 8)
     #[allow(dead_code)] // Part of component nesting API
-    pub fn generate_script_with_nesting(&self, registry: &ComponentRegistry) -> Result<String, String> {
+    pub fn generate_script_with_nesting(
+        &self,
+        registry: &ComponentRegistry,
+    ) -> Result<String, String> {
         // Validate first
         self.validate()?;
 
@@ -89,7 +98,7 @@ impl ComponentInstance {
 
         // Substitute parameters #{param_name} → value
         for (param_name, param_value) in &self.param_values {
-            let placeholder = format!("#{{{}}}",  param_name);
+            let placeholder = format!("#{{{}}}", param_name);
             let value_str = param_value.to_script_string();
             script = script.replace(&placeholder, &value_str);
         }
@@ -106,7 +115,12 @@ impl ComponentInstance {
     }
 
     /// Expand nested component references recursively
-    fn expand_nested_components(&self, mut script: String, registry: &ComponentRegistry, depth: usize) -> Result<String, String> {
+    fn expand_nested_components(
+        &self,
+        mut script: String,
+        registry: &ComponentRegistry,
+        depth: usize,
+    ) -> Result<String, String> {
         const MAX_DEPTH: usize = 10;
         if depth >= MAX_DEPTH {
             return Err("Maximum nesting depth exceeded (possible cycle)".to_string());
@@ -122,7 +136,8 @@ impl ComponentInstance {
                 let component_name = reference.trim();
 
                 // Look up component in registry
-                let component_def = registry.get(component_name)
+                let component_def = registry
+                    .get(component_name)
                     .ok_or(format!("Component not found: {}", component_name))?;
 
                 // Create instance with default parameters
@@ -132,13 +147,13 @@ impl ComponentInstance {
                 let expanded_script = nested_instance.expand_nested_components(
                     component_def.script_template.clone(),
                     registry,
-                    depth + 1
+                    depth + 1,
                 )?;
 
                 // Substitute nested component's parameters
                 let mut nested_script = expanded_script;
                 for (param_name, param_value) in &nested_instance.param_values {
-                    let placeholder = format!("#{{{}}}",  param_name);
+                    let placeholder = format!("#{{{}}}", param_name);
                     let value_str = param_value.to_script_string();
                     nested_script = nested_script.replace(&placeholder, &value_str);
                 }
@@ -158,18 +173,21 @@ impl ComponentInstance {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::components::library::{ParameterDef, ParamType};
+    use crate::components::library::{ParamType, ParameterDef};
 
     #[test]
     fn test_component_instance_default_params() {
         let mut params = HashMap::new();
-        params.insert("radius".to_string(), ParameterDef {
-            param_type: ParamType::Float,
-            default: ParamValue::Float(10.0),
-            min: Some(1.0),
-            max: Some(100.0),
-            description: None,
-        });
+        params.insert(
+            "radius".to_string(),
+            ParameterDef {
+                param_type: ParamType::Float,
+                default: ParamValue::Float(10.0),
+                min: Some(1.0),
+                max: Some(100.0),
+                description: None,
+            },
+        );
 
         let component_def = ComponentDef {
             name: "test_sphere".to_string(),
@@ -182,19 +200,25 @@ mod tests {
         let instance = ComponentInstance::new(component_def);
 
         // Should have default value
-        assert_eq!(instance.param_values.get("radius"), Some(&ParamValue::Float(10.0)));
+        assert_eq!(
+            instance.param_values.get("radius"),
+            Some(&ParamValue::Float(10.0))
+        );
     }
 
     #[test]
     fn test_generate_script_simple() {
         let mut params = HashMap::new();
-        params.insert("radius".to_string(), ParameterDef {
-            param_type: ParamType::Float,
-            default: ParamValue::Float(10.0),
-            min: None,
-            max: None,
-            description: None,
-        });
+        params.insert(
+            "radius".to_string(),
+            ParameterDef {
+                param_type: ParamType::Float,
+                default: ParamValue::Float(10.0),
+                min: None,
+                max: None,
+                description: None,
+            },
+        );
 
         let component_def = ComponentDef {
             name: "test_sphere".to_string(),
@@ -213,20 +237,26 @@ mod tests {
     #[test]
     fn test_generate_script_multiple_params() {
         let mut params = HashMap::new();
-        params.insert("length".to_string(), ParameterDef {
-            param_type: ParamType::Float,
-            default: ParamValue::Float(60.0),
-            min: None,
-            max: None,
-            description: None,
-        });
-        params.insert("diameter".to_string(), ParameterDef {
-            param_type: ParamType::Float,
-            default: ParamValue::Float(8.0),
-            min: None,
-            max: None,
-            description: None,
-        });
+        params.insert(
+            "length".to_string(),
+            ParameterDef {
+                param_type: ParamType::Float,
+                default: ParamValue::Float(60.0),
+                min: None,
+                max: None,
+                description: None,
+            },
+        );
+        params.insert(
+            "diameter".to_string(),
+            ParameterDef {
+                param_type: ParamType::Float,
+                default: ParamValue::Float(8.0),
+                min: None,
+                max: None,
+                description: None,
+            },
+        );
 
         let component_def = ComponentDef {
             name: "test_fuselage".to_string(),
@@ -245,13 +275,16 @@ mod tests {
     #[test]
     fn test_validation_error() {
         let mut params = HashMap::new();
-        params.insert("value".to_string(), ParameterDef {
-            param_type: ParamType::Float,
-            default: ParamValue::Float(10.0),
-            min: Some(0.0),
-            max: Some(20.0),
-            description: None,
-        });
+        params.insert(
+            "value".to_string(),
+            ParameterDef {
+                param_type: ParamType::Float,
+                default: ParamValue::Float(10.0),
+                min: Some(0.0),
+                max: Some(20.0),
+                description: None,
+            },
+        );
 
         let component_def = ComponentDef {
             name: "test".to_string(),

@@ -1,11 +1,11 @@
 // Split-body operation: divide an SDF into two halves along a plane and add
 // alignment features so the printed parts mate correctly.
 
-use std::sync::Arc;
-use glam::Vec3;
+use super::alignment::AlignmentFeature;
 use crate::sdf::Sdf;
 use crate::sdf::booleans::Intersect;
-use super::alignment::AlignmentFeature;
+use glam::Vec3;
+use std::sync::Arc;
 
 // ── SplitPlane ───────────────────────────────────────────────────────────────
 
@@ -44,9 +44,9 @@ impl SplitPlane {
     #[allow(dead_code)] // Part of split plane geometry API
     pub fn normal(&self) -> Vec3 {
         match self {
-            SplitPlane::X(_)                    => Vec3::X,
-            SplitPlane::Y(_)                    => Vec3::Y,
-            SplitPlane::Z(_)                    => Vec3::Z,
+            SplitPlane::X(_) => Vec3::X,
+            SplitPlane::Y(_) => Vec3::Y,
+            SplitPlane::Z(_) => Vec3::Z,
             SplitPlane::Arbitrary { normal, .. } => normal.normalize(),
         }
     }
@@ -54,12 +54,10 @@ impl SplitPlane {
     /// Center point on the plane (origin projected onto it).
     pub fn center(&self) -> Vec3 {
         match self {
-            SplitPlane::X(d)                    => Vec3::new(*d, 0.0, 0.0),
-            SplitPlane::Y(d)                    => Vec3::new(0.0, *d, 0.0),
-            SplitPlane::Z(d)                    => Vec3::new(0.0, 0.0, *d),
-            SplitPlane::Arbitrary { normal, distance } => {
-                normal.normalize() * distance
-            }
+            SplitPlane::X(d) => Vec3::new(*d, 0.0, 0.0),
+            SplitPlane::Y(d) => Vec3::new(0.0, *d, 0.0),
+            SplitPlane::Z(d) => Vec3::new(0.0, 0.0, *d),
+            SplitPlane::Arbitrary { normal, distance } => normal.normalize() * distance,
         }
     }
 
@@ -83,7 +81,10 @@ impl SplitPlane {
             SplitPlane::Arbitrary { distance, .. } => *distance,
         };
         // Negate: inside = point on positive side of plane → use -plane
-        Arc::new(NegatedPlane { normal: n, distance: d })
+        Arc::new(NegatedPlane {
+            normal: n,
+            distance: d,
+        })
     }
 
     /// An SDF representing the negative half-space.
@@ -95,7 +96,10 @@ impl SplitPlane {
             SplitPlane::Z(v) => *v,
             SplitPlane::Arbitrary { distance, .. } => *distance,
         };
-        Arc::new(NegatedPlane { normal: -n, distance: -d })
+        Arc::new(NegatedPlane {
+            normal: -n,
+            distance: -d,
+        })
     }
 
     /// Two unit vectors lying in the plane (for placing features at offsets).
@@ -144,19 +148,19 @@ pub fn split_body(
     alignment: &AlignmentFeature,
 ) -> SplitResult {
     // Carve the two halves
-    let half_a_raw: Arc<dyn Sdf> = Arc::new(Intersect::new(
-        Arc::clone(&body),
-        plane.positive_half_sdf(),
-    ));
-    let half_b_raw: Arc<dyn Sdf> = Arc::new(Intersect::new(
-        Arc::clone(&body),
-        plane.negative_half_sdf(),
-    ));
+    let half_a_raw: Arc<dyn Sdf> =
+        Arc::new(Intersect::new(Arc::clone(&body), plane.positive_half_sdf()));
+    let half_b_raw: Arc<dyn Sdf> =
+        Arc::new(Intersect::new(Arc::clone(&body), plane.negative_half_sdf()));
 
     // Generate alignment features
     let (part_a, part_b) = alignment.apply(half_a_raw, half_b_raw, plane);
 
-    SplitResult { part_a, part_b, plane: plane.clone() }
+    SplitResult {
+        part_a,
+        part_b,
+        plane: plane.clone(),
+    }
 }
 
 /// Split `body` at multiple planes in sequence, returning one part per region
@@ -183,8 +187,8 @@ pub fn split_body_multi(
 
     for (i, (plane, alignment)) in sorted.iter().enumerate() {
         let result = split_body(Arc::clone(&remainder), plane, alignment);
-        parts.push(result.part_b);   // negative side = "earlier" piece
-        remainder = result.part_a;    // positive side continues to next split
+        parts.push(result.part_b); // negative side = "earlier" piece
+        remainder = result.part_a; // positive side continues to next split
         let _ = i;
     }
     parts.push(remainder); // final positive-most piece
@@ -314,22 +318,22 @@ mod tests {
         let sphere: Arc<dyn Sdf> = Arc::new(Sphere::new(15.0));
         let planes = vec![
             (SplitPlane::Z(-4.0), AlignmentFeature::None),
-            (SplitPlane::Z(4.0),  AlignmentFeature::None),
+            (SplitPlane::Z(4.0), AlignmentFeature::None),
         ];
         let parts = split_body_multi(sphere, &planes);
         assert_eq!(parts.len(), 3, "two splits should produce three parts");
 
         // Bottom piece: inside at z=-10, outside at z=0 and z=+10
         assert!(parts[0].distance(Vec3::new(0.0, 0.0, -10.0)) < 0.0);
-        assert!(parts[0].distance(Vec3::new(0.0, 0.0,   0.0)) > 0.0);
+        assert!(parts[0].distance(Vec3::new(0.0, 0.0, 0.0)) > 0.0);
 
         // Middle piece: inside at z=0
-        assert!(parts[1].distance(Vec3::new(0.0, 0.0,  0.0)) < 0.0);
+        assert!(parts[1].distance(Vec3::new(0.0, 0.0, 0.0)) < 0.0);
         assert!(parts[1].distance(Vec3::new(0.0, 0.0, 10.0)) > 0.0);
 
         // Top piece: inside at z=+10
         assert!(parts[2].distance(Vec3::new(0.0, 0.0, 10.0)) < 0.0);
-        assert!(parts[2].distance(Vec3::new(0.0, 0.0,  0.0)) > 0.0);
+        assert!(parts[2].distance(Vec3::new(0.0, 0.0, 0.0)) > 0.0);
     }
 
     #[test]

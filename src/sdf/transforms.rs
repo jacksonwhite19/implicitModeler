@@ -1,8 +1,8 @@
 // SDF transform operations
 
-use std::sync::Arc;
-use glam::{Vec3, Quat};
 use crate::sdf::Sdf;
+use glam::{Quat, Vec3};
+use std::sync::Arc;
 
 /// Translate an SDF by an offset
 pub struct Translate {
@@ -18,6 +18,7 @@ impl Translate {
 
 impl Sdf for Translate {
     fn distance(&self, point: Vec3) -> f32 {
+        crate::sdf::sdf_profile_node_visit();
         self.child.distance(point - self.offset)
     }
 }
@@ -36,6 +37,7 @@ impl Rotate {
 
 impl Sdf for Rotate {
     fn distance(&self, point: Vec3) -> f32 {
+        crate::sdf::sdf_profile_node_visit();
         self.child.distance(self.rotation.inverse() * point)
     }
 }
@@ -54,6 +56,7 @@ impl Scale {
 
 impl Sdf for Scale {
     fn distance(&self, point: Vec3) -> f32 {
+        crate::sdf::sdf_profile_node_visit();
         let scaled_point = point / self.scale;
         let min_scale = self.scale.x.min(self.scale.y).min(self.scale.z);
         self.child.distance(scaled_point) * min_scale
@@ -74,6 +77,7 @@ impl Offset {
 
 impl Sdf for Offset {
     fn distance(&self, point: Vec3) -> f32 {
+        crate::sdf::sdf_profile_node_visit();
         self.child.distance(point) - self.distance
     }
 }
@@ -89,19 +93,24 @@ impl Sdf for Offset {
 /// deformation; do not rely on the value for precise offset operations.
 pub struct Twist {
     pub child: Arc<dyn Sdf>,
-    pub axis: Vec3,   // normalised rotation axis
-    pub rate: f32,    // degrees per unit length along axis
+    pub axis: Vec3, // normalised rotation axis
+    pub rate: f32,  // degrees per unit length along axis
 }
 
 impl Twist {
     /// `axis` is normalised internally; passing a zero vector will produce NaN.
     pub fn new(child: Arc<dyn Sdf>, axis: Vec3, rate: f32) -> Self {
-        Self { child, axis: axis.normalize(), rate }
+        Self {
+            child,
+            axis: axis.normalize(),
+            rate,
+        }
     }
 }
 
 impl Sdf for Twist {
     fn distance(&self, point: Vec3) -> f32 {
+        crate::sdf::sdf_profile_node_visit();
         // Project point onto axis to obtain the twist parameter.
         let d = point.dot(self.axis);
         let angle_rad = (self.rate * d).to_radians();
@@ -123,29 +132,38 @@ impl Sdf for Twist {
 /// Safe for raymarching and marching cubes; do not use for precise offsets.
 pub struct Bend {
     pub child: Arc<dyn Sdf>,
-    pub axis: Vec3,      // normalised bend axis (originally-straight direction)
-    pub curvature: f32,  // radians per unit length along axis
+    pub axis: Vec3,     // normalised bend axis (originally-straight direction)
+    pub curvature: f32, // radians per unit length along axis
 }
 
 impl Bend {
     /// `axis` is normalised internally; passing a zero vector will produce NaN.
     pub fn new(child: Arc<dyn Sdf>, axis: Vec3, curvature: f32) -> Self {
-        Self { child, axis: axis.normalize(), curvature }
+        Self {
+            child,
+            axis: axis.normalize(),
+            curvature,
+        }
     }
 }
 
 impl Sdf for Bend {
     fn distance(&self, point: Vec3) -> f32 {
+        crate::sdf::sdf_profile_node_visit();
         let a = self.axis;
 
         // Build an orthonormal frame: (a, b, c) where b is the "bend into" direction.
         // Choose world-Y as the reference; fall back to world-Z if axis is near-parallel.
-        let world_ref = if a.abs().dot(Vec3::Y) < 0.9 { Vec3::Y } else { Vec3::Z };
+        let world_ref = if a.abs().dot(Vec3::Y) < 0.9 {
+            Vec3::Y
+        } else {
+            Vec3::Z
+        };
         let b = a.cross(world_ref).normalize();
         let c = a.cross(b);
 
         // Decompose point into the local frame.
-        let d   = point.dot(a);
+        let d = point.dot(a);
         let p_b = point.dot(b);
         let p_c = point.dot(c);
 
@@ -153,8 +171,8 @@ impl Sdf for Bend {
         let angle = self.curvature * d;
         let (s, cos_a) = angle.sin_cos();
 
-        let q_a =  cos_a * d   + s     * p_b;
-        let q_b = -s     * d   + cos_a * p_b;
+        let q_a = cos_a * d + s * p_b;
+        let q_b = -s * d + cos_a * p_b;
 
         // Reconstruct the warped point in world space and evaluate child.
         self.child.distance(q_a * a + q_b * b + p_c * c)
@@ -165,17 +183,63 @@ impl Sdf for Bend {
 pub struct Shell {
     pub child: Arc<dyn Sdf>,
     pub thickness: f32,
+    pub collapse_gradient_threshold: f32,
+    pub minimum_inner_clearance_fraction: f32,
 }
 
 impl Shell {
     pub fn new(child: Arc<dyn Sdf>, thickness: f32) -> Self {
-        Self { child, thickness }
+        Self {
+            child,
+            thickness: thickness.max(0.0),
+            collapse_gradient_threshold: 0.35,
+            minimum_inner_clearance_fraction: 4.0,
+        }
+    }
+
+    fn raw_gradient(&self, point: Vec3) -> Vec3 {
+        let eps = (self.thickness * 0.05).clamp(0.01, 0.25);
+        Vec3::new(
+            self.child.distance(point + Vec3::X * eps) - self.child.distance(point - Vec3::X * eps),
+            self.child.distance(point + Vec3::Y * eps) - self.child.distance(point - Vec3::Y * eps),
+            self.child.distance(point + Vec3::Z * eps) - self.child.distance(point - Vec3::Z * eps),
+        ) / (2.0 * eps)
     }
 }
 
 impl Sdf for Shell {
     fn distance(&self, point: Vec3) -> f32 {
-        self.child.distance(point).abs() - self.thickness / 2.0
+        crate::sdf::sdf_profile_node_visit();
+        let outer = self.child.distance(point);
+        if outer >= 0.0 || self.thickness <= 0.0 {
+            return outer;
+        }
+
+        // Hollow solid semantics: keep material where -wall <= d <= 0 and
+        // remove the deeper interior. If the inward offset approaches a medial
+        // axis/collapse zone, suppress the inner cut and leave that region solid.
+        let inset_cut = -outer - self.thickness;
+        if inset_cut <= 0.0 {
+            return outer.max(inset_cut);
+        }
+
+        let gradient = self.raw_gradient(point);
+        let gradient_len = gradient.length();
+        if gradient_len < self.collapse_gradient_threshold {
+            outer
+        } else {
+            // If the opposite wall is less than roughly another wall thickness
+            // away, the inward offset has collapsed. Keep this region solid
+            // instead of emitting internal medial-axis ribs/stripes.
+            let outward = gradient / gradient_len;
+            let inward_probe = point - outward * self.thickness;
+            let inward_clearance = -self.child.distance(inward_probe);
+            if inward_clearance < self.thickness * self.minimum_inner_clearance_fraction {
+                return outer;
+            }
+
+            outer.max(inset_cut)
+        }
     }
 }
 
@@ -192,7 +256,10 @@ mod tests {
         // The sphere center is now at (10, 0, 0)
         // Point at (10, 0, 0) should be at the center (distance = -3)
         let dist_center = translated.distance(Vec3::new(10.0, 0.0, 0.0));
-        assert!((dist_center - (-3.0)).abs() < 0.001, "Center should be inside");
+        assert!(
+            (dist_center - (-3.0)).abs() < 0.001,
+            "Center should be inside"
+        );
 
         // Point at (13, 0, 0) should be on the surface (distance = 0)
         let dist_surface = translated.distance(Vec3::new(13.0, 0.0, 0.0));
@@ -200,7 +267,10 @@ mod tests {
 
         // Point at origin should be outside
         let dist_origin = translated.distance(Vec3::new(0.0, 0.0, 0.0));
-        assert!(dist_origin > 0.0, "Origin should be outside translated sphere");
+        assert!(
+            dist_origin > 0.0,
+            "Origin should be outside translated sphere"
+        );
     }
 
     #[test]
@@ -232,7 +302,11 @@ mod tests {
         let twisted = Twist::new(sphere.clone(), Vec3::Y, 0.0);
         let p = Vec3::new(1.0, 2.0, 1.0);
         let diff = (twisted.distance(p) - sphere.distance(p)).abs();
-        assert!(diff < 1e-5, "zero-rate twist should be identity, diff={}", diff);
+        assert!(
+            diff < 1e-5,
+            "zero-rate twist should be identity, diff={}",
+            diff
+        );
     }
 
     #[test]
@@ -242,16 +316,20 @@ mod tests {
         // At y=0 it is aligned with X; after twisting 90°/unit around Y
         // the box at y=1 should be aligned with Z instead.
         let sdf_box = Arc::new(SdfBox::new(Vec3::new(5.0, 2.0, 0.5)));
-        let twisted  = Twist::new(sdf_box, Vec3::Y, 90.0); // 90 deg/unit around Y
+        let twisted = Twist::new(sdf_box, Vec3::Y, 90.0); // 90 deg/unit around Y
 
         // At y=0 the long axis is X: (4,0,0) should be inside.
-        assert!(twisted.distance(Vec3::new(4.0,  0.0, 0.0)) < 0.0,
-            "at y=0 long axis is X");
+        assert!(
+            twisted.distance(Vec3::new(4.0, 0.0, 0.0)) < 0.0,
+            "at y=0 long axis is X"
+        );
         // At y=1 the box has been twisted -90° back (un-twist) before evaluating.
         // Query (0,1,-4): rotating by -90° around Y maps z=-4 → x=4.
         // Resulting evaluation point (4,1,0) is inside the box (half-extents 5,2,0.5).
-        assert!(twisted.distance(Vec3::new(0.0, 1.0, -4.0)) < 0.0,
-            "at y=1 long axis should be -Z after 90°/unit twist");
+        assert!(
+            twisted.distance(Vec3::new(0.0, 1.0, -4.0)) < 0.0,
+            "at y=1 long axis should be -Z after 90°/unit twist"
+        );
     }
 
     #[test]
@@ -261,7 +339,11 @@ mod tests {
         let bent = Bend::new(sphere.clone(), Vec3::X, 0.0);
         let p = Vec3::new(1.5, 0.5, 1.0);
         let diff = (bent.distance(p) - sphere.distance(p)).abs();
-        assert!(diff < 1e-5, "zero curvature should be identity, diff={}", diff);
+        assert!(
+            diff < 1e-5,
+            "zero curvature should be identity, diff={}",
+            diff
+        );
     }
 
     #[test]
@@ -272,7 +354,10 @@ mod tests {
         // The origin should still be inside regardless of curvature.
         let cyl = Arc::new(Cylinder::new(0.5, 50.0));
         let bent = Bend::new(cyl, Vec3::Z, 0.2); // gentle bend along Z axis
-        assert!(bent.distance(Vec3::ZERO) < 0.0, "origin should remain inside bent cylinder");
+        assert!(
+            bent.distance(Vec3::ZERO) < 0.0,
+            "origin should remain inside bent cylinder"
+        );
     }
 
     #[test]

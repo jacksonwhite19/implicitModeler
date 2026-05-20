@@ -14,6 +14,8 @@ pub struct AppSettings {
     /// When `None`, the bundled binary and system PATH are searched automatically.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ccx_path: Option<String>,
+    #[serde(default)]
+    pub export: crate::export::ExportSettings,
 }
 
 impl AppSettings {
@@ -22,10 +24,12 @@ impl AppSettings {
         let base = std::env::var("APPDATA")
             .map(PathBuf::from)
             .or_else(|_| std::env::var("HOME").map(|h| PathBuf::from(h).join(".config")))
-            .unwrap_or_else(|_| std::env::current_exe()
-                .ok()
-                .and_then(|p| p.parent().map(|d| d.to_path_buf()))
-                .unwrap_or_else(|| PathBuf::from(".")));
+            .unwrap_or_else(|_| {
+                std::env::current_exe()
+                    .ok()
+                    .and_then(|p| p.parent().map(|d| d.to_path_buf()))
+                    .unwrap_or_else(|| PathBuf::from("."))
+            });
         base.join("implicit-cad").join("settings.json")
     }
 

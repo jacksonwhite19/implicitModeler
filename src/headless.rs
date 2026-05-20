@@ -1,42 +1,51 @@
 // Headless mode for batch processing
 
-use std::path::Path;
-use std::collections::HashMap;
-use std::time::Instant;
-use glam::Vec3;
-use serde::Serialize;
-use indexmap::IndexMap;
-use crate::sdf::Sdf;
+use crate::analysis::{
+    GeometryValidationResult, ValidationSettings, compute_model_properties, validate_geometry,
+};
+use crate::export::adaptive_octree::AdaptiveOctreeSettings;
+use crate::export::aero::{AeroExportMode, AeroExportSettings, export_aero_surfaces};
+use crate::mesh::{Mesh, MeshQuality};
+use crate::pipeline::compute_sdf_grid_cached_arc;
 use crate::scripting;
 use crate::scripting::ScriptResult;
-use crate::mesh::{Mesh, MeshQuality};
+use crate::sdf::Sdf;
+use glam::Vec3;
+use indexmap::IndexMap;
+use serde::Serialize;
+use std::collections::HashMap;
+use std::path::Path;
+use std::sync::Arc;
+use std::time::Instant;
 
 // ── Metrics structs ───────────────────────────────────────────────────────────
 
 #[derive(Serialize)]
 pub struct BoundingBoxMetrics {
-    pub min:  [f32; 3],
-    pub max:  [f32; 3],
+    pub min: [f32; 3],
+    pub max: [f32; 3],
     pub size: [f32; 3],
 }
 
 #[derive(Serialize)]
 pub struct MetricsOutput {
-    pub schema_version:        u32,
-    pub volume_mm3:            f32,
-    pub surface_area_mm2:      f32,
-    pub bounding_box:          BoundingBoxMetrics,
-    pub center_of_mass:        [f32; 3],
-    pub estimated_mass_g:      f32,
+    pub schema_version: u32,
+    pub volume_mm3: f32,
+    pub surface_area_mm2: f32,
+    pub bounding_box: BoundingBoxMetrics,
+    pub center_of_mass: [f32; 3],
+    pub estimated_mass_g: f32,
     pub min_wall_thickness_mm: f32,
-    pub min_wall_location:     [f32; 3],
-    pub component_masses:      HashMap<String, f32>,
-    pub component_positions:   HashMap<String, [f32; 3]>,
-    pub script_cg:             Option<[f32; 3]>,
-    pub geometric_cg:          [f32; 3],
-    pub evaluation_time_ms:    u64,
-    pub grid_resolution:       u32,
-    pub dimensions_used:       HashMap<String, f64>,
+    pub min_wall_location: [f32; 3],
+    pub component_masses: HashMap<String, f32>,
+    pub component_positions: HashMap<String, [f32; 3]>,
+    pub script_cg: Option<[f32; 3]>,
+    pub geometric_cg: [f32; 3],
+    pub evaluation_time_ms: u64,
+    pub mesh_extraction_time_ms: u64,
+    pub grid_resolution: u32,
+    pub dimensions_used: HashMap<String, f64>,
+    pub validation: GeometryValidationResult,
 }
 
 fn quality_from_resolution(resolution: u32) -> MeshQuality {
@@ -49,28 +58,6 @@ fn quality_from_resolution(resolution: u32) -> MeshQuality {
 }
 
 // ── Mesh geometry helpers ─────────────────────────────────────────────────────
-
-fn mesh_volume(mesh: &Mesh) -> f32 {
-    let mut vol = 0.0_f32;
-    for i in (0..mesh.indices.len()).step_by(3) {
-        let a = Vec3::from(mesh.vertices[mesh.indices[i]     as usize].position);
-        let b = Vec3::from(mesh.vertices[mesh.indices[i + 1] as usize].position);
-        let c = Vec3::from(mesh.vertices[mesh.indices[i + 2] as usize].position);
-        vol += a.dot(b.cross(c));
-    }
-    (vol / 6.0).abs()
-}
-
-fn mesh_surface_area(mesh: &Mesh) -> f32 {
-    let mut area = 0.0_f32;
-    for i in (0..mesh.indices.len()).step_by(3) {
-        let a = Vec3::from(mesh.vertices[mesh.indices[i]     as usize].position);
-        let b = Vec3::from(mesh.vertices[mesh.indices[i + 1] as usize].position);
-        let c = Vec3::from(mesh.vertices[mesh.indices[i + 2] as usize].position);
-        area += (b - a).cross(c - a).length() * 0.5;
-    }
-    area
-}
 
 fn mesh_bounds(mesh: &Mesh) -> (Vec3, Vec3) {
     if mesh.vertices.is_empty() {
@@ -86,38 +73,31 @@ fn mesh_bounds(mesh: &Mesh) -> (Vec3, Vec3) {
     (min, max)
 }
 
-fn mesh_centroid(mesh: &Mesh) -> Vec3 {
-    if mesh.vertices.is_empty() {
-        return Vec3::ZERO;
-    }
-    let sum: Vec3 = mesh.vertices.iter().map(|v| Vec3::from(v.position)).sum();
-    sum / mesh.vertices.len() as f32
-}
-
 /// Simplified min-wall-thickness estimate via SDF interior sampling.
 /// Samples on a 32³ grid; for interior points, -SDF(p) approximates local clearance to surface.
 fn min_wall_thickness(sdf: &dyn Sdf, bbox_min: Vec3, bbox_max: Vec3) -> (f32, Vec3) {
     const STEPS: usize = 32;
     let mut min_thickness = f32::MAX;
-    let mut min_location  = Vec3::ZERO;
+    let mut min_location = Vec3::ZERO;
 
     let step = (bbox_max - bbox_min) / STEPS as f32;
 
     for ix in 0..STEPS {
         for iy in 0..STEPS {
             for iz in 0..STEPS {
-                let p = bbox_min + Vec3::new(
-                    ix as f32 * step.x + step.x * 0.5,
-                    iy as f32 * step.y + step.y * 0.5,
-                    iz as f32 * step.z + step.z * 0.5,
-                );
+                let p = bbox_min
+                    + Vec3::new(
+                        ix as f32 * step.x + step.x * 0.5,
+                        iy as f32 * step.y + step.y * 0.5,
+                        iz as f32 * step.z + step.z * 0.5,
+                    );
                 let d = sdf.distance(p);
                 // Only consider interior points (d < 0)
                 if d < 0.0 {
                     let thickness = -d;
                     if thickness < min_thickness {
                         min_thickness = thickness;
-                        min_location  = p;
+                        min_location = p;
                     }
                 }
             }
@@ -134,29 +114,33 @@ fn min_wall_thickness(sdf: &dyn Sdf, bbox_min: Vec3, bbox_max: Vec3) -> (f32, Ve
 // ── Public metrics API ────────────────────────────────────────────────────────
 
 pub fn compute_metrics(
-    sdf:           &dyn Sdf,
-    mesh:          &Mesh,
+    sdf: &Arc<dyn Sdf>,
+    mesh: &Mesh,
     script_result: &ScriptResult,
-    resolution:    u32,
-    eval_time_ms:  u64,
-    dimensions:    &IndexMap<String, f64>,
+    resolution: u32,
+    eval_time_ms: u64,
+    mesh_extraction_time_ms: u64,
+    dimensions: &IndexMap<String, f64>,
 ) -> MetricsOutput {
-    // Geometry
-    let volume       = mesh_volume(mesh);
-    let surface_area = mesh_surface_area(mesh);
+    // Geometry from sampled field properties so thin-walled/open-shell models do not
+    // collapse to zero metrics just because the export mesh is not watertight.
     let (bb_min, bb_max) = mesh_bounds(mesh);
+    let span = (bb_max - bb_min).max(Vec3::splat(1.0));
+    let pad = span * 0.05 + Vec3::splat(1.0);
+    let grid =
+        compute_sdf_grid_cached_arc(sdf, bb_min - pad, bb_max + pad, resolution.clamp(16, 48));
+    let (volume, surface_area, geometric_cg) = compute_model_properties(&grid);
     let bb_size = bb_max - bb_min;
-    let geometric_cg = mesh_centroid(mesh);
 
     // Estimated mass: PLA density ≈ 0.0012 g/mm³
     const PLA_DENSITY: f32 = 0.0012;
     let estimated_mass = volume * PLA_DENSITY;
 
     // Min wall thickness
-    let (min_wall, min_wall_loc) = min_wall_thickness(sdf, bb_min, bb_max);
+    let (min_wall, min_wall_loc) = min_wall_thickness(sdf.as_ref(), bb_min, bb_max);
 
     // Component masses and positions from script
-    let mut component_masses:    HashMap<String, f32>      = HashMap::new();
+    let mut component_masses: HashMap<String, f32> = HashMap::new();
     let mut component_positions: HashMap<String, [f32; 3]> = HashMap::new();
     for mp in &script_result.mass_points {
         component_masses.insert(mp.name.clone(), mp.mass_g);
@@ -167,42 +151,51 @@ pub fn compute_metrics(
     let script_cg = script_result.center_of_gravity().map(|v| v.to_array());
 
     // Dimensions
-    let dimensions_used: HashMap<String, f64> = dimensions
-        .iter()
-        .map(|(k, v)| (k.clone(), *v))
-        .collect();
+    let dimensions_used: HashMap<String, f64> =
+        dimensions.iter().map(|(k, v)| (k.clone(), *v)).collect();
+    let validation = validate_geometry(
+        sdf,
+        mesh,
+        &ValidationSettings {
+            grid_resolution: resolution.clamp(16, 48),
+            ..Default::default()
+        },
+    );
 
     MetricsOutput {
-        schema_version:        1,
-        volume_mm3:            volume,
-        surface_area_mm2:      surface_area,
+        schema_version: 2,
+        volume_mm3: volume,
+        surface_area_mm2: surface_area,
         bounding_box: BoundingBoxMetrics {
-            min:  bb_min.to_array(),
-            max:  bb_max.to_array(),
+            min: bb_min.to_array(),
+            max: bb_max.to_array(),
             size: bb_size.to_array(),
         },
-        center_of_mass:        geometric_cg.to_array(),
-        estimated_mass_g:      estimated_mass,
+        center_of_mass: geometric_cg.to_array(),
+        estimated_mass_g: estimated_mass,
         min_wall_thickness_mm: min_wall,
-        min_wall_location:     min_wall_loc.to_array(),
+        min_wall_location: min_wall_loc.to_array(),
         component_masses,
         component_positions,
         script_cg,
-        geometric_cg:          geometric_cg.to_array(),
-        evaluation_time_ms:    eval_time_ms,
-        grid_resolution:       resolution,
+        geometric_cg: geometric_cg.to_array(),
+        evaluation_time_ms: eval_time_ms,
+        mesh_extraction_time_ms,
+        grid_resolution: resolution,
         dimensions_used,
+        validation,
     }
 }
 
 // ── Headless entry points ─────────────────────────────────────────────────────
 
 pub fn execute_script_headless(
-    script_path:    &Path,
-    output_path:    &Path,
-    format:         &str,
-    resolution:     u32,
+    script_path: &Path,
+    output_path: &Path,
+    format: &str,
+    resolution: u32,
     smooth_normals: bool,
+    smooth_surface: bool,
 ) -> Result<(), String> {
     execute_script_headless_extended(
         script_path,
@@ -210,19 +203,37 @@ pub fn execute_script_headless(
         format,
         resolution,
         smooth_normals,
+        smooth_surface,
         &[],
         None,
+        "external",
+        0.5,
+        1.0,
+        6,
+        false,
+        false,
+        false,
+        128_000_000,
     )
 }
 
 pub fn execute_script_headless_extended(
-    script_path:    &Path,
-    output_path:    Option<&Path>,
-    format:         &str,
-    resolution:     u32,
+    script_path: &Path,
+    output_path: Option<&Path>,
+    format: &str,
+    resolution: u32,
     smooth_normals: bool,
-    dim_overrides:  &[(String, f64)],
-    metrics_path:   Option<&Path>,
+    smooth_surface: bool,
+    dim_overrides: &[(String, f64)],
+    metrics_path: Option<&Path>,
+    aero_mode: &str,
+    aero_target_error_mm: f32,
+    aero_min_cell_mm: f32,
+    aero_max_depth: u32,
+    aero_write_obj: bool,
+    aero_fast_mode: bool,
+    aero_uniform_reference: bool,
+    aero_max_patch_voxels: u64,
 ) -> Result<(), String> {
     // Load script and dimensions
     let (script, mut dimensions) = load_script_and_dims(script_path)?;
@@ -230,6 +241,103 @@ pub fn execute_script_headless_extended(
     // Apply dimension overrides
     for (k, v) in dim_overrides {
         dimensions.insert(k.clone(), *v);
+    }
+
+    let is_aero_export = format.eq_ignore_ascii_case("aero");
+
+    if is_aero_export {
+        let t0 = Instant::now();
+        eprintln!(
+            "[aero] starting aero metadata evaluation for {}",
+            script_path.display()
+        );
+        let out_dir = output_path.ok_or("Aero export requires --output <directory>")?;
+        let aero_parts = scripting::evaluate_aero_export_parts(
+            &script,
+            None,
+            None,
+            None,
+            None,
+            &dimensions,
+            script_path.parent(),
+            None,
+            &[],
+        )?;
+        let aero_eval_ms = t0.elapsed().as_millis() as u64;
+        eprintln!(
+            "[aero] metadata evaluation completed in {} ms ({} aero part(s))",
+            aero_eval_ms,
+            aero_parts.len()
+        );
+        let eval_ms = t0.elapsed().as_millis() as u64;
+        let quality = quality_from_resolution(resolution);
+        let settings = AeroExportSettings {
+            mode: AeroExportMode::parse(aero_mode)?,
+            quality,
+            smooth_normals,
+            write_obj_per_patch: aero_write_obj,
+            fast_cfd_mode: aero_fast_mode,
+            uniform_reference_mode: aero_uniform_reference,
+            uniform_reference_target_cell_mm: aero_min_cell_mm.max(0.05),
+            max_patch_preflight_voxels: aero_max_patch_voxels.max(1_000_000),
+            adaptive_octree: AdaptiveOctreeSettings {
+                error_tolerance_mm: aero_target_error_mm.max(0.01),
+                min_cell_size_mm: aero_min_cell_mm.max(0.05),
+                max_depth: aero_max_depth.max(1),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let source_model = script_path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("model");
+        eprintln!("[aero] starting patch export for {}", source_model);
+        let manifest = export_aero_surfaces(source_model, &aero_parts, out_dir, &settings)?;
+        eprintln!(
+            "[aero] patch export completed in {} ms",
+            t0.elapsed().as_millis()
+        );
+        println!(
+            "Aero export wrote {} patch file(s) to {}",
+            manifest.patches.len(),
+            out_dir.display()
+        );
+        if let Some(mpath) = metrics_path {
+            let script_result = scripting::evaluate_script_full(
+                &script,
+                None,
+                None,
+                None,
+                None,
+                &dimensions,
+                script_path.parent(),
+                None,
+                &[],
+            )?;
+            let metrics = compute_metrics(
+                &script_result.sdf,
+                &crate::export::build_export_mesh(
+                    script_result.sdf.as_ref(),
+                    crate::pipeline::auto_bounds(script_result.sdf.as_ref()).0,
+                    crate::pipeline::auto_bounds(script_result.sdf.as_ref()).1,
+                    quality,
+                    smooth_normals,
+                ),
+                &script_result,
+                resolution,
+                eval_ms,
+                0,
+                &dimensions,
+            );
+            let json = serde_json::to_string_pretty(&metrics)
+                .map_err(|e| format!("Metrics serialization failed: {}", e))?;
+            std::fs::write(mpath, json)
+                .map_err(|e| format!("Failed to write metrics file: {}", e))?;
+            println!("Metrics written to {}", mpath.display());
+        }
+        println!("Evaluation time: {}ms, resolution: {}", eval_ms, resolution);
+        return Ok(());
     }
 
     // Time the evaluation
@@ -251,13 +359,26 @@ pub fn execute_script_headless_extended(
     let (bounds_min, bounds_max) = crate::pipeline::auto_bounds(&*script_result.sdf);
 
     // Extract mesh
-    let mesh = crate::export::build_export_mesh(
+    let mesh_t0 = Instant::now();
+    let mut mesh = crate::export::build_export_mesh(
         script_result.sdf.as_ref(),
         bounds_min,
         bounds_max,
         quality_from_resolution(resolution),
         smooth_normals,
     );
+    if smooth_surface {
+        mesh = crate::export::smooth_export_mesh_with_topology_guard(
+            &mesh,
+            script_result.sdf.as_ref(),
+            quality_from_resolution(resolution).target_cell_size_mm(),
+            crate::export::SurfaceProjectionSettings {
+                enabled: true,
+                ..Default::default()
+            },
+        );
+    }
+    let mesh_extraction_time_ms = mesh_t0.elapsed().as_millis() as u64;
 
     // Export mesh if requested
     if let Some(out) = output_path {
@@ -273,34 +394,42 @@ pub fn execute_script_headless_extended(
             "package" => {
                 crate::export::export_manufacturing_package(
                     &mesh,
-                    script_path.file_stem().and_then(|s| s.to_str()).unwrap_or("project"),
+                    script_path
+                        .file_stem()
+                        .and_then(|s| s.to_str())
+                        .unwrap_or("project"),
                     out,
                 )?;
             }
             _ => {
-                return Err(format!("Unknown format: {}. Use 'stl', 'obj', or 'package'.", format));
+                return Err(format!(
+                    "Unknown format: {}. Use 'stl', 'obj', 'package', or 'aero'.",
+                    format
+                ));
             }
         }
-        println!("Exported {} ({} vertices, {} triangles)",
+        println!(
+            "Exported {} ({} vertices, {} triangles)",
             out.display(),
             mesh.vertices.len(),
-            mesh.indices.len() / 3);
+            mesh.indices.len() / 3
+        );
     }
 
     // Compute and write metrics if requested
     if let Some(mpath) = metrics_path {
         let metrics = compute_metrics(
-            script_result.sdf.as_ref(),
+            &script_result.sdf,
             &mesh,
             &script_result,
             resolution,
             eval_ms,
+            mesh_extraction_time_ms,
             &dimensions,
         );
         let json = serde_json::to_string_pretty(&metrics)
             .map_err(|e| format!("Metrics serialization failed: {}", e))?;
-        std::fs::write(mpath, json)
-            .map_err(|e| format!("Failed to write metrics file: {}", e))?;
+        std::fs::write(mpath, json).map_err(|e| format!("Failed to write metrics file: {}", e))?;
         println!("Metrics written to {}", mpath.display());
     }
 
@@ -326,17 +455,26 @@ fn load_script_and_dims(path: &Path) -> Result<(String, IndexMap<String, f64>), 
     }
 
     // Load as raw Rhai script
-    let script = std::fs::read_to_string(path)
-        .map_err(|e| format!("Failed to read script: {}", e))?;
+    let script =
+        std::fs::read_to_string(path).map_err(|e| format!("Failed to read script: {}", e))?;
     Ok((script, IndexMap::new()))
 }
 
 pub fn execute_batch(
-    input_dir:      &Path,
-    output_dir:     &Path,
-    format:         &str,
-    resolution:     u32,
+    input_dir: &Path,
+    output_dir: &Path,
+    format: &str,
+    resolution: u32,
     smooth_normals: bool,
+    smooth_surface: bool,
+    aero_mode: &str,
+    aero_target_error_mm: f32,
+    aero_min_cell_mm: f32,
+    aero_max_depth: u32,
+    aero_write_obj: bool,
+    aero_fast_mode: bool,
+    aero_uniform_reference: bool,
+    aero_max_patch_voxels: u64,
 ) -> Result<(), String> {
     std::fs::create_dir_all(output_dir)
         .map_err(|e| format!("Failed to create output directory: {}", e))?;
@@ -345,19 +483,39 @@ pub fn execute_batch(
         .map_err(|e| format!("Failed to read input directory: {}", e))?;
 
     let mut successes = 0;
-    let mut failures  = 0;
+    let mut failures = 0;
 
     for entry in entries {
         let entry = entry.map_err(|e| format!("Failed to read directory entry: {}", e))?;
-        let path  = entry.path();
+        let path = entry.path();
 
         if path.extension().and_then(|s| s.to_str()) == Some("rhai") {
-            let file_stem   = path.file_stem().unwrap();
+            let file_stem = path.file_stem().unwrap();
             let output_name = format!("{}.{}", file_stem.to_str().unwrap(), format);
             let output_path = output_dir.join(output_name);
 
-            print!("Processing {}... ", path.file_name().unwrap().to_str().unwrap());
-            match execute_script_headless(&path, &output_path, format, resolution, smooth_normals) {
+            print!(
+                "Processing {}... ",
+                path.file_name().unwrap().to_str().unwrap()
+            );
+            match execute_script_headless_extended(
+                &path,
+                Some(&output_path),
+                format,
+                resolution,
+                smooth_normals,
+                smooth_surface,
+                &[],
+                None,
+                aero_mode,
+                aero_target_error_mm,
+                aero_min_cell_mm,
+                aero_max_depth,
+                aero_write_obj,
+                aero_fast_mode,
+                aero_uniform_reference,
+                aero_max_patch_voxels,
+            ) {
                 Ok(_) => {
                     successes += 1;
                 }
@@ -394,8 +552,22 @@ mod tests {
         // Sphere of radius 10 → analytical volume = 4/3 * π * 10³ ≈ 4188.8 mm³
         let script_result = evaluate_script("sphere(10.0)").unwrap();
         let sdf = &*script_result.sdf;
-        let mesh = crate::export::build_export_mesh(sdf, Vec3::splat(-15.0), Vec3::splat(15.0), MeshQuality::Ultra, false);
-        let metrics = compute_metrics(sdf, &mesh, &script_result, 64, 0, &IndexMap::new());
+        let mesh = crate::export::build_export_mesh(
+            sdf,
+            Vec3::splat(-15.0),
+            Vec3::splat(15.0),
+            MeshQuality::Ultra,
+            false,
+        );
+        let metrics = compute_metrics(
+            &script_result.sdf,
+            &mesh,
+            &script_result,
+            64,
+            0,
+            0,
+            &IndexMap::new(),
+        );
         let analytical = (4.0_f32 / 3.0) * std::f32::consts::PI * 1000.0; // 4188.8
         let error_pct = ((metrics.volume_mm3 - analytical) / analytical).abs() * 100.0;
         assert!(
@@ -411,13 +583,28 @@ mod tests {
     fn test_metrics_has_all_fields() {
         let script_result = evaluate_script("sphere(5.0)").unwrap();
         let sdf = &*script_result.sdf;
-        let mesh = crate::export::build_export_mesh(sdf, Vec3::splat(-10.0), Vec3::splat(10.0), MeshQuality::Normal, false);
-        let metrics = compute_metrics(sdf, &mesh, &script_result, 32, 100, &IndexMap::new());
-        assert_eq!(metrics.schema_version, 1);
+        let mesh = crate::export::build_export_mesh(
+            sdf,
+            Vec3::splat(-10.0),
+            Vec3::splat(10.0),
+            MeshQuality::Normal,
+            false,
+        );
+        let metrics = compute_metrics(
+            &script_result.sdf,
+            &mesh,
+            &script_result,
+            32,
+            100,
+            0,
+            &IndexMap::new(),
+        );
+        assert_eq!(metrics.schema_version, 2);
         assert!(metrics.volume_mm3 > 0.0);
         assert!(metrics.surface_area_mm2 > 0.0);
         assert_eq!(metrics.grid_resolution, 32);
         assert_eq!(metrics.evaluation_time_ms, 100);
+        assert!(metrics.validation.valid);
     }
 
     #[test]
@@ -426,14 +613,29 @@ mod tests {
         let mut dims = IndexMap::new();
         dims.insert("wingspan".to_string(), 8.0_f64);
         let result = crate::scripting::evaluate_script_full(
-            script, None, None, None, None, &dims, None, None, &[]
-        ).unwrap();
+            script,
+            None,
+            None,
+            None,
+            None,
+            &dims,
+            None,
+            None,
+            &[],
+        )
+        .unwrap();
         assert!(
             result.sdf.distance(Vec3::new(7.5, 0.0, 0.0)) < 0.0,
             "Sphere of radius 8 should contain point at 7.5"
         );
-        let mesh = crate::export::build_export_mesh(&*result.sdf, Vec3::splat(-12.0), Vec3::splat(12.0), MeshQuality::Normal, false);
-        let metrics = compute_metrics(&*result.sdf, &mesh, &result, 32, 0, &dims);
+        let mesh = crate::export::build_export_mesh(
+            &*result.sdf,
+            Vec3::splat(-12.0),
+            Vec3::splat(12.0),
+            MeshQuality::Normal,
+            false,
+        );
+        let metrics = compute_metrics(&result.sdf, &mesh, &result, 32, 0, 0, &dims);
         assert_eq!(metrics.dimensions_used.get("wingspan"), Some(&8.0_f64));
     }
 
@@ -453,7 +655,8 @@ mod tests {
   "camera_target": [0.0, 0.0, 0.0],
   "dimensions": { "radius": 6.5 }
 }"#,
-        ).unwrap();
+        )
+        .unwrap();
 
         let (script, dims) = load_script_and_dims(&path).unwrap();
         assert_eq!(script, "sphere(radius)");
@@ -478,7 +681,8 @@ mod tests {
   "camera_target": [0.0, 0.0, 0.0],
   "dimensions": { "radius": 4.0 }
 }"#,
-        ).unwrap();
+        )
+        .unwrap();
 
         execute_script_headless_extended(
             &project_path,
@@ -486,15 +690,32 @@ mod tests {
             "stl",
             24,
             false,
+            false,
             &[("radius".to_string(), 5.0)],
             Some(&metrics_path),
-        ).unwrap();
+            "external",
+            0.5,
+            1.0,
+            6,
+            false,
+            false,
+            false,
+            128_000_000,
+        )
+        .unwrap();
 
-        assert!(mesh_path.exists(), "Headless export should write the mesh file");
-        assert!(metrics_path.exists(), "Headless export should write the metrics file");
+        assert!(
+            mesh_path.exists(),
+            "Headless export should write the mesh file"
+        );
+        assert!(
+            metrics_path.exists(),
+            "Headless export should write the metrics file"
+        );
         let metrics = std::fs::read_to_string(metrics_path).unwrap();
         assert!(metrics.contains("\"radius\""));
         assert!(metrics.contains("5.0"));
+        assert!(metrics.contains("\"validation\""));
     }
 
     #[test]
@@ -510,12 +731,274 @@ mod tests {
             "package",
             24,
             false,
+            false,
             &[],
             None,
-        ).unwrap();
+            "external",
+            0.5,
+            1.0,
+            6,
+            false,
+            false,
+            false,
+            128_000_000,
+        )
+        .unwrap();
 
         assert!(package_dir.join("main_body.stl").exists());
         assert!(package_dir.join("bom.csv").exists());
         assert!(package_dir.join("assembly_notes.md").exists());
+    }
+
+    #[test]
+    fn test_execute_headless_aero_export_writes_manifest_and_patch() {
+        let temp = TempDir::new().unwrap();
+        let script_path = temp.path().join("aircraft.rhai");
+        let aero_dir = temp.path().join("aero");
+        std::fs::write(
+            &script_path,
+            r#"
+                let fuse = translate(box_(40.0, 30.0, 20.0), 3.0, 2.0, 1.0);
+                let rib = translate(box_(5.0, 5.0, 5.0), 0.0, 0.0, 0.0);
+                let aero_export = #{
+                    parts: [
+                        #{
+                            name: "fuselage_oml",
+                            sdf: fuse,
+                            aero_role: "outer_mold_line",
+                            patch_name: "fuselage",
+                            include_in_modes: ["external"]
+                        },
+                        #{
+                            name: "internal_rib",
+                            sdf: rib,
+                            aero_role: "internal_structure",
+                            patch_name: "rib"
+                        }
+                    ]
+                };
+                union(fuse, rib)
+            "#,
+        )
+        .unwrap();
+
+        let script = std::fs::read_to_string(&script_path).unwrap();
+        let parts = crate::scripting::evaluate_aero_export_parts(
+            &script,
+            None,
+            None,
+            None,
+            None,
+            &IndexMap::new(),
+            script_path.parent(),
+            None,
+            &[],
+        )
+        .unwrap();
+        let settings = crate::export::aero::AeroExportSettings {
+            mode: crate::export::aero::AeroExportMode::External,
+            quality: MeshQuality::Ultra,
+            smooth_normals: false,
+            drop_tiny_components: true,
+            min_component_triangles: 0,
+            ..Default::default()
+        };
+        crate::export::aero::export_aero_surfaces("aircraft", &parts, &aero_dir, &settings)
+            .unwrap();
+
+        assert!(aero_dir.join("manifest.json").exists());
+        assert!(aero_dir.join("patch_summary.json").exists());
+        assert!(aero_dir.join("export_report.md").exists());
+        assert!(aero_dir.join("openfoam_geometry_dict.txt").exists());
+        assert!(aero_dir.join("openfoam_boundary_summary.md").exists());
+        assert!(aero_dir.join("snappyHexMesh_notes.md").exists());
+        assert!(aero_dir.join("composite_aero.stl").exists());
+        assert!(aero_dir.join("combined_patches.obj").exists());
+        assert!(
+            aero_dir
+                .join("openfoam_template")
+                .join("system")
+                .join("surfaceFeatureExtractDict")
+                .exists()
+        );
+        assert!(
+            aero_dir
+                .join("openfoam_template")
+                .join("constant")
+                .join("triSurface")
+                .join("fuselage.stl")
+                .exists()
+        );
+        assert!(aero_dir.join("fuselage.stl").exists());
+    }
+
+    #[test]
+    fn test_execute_headless_aero_export_external_plus_inlets_writes_duct_patch() {
+        let temp = TempDir::new().unwrap();
+        let script_path = temp.path().join("aircraft_inlet.rhai");
+        let aero_dir = temp.path().join("aero_inlets");
+        std::fs::write(
+            &script_path,
+            r#"
+                let aircraft = translate(box_(40.0, 30.0, 20.0), 3.0, 2.0, 1.0);
+                let duct = translate(box_(10.0, 8.0, 30.0), 15.0, 0.0, 0.0);
+                let rib = box_(5.0, 5.0, 5.0);
+                let aero_export = #{
+                    parts: [
+                        #{
+                            name: "aircraft_oml",
+                            sdf: aircraft,
+                            aero_role: "outer_mold_line",
+                            patch_name: "aircraft",
+                            include_in_modes: ["external", "external_plus_inlets"]
+                        },
+                        #{
+                            name: "duct_internal",
+                            sdf: duct,
+                            aero_role: "flow_path_internal",
+                            patch_name: "duct",
+                            include_in_modes: ["external_plus_inlets"]
+                        },
+                        #{
+                            name: "internal_rib",
+                            sdf: rib,
+                            aero_role: "internal_structure",
+                            patch_name: "rib"
+                        }
+                    ]
+                };
+                union(aircraft, union(duct, rib))
+            "#,
+        )
+        .unwrap();
+
+        let script = std::fs::read_to_string(&script_path).unwrap();
+        let parts = crate::scripting::evaluate_aero_export_parts(
+            &script,
+            None,
+            None,
+            None,
+            None,
+            &IndexMap::new(),
+            script_path.parent(),
+            None,
+            &[],
+        )
+        .unwrap();
+        let settings = crate::export::aero::AeroExportSettings {
+            mode: crate::export::aero::AeroExportMode::ExternalPlusInlets,
+            quality: MeshQuality::Ultra,
+            smooth_normals: false,
+            drop_tiny_components: true,
+            min_component_triangles: 0,
+            ..Default::default()
+        };
+        let manifest = crate::export::aero::export_aero_surfaces(
+            "aircraft_inlet",
+            &parts,
+            &aero_dir,
+            &settings,
+        )
+        .unwrap();
+
+        assert!(aero_dir.join("manifest.json").exists());
+        assert!(aero_dir.join("aircraft.stl").exists());
+        assert!(aero_dir.join("duct.stl").exists());
+        assert!(manifest.included_parts.iter().any(|p| p == "duct_internal"));
+        assert!(manifest.excluded_parts.iter().any(|p| p == "internal_rib"));
+    }
+
+    #[test]
+    fn test_aero_export_optionally_writes_obj_per_patch() {
+        let temp = TempDir::new().unwrap();
+        let script_path = temp.path().join("aircraft_obj.rhai");
+        let aero_dir = temp.path().join("aero_obj");
+        std::fs::write(
+            &script_path,
+            r#"
+                let aircraft = box_(20.0, 10.0, 8.0);
+                let aero_export = #{
+                    parts: [
+                        #{
+                            name: "aircraft_oml",
+                            sdf: aircraft,
+                            aero_role: "outer_mold_line",
+                            patch_name: "aircraft"
+                        }
+                    ]
+                };
+                aircraft
+            "#,
+        )
+        .unwrap();
+        let script = std::fs::read_to_string(&script_path).unwrap();
+        let parts = crate::scripting::evaluate_aero_export_parts(
+            &script,
+            None,
+            None,
+            None,
+            None,
+            &IndexMap::new(),
+            script_path.parent(),
+            None,
+            &[],
+        )
+        .unwrap();
+        let settings = crate::export::aero::AeroExportSettings {
+            mode: crate::export::aero::AeroExportMode::External,
+            quality: MeshQuality::Draft,
+            write_obj_per_patch: true,
+            min_component_triangles: 0,
+            ..Default::default()
+        };
+        crate::export::aero::export_aero_surfaces("aircraft_obj", &parts, &aero_dir, &settings)
+            .unwrap();
+        assert!(aero_dir.join("aircraft.stl").exists());
+        assert!(aero_dir.join("aircraft.obj").exists());
+        assert!(aero_dir.join("patch_summary.json").exists());
+    }
+
+    #[test]
+    fn test_scratchpad_plane_shell_metrics_are_nonzero() {
+        let script = std::fs::read_to_string("scratchpad_plane.rhai").unwrap();
+        let result = crate::scripting::evaluate_script_full(
+            &script,
+            None,
+            None,
+            None,
+            None,
+            &IndexMap::new(),
+            Some(std::path::Path::new(".")),
+            None,
+            &[],
+        )
+        .unwrap();
+
+        let (bounds_min, bounds_max) = crate::pipeline::auto_bounds(result.sdf.as_ref());
+        let mesh = crate::export::build_export_mesh(
+            result.sdf.as_ref(),
+            bounds_min,
+            bounds_max,
+            MeshQuality::Draft,
+            false,
+        );
+        let metrics = compute_metrics(&result.sdf, &mesh, &result, 24, 0, 0, &IndexMap::new());
+        assert!(
+            metrics.volume_mm3 > 0.0,
+            "shell-aware metrics should report non-zero volume"
+        );
+        assert!(
+            metrics.surface_area_mm2 > 0.0,
+            "shell-aware metrics should report non-zero surface area"
+        );
+        assert!(
+            !metrics
+                .validation
+                .hard_failures
+                .iter()
+                .any(|f| f == "volume_too_small"),
+            "scratchpad plane should no longer fail volume_too_small: {:?}",
+            metrics.validation.hard_failures
+        );
     }
 }

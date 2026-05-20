@@ -1,8 +1,8 @@
 // SDF pattern operations: arrays, mirrors, repetition
 
-use std::sync::Arc;
-use glam::{Vec3, Quat};
 use crate::sdf::Sdf;
+use glam::{Quat, Vec3};
+use std::sync::Arc;
 
 /// N evenly-spaced copies of a shape offset by a step vector each time.
 /// linear_array(shape, 5, 10.0, 0.0, 0.0) → 5 copies at x=0, 10, 20, 30, 40
@@ -14,7 +14,11 @@ pub struct LinearArray {
 
 impl LinearArray {
     pub fn new(child: Arc<dyn Sdf>, count: usize, spacing: Vec3) -> Self {
-        Self { child, count: count.max(1), spacing }
+        Self {
+            child,
+            count: count.max(1),
+            spacing,
+        }
     }
 }
 
@@ -24,7 +28,9 @@ impl Sdf for LinearArray {
         for i in 0..self.count {
             let offset = self.spacing * (i as f32);
             let d = self.child.distance(point - offset);
-            if d < min_dist { min_dist = d; }
+            if d < min_dist {
+                min_dist = d;
+            }
         }
         min_dist
     }
@@ -40,7 +46,11 @@ pub struct PolarArray {
 
 impl PolarArray {
     pub fn new(child: Arc<dyn Sdf>, count: usize, axis: Vec3) -> Self {
-        Self { child, count: count.max(1), axis: axis.normalize() }
+        Self {
+            child,
+            count: count.max(1),
+            axis: axis.normalize(),
+        }
     }
 }
 
@@ -54,7 +64,9 @@ impl Sdf for PolarArray {
             let q = Quat::from_axis_angle(self.axis, -angle);
             let rotated_point = q * point;
             let d = self.child.distance(rotated_point);
-            if d < min_dist { min_dist = d; }
+            if d < min_dist {
+                min_dist = d;
+            }
         }
         min_dist
     }
@@ -67,12 +79,15 @@ impl Sdf for PolarArray {
 /// mirror_z → reflect across XY plane (negate Z)
 pub struct Mirror {
     pub child: Arc<dyn Sdf>,
-    pub normal: Vec3,  // Unit normal of the mirror plane (e.g. Vec3::X for YZ plane)
+    pub normal: Vec3, // Unit normal of the mirror plane (e.g. Vec3::X for YZ plane)
 }
 
 impl Mirror {
     pub fn new(child: Arc<dyn Sdf>, normal: Vec3) -> Self {
-        Self { child, normal: normal.normalize() }
+        Self {
+            child,
+            normal: normal.normalize(),
+        }
     }
 }
 
@@ -120,7 +135,8 @@ mod tests {
         let sphere = Arc::new(Sphere { radius: 3.0 });
         // Place sphere offset from axis
         let offset_sphere = Arc::new(crate::sdf::transforms::Translate::new(
-            sphere, Vec3::new(10.0, 0.0, 0.0)
+            sphere,
+            Vec3::new(10.0, 0.0, 0.0),
         ));
         let arr = PolarArray::new(offset_sphere, 4, Vec3::Z);
 
@@ -137,7 +153,8 @@ mod tests {
         let sphere = Arc::new(Sphere { radius: 3.0 });
         // Place sphere at positive X
         let offset = Arc::new(crate::sdf::transforms::Translate::new(
-            sphere, Vec3::new(10.0, 0.0, 0.0)
+            sphere,
+            Vec3::new(10.0, 0.0, 0.0),
         ));
         let mirrored = Mirror::new(offset, Vec3::X);
 

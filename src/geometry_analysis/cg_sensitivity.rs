@@ -103,7 +103,10 @@ pub fn compute_cg_sensitivity(
                 margin_to_aft_limit_mm: neutral_point_x_mm,
                 percent_through_envelope: 0.0,
             },
-            recommendations: vec!["No mass points defined. Declare components with mass_g to enable CG analysis.".to_string()],
+            recommendations: vec![
+                "No mass points defined. Declare components with mass_g to enable CG analysis."
+                    .to_string(),
+            ],
         };
     }
 
@@ -112,7 +115,11 @@ pub fn compute_cg_sensitivity(
         let sum_mx: f32 = components.iter().map(|(_, p, m)| p.x * m).sum();
         let sum_my: f32 = components.iter().map(|(_, p, m)| p.y * m).sum();
         let sum_mz: f32 = components.iter().map(|(_, p, m)| p.z * m).sum();
-        Vec3::new(sum_mx / total_mass, sum_my / total_mass, sum_mz / total_mass)
+        Vec3::new(
+            sum_mx / total_mass,
+            sum_my / total_mass,
+            sum_mz / total_mass,
+        )
     };
 
     // Static margin: (NP - CG) / MAC. Positive = stable.
@@ -164,11 +171,21 @@ pub fn compute_cg_sensitivity(
     let dimension_sensitivities: Vec<DimensionCgSensitivity> = dimensions
         .iter()
         .map(|(name, &value)| {
-            let dcg_x = estimate_dimension_cg_sensitivity(name, value as f32, components, total_mass, baseline_cg.x);
+            let dcg_x = estimate_dimension_cg_sensitivity(
+                name,
+                value as f32,
+                components,
+                total_mass,
+                baseline_cg.x,
+            );
             let rating = SensitivityRating::from_magnitude(dcg_x);
 
             // Rough estimate of static margin sensitivity: −dcg_x / MAC
-            let dsm = if wing_mac > 0.0 { -dcg_x / wing_mac } else { 0.0 };
+            let dsm = if wing_mac > 0.0 {
+                -dcg_x / wing_mac
+            } else {
+                0.0
+            };
 
             DimensionCgSensitivity {
                 dimension_name: name.clone(),
@@ -251,20 +268,32 @@ fn estimate_dimension_cg_sensitivity(
     let name_lower = dim_name.to_lowercase();
 
     // Estimate fraction of total mass that moves with this dimension
-    let moving_mass_fraction: f32 = if name_lower.contains("fuse") || name_lower.contains("length") {
+    let moving_mass_fraction: f32 = if name_lower.contains("fuse") || name_lower.contains("length")
+    {
         // Fuselage length changes push aft components
         // Approximate: tail components (aft half) move with fuselage stretch
-        let aft_mass: f32 = components.iter()
+        let aft_mass: f32 = components
+            .iter()
             .filter(|(_, p, _)| p.x > _baseline_cg_x)
             .map(|(_, _, m)| *m)
             .sum();
-        if total_mass > 1e-9 { aft_mass / total_mass } else { 0.3 }
-    } else if name_lower.contains("battery") || name_lower.contains("bat_") || name_lower.contains("_bat") {
+        if total_mass > 1e-9 {
+            aft_mass / total_mass
+        } else {
+            0.3
+        }
+    } else if name_lower.contains("battery")
+        || name_lower.contains("bat_")
+        || name_lower.contains("_bat")
+    {
         // Battery position: assume battery is ~30% of total mass moving 1:1
         0.30
     } else if name_lower.contains("motor") || name_lower.contains("arm") {
         0.10
-    } else if name_lower.contains("x") || name_lower.contains("pos") || name_lower.contains("offset") {
+    } else if name_lower.contains("x")
+        || name_lower.contains("pos")
+        || name_lower.contains("offset")
+    {
         // Direct position parameter — affects some component
         0.15
     } else {
@@ -290,8 +319,11 @@ mod tests {
         ];
         let dims = IndexMap::new();
         let result = compute_cg_sensitivity(&components, &dims, 80.0, 30.0, 72.5);
-        let front_sens = result.component_sensitivities.iter()
-            .find(|c| c.component_name == "front").unwrap();
+        let front_sens = result
+            .component_sensitivities
+            .iter()
+            .find(|c| c.component_name == "front")
+            .unwrap();
         assert!(
             (front_sens.dcg_dx_mm_per_mm - 0.5).abs() < 0.01,
             "Expected dcg_dx = 0.5, got {}",
@@ -317,9 +349,7 @@ mod tests {
     #[test]
     fn test_cg_envelope_forward_of_np() {
         // CG at 40mm, NP at 60mm, mac=20 → forward_limit=55, aft_limit=60
-        let components = vec![
-            ("a".to_string(), Vec3::new(40.0, 0.0, 0.0), 100.0f32),
-        ];
+        let components = vec![("a".to_string(), Vec3::new(40.0, 0.0, 0.0), 100.0f32)];
         let dims = IndexMap::new();
         let result = compute_cg_sensitivity(&components, &dims, 60.0, 20.0, 55.0);
         assert!(
@@ -343,11 +373,16 @@ mod tests {
     fn test_dominant_component_recommendation() {
         let components = vec![
             ("battery".to_string(), Vec3::new(50.0, 0.0, 0.0), 450.0f32),
-            ("frame".to_string(),   Vec3::new(50.0, 0.0, 0.0),  50.0f32),
+            ("frame".to_string(), Vec3::new(50.0, 0.0, 0.0), 50.0f32),
         ];
         let result = compute_cg_sensitivity(&components, &IndexMap::new(), 80.0, 30.0, 72.5);
-        let has_dominant_rec = result.recommendations.iter()
+        let has_dominant_rec = result
+            .recommendations
+            .iter()
             .any(|r| r.contains("battery") && r.contains("dominates"));
-        assert!(has_dominant_rec, "Should warn about dominant battery component");
+        assert!(
+            has_dominant_rec,
+            "Should warn about dominant battery component"
+        );
     }
 }

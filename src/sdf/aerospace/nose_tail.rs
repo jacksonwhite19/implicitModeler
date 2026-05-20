@@ -1,7 +1,7 @@
 // Haack series, Von Karman, Tangent Ogive, and Ellipsoid nose/tail cone primitives.
 
-use glam::Vec3;
 use crate::sdf::Sdf;
+use glam::Vec3;
 
 // ── Helper: 2D point-to-segment distance ─────────────────────────────────────
 
@@ -46,11 +46,18 @@ impl HaackNose {
             let r = (base_radius / std::f32::consts::PI.sqrt()) * val.max(0.0).sqrt();
             profile.push((x, r));
         }
-        Self { length, base_radius, c_parameter, profile }
+        Self {
+            length,
+            base_radius,
+            c_parameter,
+            profile,
+        }
     }
 
     pub fn radius_at(&self, x: f32) -> f32 {
-        if self.profile.is_empty() { return 0.0; }
+        if self.profile.is_empty() {
+            return 0.0;
+        }
         let x_clamped = x.clamp(0.0, self.length);
         // Binary search for the segment
         let x_frac = x_clamped / self.length;
@@ -59,7 +66,9 @@ impl HaackNose {
         let i1 = i0 + 1;
         let (x0, r0) = self.profile[i0];
         let (x1, r1) = self.profile[i1];
-        if (x1 - x0).abs() < 1e-9 { return r0; }
+        if (x1 - x0).abs() < 1e-9 {
+            return r0;
+        }
         let t = ((x_clamped - x0) / (x1 - x0)).clamp(0.0, 1.0);
         r0 + t * (r1 - r0)
     }
@@ -82,7 +91,9 @@ impl Sdf for HaackNose {
         // Also check endcaps (base disk at x=length)
         // Distance to tip point (0, 0) in 2D
         let tip_dist = ((p.x) * (p.x) + r_query * r_query).sqrt();
-        if tip_dist < min_dist { min_dist = tip_dist; }
+        if tip_dist < min_dist {
+            min_dist = tip_dist;
+        }
 
         // Sign: inside if x in [0, length] and r_query < radius_at(x)
         if p.x >= 0.0 && p.x <= self.length && r_query < self.radius_at(p.x) {
@@ -122,11 +133,19 @@ impl HaackTail {
             let r = tip_radius.max(haack_r * (1.0 - x_frac) + tip_radius * x_frac);
             profile.push((x, r));
         }
-        Self { length, base_radius, tip_radius, c_parameter, profile }
+        Self {
+            length,
+            base_radius,
+            tip_radius,
+            c_parameter,
+            profile,
+        }
     }
 
     pub fn radius_at(&self, x: f32) -> f32 {
-        if self.profile.is_empty() { return 0.0; }
+        if self.profile.is_empty() {
+            return 0.0;
+        }
         let x_clamped = x.clamp(0.0, self.length);
         let x_frac = x_clamped / self.length;
         let idx_f = x_frac * (self.profile.len() - 1) as f32;
@@ -134,7 +153,9 @@ impl HaackTail {
         let i1 = i0 + 1;
         let (x0, r0) = self.profile[i0];
         let (x1, r1) = self.profile[i1];
-        if (x1 - x0).abs() < 1e-9 { return r0; }
+        if (x1 - x0).abs() < 1e-9 {
+            return r0;
+        }
         let t = ((x_clamped - x0) / (x1 - x0)).clamp(0.0, 1.0);
         r0 + t * (r1 - r0)
     }
@@ -183,11 +204,17 @@ impl TangentOgive {
             let r = (rho * rho - (length - x) * (length - x)).max(0.0).sqrt() + base_radius - rho;
             profile.push((x, r.max(0.0)));
         }
-        Self { length, base_radius, profile }
+        Self {
+            length,
+            base_radius,
+            profile,
+        }
     }
 
     pub fn radius_at(&self, x: f32) -> f32 {
-        if self.profile.is_empty() { return 0.0; }
+        if self.profile.is_empty() {
+            return 0.0;
+        }
         let x_clamped = x.clamp(0.0, self.length);
         let x_frac = x_clamped / self.length;
         let idx_f = x_frac * (self.profile.len() - 1) as f32;
@@ -195,7 +222,9 @@ impl TangentOgive {
         let i1 = i0 + 1;
         let (x0, r0) = self.profile[i0];
         let (x1, r1) = self.profile[i1];
-        if (x1 - x0).abs() < 1e-9 { return r0; }
+        if (x1 - x0).abs() < 1e-9 {
+            return r0;
+        }
         let t = ((x_clamped - x0) / (x1 - x0)).clamp(0.0, 1.0);
         r0 + t * (r1 - r0)
     }
@@ -233,7 +262,10 @@ pub struct EllipsoidNose {
 
 impl EllipsoidNose {
     pub fn new(length: f32, base_radius: f32) -> Self {
-        Self { length, base_radius }
+        Self {
+            length,
+            base_radius,
+        }
     }
 }
 
@@ -279,8 +311,8 @@ mod tests {
             let x_frac = i as f32 / 9.0;
             let x = x_frac * 100.0;
             let theta = (1.0 - 2.0 * x_frac).acos();
-            let expected_r = (15.0 / std::f32::consts::PI.sqrt())
-                * (theta - theta.sin() * theta.cos()).sqrt();
+            let expected_r =
+                (15.0 / std::f32::consts::PI.sqrt()) * (theta - theta.sin() * theta.cos()).sqrt();
             let computed_r = nose.radius_at(x);
             assert!(
                 (computed_r - expected_r).abs() < 0.5,
@@ -302,14 +334,22 @@ mod tests {
     fn test_haack_nose_base_matches() {
         let nose = HaackNose::new(100.0, 15.0, 0.0);
         let r_base = nose.radius_at(100.0);
-        assert!((r_base - 15.0).abs() < 0.5, "base radius should match: got {}", r_base);
+        assert!(
+            (r_base - 15.0).abs() < 0.5,
+            "base radius should match: got {}",
+            r_base
+        );
     }
 
     #[test]
     fn test_haack_nose_inside_negative() {
         let nose = HaackNose::new(100.0, 15.0, 0.0);
         let d = nose.distance(Vec3::new(50.0, 0.0, 0.0));
-        assert!(d < 0.0, "center axis inside nose should be negative, got {}", d);
+        assert!(
+            d < 0.0,
+            "center axis inside nose should be negative, got {}",
+            d
+        );
     }
 
     #[test]
@@ -330,6 +370,10 @@ mod tests {
     fn test_ellipsoid_nose_inside() {
         let en = EllipsoidNose::new(100.0, 15.0);
         let d = en.distance(Vec3::new(50.0, 0.0, 0.0));
-        assert!(d < 0.0, "axis inside ellipsoid nose should be negative, got {}", d);
+        assert!(
+            d < 0.0,
+            "axis inside ellipsoid nose should be negative, got {}",
+            d
+        );
     }
 }

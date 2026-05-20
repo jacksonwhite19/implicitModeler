@@ -1,3 +1,3 @@
 pub mod conformal;
 
-pub use conformal::{ConformalGyroid, ConformalDiamond, ConformalSchwarzP};
+pub use conformal::{ConformalDiamond, ConformalGyroid, ConformalSchwarzP};

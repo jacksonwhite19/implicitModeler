@@ -1,6 +1,6 @@
 # AGENT_REFERENCE.md — Implicit CAD Modeler
 
-**Last updated**: 2026-03-17
+**Last updated**: 2026-05-14
 **Purpose**: Comprehensive agent/developer reference for the Implicit CAD Modeler codebase. Read this before making any changes. Prefer MasterPlan.md for high-level goals and scope.
 
 ---
@@ -8,6 +8,10 @@
 ## Table of Contents
 
 1. [Project Summary](#1-project-summary)
+   - 1.1 [Start Here](#11-start-here)
+   - 1.2 [Current Project State](#12-current-project-state)
+   - 1.3 [Sandbox Clone: dual_contouring](#13-sandbox-clone-dual_contouring)
+   - 1.4 [Current Working Files](#14-current-working-files)
 2. [Dependency Inventory](#2-dependency-inventory)
 3. [Repository Layout](#3-repository-layout)
 4. [Architecture Overview](#4-architecture-overview)
@@ -73,13 +77,115 @@
 
 The Implicit CAD Modeler is a code-first, SDF-based (signed distance field) parametric geometry system. Users write Rhai scripts to build geometry through primitives, booleans, and transforms. A native desktop viewer (egui + wgpu) renders the result in a two-pane layout: code editor on the left, 3D viewport on the right.
 
-**Core philosophy**: geometry is a computable field, not a mesh. A sphere is `f(x,y,z) = length(xyz) - r`, not a collection of triangles. Meshes are extracted at the final step only, via marching cubes. This enables smooth SDF blends, variable offsets, and topology-independent booleans.
+**Core philosophy**: geometry is a computable field, not a mesh. A sphere is `f(x,y,z) = length(xyz) - r`, not a collection of triangles. Meshes are extracted at the final step only. Historically this repo has used marching-cubes-based extraction for STL/export work; keep that material as reference for legacy behavior, not as an assumption about the forward export direction. This enables smooth SDF blends, variable offsets, and topology-independent booleans.
 
 **Inspiration**: nTop (SDF-based modeling) and OpenSCAD (code-first UI).
 
 **Primary target OS**: Windows (DX12 via wgpu). Architecture is cross-platform ready.
 
 **Language**: Rust + Rhai scripting language.
+
+### 1.1 Start Here
+
+If you are a new agent picking up work, read these files in this order:
+
+1. `CLAUDE.md` â€” local agent working rules and repo-specific expectations.
+2. `MasterPlan.md` â€” high-level product goals.
+3. `AGENT_REFERENCE.md` â€” this file; current codebase and workflow summary.
+4. `output.md` â€” current export/debug log history.
+5. `scratchpad.md` â€” current queued task, if the user is actively driving work through it.
+
+Then inspect the current active code path before changing anything:
+
+- `src/mesh/adaptive_mc.rs`
+- `src/export/aero.rs`
+- `src/mesh/marching_cubes.rs`
+- `scratchpad_plane.rhai`
+- `tmp_inlet_only_debug.rhai`
+- `bwb_edf_800.rhai`
+
+### 1.2 Current Project State
+
+This repo is not in a generic greenfield state. The recent active engineering problem has been STL/aero export topology reliability for adaptive mesh extraction on aircraft-like SDF geometry.
+
+Current status as of 2026-05-14:
+
+- The core product is still an SDF-first CAD/modeling system written in Rust with a Rhai scripting front-end and egui/wgpu viewer.
+- The viewer, scripting engine, aerospace primitives, and headless export paths are present and usable.
+- The current weak subsystem is the existing adaptive aero meshing/export path, centered on `src/mesh/adaptive_mc.rs`.
+- The main open problem is topology preservation across adaptive extraction, welding, transition repair, and coarse/fine boundary handling.
+- Recent high-signal work has used narrow standalone repros like `wing_safe` and `inlet_only`, not full-aircraft sweeps.
+- Treat the current marching-cubes/octree/aero STL path as legacy reference material that may be removed or replaced. Keep its diagnostics and failure history because they explain what was tried and what to avoid, but do not assume new export work should extend that path.
+
+Recent debugging conclusions that matter immediately:
+
+- Raw marching-cubes emission is not the only failure mode. In at least one clean repro (`wing_safe`), the first large-epsilon weld pass was shown to be a primary topology breaker.
+- The adaptive path now contains several targeted repair stages:
+  - constrained weld behavior
+  - boundary-edge pairing repair
+  - guarded T-junction repair
+  - tiny-loop fill
+  - late duplicate/degenerate cleanup
+- These improve narrow repros materially, but do not yet make the inlet transition corridor reliable.
+- Remaining inlet defects are concentrated around coarse/fine transition layout, especially `PartialOverlap` and true different-size edge-contact cases.
+- `transition_emission` currently handles only exact coarse/fine face tilings. It does not solve the edge-contact T-junction class that dominates the inlet corridor diagnostics.
+- `EdgeTransitionRecord` collection and a first `emit_edge_transitions(...)` prototype now exist in `adaptive_mc.rs`, but the first pass emitted zero triangles because it could not reconstruct the needed fine half-edge endpoints reliably.
+
+What not to assume:
+
+- `scratchpad.md` is a task queue, not authoritative architecture documentation.
+- A visually acceptable viewer result does not mean STL topology is acceptable.
+- `balance_surface_cells` is not currently a complete enforcement pass for conforming transitions.
+- More refinement alone is not a complete fix. Several tests already showed that increased local refinement without conforming transitions is insufficient or regressive.
+
+### 1.3 Sandbox Clone: dual_contouring
+
+A fully separate sandbox clone now exists at `dual_contouring/`.
+
+Purpose:
+
+- experiment with a new export option such as dual contouring
+- perform invasive meshing work without destabilizing the main workspace
+
+Important facts:
+
+- It is a near-full mirror of the main repo created on 2026-05-14.
+- It includes its own `.git`, source tree, scripts, shaders, tests, copied artifacts, and build tree.
+- It has already been built independently inside the clone.
+- Its separate executable is `dual_contouring/target/release/implicit-cad.exe`.
+
+Workflow rule:
+
+- Use `dual_contouring/` for new export-backend experiments.
+- Use the main repo for maintaining or auditing the current adaptive-MC/aero path unless the user explicitly wants the experiment moved.
+- Be explicit in notes, commits, and logs about which tree you are editing.
+
+### 1.4 Current Working Files
+
+The most relevant current files are:
+
+- `src/mesh/adaptive_mc.rs`
+  - adaptive extraction, welding, transition diagnostics, boundary repair, and current experimental transition-edge work
+- `src/export/aero.rs`
+  - aero export orchestration and cleanup stages
+- `src/mesh/marching_cubes.rs`
+  - base marching-cubes extraction logic
+- `output.md`
+  - chronological debug log of recent export/mesh investigations
+- `scratchpad.md`
+  - current queued task prompt from the user
+- `scratchpad_plane.rhai`
+  - updated scratchpad aircraft model using current export-safe tools
+- `tmp_inlet_only_debug.rhai`
+  - narrow standalone inlet repro used for transition-layout and repair testing
+- `bwb_edf_800.rhai`
+  - broader aircraft model
+
+Current model notes:
+
+- `scratchpad_plane.rhai` was restored and modernized from the old deleted root script.
+- Its inlet was intentionally made much smaller than the old version, then widened by 50 percent.
+- The current scratchpad aero export configuration is expensive because it enables many local refinement regions and spline-path refinement boxes.
 
 ---
 
@@ -507,6 +613,12 @@ Computes signed mesh volume using the divergence theorem (signed tetrahedral vol
 
 Standard uniform-grid marching cubes. Evaluates the SDF at each grid vertex, interpolates crossing points, generates triangles. Used for preview at coarse resolution.
 
+Status note:
+
+- Keep this section as legacy/reference behavior.
+- Do not assume marching cubes is the desired future STL/export path.
+- If you are working on new export architecture, use this code primarily as a baseline to compare against or to remove/replace safely.
+
 #### Adaptive Marching Cubes (`mesh/adaptive_mc.rs`)
 
 Parallel adaptive marching cubes with quality settings:
@@ -521,6 +633,12 @@ pub enum MeshQuality {
 ```
 
 This is the primary mesh extraction path used by the app. Parallelized with rayon.
+
+Status note:
+
+- This has been the active STL/aero export path under investigation.
+- It is currently documented here so a new agent understands the existing implementation and its failure modes.
+- It should not be treated as a protected long-term direction for STL export work.
 
 #### Mesh Import (`mesh/import.rs`)
 
@@ -1009,6 +1127,11 @@ Export functions for geometry and manufacturing packages:
 - STL export
 - `ManufacturingPackage` — bundles geometry, material spec, FEA results, and print analysis for handoff
 
+Status note:
+
+- This section documents the current/legacy STL export implementation, not a committed future direction.
+- Keep it as codebase context so a new agent understands what exists today and what may need to be removed or replaced.
+
 ---
 
 ### 5.20 `undo` — Undo/Redo
@@ -1039,6 +1162,11 @@ Command types:
 **Path**: `src/headless.rs`
 
 Batch evaluation without a UI window. Used for scripted geometry generation, CI pipelines, or automated STL export. Selected via CLI flags (parsed by `clap` in `main.rs`).
+
+Status note:
+
+- Headless export remains operationally important.
+- The extraction backend used by headless STL export is not fixed; treat the current marching-cubes/adaptive path as replaceable.
 
 ---
 

@@ -1,4 +1,4 @@
-// Sphere-tracing renderer against a precomputed 3D SDF texture.
+// Conservative renderer against a precomputed 3D SDF texture.
 // Uses textureLoad + manual trilinear interpolation (avoids R32Float filterability issues).
 // Ray generation uses camera basis vectors to avoid projection-matrix convention issues.
 
@@ -223,18 +223,20 @@ fn fs_main(@builtin(position) frag_coord: vec4<f32>) -> @location(0) vec4<f32> {
     if tmax < 0.0 || tmin > tmax { return vec4<f32>(0.0, 0.0, 0.0, 0.0); }
 
     let min_step = uni.voxel_size * 0.01;
+    let max_step = max(uni.voxel_size * 0.5, min_step);
     let hit_eps = preview_hit_epsilon();
 
-    // Sphere trace. Start at march_from (which is inside the kept region and
-    // has SDF >= 0). march_anchor is a confirmed-outside point for bisection.
+    // March conservatively through the sampled texture. Pure sphere tracing can
+    // jump over 2 mm shell walls in a large grid because the texture is only an
+    // interpolated approximation of the source SDF.
     var t      = march_from;
     var t_prev = march_anchor;
     var hit    = false;
-    for (var i = 0; i < 256; i++) {
+    for (var i = 0; i < 1024; i++) {
         let d = sample_sdf(ro + rd * t);
         if d < hit_eps { hit = true; break; }
         t_prev = t;
-        t += max(d, min_step);
+        t += clamp(d, min_step, max_step);
         if t > tmax + min_step { break; }
     }
 

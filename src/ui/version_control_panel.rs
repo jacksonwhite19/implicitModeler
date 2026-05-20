@@ -1,13 +1,12 @@
 // Version control UI panel — floating Window with Branches / History / Changes tabs.
 
-use eframe::egui::{self, Color32, RichText, Ui};
-use crate::version_control::{VersionControlState, CommitId, ProjectState};
-use crate::version_control::operations::{
-    commit, create_branch, checkout_branch, checkout_commit, discard_changes,
-    delete_branch, merge, get_commit_graph,
-    MergeResult, MergeConflict,
-};
 use crate::undo::AppState;
+use crate::version_control::operations::{
+    MergeConflict, MergeResult, checkout_branch, checkout_commit, commit, create_branch,
+    delete_branch, discard_changes, get_commit_graph, merge,
+};
+use crate::version_control::{CommitId, ProjectState, VersionControlState};
+use eframe::egui::{self, Color32, RichText, Ui};
 
 // ── Tab enum ──────────────────────────────────────────────────────────────────
 
@@ -39,7 +38,7 @@ pub struct VCPanelState {
     pub merge_source: Option<String>,
     pub conflict: Option<MergeConflict>,
     pub conflict_resolutions: Vec<ConflictResolution>,
-    pub dim_resolutions: Vec<bool>,         // true = use_current per dimension conflict
+    pub dim_resolutions: Vec<bool>, // true = use_current per dimension conflict
     pub history_limit: usize,
     pub pending_checkout_branch: Option<String>,
     pub pending_checkout_commit: Option<CommitId>,
@@ -72,14 +71,19 @@ impl Default for VCPanelState {
 
 pub fn suggest_commit_message(current: &AppState, head_state: &ProjectState) -> String {
     let script_changed = current.script_text != head_state.script_text;
-    let dims_changed: Vec<&str> = current.dimensions.iter()
+    let dims_changed: Vec<&str> = current
+        .dimensions
+        .iter()
         .filter(|(k, v)| head_state.dimensions.get(*k) != Some(v))
         .map(|(k, _)| k.as_str())
         .collect();
     let profiles_changed = current.profiles.len() != head_state.profiles.len()
         || current.profiles.keys().any(|k| {
-            let a = serde_json::to_string(head_state.profiles.get(k).unwrap_or(&Default::default())).unwrap_or_default();
-            let b = serde_json::to_string(current.profiles.get(k).unwrap_or(&Default::default())).unwrap_or_default();
+            let a =
+                serde_json::to_string(head_state.profiles.get(k).unwrap_or(&Default::default()))
+                    .unwrap_or_default();
+            let b = serde_json::to_string(current.profiles.get(k).unwrap_or(&Default::default()))
+                .unwrap_or_default();
             a != b
         });
 
@@ -131,13 +135,23 @@ fn compute_diff_display(before: &str, after: &str, context: usize) -> Vec<DiffLi
     let mut j = 0;
     while i < n || j < m {
         if i < n && j < m && before_lines[i] == after_lines[j] {
-            raw.push(DiffLine { kind: DiffKind::Same, content: before_lines[i].to_string() });
-            i += 1; j += 1;
+            raw.push(DiffLine {
+                kind: DiffKind::Same,
+                content: before_lines[i].to_string(),
+            });
+            i += 1;
+            j += 1;
         } else if j < m && (i >= n || dp[i][j + 1] >= dp[i + 1][j]) {
-            raw.push(DiffLine { kind: DiffKind::Added, content: after_lines[j].to_string() });
+            raw.push(DiffLine {
+                kind: DiffKind::Added,
+                content: after_lines[j].to_string(),
+            });
             j += 1;
         } else if i < n {
-            raw.push(DiffLine { kind: DiffKind::Removed, content: before_lines[i].to_string() });
+            raw.push(DiffLine {
+                kind: DiffKind::Removed,
+                content: before_lines[i].to_string(),
+            });
             i += 1;
         }
     }
@@ -154,7 +168,8 @@ fn compute_diff_display(before: &str, after: &str, context: usize) -> Vec<DiffLi
         }
     }
 
-    raw.into_iter().zip(show.into_iter())
+    raw.into_iter()
+        .zip(show.into_iter())
         .filter(|(_, s)| *s)
         .map(|(d, _)| d)
         .collect()
@@ -191,23 +206,31 @@ pub fn show_vc_panel(
             // ── Tab bar ───────────────────────────────────────────────────────
             ui.horizontal(|ui| {
                 ui.selectable_value(&mut panel_state.active_tab, VCTab::Branches, "Branches");
-                ui.selectable_value(&mut panel_state.active_tab, VCTab::History,  "History");
-                ui.selectable_value(&mut panel_state.active_tab, VCTab::Changes,  "Changes");
+                ui.selectable_value(&mut panel_state.active_tab, VCTab::History, "History");
+                ui.selectable_value(&mut panel_state.active_tab, VCTab::Changes, "Changes");
             });
             ui.separator();
 
             match panel_state.active_tab {
                 VCTab::Branches => show_branches_tab(
-                    ui, vc, state, panel_state,
-                    new_branch_name, new_branch_desc, new_branch_dialog,
+                    ui,
+                    vc,
+                    state,
+                    panel_state,
+                    new_branch_name,
+                    new_branch_desc,
+                    new_branch_dialog,
                     needs_eval,
                 ),
-                VCTab::History => show_history_tab(
-                    ui, vc, state, panel_state, needs_eval,
-                ),
+                VCTab::History => show_history_tab(ui, vc, state, panel_state, needs_eval),
                 VCTab::Changes => show_changes_tab(
-                    ui, vc, state, panel_state,
-                    commit_message, discard_confirm, needs_eval,
+                    ui,
+                    vc,
+                    state,
+                    panel_state,
+                    commit_message,
+                    discard_confirm,
+                    needs_eval,
                 ),
             }
         });
@@ -241,7 +264,10 @@ fn show_branches_tab(
             ui.text_edit_singleline(new_branch_desc);
             ui.horizontal(|ui| {
                 let can_create = !new_branch_name.trim().is_empty();
-                if ui.add_enabled(can_create, egui::Button::new("Create")).clicked() {
+                if ui
+                    .add_enabled(can_create, egui::Button::new("Create"))
+                    .clicked()
+                {
                     let name = new_branch_name.trim().to_string();
                     let desc = new_branch_desc.trim().to_string();
                     match create_branch(vc, name, desc) {
@@ -273,56 +299,70 @@ fn show_branches_tab(
     let mut delete_target: Option<String> = None;
     let mut merge_target: Option<String> = None;
 
-    egui::ScrollArea::vertical().max_height(300.0).show(ui, |ui| {
-        for name in &branch_names {
-            let branch = &vc.branches[name];
-            let is_current = *name == current_branch;
-            let head_commit = vc.commits.get(&branch.head_commit_id);
-            let last_time = head_commit.map(|c| c.timestamp.format("%Y-%m-%d %H:%M").to_string())
-                .unwrap_or_else(|| "unknown".to_string());
+    egui::ScrollArea::vertical()
+        .max_height(300.0)
+        .show(ui, |ui| {
+            for name in &branch_names {
+                let branch = &vc.branches[name];
+                let is_current = *name == current_branch;
+                let head_commit = vc.commits.get(&branch.head_commit_id);
+                let last_time = head_commit
+                    .map(|c| c.timestamp.format("%Y-%m-%d %H:%M").to_string())
+                    .unwrap_or_else(|| "unknown".to_string());
 
-            ui.group(|ui| {
-                ui.horizontal(|ui| {
-                    if is_current {
-                        ui.colored_label(Color32::from_rgb(100, 150, 255),
-                            RichText::new(format!("● {}", name)).strong());
-                    } else {
-                        ui.label(RichText::new(format!("  {}", name)));
-                    }
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        ui.label(RichText::new(&last_time).small().weak());
-                    });
-                });
-
-                if !branch.description.is_empty() {
-                    ui.label(RichText::new(&branch.description).small().weak());
-                }
-
-                if !is_current {
+                ui.group(|ui| {
                     ui.horizontal(|ui| {
-                        if ui.small_button("Checkout").clicked() {
-                            checkout_target = Some(name.clone());
+                        if is_current {
+                            ui.colored_label(
+                                Color32::from_rgb(100, 150, 255),
+                                RichText::new(format!("● {}", name)).strong(),
+                            );
+                        } else {
+                            ui.label(RichText::new(format!("  {}", name)));
                         }
-                        if ui.small_button("Merge into current").clicked() {
-                            merge_target = Some(name.clone());
-                        }
-                        if *name != "main" {
-                            if ui.small_button(RichText::new("Delete").color(Color32::RED)).clicked() {
-                                delete_target = Some(name.clone());
-                            }
-                        }
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            ui.label(RichText::new(&last_time).small().weak());
+                        });
                     });
-                } else {
-                    ui.label(RichText::new("(current)").small().color(Color32::from_rgb(100, 150, 255)));
-                }
-            });
-        }
-    });
+
+                    if !branch.description.is_empty() {
+                        ui.label(RichText::new(&branch.description).small().weak());
+                    }
+
+                    if !is_current {
+                        ui.horizontal(|ui| {
+                            if ui.small_button("Checkout").clicked() {
+                                checkout_target = Some(name.clone());
+                            }
+                            if ui.small_button("Merge into current").clicked() {
+                                merge_target = Some(name.clone());
+                            }
+                            if *name != "main" {
+                                if ui
+                                    .small_button(RichText::new("Delete").color(Color32::RED))
+                                    .clicked()
+                                {
+                                    delete_target = Some(name.clone());
+                                }
+                            }
+                        });
+                    } else {
+                        ui.label(
+                            RichText::new("(current)")
+                                .small()
+                                .color(Color32::from_rgb(100, 150, 255)),
+                        );
+                    }
+                });
+            }
+        });
 
     // Process deferred actions
     if let Some(target) = checkout_target {
         match checkout_branch(vc, state, &target) {
-            Ok(_) => { *needs_eval = true; }
+            Ok(_) => {
+                *needs_eval = true;
+            }
             Err(e) => {
                 // Store error for display next frame
                 panel_state.selected_branch = Some(e);
@@ -334,14 +374,17 @@ fn show_branches_tab(
     }
     if let Some(target) = merge_target {
         match merge(vc, state, &target) {
-            Ok(MergeResult::Success) => { *needs_eval = true; }
+            Ok(MergeResult::Success) => {
+                *needs_eval = true;
+            }
             Ok(MergeResult::Conflict(conflict)) => {
-                panel_state.conflict_resolutions = conflict.script_conflicts.iter()
+                panel_state.conflict_resolutions = conflict
+                    .script_conflicts
+                    .iter()
                     .map(|_| ConflictResolution::UseCurrent)
                     .collect();
-                panel_state.dim_resolutions = conflict.dimension_conflicts.iter()
-                    .map(|_| true)
-                    .collect();
+                panel_state.dim_resolutions =
+                    conflict.dimension_conflicts.iter().map(|_| true).collect();
                 panel_state.conflict = Some(conflict);
             }
             Err(_) => {}
@@ -377,107 +420,135 @@ fn show_history_tab(
         });
     });
 
-    egui::ScrollArea::vertical().max_height(400.0).show(ui, |ui| {
-        let display_count = graph.len().min(limit);
-        for (idx, node) in graph.iter().take(display_count).enumerate() {
-            let is_last = idx + 1 == display_count;
+    egui::ScrollArea::vertical()
+        .max_height(400.0)
+        .show(ui, |ui| {
+            let display_count = graph.len().min(limit);
+            for (idx, node) in graph.iter().take(display_count).enumerate() {
+                let is_last = idx + 1 == display_count;
 
-            ui.horizontal(|ui| {
-                // Graph line column (fixed width)
-                ui.set_min_width(20.0);
-                let (rect, _) = ui.allocate_exact_size(
-                    egui::vec2(20.0, 28.0),
-                    egui::Sense::hover(),
-                );
-                let painter = ui.painter_at(rect);
-                let cx = rect.center().x;
-                let top = rect.min.y;
-                let bot = rect.max.y;
-                let mid = rect.center().y;
+                ui.horizontal(|ui| {
+                    // Graph line column (fixed width)
+                    ui.set_min_width(20.0);
+                    let (rect, _) =
+                        ui.allocate_exact_size(egui::vec2(20.0, 28.0), egui::Sense::hover());
+                    let painter = ui.painter_at(rect);
+                    let cx = rect.center().x;
+                    let top = rect.min.y;
+                    let bot = rect.max.y;
+                    let mid = rect.center().y;
 
-                // Vertical line (connect to next commit)
-                if !is_last {
-                    painter.line_segment(
-                        [egui::pos2(cx, mid), egui::pos2(cx, bot)],
-                        egui::Stroke::new(1.5, Color32::GRAY),
-                    );
-                }
-                if idx > 0 {
-                    painter.line_segment(
-                        [egui::pos2(cx, top), egui::pos2(cx, mid)],
-                        egui::Stroke::new(1.5, Color32::GRAY),
-                    );
-                }
+                    // Vertical line (connect to next commit)
+                    if !is_last {
+                        painter.line_segment(
+                            [egui::pos2(cx, mid), egui::pos2(cx, bot)],
+                            egui::Stroke::new(1.5, Color32::GRAY),
+                        );
+                    }
+                    if idx > 0 {
+                        painter.line_segment(
+                            [egui::pos2(cx, top), egui::pos2(cx, mid)],
+                            egui::Stroke::new(1.5, Color32::GRAY),
+                        );
+                    }
 
-                // Dot
-                let radius = if node.is_head { 6.0 } else { 4.0 };
-                let dot_color = if node.is_head {
-                    Color32::from_rgb(100, 200, 100)
-                } else if node.is_current_branch_head {
-                    Color32::from_rgb(100, 150, 255)
-                } else {
-                    Color32::GRAY
-                };
-                painter.circle_filled(egui::pos2(cx, mid), radius, dot_color);
-                if node.parent_ids.len() > 1 {
-                    // Merge commit — draw a second line
-                    painter.circle_stroke(egui::pos2(cx, mid), radius + 2.0,
-                        egui::Stroke::new(1.0, Color32::from_rgb(200, 150, 50)));
-                }
+                    // Dot
+                    let radius = if node.is_head { 6.0 } else { 4.0 };
+                    let dot_color = if node.is_head {
+                        Color32::from_rgb(100, 200, 100)
+                    } else if node.is_current_branch_head {
+                        Color32::from_rgb(100, 150, 255)
+                    } else {
+                        Color32::GRAY
+                    };
+                    painter.circle_filled(egui::pos2(cx, mid), radius, dot_color);
+                    if node.parent_ids.len() > 1 {
+                        // Merge commit — draw a second line
+                        painter.circle_stroke(
+                            egui::pos2(cx, mid),
+                            radius + 2.0,
+                            egui::Stroke::new(1.0, Color32::from_rgb(200, 150, 50)),
+                        );
+                    }
 
-                // Commit info column
-                ui.vertical(|ui| {
-                    ui.horizontal(|ui| {
-                        // Short hash badge
-                        ui.label(RichText::new(&node.short_id).monospace().small()
-                            .color(Color32::from_rgb(150, 150, 150)));
+                    // Commit info column
+                    ui.vertical(|ui| {
+                        ui.horizontal(|ui| {
+                            // Short hash badge
+                            ui.label(
+                                RichText::new(&node.short_id)
+                                    .monospace()
+                                    .small()
+                                    .color(Color32::from_rgb(150, 150, 150)),
+                            );
 
-                        // Branch labels
-                        for branch_name in &node.branch_names {
-                            let color = if *branch_name == vc.current_branch {
-                                Color32::from_rgb(100, 150, 255)
-                            } else {
-                                Color32::from_rgb(150, 200, 100)
-                            };
-                            ui.label(RichText::new(format!("[{}]", branch_name))
-                                .small().color(color).strong());
-                        }
-
-                        if node.is_head {
-                            ui.label(RichText::new("HEAD").small()
-                                .color(Color32::from_rgb(100, 200, 100)).strong());
-                        }
-
-                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                            if !node.is_head {
-                                if ui.small_button("Checkout").clicked() {
-                                    panel_state.pending_checkout_commit = Some(node.commit_id.clone());
-                                }
+                            // Branch labels
+                            for branch_name in &node.branch_names {
+                                let color = if *branch_name == vc.current_branch {
+                                    Color32::from_rgb(100, 150, 255)
+                                } else {
+                                    Color32::from_rgb(150, 200, 100)
+                                };
+                                ui.label(
+                                    RichText::new(format!("[{}]", branch_name))
+                                        .small()
+                                        .color(color)
+                                        .strong(),
+                                );
                             }
-                            let ts = node.timestamp.format("%m-%d %H:%M").to_string();
-                            ui.label(RichText::new(ts).small().weak());
+
+                            if node.is_head {
+                                ui.label(
+                                    RichText::new("HEAD")
+                                        .small()
+                                        .color(Color32::from_rgb(100, 200, 100))
+                                        .strong(),
+                                );
+                            }
+
+                            ui.with_layout(
+                                egui::Layout::right_to_left(egui::Align::Center),
+                                |ui| {
+                                    if !node.is_head {
+                                        if ui.small_button("Checkout").clicked() {
+                                            panel_state.pending_checkout_commit =
+                                                Some(node.commit_id.clone());
+                                        }
+                                    }
+                                    let ts = node.timestamp.format("%m-%d %H:%M").to_string();
+                                    ui.label(RichText::new(ts).small().weak());
+                                },
+                            );
                         });
+
+                        // Message
+                        let msg_text = RichText::new(&node.message).small();
+                        let msg_text = if node.is_head {
+                            msg_text.strong()
+                        } else {
+                            msg_text
+                        };
+                        ui.label(msg_text);
                     });
-
-                    // Message
-                    let msg_text = RichText::new(&node.message).small();
-                    let msg_text = if node.is_head { msg_text.strong() } else { msg_text };
-                    ui.label(msg_text);
                 });
-            });
-        }
-
-        if total > limit {
-            if ui.button(format!("Load more ({} remaining)", total - limit)).clicked() {
-                panel_state.history_limit += 100;
             }
-        }
-    });
+
+            if total > limit {
+                if ui
+                    .button(format!("Load more ({} remaining)", total - limit))
+                    .clicked()
+                {
+                    panel_state.history_limit += 100;
+                }
+            }
+        });
 
     // Process deferred checkout
     if let Some(commit_id) = panel_state.pending_checkout_commit.take() {
         match checkout_commit(vc, state, &commit_id) {
-            Ok(_) => { *needs_eval = true; }
+            Ok(_) => {
+                *needs_eval = true;
+            }
             Err(e) => {
                 ui.colored_label(Color32::from_rgb(255, 180, 50), e);
             }
@@ -496,7 +567,9 @@ fn show_changes_tab(
     discard_confirm: &mut bool,
     needs_eval: &mut bool,
 ) {
-    let head_state = vc.head_commit_id.as_ref()
+    let head_state = vc
+        .head_commit_id
+        .as_ref()
         .and_then(|id| vc.commits.get(id))
         .map(|c| c.state.clone());
 
@@ -534,7 +607,10 @@ fn show_changes_tab(
                 *discard_confirm = false;
             }
         } else {
-            if ui.button(RichText::new("Discard All").color(Color32::RED)).clicked() {
+            if ui
+                .button(RichText::new("Discard All").color(Color32::RED))
+                .clicked()
+            {
                 *discard_confirm = true;
             }
         }
@@ -547,7 +623,10 @@ fn show_changes_tab(
             ui.text_edit_multiline(commit_message);
             ui.horizontal(|ui| {
                 let can_commit = !commit_message.trim().is_empty();
-                if ui.add_enabled(can_commit, egui::Button::new("Commit")).clicked() {
+                if ui
+                    .add_enabled(can_commit, egui::Button::new("Commit"))
+                    .clicked()
+                {
                     let msg = commit_message.clone();
                     commit(vc, state, msg, "User".to_string());
                     *commit_message = String::new();
@@ -562,93 +641,132 @@ fn show_changes_tab(
     }
 
     if let Some(ref head) = head_state {
-        egui::ScrollArea::vertical().max_height(350.0).show(ui, |ui| {
-            // Script changes section
-            if state.script_text != head.script_text {
-                ui.collapsing("Script Changes", |ui| {
-                    let diff_lines = compute_diff_display(&head.script_text, &state.script_text, 3);
-                    egui::ScrollArea::vertical().max_height(200.0).id_salt("script_diff").show(ui, |ui| {
-                        for dl in &diff_lines {
-                            let (text, color) = match dl.kind {
-                                DiffKind::Added   => (format!("+ {}", dl.content), Color32::from_rgb(80, 200, 80)),
-                                DiffKind::Removed => (format!("- {}", dl.content), Color32::from_rgb(200, 80, 80)),
-                                DiffKind::Same    => (format!("  {}", dl.content), Color32::GRAY),
-                            };
-                            ui.label(RichText::new(text).monospace().small().color(color));
+        egui::ScrollArea::vertical()
+            .max_height(350.0)
+            .show(ui, |ui| {
+                // Script changes section
+                if state.script_text != head.script_text {
+                    ui.collapsing("Script Changes", |ui| {
+                        let diff_lines =
+                            compute_diff_display(&head.script_text, &state.script_text, 3);
+                        egui::ScrollArea::vertical()
+                            .max_height(200.0)
+                            .id_salt("script_diff")
+                            .show(ui, |ui| {
+                                for dl in &diff_lines {
+                                    let (text, color) = match dl.kind {
+                                        DiffKind::Added => (
+                                            format!("+ {}", dl.content),
+                                            Color32::from_rgb(80, 200, 80),
+                                        ),
+                                        DiffKind::Removed => (
+                                            format!("- {}", dl.content),
+                                            Color32::from_rgb(200, 80, 80),
+                                        ),
+                                        DiffKind::Same => {
+                                            (format!("  {}", dl.content), Color32::GRAY)
+                                        }
+                                    };
+                                    ui.label(RichText::new(text).monospace().small().color(color));
+                                }
+                            });
+                    });
+                }
+
+                // Dimension changes section
+                let changed_dims: Vec<(&str, f64, Option<f64>)> = state
+                    .dimensions
+                    .iter()
+                    .filter_map(|(k, &v)| {
+                        let prev = head.dimensions.get(k).copied();
+                        if prev != Some(v) {
+                            Some((k.as_str(), v, prev))
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
+
+                // Also check for deleted dims
+                let deleted_dims: Vec<(&str, f64)> = head
+                    .dimensions
+                    .iter()
+                    .filter(|(k, _)| !state.dimensions.contains_key(*k))
+                    .map(|(k, &v)| (k.as_str(), v))
+                    .collect();
+
+                if !changed_dims.is_empty() || !deleted_dims.is_empty() {
+                    ui.collapsing("Dimension Changes", |ui| {
+                        egui::Grid::new("dim_changes").striped(true).show(ui, |ui| {
+                            ui.label(RichText::new("Name").strong());
+                            ui.label(RichText::new("Before").strong());
+                            ui.label(RichText::new("After").strong());
+                            ui.end_row();
+
+                            for (name, new_val, old_val) in &changed_dims {
+                                ui.label(*name);
+                                match old_val {
+                                    Some(v) => ui.label(
+                                        RichText::new(format!("{:.3}", v))
+                                            .color(Color32::from_rgb(200, 80, 80)),
+                                    ),
+                                    None => ui.label(RichText::new("(new)").weak()),
+                                };
+                                ui.label(
+                                    RichText::new(format!("{:.3}", new_val))
+                                        .color(Color32::from_rgb(80, 200, 80)),
+                                );
+                                ui.end_row();
+                            }
+                            for (name, old_val) in &deleted_dims {
+                                ui.label(*name);
+                                ui.label(
+                                    RichText::new(format!("{:.3}", old_val))
+                                        .color(Color32::from_rgb(200, 80, 80)),
+                                );
+                                ui.label(RichText::new("(deleted)").weak());
+                                ui.end_row();
+                            }
+                        });
+                    });
+                }
+
+                // Profile changes section
+                let profiles_json_current =
+                    serde_json::to_string(&state.profiles).unwrap_or_default();
+                let profiles_json_head = serde_json::to_string(&head.profiles).unwrap_or_default();
+                if profiles_json_current != profiles_json_head {
+                    ui.collapsing("Profile Changes", |ui| {
+                        for k in state.profiles.keys() {
+                            let in_head = head.profiles.contains_key(k);
+                            let same = head
+                                .profiles
+                                .get(k)
+                                .map(|p| serde_json::to_string(p).unwrap_or_default())
+                                == state
+                                    .profiles
+                                    .get(k)
+                                    .map(|p| serde_json::to_string(p).unwrap_or_default());
+                            if !in_head {
+                                ui.colored_label(
+                                    Color32::from_rgb(80, 200, 80),
+                                    format!("+ {}", k),
+                                );
+                            } else if !same {
+                                ui.colored_label(Color32::YELLOW, format!("~ {}", k));
+                            }
+                        }
+                        for k in head.profiles.keys() {
+                            if !state.profiles.contains_key(k) {
+                                ui.colored_label(
+                                    Color32::from_rgb(200, 80, 80),
+                                    format!("- {}", k),
+                                );
+                            }
                         }
                     });
-                });
-            }
-
-            // Dimension changes section
-            let changed_dims: Vec<(&str, f64, Option<f64>)> = state.dimensions.iter()
-                .filter_map(|(k, &v)| {
-                    let prev = head.dimensions.get(k).copied();
-                    if prev != Some(v) {
-                        Some((k.as_str(), v, prev))
-                    } else {
-                        None
-                    }
-                })
-                .collect();
-
-            // Also check for deleted dims
-            let deleted_dims: Vec<(&str, f64)> = head.dimensions.iter()
-                .filter(|(k, _)| !state.dimensions.contains_key(*k))
-                .map(|(k, &v)| (k.as_str(), v))
-                .collect();
-
-            if !changed_dims.is_empty() || !deleted_dims.is_empty() {
-                ui.collapsing("Dimension Changes", |ui| {
-                    egui::Grid::new("dim_changes").striped(true).show(ui, |ui| {
-                        ui.label(RichText::new("Name").strong());
-                        ui.label(RichText::new("Before").strong());
-                        ui.label(RichText::new("After").strong());
-                        ui.end_row();
-
-                        for (name, new_val, old_val) in &changed_dims {
-                            ui.label(*name);
-                            match old_val {
-                                Some(v) => ui.label(RichText::new(format!("{:.3}", v)).color(Color32::from_rgb(200, 80, 80))),
-                                None => ui.label(RichText::new("(new)").weak()),
-                            };
-                            ui.label(RichText::new(format!("{:.3}", new_val)).color(Color32::from_rgb(80, 200, 80)));
-                            ui.end_row();
-                        }
-                        for (name, old_val) in &deleted_dims {
-                            ui.label(*name);
-                            ui.label(RichText::new(format!("{:.3}", old_val)).color(Color32::from_rgb(200, 80, 80)));
-                            ui.label(RichText::new("(deleted)").weak());
-                            ui.end_row();
-                        }
-                    });
-                });
-            }
-
-            // Profile changes section
-            let profiles_json_current = serde_json::to_string(&state.profiles).unwrap_or_default();
-            let profiles_json_head = serde_json::to_string(&head.profiles).unwrap_or_default();
-            if profiles_json_current != profiles_json_head {
-                ui.collapsing("Profile Changes", |ui| {
-                    for k in state.profiles.keys() {
-                        let in_head = head.profiles.contains_key(k);
-                        let same = head.profiles.get(k)
-                            .map(|p| serde_json::to_string(p).unwrap_or_default())
-                            == state.profiles.get(k).map(|p| serde_json::to_string(p).unwrap_or_default());
-                        if !in_head {
-                            ui.colored_label(Color32::from_rgb(80, 200, 80), format!("+ {}", k));
-                        } else if !same {
-                            ui.colored_label(Color32::YELLOW, format!("~ {}", k));
-                        }
-                    }
-                    for k in head.profiles.keys() {
-                        if !state.profiles.contains_key(k) {
-                            ui.colored_label(Color32::from_rgb(200, 80, 80), format!("- {}", k));
-                        }
-                    }
-                });
-            }
-        });
+                }
+            });
     }
 }
 
@@ -669,102 +787,147 @@ fn show_conflict_modal(
         .resizable(true)
         .default_width(600.0)
         .show(ctx, |ui| {
-            ui.colored_label(Color32::from_rgb(255, 180, 50),
-                "⚠ Merge conflicts detected. Resolve all before finishing.");
+            ui.colored_label(
+                Color32::from_rgb(255, 180, 50),
+                "⚠ Merge conflicts detected. Resolve all before finishing.",
+            );
             ui.separator();
 
             if let Some(ref conflict) = panel_state.conflict {
-                egui::ScrollArea::vertical().max_height(400.0).show(ui, |ui| {
-                    // Script conflicts
-                    if !conflict.script_conflicts.is_empty() {
-                        ui.heading("Script Conflicts");
-                        for (i, sc) in conflict.script_conflicts.iter().enumerate() {
-                            ui.group(|ui| {
-                                ui.label(format!("Lines {}–{}", sc.line_start, sc.line_end));
+                egui::ScrollArea::vertical()
+                    .max_height(400.0)
+                    .show(ui, |ui| {
+                        // Script conflicts
+                        if !conflict.script_conflicts.is_empty() {
+                            ui.heading("Script Conflicts");
+                            for (i, sc) in conflict.script_conflicts.iter().enumerate() {
+                                ui.group(|ui| {
+                                    ui.label(format!("Lines {}–{}", sc.line_start, sc.line_end));
 
-                                ui.columns(3, |cols| {
-                                    cols[0].label(RichText::new("Base").strong());
-                                    for l in &sc.base_lines {
-                                        cols[0].label(RichText::new(l).monospace().small());
-                                    }
-
-                                    cols[1].label(RichText::new("Current").strong()
-                                        .color(Color32::from_rgb(80, 150, 255)));
-                                    for l in &sc.current_lines {
-                                        cols[1].label(RichText::new(l).monospace().small()
-                                            .color(Color32::from_rgb(80, 150, 255)));
-                                    }
-
-                                    cols[2].label(RichText::new("Source").strong()
-                                        .color(Color32::from_rgb(80, 200, 80)));
-                                    for l in &sc.source_lines {
-                                        cols[2].label(RichText::new(l).monospace().small()
-                                            .color(Color32::from_rgb(80, 200, 80)));
-                                    }
-                                });
-
-                                if i < panel_state.conflict_resolutions.len() {
-                                    ui.horizontal(|ui| {
-                                        let is_current = matches!(
-                                            panel_state.conflict_resolutions[i],
-                                            ConflictResolution::UseCurrent
-                                        );
-                                        let is_source = matches!(
-                                            panel_state.conflict_resolutions[i],
-                                            ConflictResolution::UseSource
-                                        );
-                                        if ui.selectable_label(is_current, "Use Current").clicked() {
-                                            panel_state.conflict_resolutions[i] = ConflictResolution::UseCurrent;
+                                    ui.columns(3, |cols| {
+                                        cols[0].label(RichText::new("Base").strong());
+                                        for l in &sc.base_lines {
+                                            cols[0].label(RichText::new(l).monospace().small());
                                         }
-                                        if ui.selectable_label(is_source, "Use Source").clicked() {
-                                            panel_state.conflict_resolutions[i] = ConflictResolution::UseSource;
+
+                                        cols[1].label(
+                                            RichText::new("Current")
+                                                .strong()
+                                                .color(Color32::from_rgb(80, 150, 255)),
+                                        );
+                                        for l in &sc.current_lines {
+                                            cols[1].label(
+                                                RichText::new(l)
+                                                    .monospace()
+                                                    .small()
+                                                    .color(Color32::from_rgb(80, 150, 255)),
+                                            );
+                                        }
+
+                                        cols[2].label(
+                                            RichText::new("Source")
+                                                .strong()
+                                                .color(Color32::from_rgb(80, 200, 80)),
+                                        );
+                                        for l in &sc.source_lines {
+                                            cols[2].label(
+                                                RichText::new(l)
+                                                    .monospace()
+                                                    .small()
+                                                    .color(Color32::from_rgb(80, 200, 80)),
+                                            );
                                         }
                                     });
-                                }
-                            });
-                        }
-                    }
 
-                    // Dimension conflicts
-                    if !conflict.dimension_conflicts.is_empty() {
-                        ui.heading("Dimension Conflicts");
-                        egui::Grid::new("dim_conflicts").striped(true).show(ui, |ui| {
-                            ui.label(RichText::new("Name").strong());
-                            ui.label(RichText::new("Current").strong());
-                            ui.label(RichText::new("Source").strong());
-                            ui.label(RichText::new("Use Current?").strong());
-                            ui.end_row();
-
-                            for (i, (name, current_val, source_val)) in conflict.dimension_conflicts.iter().enumerate() {
-                                ui.label(name);
-                                ui.colored_label(Color32::from_rgb(80, 150, 255), format!("{:.3}", current_val));
-                                ui.colored_label(Color32::from_rgb(80, 200, 80), format!("{:.3}", source_val));
-                                if i < panel_state.dim_resolutions.len() {
-                                    ui.checkbox(&mut panel_state.dim_resolutions[i], "");
-                                }
-                                ui.end_row();
+                                    if i < panel_state.conflict_resolutions.len() {
+                                        ui.horizontal(|ui| {
+                                            let is_current = matches!(
+                                                panel_state.conflict_resolutions[i],
+                                                ConflictResolution::UseCurrent
+                                            );
+                                            let is_source = matches!(
+                                                panel_state.conflict_resolutions[i],
+                                                ConflictResolution::UseSource
+                                            );
+                                            if ui
+                                                .selectable_label(is_current, "Use Current")
+                                                .clicked()
+                                            {
+                                                panel_state.conflict_resolutions[i] =
+                                                    ConflictResolution::UseCurrent;
+                                            }
+                                            if ui
+                                                .selectable_label(is_source, "Use Source")
+                                                .clicked()
+                                            {
+                                                panel_state.conflict_resolutions[i] =
+                                                    ConflictResolution::UseSource;
+                                            }
+                                        });
+                                    }
+                                });
                             }
-                        });
-                    }
-
-                    // Profile conflicts
-                    if !conflict.profile_conflicts.is_empty() {
-                        ui.heading("Profile Conflicts");
-                        for name in &conflict.profile_conflicts {
-                            ui.label(format!("  Profile '{}' modified in both branches", name));
-                            ui.label(RichText::new("  (current version will be kept)").weak().small());
                         }
-                    }
-                });
+
+                        // Dimension conflicts
+                        if !conflict.dimension_conflicts.is_empty() {
+                            ui.heading("Dimension Conflicts");
+                            egui::Grid::new("dim_conflicts")
+                                .striped(true)
+                                .show(ui, |ui| {
+                                    ui.label(RichText::new("Name").strong());
+                                    ui.label(RichText::new("Current").strong());
+                                    ui.label(RichText::new("Source").strong());
+                                    ui.label(RichText::new("Use Current?").strong());
+                                    ui.end_row();
+
+                                    for (i, (name, current_val, source_val)) in
+                                        conflict.dimension_conflicts.iter().enumerate()
+                                    {
+                                        ui.label(name);
+                                        ui.colored_label(
+                                            Color32::from_rgb(80, 150, 255),
+                                            format!("{:.3}", current_val),
+                                        );
+                                        ui.colored_label(
+                                            Color32::from_rgb(80, 200, 80),
+                                            format!("{:.3}", source_val),
+                                        );
+                                        if i < panel_state.dim_resolutions.len() {
+                                            ui.checkbox(&mut panel_state.dim_resolutions[i], "");
+                                        }
+                                        ui.end_row();
+                                    }
+                                });
+                        }
+
+                        // Profile conflicts
+                        if !conflict.profile_conflicts.is_empty() {
+                            ui.heading("Profile Conflicts");
+                            for name in &conflict.profile_conflicts {
+                                ui.label(format!("  Profile '{}' modified in both branches", name));
+                                ui.label(
+                                    RichText::new("  (current version will be kept)")
+                                        .weak()
+                                        .small(),
+                                );
+                            }
+                        }
+                    });
             }
 
             ui.separator();
-            let all_resolved = panel_state.conflict.as_ref()
+            let all_resolved = panel_state
+                .conflict
+                .as_ref()
                 .map(|c| c.script_conflicts.len() == panel_state.conflict_resolutions.len())
                 .unwrap_or(false);
 
             ui.horizontal(|ui| {
-                if ui.add_enabled(all_resolved, egui::Button::new("Finish Merge")).clicked() {
+                if ui
+                    .add_enabled(all_resolved, egui::Button::new("Finish Merge"))
+                    .clicked()
+                {
                     finish_merge = true;
                 }
                 if ui.button("Cancel").clicked() {
@@ -792,14 +955,15 @@ fn apply_conflict_resolutions(
 ) {
     if let Some(conflict) = panel_state.conflict.take() {
         // Apply script conflict resolutions
-        let mut script_lines: Vec<String> = state.script_text.lines().map(|s| s.to_string()).collect();
+        let mut script_lines: Vec<String> =
+            state.script_text.lines().map(|s| s.to_string()).collect();
 
         for (i, resolution) in panel_state.conflict_resolutions.iter().enumerate() {
             if i < conflict.script_conflicts.len() {
                 let sc = &conflict.script_conflicts[i];
                 let replacement = match resolution {
                     ConflictResolution::UseCurrent => sc.current_lines.clone(),
-                    ConflictResolution::UseSource  => sc.source_lines.clone(),
+                    ConflictResolution::UseSource => sc.source_lines.clone(),
                     ConflictResolution::Manual(lines) => lines.clone(),
                 };
                 // Replace lines in range
@@ -812,7 +976,8 @@ fn apply_conflict_resolutions(
         state.script_text = script_lines.join("\n");
 
         // Apply dimension conflict resolutions
-        for (i, (name, _current_val, source_val)) in conflict.dimension_conflicts.iter().enumerate() {
+        for (i, (name, _current_val, source_val)) in conflict.dimension_conflicts.iter().enumerate()
+        {
             let use_current = panel_state.dim_resolutions.get(i).copied().unwrap_or(true);
             if !use_current {
                 state.dimensions.insert(name.clone(), *source_val);
@@ -825,7 +990,10 @@ fn apply_conflict_resolutions(
         let dims_str = format!("{:?}", state.dimensions);
         let merge_msg = "Merge (resolved conflicts)".to_string();
         let merge_id = crate::version_control::CommitId::generate(
-            &ts_str, &merge_msg, &state.script_text, &dims_str,
+            &ts_str,
+            &merge_msg,
+            &state.script_text,
+            &dims_str,
         );
 
         let parent_ids = vc.head_commit_id.iter().cloned().collect();

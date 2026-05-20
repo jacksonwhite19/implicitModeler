@@ -12,13 +12,13 @@ pub enum DetectionType {
 
 #[derive(Clone, Debug)]
 pub struct DetectedVariable {
-    pub name: String,        // variable name or auto label
+    pub name: String, // variable name or auto label
     pub value: f64,
-    pub line: usize,         // 0-indexed
-    pub col_start: usize,    // char offset on that line where literal starts
-    pub col_end: usize,      // char offset where literal ends (exclusive)
+    pub line: usize,      // 0-indexed
+    pub col_start: usize, // char offset on that line where literal starts
+    pub col_end: usize,   // char offset where literal ends (exclusive)
     pub detection_type: DetectionType,
-    pub context: String,     // snippet for display
+    pub context: String, // snippet for display
 }
 
 /// Detect all numeric variables/literals in the script source.
@@ -147,7 +147,10 @@ fn parse_let_binding(raw_line: &str, line_idx: usize) -> Option<DetectedVariable
 }
 
 /// Detect numeric literals inside function call arguments.
-fn detect_inline_literals(source: &str, let_bindings: &[DetectedVariable]) -> Vec<DetectedVariable> {
+fn detect_inline_literals(
+    source: &str,
+    let_bindings: &[DetectedVariable],
+) -> Vec<DetectedVariable> {
     let mut results = Vec::new();
     let lines: Vec<&str> = source.lines().collect();
 
@@ -183,7 +186,11 @@ fn detect_inline_literals(source: &str, let_bindings: &[DetectedVariable]) -> Ve
 
         if ch == '(' {
             // Find the function name by scanning backward on this line.
-            let raw_line = if line_idx < lines.len() { lines[line_idx] } else { "" };
+            let raw_line = if line_idx < lines.len() {
+                lines[line_idx]
+            } else {
+                ""
+            };
             let fn_name = find_function_name_before(raw_line, col_idx);
             call_stack.push((fn_name, 0));
             col_idx += 1;
@@ -217,7 +224,8 @@ fn detect_inline_literals(source: &str, let_bindings: &[DetectedVariable]) -> Ve
 
         if !call_stack.is_empty() {
             // Check if this could be a number argument start
-            if ch.is_ascii_digit() || (ch == '-' && i + 1 < total && chars[i + 1].is_ascii_digit()) {
+            if ch.is_ascii_digit() || (ch == '-' && i + 1 < total && chars[i + 1].is_ascii_digit())
+            {
                 // Check that previous non-whitespace char is '(' or ','
                 if is_after_arg_separator(&chars, i) {
                     // Don't overlap with let-bindings
@@ -225,7 +233,8 @@ fn detect_inline_literals(source: &str, let_bindings: &[DetectedVariable]) -> Ve
                         let rest: String = chars[i..].iter().collect();
                         if let Some((value, char_len)) = try_parse_number(&rest) {
                             if value.is_finite() {
-                                let (fn_name, arg_idx) = call_stack.last()
+                                let (fn_name, arg_idx) = call_stack
+                                    .last()
                                     .map(|(f, a)| (f.clone(), *a))
                                     .unwrap_or((None, 0));
 
@@ -234,7 +243,11 @@ fn detect_inline_literals(source: &str, let_bindings: &[DetectedVariable]) -> Ve
                                     None => format!("line {} col {}", line_idx + 1, col_idx + 1),
                                 };
 
-                                let raw_line = if line_idx < lines.len() { lines[line_idx] } else { "" };
+                                let raw_line = if line_idx < lines.len() {
+                                    lines[line_idx]
+                                } else {
+                                    ""
+                                };
                                 results.push(DetectedVariable {
                                     name,
                                     value,
@@ -315,11 +328,7 @@ fn find_function_name_before(line: &str, col: usize) -> Option<String> {
     }
     let start = (j + 1) as usize;
     let name: String = chars[start..end].iter().collect();
-    if name.is_empty() {
-        None
-    } else {
-        Some(name)
-    }
+    if name.is_empty() { None } else { Some(name) }
 }
 
 /// Try to parse a numeric literal from the start of `s`.
@@ -493,10 +502,16 @@ mod tests {
     fn test_detect_let_binding() {
         let source = "let wingspan = 800.0;\nlet chord = 150.0;";
         let vars = detect_script_variables(source);
-        let wing = vars.iter().find(|v| v.name == "wingspan").expect("should detect wingspan");
+        let wing = vars
+            .iter()
+            .find(|v| v.name == "wingspan")
+            .expect("should detect wingspan");
         assert_eq!(wing.value, 800.0);
         assert_eq!(wing.line, 0);
-        assert!(matches!(wing.detection_type, DetectionType::LetBinding { .. }));
+        assert!(matches!(
+            wing.detection_type,
+            DetectionType::LetBinding { .. }
+        ));
     }
 
     #[test]
@@ -542,8 +557,14 @@ mod tests {
     fn test_skip_fn_block() {
         let source = "fn helper() {\n    let x = 5.0;\n}\nlet y = 10.0;";
         let vars = detect_script_variables(source);
-        assert!(vars.iter().any(|v| v.name == "y"), "top-level y should be detected");
-        assert!(!vars.iter().any(|v| v.name == "x"), "x inside fn block should not be detected");
+        assert!(
+            vars.iter().any(|v| v.name == "y"),
+            "top-level y should be detected"
+        );
+        assert!(
+            !vars.iter().any(|v| v.name == "x"),
+            "x inside fn block should not be detected"
+        );
     }
 
     #[test]

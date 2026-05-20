@@ -35,4 +35,65 @@ let aircraft = blend(aircraft, v_tail, 1.5);
 let aircraft = blend(aircraft, nacelle_left, 1.0);
 let aircraft = blend(aircraft, nacelle_right, 1.0);
 
+let aero_export = #{
+    parts: [
+        #{
+            name: "fuselage_oml",
+            sdf: fuselage,
+            aero_role: "outer_mold_line",
+            patch_name: "fuselage"
+        },
+        #{
+            name: "main_wing_oml",
+            sdf: wing,
+            aero_role: "outer_mold_line",
+            patch_name: "main_wing",
+            preserve_feature: true,
+            feature_tags: ["leading_edge", "trailing_edge", "wing_body_junction"],
+            min_export_scale_mm: 0.8,
+            feature_protection_strength: 2.0
+        },
+        #{
+            name: "horizontal_tail_oml",
+            sdf: h_tail,
+            aero_role: "outer_mold_line",
+            patch_name: "horizontal_tail",
+            preserve_feature: true,
+            feature_tags: ["leading_edge", "trailing_edge", "tail_body_junction"],
+            min_export_scale_mm: 0.8,
+            feature_protection_strength: 1.5
+        },
+        #{
+            name: "vertical_tail_oml",
+            sdf: v_tail,
+            aero_role: "outer_mold_line",
+            patch_name: "vertical_tail",
+            preserve_feature: true,
+            feature_tags: ["leading_edge", "trailing_edge", "tail_body_junction"],
+            min_export_scale_mm: 0.8,
+            feature_protection_strength: 1.5
+        },
+        #{
+            name: "left_nacelle_oml",
+            sdf: nacelle_left,
+            aero_role: "outer_mold_line",
+            patch_name: "left_nacelle",
+            preserve_feature: true,
+            feature_tags: ["inlet_lip", "nozzle_exit"],
+            min_export_scale_mm: 0.5,
+            feature_protection_strength: 2.0
+        },
+        #{
+            name: "right_nacelle_oml",
+            sdf: nacelle_right,
+            aero_role: "outer_mold_line",
+            patch_name: "right_nacelle",
+            preserve_feature: true,
+            feature_tags: ["inlet_lip", "nozzle_exit"],
+            min_export_scale_mm: 0.5,
+            feature_protection_strength: 2.0
+        }
+    ]
+};
+
 aircraft
