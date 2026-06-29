@@ -1,0 +1,22 @@
+{
+  "candidate_id": "candidate_example_0001",
+  "campaign_id": "campaign_example_0001",
+  "aircraft_family": "fixed_wing_uav_reference",
+  "variable_schema_id": "varschema_example_0001",
+  "generation": 0,
+  "status": "registered",
+  "created_by": "seed",
+  "design_variables": {
+    "wing.span_mm": {"value": 700.0, "unit": "mm"},
+    "wing.root_chord_mm": {"value": 170.0, "unit": "mm"},
+    "wing.tip_chord_mm": {"value": 65.0, "unit": "mm"},
+    "wing.sweep_deg": {"value": 15.0, "unit": "deg"}
+  },
+  "normalized_design_vector": {
+    "wing.span_mm": 0.5,
+    "wing.root_chord_mm": 0.5,
+    "wing.tip_chord_mm": 0.5,
+    "wing.sweep_deg": 0.5
+  },
+  "notes": "Example records-only candidate."
+}

@@ -1,0 +1,13 @@
+{
+  "failure_id": "failure_example_0001",
+  "candidate_id": "candidate_example_0001",
+  "evaluation_id": "evaluation_example_0001",
+  "module_attempt_id": "module_example_0001",
+  "category": "geometry.missing_feature",
+  "stage": "geometry_provider",
+  "severity": "fatal",
+  "retryable": false,
+  "message": "Example failure record only; not emitted by the v0.1 fixture.",
+  "evidence_artifact_ids": [],
+  "suggested_next_action": "Check script path and feature name."
+}

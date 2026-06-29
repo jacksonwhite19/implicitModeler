@@ -1,0 +1,92 @@
+{
+  "schema_id": "fixed_wing_uav_reference.variables.v0_1",
+  "aircraft_family": "fixed_wing_uav_reference",
+  "schema_version": "0.1.0",
+  "units": "mm_deg",
+  "topology_policy": "fixed_topology",
+  "variables": {
+    "wing.span_mm": {
+      "type": "continuous",
+      "unit": "mm",
+      "required": true,
+      "min": 500.0,
+      "max": 950.0,
+      "description": "Reference wing span."
+    },
+    "wing.root_chord_mm": {
+      "type": "continuous",
+      "unit": "mm",
+      "required": true,
+      "min": 120.0,
+      "max": 230.0,
+      "description": "Reference wing root chord."
+    },
+    "wing.tip_chord_mm": {
+      "type": "continuous",
+      "unit": "mm",
+      "required": true,
+      "min": 40.0,
+      "max": 120.0,
+      "description": "Reference wing tip chord."
+    },
+    "wing.sweep_deg": {
+      "type": "continuous",
+      "unit": "deg",
+      "required": true,
+      "min": -5.0,
+      "max": 35.0,
+      "description": "Reference wing sweep angle."
+    },
+    "wing.airfoil_selector": {
+      "type": "continuous_selector",
+      "unit": null,
+      "required": false,
+      "min": 0.0,
+      "max": 2.0,
+      "description": "Rounded selector for the reference airfoil family used by screening and downstream geometry adapters.",
+      "selector_policy": {
+        "round_to_integer": true,
+        "options": {
+          "0": "thin_loiter",
+          "1": "balanced_uav",
+          "2": "high_lift_stable"
+        }
+      }
+    },
+    "fuselage.length_delta_mm": {
+      "type": "continuous",
+      "unit": "mm",
+      "required": false,
+      "min": -100.0,
+      "max": 100.0,
+      "description": "Delta from the reference fuselage length. Positive values lengthen the fuselage."
+    },
+    "fuselage.nose_bluntness": {
+      "type": "continuous",
+      "unit": null,
+      "required": false,
+      "min": 0.0,
+      "max": 1.0,
+      "description": "0 is sharpest reference nose, 1 is bluntest reference nose."
+    },
+    "fuselage.tail_bluntness": {
+      "type": "continuous",
+      "unit": null,
+      "required": false,
+      "min": 0.0,
+      "max": 1.0,
+      "description": "0 is sharpest reference tail cone, 1 is bluntest reference tail cone."
+    }
+  },
+  "normalized_policy": {
+    "required": true,
+    "min": 0.0,
+    "max": 1.0
+  },
+  "notes": [
+    "Initial operational schema for v0.1 fixture work.",
+    "This is intentionally smaller than the long-term contract variable list.",
+    "Optional fuselage and airfoil selector variables support stress testing without breaking existing four-variable candidates.",
+    "Do not encode topology changes in this schema."
+  ]
+}

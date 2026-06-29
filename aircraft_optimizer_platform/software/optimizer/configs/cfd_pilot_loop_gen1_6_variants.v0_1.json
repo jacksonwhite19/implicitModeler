@@ -1,0 +1,206 @@
+{
+  "schema": "cfd_pilot_loop_gen1_6_variants.v0_1",
+  "description": "First bounded optimizer pilot-loop generation: six children generated from the 2026-06-26 10-candidate rough-CFD wing shakedown. Variations stay within the same faired-cap fixed-wing UAV family and mutate wing planform/placement only.",
+  "source_results": {
+    "ranked_summary_csv": "custom_cfd_mesher_experiment/runs/wing_shakedown_10_snappy_adaptive_v0_1_20260626_retry2/rough_scoring_ranked_summary.csv",
+    "parent_config": "aircraft_optimizer_platform/software/optimizer/configs/cfd_wing_shakedown_10_variants.v0_1.json",
+    "selection_policy": "Exploit top rough-score candidates shv09, shv05, and shv03; include one bounded rescue mutation from high-LD shv06 with wing placement/tail changes to reduce pitch-moment penalty."
+  },
+  "source_rhai": "dual_contouring/direct_sparse_sdf_mc_experiment/scratch/aircraft_oml_inlet_native_frame.rhai",
+  "inlet_mode": "faired_cap",
+  "export_preset": "direct_sparse_oml_fast",
+  "units": "mm",
+  "candidate_scope": {
+    "family": "same faired-cap fixed-wing UAV family as the shv rough-CFD baseline",
+    "topology_changes": "none",
+    "primary_variables": [
+      "wing_span",
+      "wing_sweep_deg",
+      "wing_root_chord",
+      "wing_tip_chord",
+      "wing_le_x"
+    ],
+    "secondary_variables": [
+      "htail_span",
+      "htail_root_chord",
+      "htail_tip_chord",
+      "vtail_span"
+    ],
+    "notes": [
+      "This is a pilot optimizer loop, not a final design search.",
+      "All candidates use the existing faired-cap inlet exporter path and preserve the same aircraft family.",
+      "Rough scores from this generation should be used comparatively only."
+    ]
+  },
+  "variants": [
+    {
+      "id": "opg1_01_shv09_span_tip_plus",
+      "description": "Exploit shv09 by adding small span and tip chord while keeping strong sweep and near-neutral pitch behavior.",
+      "parent_id": "shv09_long_span_swept",
+      "mutation_reason": "optimizer exploitation around best rough score",
+      "lineage": {
+        "parent_score": 88.030012218398,
+        "mutations": [
+          "wing_span +20 mm",
+          "wing_tip_chord +6 mm",
+          "wing_sweep_deg -2 deg",
+          "wing_le_x +5 mm",
+          "htail_span +5 mm"
+        ]
+      },
+      "output_stem": "direct_sdf_oml_opg1_01_shv09_span_tip_plus_faired_cap",
+      "feature": "aircraft_oml_opg1_01_shv09_span_tip_plus_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 860.0,
+        "wing_root_chord": 158.0,
+        "wing_tip_chord": 64.0,
+        "wing_sweep_deg": 24.0,
+        "wing_le_x": 240.0,
+        "htail_span": 435.0,
+        "vtail_span": 260.0
+      }
+    },
+    {
+      "id": "opg1_02_shv09_sweep_down_area_hold",
+      "description": "Reduce shv09 sweep while holding area close to test drag/lift tradeoff without moving far from the current leader.",
+      "parent_id": "shv09_long_span_swept",
+      "mutation_reason": "optimizer local trade study around sweep penalty",
+      "lineage": {
+        "parent_score": 88.030012218398,
+        "mutations": [
+          "wing_span -5 mm",
+          "wing_root_chord +6 mm",
+          "wing_tip_chord +7 mm",
+          "wing_sweep_deg -6 deg",
+          "wing_le_x +10 mm"
+        ]
+      },
+      "output_stem": "direct_sdf_oml_opg1_02_shv09_sweep_down_area_hold_faired_cap",
+      "feature": "aircraft_oml_opg1_02_shv09_sweep_down_area_hold_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 835.0,
+        "wing_root_chord": 166.0,
+        "wing_tip_chord": 65.0,
+        "wing_sweep_deg": 20.0,
+        "wing_le_x": 245.0,
+        "htail_span": 430.0,
+        "vtail_span": 260.0
+      }
+    },
+    {
+      "id": "opg1_03_shv05_span_up_sweep_mid",
+      "description": "Exploit shv05 by increasing span and slightly reducing sweep while retaining aft wing placement and larger tail authority.",
+      "parent_id": "shv05_aft_wing_moderate_sweep",
+      "mutation_reason": "optimizer exploitation around second-best rough score",
+      "lineage": {
+        "parent_score": 86.355002760191,
+        "mutations": [
+          "wing_span +40 mm",
+          "wing_root_chord -2 mm",
+          "wing_tip_chord +2 mm",
+          "wing_sweep_deg -2 deg",
+          "htail_span +5 mm"
+        ]
+      },
+      "output_stem": "direct_sdf_oml_opg1_03_shv05_span_up_sweep_mid_faired_cap",
+      "feature": "aircraft_oml_opg1_03_shv05_span_up_sweep_mid_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 760.0,
+        "wing_root_chord": 166.0,
+        "wing_tip_chord": 66.0,
+        "wing_sweep_deg": 20.0,
+        "wing_le_x": 270.0,
+        "htail_span": 435.0,
+        "htail_root_chord": 106.0,
+        "htail_tip_chord": 86.0
+      }
+    },
+    {
+      "id": "opg1_04_shv05_drag_trim",
+      "description": "Keep shv05 aft-wing trim behavior but reduce area slightly and add sweep to probe drag and moment sensitivity.",
+      "parent_id": "shv05_aft_wing_moderate_sweep",
+      "mutation_reason": "optimizer local trade study around drag and pitch stability",
+      "lineage": {
+        "parent_score": 86.355002760191,
+        "mutations": [
+          "wing_span +15 mm",
+          "wing_root_chord -6 mm",
+          "wing_tip_chord -2 mm",
+          "wing_sweep_deg +2 deg",
+          "wing_le_x +8 mm",
+          "htail_span +5 mm"
+        ]
+      },
+      "output_stem": "direct_sdf_oml_opg1_04_shv05_drag_trim_faired_cap",
+      "feature": "aircraft_oml_opg1_04_shv05_drag_trim_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 735.0,
+        "wing_root_chord": 162.0,
+        "wing_tip_chord": 62.0,
+        "wing_sweep_deg": 24.0,
+        "wing_le_x": 278.0,
+        "htail_span": 435.0,
+        "htail_root_chord": 106.0,
+        "htail_tip_chord": 86.0
+      }
+    },
+    {
+      "id": "opg1_05_shv03_lift_recover",
+      "description": "Recover lift from compact high-sweep shv03 by adding span/root chord while keeping the compact swept character.",
+      "parent_id": "shv03_compact_high_sweep",
+      "mutation_reason": "optimizer exploitation of low-moment compact candidate with low lift",
+      "lineage": {
+        "parent_score": 83.386667177531,
+        "mutations": [
+          "wing_span +50 mm",
+          "wing_root_chord +2 mm",
+          "wing_tip_chord +4 mm",
+          "wing_sweep_deg -4 deg",
+          "wing_le_x +13 mm",
+          "htail_span +5 mm"
+        ]
+      },
+      "output_stem": "direct_sdf_oml_opg1_05_shv03_lift_recover_faired_cap",
+      "feature": "aircraft_oml_opg1_05_shv03_lift_recover_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 670.0,
+        "wing_root_chord": 172.0,
+        "wing_tip_chord": 58.0,
+        "wing_sweep_deg": 30.0,
+        "wing_le_x": 248.0,
+        "htail_span": 420.0,
+        "vtail_span": 260.0
+      }
+    },
+    {
+      "id": "opg1_06_shv06_trimmed_high_ld",
+      "description": "Rescue mutation from high-L/D shv06, shifting wing aft and increasing tail authority to see if the pitch-moment penalty can be reduced.",
+      "parent_id": "shv06_wide_low_taper",
+      "mutation_reason": "optimizer exploration of high raw L/D candidate penalized by positive pitch moment",
+      "lineage": {
+        "parent_score": 68.001011402694,
+        "parent_best_ld": 3.5165999637605094,
+        "mutations": [
+          "wing_root_chord -4 mm",
+          "wing_tip_chord -9 mm",
+          "wing_sweep_deg +2 deg",
+          "wing_le_x +30 mm",
+          "htail_span +20 mm",
+          "larger htail chord"
+        ]
+      },
+      "output_stem": "direct_sdf_oml_opg1_06_shv06_trimmed_high_ld_faired_cap",
+      "feature": "aircraft_oml_opg1_06_shv06_trimmed_high_ld_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 820.0,
+        "wing_root_chord": 174.0,
+        "wing_tip_chord": 96.0,
+        "wing_sweep_deg": 16.0,
+        "wing_le_x": 255.0,
+        "htail_span": 440.0,
+        "htail_root_chord": 106.0,
+        "htail_tip_chord": 86.0
+      }
+    }
+  ]
+}

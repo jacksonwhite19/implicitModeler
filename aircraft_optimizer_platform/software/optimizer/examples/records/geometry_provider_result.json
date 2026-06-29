@@ -1,0 +1,19 @@
+{
+  "geometry_provider_result_id": "geometry_example_0001",
+  "candidate_id": "candidate_example_0001",
+  "evaluation_id": "evaluation_example_0001",
+  "provider_name": "manual_reference_geometry_provider",
+  "provider_version": "0.1.0",
+  "provider_kind": "manual_reference",
+  "status": "success",
+  "representation": "rhai_sdf",
+  "script_path": "software/sdf_generation_manual/curated_rhai/direct_sparse_oml_aircraft_no_inlet.rhai",
+  "feature_name": "aircraft_oml_oblique15_y_slice_frame",
+  "coordinate_frame": "oblique_y_slice_frame",
+  "bbox_min_mm": [-130.0, -160.0, -380.0],
+  "bbox_max_mm": [830.0, 160.0, 570.0],
+  "metadata": {
+    "role": "outer_mold_line",
+    "records_only": true
+  }
+}

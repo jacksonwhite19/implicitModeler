@@ -1,0 +1,83 @@
+{
+  "id": "snappy_openfoam_external_aero_wall_function_candidate_v0_1",
+  "status": "research_only_not_default",
+  "created": "2026-06-24",
+  "purpose": "Research-only OpenFOAM no-slip RANS mesh targeting wall-function y+ behavior for small UAV external aero.",
+  "default_use_policy": {
+    "can_be_default": false,
+    "reason": "This preset improves y+ behavior by coarsening the aircraft surface mesh, which violates the current surface-fidelity priority.",
+    "preferred_default_preset": "snappy_openfoam_external_aero_hifi_surface_v0_2"
+  },
+  "geometry_units": {
+    "input_stl_units": "mm",
+    "openfoam_case_units": "m",
+    "scale": 0.001
+  },
+  "mesher": {
+    "tool": "OpenFOAM snappyHexMesh",
+    "parallel_procs": 12,
+    "base_cells": "44,28,44",
+    "pad_m": 0.8,
+    "surface_min_level": 2,
+    "surface_max_level": 3,
+    "feature_level": 3,
+    "n_cells_between_levels": 4,
+    "snap_tolerance": 0.5,
+    "n_smooth_patch": 10,
+    "include_known_hotspot_boxes": true,
+    "check_skew_threshold": 12.0
+  },
+  "layers": {
+    "add_layers": true,
+    "n_surface_layers": 1,
+    "layer_relative_sizes": true,
+    "layer_expansion_ratio": 1.2,
+    "final_layer_thickness": 0.75,
+    "min_layer_thickness": 0.15,
+    "layer_feature_angle_deg": 70.0,
+    "n_layer_iter": 35,
+    "n_relaxed_iter": 15
+  },
+  "solver_smoke": {
+    "freestream_mps": [22.352, 0.0, 0.0],
+    "potentialFoam_required": true,
+    "no_slip_laminar_start_required": true,
+    "rans_model": "kOmegaSST",
+    "rans_end_time": 100,
+    "aircraft_wall": "noSlip",
+    "k_wall_bc": "kqRWallFunction",
+    "omega_wall_bc": "omegaWallFunction",
+    "nut_wall_bc": "nutkWallFunction"
+  },
+  "gates": {
+    "mesh": {
+      "checkMesh_skewThreshold": 12.0,
+      "max_non_orthogonality_target_deg": 70.0,
+      "snappy_finished_without_errors_required": true
+    },
+    "solver": {
+      "floating_point_exception_allowed": false,
+      "fatal_error_allowed": false,
+      "force_coeff_abs_max": 10.0,
+      "force_coeff_tail_relative_drift_max": 0.1,
+      "force_coeff_tail_absolute_drift_max": 0.01
+    },
+    "yplus": {
+      "status": "near_miss_on_fcv04_probe",
+      "target_p50_min": 30.0,
+      "target_p50_max": 100.0,
+      "target_p95_max": 150.0,
+      "target_max_max": 300.0,
+      "fcv04_probe_p50": 27.762436,
+      "fcv04_probe_p95": 100.037923,
+      "fcv04_probe_max": 205.032
+    }
+  },
+  "known_limitations": [
+    "Surface capture is visibly coarser than the higher-fidelity thick-layer snappy preset.",
+    "fcv04 p50 y+ is close to but below the nominal 30 lower bound.",
+    "Only fcv04 has completed this wall-function candidate probe so far.",
+    "Not acceptable as the default path while surface fidelity is the priority.",
+    "This is not validated scoring CFD."
+  ]
+}

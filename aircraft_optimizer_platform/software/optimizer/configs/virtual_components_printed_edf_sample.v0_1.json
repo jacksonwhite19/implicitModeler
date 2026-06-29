@@ -1,0 +1,51 @@
+{
+  "description": "Sample mostly 3D-printed UAV layout assumptions with 70 mm EDF, 3 inch battery, and compact electronics.",
+  "construction": "mostly_3d_printed_shell_with_integral_ribs_and_bulkheads",
+  "printed_shell_areal_density_kg_m2": 0.95,
+  "printed_rib_linear_density_kg_m": 0.045,
+  "wing_rib_spacing_mm": 95.0,
+  "wing_spar_linear_density_kg_m": 0.075,
+  "wing_root_reinforcement_kg": 0.055,
+  "fuselage_length_mm": 960.0,
+  "fuselage_diameter_mm": 115.0,
+  "fuselage_inner_diameter_mm": 100.0,
+  "fuselage_usable_x_min_mm": 105.0,
+  "fuselage_usable_x_max_mm": 745.0,
+  "fuselage_bulkhead_count": 5,
+  "fuselage_bulkhead_mass_kg": 0.018,
+  "fuselage_mount_allowance_kg": 0.055,
+  "target_cg_x_mm": 341.05,
+  "force_internal_components_on_x_axis": true,
+  "component_axial_clearance_mm": 8.0,
+  "default_inner_surface_keepout_mm": 2.0,
+  "components": {
+    "battery": {
+      "mass_kg": 0.3,
+      "dimensions_mm": [76.2, 38.1, 38.1],
+      "inner_surface_keepout_mm": 2.0,
+      "x_range_mm": [190.0, 560.0],
+      "z_mm": -12.0
+    },
+    "payload": {
+      "mass_kg": 0.18,
+      "dimensions_mm": [85.0, 45.0, 35.0],
+      "inner_surface_keepout_mm": 2.0,
+      "fixed_x_mm": 365.0,
+      "z_mm": -4.0
+    },
+    "avionics": {
+      "mass_kg": 0.175,
+      "dimensions_mm": [38.1, 38.1, 25.4],
+      "inner_surface_keepout_mm": 2.0,
+      "x_range_mm": [180.0, 620.0],
+      "z_mm": 8.0
+    },
+    "edf": {
+      "mass_kg": 0.3,
+      "dimensions_mm": [120.0, 70.0, 70.0],
+      "inner_surface_keepout_mm": 2.0,
+      "fixed_x_mm": 232.5,
+      "z_mm": 0.0
+    }
+  }
+}

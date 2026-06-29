@@ -1,0 +1,8 @@
+{
+  "opg1_01_shv09_span_tip_plus": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_opg1_01_shv09_span_tip_plus_faired_cap_spacing_1p0.stl",
+  "opg1_02_shv09_sweep_down_area_hold": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_opg1_02_shv09_sweep_down_area_hold_faired_cap_spacing_1p0.stl",
+  "opg1_03_shv05_span_up_sweep_mid": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_opg1_03_shv05_span_up_sweep_mid_faired_cap_spacing_1p0.stl",
+  "opg1_04_shv05_drag_trim": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_opg1_04_shv05_drag_trim_faired_cap_spacing_1p0.stl",
+  "opg1_05_shv03_lift_recover": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_opg1_05_shv03_lift_recover_faired_cap_spacing_1p0.stl",
+  "opg1_06_shv06_trimmed_high_ld": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_opg1_06_shv06_trimmed_high_ld_faired_cap_spacing_1p0.stl"
+}

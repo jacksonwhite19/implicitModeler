@@ -1,0 +1,118 @@
+{
+  "id": "rough_cfd_stable_efficient_drone_v0_1",
+  "version": "0.1",
+  "goal": "Favor stable, efficient small fixed-wing UAV candidates using rough CFD ranking evidence.",
+  "alpha_policy": {
+    "current_status": "polar_sweep_supported_when_alpha_summary_exists",
+    "recommended_next_sweep_deg": [-2.0, 0.0, 4.0, 8.0, 10.0],
+    "adaptive_promotion_policy": {
+      "min_expanded_baseline_candidates": 5,
+      "compare_alpha_deg": 4.0,
+      "max_lift_loss_fraction_vs_baseline_best": 0.65,
+      "behavior": "Run first-pass rough scoring by default for broad exploration. Use expanded survivor sweeps only for deliberate baseline-building or promoted candidates."
+    },
+    "two_stage_policy": {
+      "first_pass": {
+        "angles_deg": [0.0, 4.0, 8.0, 12.0],
+        "summary_name": "alpha_sweep_summary_first_pass_end60_np8.json",
+        "purpose": "Rough scoring for most plausible candidates using enough alpha points to assess level-flight lift, L/D breadth, and high-alpha dependence.",
+        "selection_policy": "screening_tolerant_best_positive_lift_ld",
+        "rejection_policy": "Reject only clearly bad results such as missing forces, solver failure, non-positive lift at all sampled alphas, negative/invalid drag, or absurd coefficients. Treat pitch moment concerns as soft review until the expanded sweep runs."
+      },
+      "survivor_expanded": {
+        "angles_deg": [-2.0, 0.0, 4.0, 8.0, 10.0],
+        "summary_name": "alpha_sweep_summary_survivor_end60_np8.json",
+        "purpose": "Stronger rough polar scoring for candidates that survive the first pass."
+      }
+    },
+    "why": "A single alpha can rank a candidate at one condition, but rough optimizer scoring should prefer a small polar sweep so L/D, lift margin, and Cm trend are not one-point artifacts."
+  },
+  "score_scale": 100.0,
+  "weights": {
+    "efficiency_l_over_d": 0.22,
+    "mission_l_over_d": 0.24,
+    "curve_consistency": 0.14,
+    "low_drag": 0.14,
+    "usable_lift": 0.10,
+    "pitch_moment_trim": 0.03,
+    "solver_confidence": 0.06,
+    "mesh_confidence": 0.02
+  },
+  "targets": {
+    "ld_reference": 1.0,
+    "cd_reference": 0.1,
+    "cl_target": 0.09,
+    "cl_min": 0.03,
+    "cl_max": 0.18,
+    "abs_cm_target": 0.08,
+    "abs_cm_limit": 0.65,
+    "surface_p95_reference_mm": 0.25,
+    "surface_p99_reference_mm": 2.5,
+    "polar_ld_reference": 4.0,
+    "polar_cl_target": 0.4,
+    "polar_cl_min": 0.05,
+    "polar_cl_max": 0.8,
+    "mission_speed_mps": 22.352,
+    "air_density_kg_m3": 1.225,
+    "level_flight_cl_margin": 0.05,
+    "preferred_alpha_deg": 6.0,
+    "max_preferred_alpha_deg": 10.0,
+    "average_ld_reference": 3.5,
+    "ld_curve_consistency_reference": 0.7
+  },
+  "gates": {
+    "require_rough_scoring_allowed": true,
+    "require_steady_ready": true,
+    "require_positive_lift": true,
+    "max_abs_coefficient": 10.0
+  },
+  "negative_detractors": {
+    "high_abs_cm": {
+      "weight": 3.0,
+      "start": 0.35,
+      "limit": 0.9
+    },
+    "lift_outside_band": {
+      "weight": 5.0
+    },
+    "coefficient_instability": {
+      "weight": 6.0,
+      "cd_span_reference": 0.01,
+      "cl_span_reference": 0.01,
+      "cm_span_reference": 0.01
+    },
+    "surface_deviation": {
+      "weight": 4.0
+    },
+    "solver_residual": {
+      "weight": 4.0,
+      "velocity_residual_reference": 0.001,
+      "local_continuity_reference": 0.0001
+    },
+    "high_alpha_required": {
+      "weight": 10.0,
+      "start_deg": 8.0,
+      "limit_deg": 14.0
+    },
+    "level_flight_lift_shortfall": {
+      "weight": 14.0
+    },
+    "weak_ld_curve_consistency": {
+      "weight": 8.0,
+      "target": 0.7
+    }
+  },
+  "user_tuning_notes": [
+    "Increase efficiency_l_over_d to bias harder toward endurance.",
+    "Increase pitch_moment_trim to prefer easier-to-trim/stabler candidates; keep this modest for thrust-vectored concepts.",
+    "Increase low_drag to bias toward speed or lower power draw.",
+    "Increase high_abs_cm detractor weight or lower its start/limit only if pitch-moment estimates become more trustworthy or thrust-vector authority is limited.",
+    "Increase high_alpha_required to penalize candidates that need excessive cruise angle of attack.",
+    "Increase level_flight_lift_shortfall to reject candidates that do not reach required level-flight CL in the sampled alpha range.",
+    "Increase curve_consistency or weak_ld_curve_consistency to prefer broad, forgiving L/D curves over narrow high-alpha peaks.",
+    "Increase coefficient_instability or solver_residual detractors if noisy solver runs are contaminating ranking.",
+    "Increase surface_deviation detractor if geometry-capture risk should dominate ranking.",
+    "Adjust cl_target, cl_min, and cl_max after angle-of-attack and mission conventions are formalized.",
+    "This is rough optimizer scoring, not final engineering scoring."
+  ]
+}

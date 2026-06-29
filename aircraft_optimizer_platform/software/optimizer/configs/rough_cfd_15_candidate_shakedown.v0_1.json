@@ -1,0 +1,95 @@
+{
+  "id": "rough_cfd_15_candidate_shakedown_v0_1",
+  "version": "0.1",
+  "status": "ready_for_controlled_shakedown",
+  "purpose": "Controlled 15-candidate rough-CFD shakedown before unattended optimizer use.",
+  "not_purpose": [
+    "final aerodynamic scoring",
+    "validated lift/drag prediction",
+    "unbounded optimizer campaign",
+    "automatic final design selection"
+  ],
+  "candidate_plan": {
+    "total_candidates": 15,
+    "baseline_expanded_candidates": 5,
+    "new_first_pass_candidates": 10,
+    "execution_policy": "Use existing five expanded baselines as context, then run new candidates with first-pass rough scoring by default. Run adaptive or expanded survivor sweeps only when deliberately promoting finalists.",
+    "new_candidate_config": "aircraft_optimizer_platform/software/optimizer/configs/cfd_wing_shakedown_10_variants.v0_1.json",
+    "new_candidate_stl_map": "aircraft_optimizer_platform/software/optimizer/configs/raw_direct_wing_shakedown_10_stl_batch.v0_1.json",
+    "new_candidate_export_manifest": "aircraft_optimizer_platform/software/optimizer/configs/wing_shakedown_10_export_manifest.v0_1.json",
+    "first_pass_alphas_deg": [0.0, 4.0],
+    "expanded_alphas_deg": [-2.0, 0.0, 4.0, 8.0, 10.0]
+  },
+  "geometry_bounds_required_before_run": {
+    "same_aircraft_family": true,
+    "continuous_parameter_changes_only": true,
+    "no_topology_changes": true,
+    "no_open_inlet_internal_flow": true,
+    "source_stl_must_be_closed": true,
+    "source_stl_must_have_one_connected_component": true,
+    "axis_convention": {
+      "x": "fuselage length and freestream drag axis",
+      "y": "wingspan",
+      "z": "vertical and lift axis"
+    }
+  },
+  "adaptive_baseline_summaries": [
+    "custom_cfd_mesher_experiment/runs/raw_direct_faired_cap_snappy_ranking_v0_1_three_variant_20260625/alpha_sweep_summary_survivor_end60_np8.json",
+    "custom_cfd_mesher_experiment/runs/raw_direct_faired_cap_snappy_baseline_fcv01_v0_1_20260626/alpha_sweep_summary_survivor_end60_np8.json",
+    "custom_cfd_mesher_experiment/runs/raw_direct_faired_cap_snappy_baseline_fcv05_v0_1_20260626/alpha_sweep_summary_survivor_end60_np8.json"
+  ],
+  "adaptive_promotion_bar": {
+    "baseline_ready": true,
+    "compare_alpha_deg": 4.0,
+    "best_baseline_cl_at_compare_alpha": 0.428726964,
+    "median_baseline_cl_at_compare_alpha": 0.397947692,
+    "reject_if_cl_at_compare_alpha_lte": 0.1500544374,
+    "reject_if_lift_loss_fraction_gte": 0.65,
+    "hard_reject_reasons": [
+      "missing_force_coefficients",
+      "invalid_non_positive_drag",
+      "absurd_force_coefficient",
+      "no_positive_lift_at_sampled_alphas",
+      "compare_alpha_lift_far_below_baseline"
+    ]
+  },
+  "mesh_gates": {
+    "strict_check_mesh_required": true,
+    "relaxed_skew_threshold": 12.0,
+    "minimum_aircraft_patch_faces": 50000,
+    "max_cells_review_threshold": 1500000,
+    "surface_fidelity_review_thresholds_mm": {
+      "reference_to_candidate_p95": 1.0,
+      "reference_to_candidate_p99": 2.5,
+      "reference_to_candidate_max": 6.0
+    }
+  },
+  "solver_gates": {
+    "potentialFoam_required": true,
+    "no_slip_rans_required": true,
+    "floating_point_exception_allowed": false,
+    "timeout_allowed": false,
+    "max_abs_coefficient": 10.0,
+    "positive_drag_required": true,
+    "positive_lift_at_any_sampled_alpha_required": true
+  },
+  "runtime_limits": {
+    "max_meshing_runtime_s_review_threshold": 1200,
+    "max_alpha_case_runtime_s_review_threshold": 2400,
+    "max_total_candidate_runtime_s_review_threshold": 5400
+  },
+  "human_review_only": [
+    "unexpected sign convention",
+    "new geometry family",
+    "new inlet treatment",
+    "surface fidelity above review threshold",
+    "mesh passes checks but aircraft screenshot visibly loses leading or trailing edge fidelity",
+    "force coefficient outlier versus nearest neighbors",
+    "candidate wins rough ranking mostly because of suspect low drag"
+  ],
+  "result_usage": {
+    "allowed": "rough relative optimizer ranking and pipeline robustness evidence",
+    "blocked": "final scoring CFD",
+    "why_blocked": "Current y-plus and wall-treatment strategy is not validated for trusted absolute drag/lift, and no mesh-convergence study exists yet."
+  }
+}

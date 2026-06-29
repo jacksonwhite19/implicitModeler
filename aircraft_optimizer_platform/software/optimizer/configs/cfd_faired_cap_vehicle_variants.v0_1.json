@@ -1,0 +1,130 @@
+{
+  "schema": "cfd_faired_cap_vehicle_variants.v0_1",
+  "description": "Five capped-inlet aircraft geometry variants for CFD mesher comparison.",
+  "source_rhai": "dual_contouring/direct_sparse_sdf_mc_experiment/scratch/aircraft_oml_inlet_native_frame.rhai",
+  "inlet_mode": "faired_cap",
+  "export_preset": "direct_sparse_oml_fast",
+  "units": "mm",
+  "variants": [
+    {
+      "id": "fcv01_long_glider",
+      "description": "Longer fuselage, larger high-aspect wing, mild sweep, larger tail.",
+      "output_stem": "direct_sdf_oml_fcv01_long_glider_faired_cap",
+      "feature": "aircraft_oml_fcv01_long_glider_faired_cap_native_frame",
+      "overrides": {
+        "fuselage_length": 760.0,
+        "wing_span": 800.0,
+        "wing_root_chord": 180.0,
+        "wing_tip_chord": 78.0,
+        "wing_sweep_deg": 8.0,
+        "wing_le_x": 250.0,
+        "htail_span": 430.0,
+        "htail_root_chord": 102.0,
+        "htail_tip_chord": 82.0,
+        "htail_le_x": 555.0,
+        "vtail_span": 260.0,
+        "vtail_root_chord": 110.0,
+        "vtail_tip_chord": 72.0,
+        "vtail_sweep_deg": 28.0,
+        "vtail_le_x": 555.0,
+        "intake_x": 305.0
+      }
+    },
+    {
+      "id": "fcv02_short_swept",
+      "description": "Shorter fuselage, compact swept wing, smaller tail.",
+      "output_stem": "direct_sdf_oml_fcv02_short_swept_faired_cap",
+      "feature": "aircraft_oml_fcv02_short_swept_faired_cap_native_frame",
+      "overrides": {
+        "fuselage_length": 640.0,
+        "wing_span": 620.0,
+        "wing_root_chord": 160.0,
+        "wing_tip_chord": 55.0,
+        "wing_sweep_deg": 28.0,
+        "wing_le_x": 205.0,
+        "htail_span": 330.0,
+        "htail_root_chord": 90.0,
+        "htail_tip_chord": 65.0,
+        "htail_le_x": 455.0,
+        "vtail_span": 220.0,
+        "vtail_root_chord": 95.0,
+        "vtail_tip_chord": 58.0,
+        "vtail_sweep_deg": 45.0,
+        "vtail_le_x": 455.0,
+        "intake_x": 240.0
+      }
+    },
+    {
+      "id": "fcv03_high_aspect_mild",
+      "description": "Very high span wing, low sweep, moderate fuselage length.",
+      "output_stem": "direct_sdf_oml_fcv03_high_aspect_mild_faired_cap",
+      "feature": "aircraft_oml_fcv03_high_aspect_mild_faired_cap_native_frame",
+      "overrides": {
+        "fuselage_length": 720.0,
+        "wing_span": 900.0,
+        "wing_root_chord": 155.0,
+        "wing_tip_chord": 60.0,
+        "wing_sweep_deg": 5.0,
+        "wing_le_x": 240.0,
+        "htail_span": 420.0,
+        "htail_root_chord": 100.0,
+        "htail_tip_chord": 78.0,
+        "htail_le_x": 530.0,
+        "vtail_span": 240.0,
+        "vtail_root_chord": 100.0,
+        "vtail_tip_chord": 64.0,
+        "vtail_sweep_deg": 25.0,
+        "vtail_le_x": 530.0,
+        "intake_x": 290.0
+      }
+    },
+    {
+      "id": "fcv04_compact_wide_tail",
+      "description": "Balanced broad-chord wing with moderate tail authority.",
+      "output_stem": "direct_sdf_oml_fcv04_compact_wide_tail_faired_cap",
+      "feature": "aircraft_oml_fcv04_compact_wide_tail_faired_cap_native_frame",
+      "overrides": {
+        "fuselage_length": 700.0,
+        "wing_span": 760.0,
+        "wing_root_chord": 180.0,
+        "wing_tip_chord": 85.0,
+        "wing_sweep_deg": 20.0,
+        "wing_le_x": 225.0,
+        "htail_span": 430.0,
+        "htail_root_chord": 105.0,
+        "htail_tip_chord": 82.0,
+        "htail_le_x": 505.0,
+        "vtail_span": 245.0,
+        "vtail_root_chord": 105.0,
+        "vtail_tip_chord": 68.0,
+        "vtail_sweep_deg": 35.0,
+        "vtail_le_x": 505.0,
+        "intake_x": 285.0
+      }
+    },
+    {
+      "id": "fcv05_aft_wing_fast",
+      "description": "Longer fuselage, aft swept lower-area wing, aggressive vertical tail sweep.",
+      "output_stem": "direct_sdf_oml_fcv05_aft_wing_fast_faired_cap",
+      "feature": "aircraft_oml_fcv05_aft_wing_fast_faired_cap_native_frame",
+      "overrides": {
+        "fuselage_length": 760.0,
+        "wing_span": 700.0,
+        "wing_root_chord": 150.0,
+        "wing_tip_chord": 50.0,
+        "wing_sweep_deg": 32.0,
+        "wing_le_x": 290.0,
+        "htail_span": 380.0,
+        "htail_root_chord": 95.0,
+        "htail_tip_chord": 70.0,
+        "htail_le_x": 560.0,
+        "vtail_span": 260.0,
+        "vtail_root_chord": 105.0,
+        "vtail_tip_chord": 62.0,
+        "vtail_sweep_deg": 50.0,
+        "vtail_le_x": 560.0,
+        "intake_x": 315.0
+      }
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "id": "snappy_openfoam_external_aero_hifi_surface_v0_2",
+  "status": "preferred_scoring_development_baseline",
+  "created": "2026-06-24",
+  "purpose": "High-surface-fidelity OpenFOAM no-slip RANS development mesh for small UAV external aero.",
+  "geometry_units": {
+    "input_stl_units": "mm",
+    "openfoam_case_units": "m",
+    "scale": 0.001
+  },
+  "surface_fidelity_policy": {
+    "priority": "preserve aircraft geometry capture over forcing y+ into a wall-function band",
+    "minimum_surface_levels": [3, 4],
+    "minimum_fcv04_aircraft_patch_faces_reference": 23962,
+    "reject_default_if_surface_levels_below": [3, 4],
+    "human_review_required_for_surface_face_count_drop_fraction_gt": 0.25
+  },
+  "mesher": {
+    "tool": "OpenFOAM snappyHexMesh",
+    "parallel_procs": 12,
+    "base_cells": "44,28,44",
+    "pad_m": 0.8,
+    "surface_min_level": 3,
+    "surface_max_level": 4,
+    "feature_level": 3,
+    "n_cells_between_levels": 4,
+    "snap_tolerance": 0.5,
+    "n_smooth_patch": 10,
+    "include_known_hotspot_boxes": true,
+    "check_skew_threshold": 12.0
+  },
+  "layers": {
+    "add_layers": true,
+    "n_surface_layers": 3,
+    "layer_relative_sizes": true,
+    "layer_expansion_ratio": 1.2,
+    "final_layer_thickness": 0.35,
+    "min_layer_thickness": 0.05,
+    "layer_feature_angle_deg": 70.0,
+    "n_layer_iter": 50,
+    "n_relaxed_iter": 20
+  },
+  "solver_smoke": {
+    "freestream_mps": [22.352, 0.0, 0.0],
+    "potentialFoam_required": true,
+    "no_slip_laminar_start_required": true,
+    "rans_model": "kOmegaSST",
+    "rans_end_time": 100,
+    "aircraft_wall": "noSlip",
+    "k_wall_bc": "kqRWallFunction",
+    "omega_wall_bc": "omegaWallFunction",
+    "nut_wall_bc": "nutkWallFunction"
+  },
+  "gates": {
+    "mesh": {
+      "checkMesh_skewThreshold": 12.0,
+      "strict_checkMesh_may_fail_on_small_skew_face_count": true,
+      "snappy_finished_without_errors_required": false,
+      "max_non_orthogonality_target_deg": 70.0
+    },
+    "solver": {
+      "floating_point_exception_allowed": false,
+      "fatal_error_allowed": false,
+      "force_coeff_abs_max": 10.0,
+      "force_coeff_tail_relative_drift_max": 0.1,
+      "force_coeff_tail_absolute_drift_max": 0.01
+    },
+    "yplus": {
+      "mode": "record_and_warn",
+      "reason": "Current high-fidelity surface mesh has mixed y+; do not degrade surface capture only to hit p50 y+ >= 30.",
+      "reference_fcv04_thick_layer_p50": 11.328,
+      "reference_fcv04_thick_layer_p95": 42.655,
+      "reference_fcv04_thick_layer_max": 148.221
+    }
+  },
+  "evidence": {
+    "five_variant_root": "custom_cfd_mesher_experiment/runs/snappy_hifi_default_3layer_five_variant_v0_2_20260624",
+    "fcv04_hifi_one_layer_probe": "custom_cfd_mesher_experiment/runs/snappy_wall_function_probe_hifi_surface_1layer_v0_1_20260624",
+    "layer_comparison_report": "custom_cfd_mesher_experiment/runs/snappy_hifi_surface_layer_comparison_20260624.md",
+    "summary": "Fresh five-variant run passed relaxed mesh gate, potentialFoam, laminar no-slip, and kOmegaSST no-slip startup. High-fidelity one-layer alternative preserved patch face counts and ran cleanly but did not solve y+; three-layer remains preferred."
+  },
+  "known_limitations": [
+    "Not validated scoring CFD.",
+    "Mixed y+ means drag should be treated as development evidence, not final aerodynamic truth.",
+    "Strict checkMesh skewness can still fail on a small number of faces; development gate is checkMesh -skewThreshold 12.",
+    "No mesh convergence or external validation exists yet."
+  ]
+}

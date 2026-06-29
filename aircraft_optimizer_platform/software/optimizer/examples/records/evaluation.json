@@ -1,0 +1,15 @@
+{
+  "evaluation_id": "evaluation_example_0001",
+  "candidate_id": "candidate_example_0001",
+  "campaign_id": "campaign_example_0001",
+  "pipeline_id": "v0_1_fixture",
+  "pipeline_version": "0.1.0",
+  "status": "complete",
+  "requested_by": "system",
+  "reason": "v0.1 smoke fixture",
+  "summary": {
+    "status": "complete",
+    "module_attempt_ids": ["module_example_0001"],
+    "artifact_ids": ["artifact_example_0001"]
+  }
+}

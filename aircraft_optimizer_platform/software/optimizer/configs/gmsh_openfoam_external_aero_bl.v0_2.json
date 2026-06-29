@@ -1,0 +1,131 @@
+{
+  "schema": "gmsh_openfoam_external_aero_bl.v0_2",
+  "status": "development_plumbing_default",
+  "name": "gmsh_openfoam_external_aero_bl_v0_2",
+  "description": "Deterministic Gmsh create-topology prism-layer preset for OpenFOAM external-flow mesher plumbing on the five approved faired-cap aircraft variants.",
+  "scoring_allowed": false,
+  "validated_scope": {
+    "aircraft_family": "small fixed-wing UAV",
+    "geometry_set": "approved full-path solid faired-cap inlet variants fcv01 through fcv05",
+    "solver_smoke": "potentialFoam -writep",
+    "freestream_m_per_s": 22.352,
+    "flow_axis": "+X",
+    "coordinate_frame": {
+      "x": "forward / drag axis",
+      "y": "right / span axis",
+      "z": "up / lift axis"
+    }
+  },
+  "source_surface": {
+    "units": "mm",
+    "input_format": "STL",
+    "variant_config": "aircraft_optimizer_platform/software/optimizer/configs/cfd_faired_cap_vehicle_variants.v0_1.json",
+    "raw_stl_root": "dual_contouring/direct_sparse_sdf_mc_experiment/stl"
+  },
+  "surface_remesh": {
+    "tool": "custom_cfd_mesher_experiment/scripts/remesh_aircraft_surface_pymeshlab.py",
+    "target_edge_mm": 4.0,
+    "iterations": 8,
+    "smooth": false,
+    "max_surface_distance_mm": 0.15,
+    "samples": 8000,
+    "default_feature_deg": 25.0
+  },
+  "boundary_layer_surface_gate": {
+    "tool": "custom_cfd_mesher_experiment/scripts/bl_surface_gate.py",
+    "limits": {
+      "max_aspect_ratio": 60.0,
+      "min_quality": 0.05,
+      "min_angle_deg": 2.5,
+      "min_altitude_mm": 0.02,
+      "max_sliver_count": 0,
+      "max_small_angle_count": 0,
+      "max_short_altitude_count": 0
+    },
+    "purpose": "diagnostic selector input only; current approved variants may fail this diagnostic but still select a passing Gmsh BL mesh setting"
+  },
+  "selector": {
+    "tool": "custom_cfd_mesher_experiment/scripts/run_gmsh_bl_auto_selector.py",
+    "version": "gmsh_bl_auto_selector_v0_2",
+    "rules": [
+      {
+        "condition": "top_bad_triangle_cluster starts with tail/ and triangle_aspect_ratio_max > 600",
+        "feature_deg": 15.0,
+        "layer_height_m": 0.0001
+      },
+      {
+        "condition": "triangle_quality_min < 0.0038 and triangle_aspect_ratio_max > 500 and top_bad_triangle_cluster starts with mid/",
+        "feature_deg": 45.0,
+        "layer_height_m": 0.00005
+      },
+      {
+        "condition": "triangle_quality_min < 0.004 and top_bad_triangle_cluster starts with mid/ and top_bad_triangle_cluster_count >= 15",
+        "feature_deg": 45.0,
+        "layer_height_m": 0.00005
+      },
+      {
+        "condition": "surface_faces < 70000 and aspect_gt_60 <= 20 and top_bad_triangle_cluster starts with aft_mid/left_tip",
+        "feature_deg": 25.0,
+        "layer_height_m": 0.00015
+      },
+      {
+        "condition": "default",
+        "feature_deg": 25.0,
+        "layer_height_m": 0.00005
+      }
+    ]
+  },
+  "gmsh": {
+    "tool": "custom_cfd_mesher_experiment/scripts/gmsh_boundary_layer_mesher.py",
+    "geometry_mode": "create-topology",
+    "surface_size_m": 0.004,
+    "farfield_size_m": 0.11,
+    "padding_m": [1.14003, 1.6, 0.38598],
+    "angle_deg": 80.0,
+    "curve_angle_deg": 180.0,
+    "algorithm3d": 4,
+    "optimize": "none",
+    "layer_elements": 1,
+    "target_faces": 0,
+    "boundary_patches": ["aircraft", "farfield"],
+    "volume_region": "fluid"
+  },
+  "openfoam_gates": {
+    "case_builder": "gmshToFoam -keepOrientation",
+    "strict_check": "checkMesh -writeSets -writeSurfaces -setFormat vtk -surfaceFormat vtk",
+    "required": {
+      "mesh_ok": true,
+      "default_faces": 0,
+      "aircraft_patch_faces_positive": true,
+      "farfield_patch_faces_positive": true
+    }
+  },
+  "solver_smoke": {
+    "required": true,
+    "solver": "potentialFoam",
+    "command": "potentialFoam -writep",
+    "aircraft_boundary_for_smoke": "slip/symmetry-style",
+    "not_scoring_reason": "potentialFoam is inviscid plumbing evidence and does not provide trusted drag/lift"
+  },
+  "evidence": {
+    "latest_run_root": "custom_cfd_mesher_experiment/runs/gmsh_bl_auto_selector_v0_2_20260623",
+    "summary": "custom_cfd_mesher_experiment/runs/gmsh_bl_auto_selector_v0_2_20260623/summary.json",
+    "result": {
+      "variant_count": 5,
+      "strict_checkmesh_pass_count": 5,
+      "potentialFoam_pass_count": 5,
+      "runtime_s": 855.0
+    }
+  },
+  "known_limitations": [
+    "High non-orthogonality remains near sharp trailing-edge and transition regions.",
+    "The prism layer currently uses one thin layer and is not a validated wall-model/y-plus strategy.",
+    "No-slip steady OpenFOAM scoring is not stable yet.",
+    "The selector is evidence-backed for the five approved variants, not a general aircraft-family model."
+  ],
+  "next_required_work": [
+    "Persist this preset and all mesh/smoke metrics in optimizer evaluation records.",
+    "Add aircraft-only screenshots and severe-face localization as required artifacts for automated runs.",
+    "Run bounded no-slip OpenFOAM experiments only under a non-scoring analysis module until force coefficients stabilize."
+  ]
+}

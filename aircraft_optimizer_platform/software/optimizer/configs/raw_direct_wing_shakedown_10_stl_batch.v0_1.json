@@ -1,0 +1,12 @@
+{
+  "shv01_high_aspect_low_sweep": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_shv01_high_aspect_low_sweep_faired_cap_spacing_1p0.stl",
+  "shv02_broad_root_mild_sweep": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_shv02_broad_root_mild_sweep_faired_cap_spacing_1p0.stl",
+  "shv03_compact_high_sweep": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_shv03_compact_high_sweep_faired_cap_spacing_1p0.stl",
+  "shv04_forward_wing_low_sweep": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_shv04_forward_wing_low_sweep_faired_cap_spacing_1p0.stl",
+  "shv05_aft_wing_moderate_sweep": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_shv05_aft_wing_moderate_sweep_faired_cap_spacing_1p0.stl",
+  "shv06_wide_low_taper": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_shv06_wide_low_taper_faired_cap_spacing_1p0.stl",
+  "shv07_narrow_tip_aggressive_taper": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_shv07_narrow_tip_aggressive_taper_faired_cap_spacing_1p0.stl",
+  "shv08_short_broad_straight": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_shv08_short_broad_straight_faired_cap_spacing_1p0.stl",
+  "shv09_long_span_swept": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_shv09_long_span_swept_faired_cap_spacing_1p0.stl",
+  "shv10_balanced_reference_mutation": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_shv10_balanced_reference_mutation_faired_cap_spacing_1p0.stl"
+}

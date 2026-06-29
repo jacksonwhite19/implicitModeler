@@ -1,0 +1,148 @@
+{
+  "pipeline_id": "sequential_gated_v0_1",
+  "pipeline_version": "0.1.0",
+  "description": "Primary autonomous optimizer workflow: one candidate at a time, cheap gates before export, analysis only after export gates pass and policy allows it.",
+  "execution_model": "sequential",
+  "candidate_batch_size": 1,
+  "stages": [
+    {
+      "stage": "candidate_proposal",
+      "required": true,
+      "execution_mode": "optimizer_policy"
+    },
+    {
+      "stage": "variable_schema_validation",
+      "required": true,
+      "execution_mode": "local"
+    },
+    {
+      "stage": "pre_export_screening",
+      "required": true,
+      "execution_mode": "cheap_estimates",
+      "checks": [
+        "estimated_mass",
+        "estimated_cg",
+        "span_packaging_bounds",
+        "wing_loading_proxy",
+        "static_margin_proxy",
+        "virtual_component_mass",
+        "virtual_component_cg",
+        "virtual_component_static_margin",
+        "geometry_bounds",
+        "mean_chord_bounds",
+        "tip_chord_minimum",
+        "span_root_chord_ratio",
+        "export_risk"
+      ]
+    },
+    {
+      "stage": "geometry_provider",
+      "required": true,
+      "execution_mode": "adapter"
+    },
+    {
+      "stage": "geometry_definition_screening",
+      "required": true,
+      "execution_mode": "cheap_definition_checks"
+    },
+    {
+      "stage": "oml_stl_export",
+      "required": false,
+      "execution_mode": "policy_gated_real_export"
+    },
+    {
+      "stage": "export_quality_gate",
+      "required": false,
+      "execution_mode": "strict_topology"
+    },
+    {
+      "stage": "analysis",
+      "required": false,
+      "execution_mode": "policy_gated",
+      "non_scoring_modes": [
+        "openfoam_smoke_relaxed_development"
+      ]
+    },
+    {
+      "stage": "results_recording",
+      "required": true,
+      "execution_mode": "append_only"
+    },
+    {
+      "stage": "optimizer_state_update",
+      "required": true,
+      "execution_mode": "history_driven"
+    }
+  ],
+  "modules": [
+    {
+      "module_name": "candidate_proposal_policy",
+      "module_kind": "optimizer",
+      "execution_mode": "one_candidate_at_a_time"
+    },
+    {
+      "module_name": "variable_schema_validation",
+      "module_kind": "validation",
+      "execution_mode": "local"
+    },
+    {
+      "module_name": "pre_export_screening",
+      "module_kind": "analysis",
+      "execution_mode": "cheap_estimates"
+    },
+    {
+      "module_name": "geometry_provider_adapter",
+      "module_kind": "geometry_provider",
+      "execution_mode": "adapter"
+    },
+    {
+      "module_name": "geometry_definition_screening",
+      "module_kind": "validation",
+      "execution_mode": "cheap_definition_checks"
+    },
+    {
+      "module_name": "oml_stl_export",
+      "module_kind": "export",
+      "execution_mode": "policy_gated_real_export",
+      "optional": true
+    },
+    {
+      "module_name": "export_quality_gate",
+      "module_kind": "validation",
+      "execution_mode": "strict_topology",
+      "optional": true
+    },
+    {
+      "module_name": "analysis_policy",
+      "module_kind": "analysis",
+      "execution_mode": "policy_gated",
+      "optional": true
+    },
+    {
+      "module_name": "openfoam_smoke_validation",
+      "module_kind": "analysis",
+      "execution_mode": "relaxed_development_non_scoring",
+      "optional": true,
+      "scoring_allowed": false,
+      "acceptance_mode": "relaxed_development"
+    },
+    {
+      "module_name": "result_recorder",
+      "module_kind": "persistence",
+      "execution_mode": "append_only"
+    },
+    {
+      "module_name": "optimizer_state_update",
+      "module_kind": "optimizer",
+      "execution_mode": "history_driven"
+    }
+  ],
+  "policies": {
+    "primary_workflow": "sequential",
+    "default_real_export": false,
+    "default_cfd_execution": false,
+    "pre_export_gates_required": true,
+    "preserve_failed_candidates": true,
+    "batch_mode_role": "secondary_for_doe_parallel_surrogate_or_stress_tests"
+  }
+}

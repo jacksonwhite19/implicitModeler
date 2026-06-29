@@ -1,4 +1,54 @@
 /target
-*.stl
+/target_*/
+/target_codex/
+/target_diag*/
+/su2_sandbox/
 
+# Generated geometry, mesh, CFD, and visualization artifacts
+*.stl
 *.STL
+*.msh
+*.su2
+*.vtk
+*.vtu
+*.foam
+*.obj
+*.ply
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.mp4
+*.avi
+*.log
+log.*
+badFaces
+problemFaces
+
+# OpenFOAM case outputs
+processor*/
+postProcessing/
+VTK/
+constant/polyMesh/
+**/processor*/
+**/postProcessing/
+**/VTK/
+**/constant/polyMesh/
+
+# Python/build caches
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+**/.pytest_cache/
+
+# Optimizer and mesher generated runs
+aircraft_optimizer_platform/runs/
+aircraft_optimizer_platform/custom_cfd_mesher_experiment/runs/
+custom_cfd_mesher_experiment/runs/
+
+# Local generated databases
+*.sqlite
+*.sqlite3
+*.db
+*.duckdb
+*.parquet

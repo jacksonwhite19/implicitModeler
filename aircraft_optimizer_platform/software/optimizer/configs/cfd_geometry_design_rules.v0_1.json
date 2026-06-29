@@ -1,0 +1,69 @@
+{
+  "schema": "cfd_geometry_design_rules.v0_1",
+  "status": "development_policy",
+  "units": "mm",
+  "coordinate_frame": {
+    "x": "forward / freestream / drag",
+    "y": "right / span",
+    "z": "up / lift"
+  },
+  "design_variable_limits": {
+    "wing_tip_chord_min_mm": 40.0,
+    "tail_tip_chord_min_mm": 35.0,
+    "wing_sweep_max_deg": 45.0,
+    "tail_sweep_max_deg": 55.0,
+    "taper_ratio_min": 0.25,
+    "aspect_ratio_max_for_early_cfd": 12.0
+  },
+  "geometry_definition_limits": {
+    "trailing_edge_min_thickness_mm": 1.0,
+    "trailing_edge_preferred_min_thickness_mm": 1.5,
+    "trailing_edge_min_radius_or_bevel_mm": 0.5,
+    "leading_edge_min_radius_mm": 1.0,
+    "blend_radius_min_multiplier_of_surface_edge": 2.5,
+    "blend_radius_preferred_min_mm_for_4mm_surface": 10.0,
+    "inlet_lip_min_radius_mm": 1.0,
+    "inlet_cap_fairing_min_radius_mm": 2.0,
+    "local_feature_min_multiplier_of_surface_edge": 2.0,
+    "local_feature_min_mm_for_4mm_surface": 8.0
+  },
+  "stl_surface_limits": {
+    "boundary_edges_max": 0,
+    "nonmanifold_edges_max": 0,
+    "duplicate_triangles_max": 0,
+    "degenerate_triangles_max": 0,
+    "triangle_min_angle_deg": 2.5,
+    "triangle_quality_min": 0.05,
+    "triangle_aspect_ratio_max": 60.0,
+    "triangle_min_altitude_mm": 0.02
+  },
+  "boundary_layer_targets": {
+    "non_scoring_plumbing_min_layers": 1,
+    "no_slip_development_target_layers_min": 3,
+    "rans_development_target_layers_min": 5,
+    "rans_development_target_layers_preferred": 10,
+    "growth_ratio_min": 1.2,
+    "growth_ratio_max": 1.35,
+    "first_layer_height_source": "derived_from_yplus_target_after_solver_scale_policy_is_finalized"
+  },
+  "openfoam_development_limits": {
+    "strict_checkmesh_required": true,
+    "potentialFoam_required": true,
+    "max_non_orthogonality_development_warning_deg": 85.0,
+    "max_non_orthogonality_development_limit_deg": 90.0,
+    "max_skewness_limit": 4.0,
+    "scoring_allowed": false
+  },
+  "failure_categories": [
+    "geometry.cfd_design_rule_violation",
+    "geometry.trailing_edge_too_sharp",
+    "geometry.blend_radius_too_small",
+    "geometry.local_feature_too_small",
+    "export.surface_quality_failed",
+    "meshing.boundary_layer_generation_failed",
+    "meshing.strict_checkmesh_failed",
+    "solver.potential_smoke_failed",
+    "solver.no_slip_development_failed",
+    "solver.coefficients_unstable"
+  ]
+}

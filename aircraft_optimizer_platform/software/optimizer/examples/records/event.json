@@ -1,0 +1,14 @@
+{
+  "event_id": "event_example_0001",
+  "campaign_id": "campaign_example_0001",
+  "candidate_id": "candidate_example_0001",
+  "evaluation_id": "evaluation_example_0001",
+  "module_attempt_id": null,
+  "event_type": "geometry.completed",
+  "actor": "module",
+  "severity": "info",
+  "message": "Manual reference geometry resolved.",
+  "payload": {
+    "geometry_provider_result_id": "geometry_example_0001"
+  }
+}

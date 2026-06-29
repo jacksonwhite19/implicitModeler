@@ -1,0 +1,5 @@
+{
+  "fcv02_short_swept": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_fcv02_short_swept_faired_cap_spacing_1p0.stl",
+  "fcv03_high_aspect_mild": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_fcv03_high_aspect_mild_faired_cap_spacing_1p0.stl",
+  "fcv04_compact_wide_tail": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_fcv04_compact_wide_tail_faired_cap_spacing_1p0.stl"
+}

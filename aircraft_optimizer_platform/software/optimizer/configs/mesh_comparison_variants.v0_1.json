@@ -1,0 +1,123 @@
+{
+  "variant_set_id": "mesh_comparison_variants.v0_1",
+  "schema_id": "fixed_wing_uav_reference.variables.v0_1",
+  "aircraft_family": "fixed_wing_uav_reference",
+  "topology_policy": "fixed_topology_no_inlet",
+  "units": "mm_deg",
+  "purpose": "Common five-variant set for comparing Gmsh and snappyHexMesh full-aircraft mesh readiness.",
+  "source_geometry_policy": {
+    "geometry_provider": "existing_implicit_sdf_adapter",
+    "export_path": "direct_sparse_oml_fast",
+    "do_not_use_poisson_smoothed_surface_as_primary": true,
+    "surface_preparation_allowed": true,
+    "surface_preparation_must_report_displacement": true
+  },
+  "common_test_conditions": {
+    "freestream_speed_mph": 50.0,
+    "freestream_velocity_mps": 22.352,
+    "freestream_direction": "+X",
+    "solver_smoke": "potentialFoam_or_equivalent",
+    "strict_mesh_check_required": true,
+    "aircraft_only_screenshots_required": true
+  },
+  "variants": [
+    {
+      "variant_id": "mc_v01_span720_reference",
+      "label": "Span 720 reference",
+      "description": "Known wing-span +20 no-inlet reference case used in current Gmsh and snappyHexMesh evidence.",
+      "variables": {
+        "wing.span_mm": 720.0,
+        "wing.root_chord_mm": 170.0,
+        "wing.tip_chord_mm": 80.0,
+        "wing.sweep_deg": 15.0
+      },
+      "reason": "Anchor case with existing evidence from both meshing paths.",
+      "expected_mesh_stress": [
+        "known small raw export boundary loop",
+        "wing root/blend capture",
+        "thin leading/trailing edge capture"
+      ]
+    },
+    {
+      "variant_id": "mc_v02_high_aspect_low_sweep",
+      "label": "High aspect low sweep",
+      "description": "Longer span, smaller chords, and low sweep to stress thin wing/tip resolution.",
+      "variables": {
+        "wing.span_mm": 900.0,
+        "wing.root_chord_mm": 150.0,
+        "wing.tip_chord_mm": 55.0,
+        "wing.sweep_deg": 5.0
+      },
+      "reason": "Tests slender lifting-surface capture and tip/edge refinement.",
+      "expected_mesh_stress": [
+        "thin trailing edge",
+        "wingtip refinement",
+        "high aspect ratio farfield sizing"
+      ]
+    },
+    {
+      "variant_id": "mc_v03_low_aspect_high_sweep",
+      "label": "Low aspect high sweep",
+      "description": "Shorter span, large root chord, and high sweep to stress root blend and swept leading edge.",
+      "variables": {
+        "wing.span_mm": 580.0,
+        "wing.root_chord_mm": 220.0,
+        "wing.tip_chord_mm": 115.0,
+        "wing.sweep_deg": 32.0
+      },
+      "reason": "Tests swept-edge geometry capture and root/fuselage interaction.",
+      "expected_mesh_stress": [
+        "swept leading edge",
+        "large root blend",
+        "tight aft transition regions"
+      ]
+    },
+    {
+      "variant_id": "mc_v04_high_taper_aggressive_tip",
+      "label": "High taper aggressive tip",
+      "description": "Moderate span with large root chord and small tip chord to stress taper and tip closure.",
+      "variables": {
+        "wing.span_mm": 760.0,
+        "wing.root_chord_mm": 210.0,
+        "wing.tip_chord_mm": 45.0,
+        "wing.sweep_deg": 20.0
+      },
+      "reason": "Tests tip sharpness, taper-driven triangle quality, and local feature refinement.",
+      "expected_mesh_stress": [
+        "small tip chord",
+        "leading/trailing edge convergence",
+        "tip cap fidelity"
+      ]
+    },
+    {
+      "variant_id": "mc_v05_broad_chord_negative_sweep",
+      "label": "Broad chord negative sweep",
+      "description": "Broad chord planform with slight forward sweep to test less-common planform geometry within the current schema.",
+      "variables": {
+        "wing.span_mm": 650.0,
+        "wing.root_chord_mm": 200.0,
+        "wing.tip_chord_mm": 100.0,
+        "wing.sweep_deg": -3.0
+      },
+      "reason": "Tests mesher robustness away from the normal swept-wing family while staying inside continuous-variable bounds.",
+      "expected_mesh_stress": [
+        "forward-swept leading edge",
+        "broad wing/fuselage blend",
+        "farfield and wake alignment assumptions"
+      ]
+    }
+  ],
+  "required_outputs_per_variant": [
+    "raw_export_result_json",
+    "raw_surface_quality_json",
+    "prepared_surface_stl_if_used",
+    "surface_preparation_report_json",
+    "final_volume_mesh",
+    "mesh_quality_report_json",
+    "solver_smoke_report_json",
+    "geometry_capture_report_json",
+    "run_manifest_json",
+    "aircraft_only_screenshot_set",
+    "human_readable_evidence_report"
+  ]
+}

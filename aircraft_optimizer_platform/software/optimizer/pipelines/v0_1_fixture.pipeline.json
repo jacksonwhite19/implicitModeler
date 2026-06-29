@@ -1,0 +1,52 @@
+{
+  "pipeline_id": "v0_1_fixture",
+  "pipeline_version": "0.1.0",
+  "description": "Records-only fixture pipeline. Does not execute CAD, exporter, CFD solver cases, dashboard, or optimizer algorithms.",
+  "modules": [
+    {
+      "module_name": "fixed_wing_uav_fixture_generator",
+      "module_kind": "geometry_provider",
+      "execution_mode": "fixture_generation_only"
+    },
+    {
+      "module_name": "mock_geometry_metrics",
+      "module_kind": "analysis",
+      "execution_mode": "records_only"
+    },
+    {
+      "module_name": "oml_stl_export",
+      "module_kind": "export",
+      "execution_mode": "fixture_parse_only"
+    },
+    {
+      "module_name": "su2_case_dry_run",
+      "module_kind": "analysis_setup",
+      "execution_mode": "dry_run_no_solver",
+      "optional": true
+    },
+    {
+      "module_name": "su2_cfd_fixture",
+      "module_kind": "analysis",
+      "execution_mode": "fixture_parse_only",
+      "optional": true
+    },
+    {
+      "module_name": "low_fidelity_fixed_wing",
+      "module_kind": "analysis",
+      "execution_mode": "analytic_screening",
+      "optional": true
+    },
+    {
+      "module_name": "fixture_scoring",
+      "module_kind": "scoring",
+      "execution_mode": "placeholder_scoring",
+      "optional": true
+    }
+  ],
+  "policies": {
+    "real_cad_execution": false,
+    "real_exporter_execution": false,
+    "real_cfd_execution": false,
+    "preserve_failures": true
+  }
+}

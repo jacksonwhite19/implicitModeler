@@ -1,0 +1,75 @@
+{
+  "id": "snappy_openfoam_external_aero_hifi_surface_v0_3",
+  "status": "preferred_high_fidelity_development_baseline",
+  "created": "2026-06-24",
+  "purpose": "Higher aircraft-surface-fidelity OpenFOAM no-slip RANS development mesh for small UAV external aero.",
+  "geometry_units": {
+    "input_stl_units": "mm",
+    "openfoam_case_units": "m",
+    "scale": 0.001
+  },
+  "surface_fidelity_policy": {
+    "priority": "preserve aircraft geometry capture over runtime and over forcing y+ into a wall-function band",
+    "minimum_surface_levels": [4, 5],
+    "feature_refinement_boxes_required": true,
+    "minimum_aircraft_patch_faces_observed": 58731,
+    "human_review_required_for_surface_p95_mm_gt": 0.25,
+    "human_review_required_for_surface_p99_mm_gt": 2.5,
+    "human_review_required_for_surface_max_mm_gt": 6.0
+  },
+  "mesher": {
+    "tool": "OpenFOAM snappyHexMesh",
+    "parallel_procs": 12,
+    "base_cells": "44,28,44",
+    "pad_m": 0.8,
+    "surface_min_level": 4,
+    "surface_max_level": 5,
+    "feature_level": 5,
+    "n_cells_between_levels": 4,
+    "snap_tolerance": 0.5,
+    "n_smooth_patch": 10,
+    "include_known_hotspot_boxes": true,
+    "feature_refinement_boxes": true,
+    "feature_refinement_level": 5,
+    "feature_angle_deg": 24.0,
+    "feature_box_count": 18,
+    "feature_box_grid": "10,10,6",
+    "feature_box_padding_frac": 0.03,
+    "max_global_cells": 6000000,
+    "max_local_cells": 3000000,
+    "check_skew_threshold": 12.0
+  },
+  "layers": {
+    "add_layers": true,
+    "n_surface_layers": 3,
+    "layer_relative_sizes": true,
+    "layer_expansion_ratio": 1.2,
+    "final_layer_thickness": 0.35,
+    "min_layer_thickness": 0.05,
+    "layer_feature_angle_deg": 70.0,
+    "n_layer_iter": 50,
+    "n_relaxed_iter": 20
+  },
+  "solver_smoke": {
+    "freestream_mps": [22.352, 0.0, 0.0],
+    "potentialFoam_required": true,
+    "no_slip_laminar_start_required": true,
+    "rans_model": "kOmegaSST",
+    "rans_end_time": 100,
+    "aircraft_wall": "noSlip",
+    "scoring_allowed": false
+  },
+  "optimizer_import": {
+    "acceptance_mode": "snappy_hifi_development",
+    "ingest_command": "ingest-snappy-hifi-run",
+    "evidence_root": "custom_cfd_mesher_experiment/runs/snappy_hifi_surface_v0_3_five_variant_20260624",
+    "summary_metrics_csv": "custom_cfd_mesher_experiment/runs/snappy_hifi_surface_v0_3_five_variant_20260624/v0_3_summary_metrics.csv"
+  },
+  "known_limitations": [
+    "Not validated scoring CFD.",
+    "Median y+ is below the wall-function target band, so drag remains development evidence only.",
+    "Runtime is higher than v0.2: roughly 6-7.5 minutes per mesh on 12 cores before the no-slip solver ladder.",
+    "Feature closeups still require human review for new aircraft families or unusually thin lifting surfaces.",
+    "No mesh convergence or external validation exists yet."
+  ]
+}

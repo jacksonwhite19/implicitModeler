@@ -1,0 +1,409 @@
+{
+  "schema": "wing_shakedown_10_export_manifest.v0_1",
+  "status": "ready_for_snappy_openfoam_shakedown",
+  "source_config": "aircraft_optimizer_platform/software/optimizer/configs/cfd_wing_shakedown_10_variants.v0_1.json",
+  "raw_stl_map": "aircraft_optimizer_platform/software/optimizer/configs/raw_direct_wing_shakedown_10_stl_batch.v0_1.json",
+  "export_preset": "direct_sparse_oml_fast",
+  "inlet_mode": "faired_cap",
+  "variant_count": 10,
+  "all_watertight": true,
+  "all_single_component": true,
+  "all_zero_boundary_edges": true,
+  "all_zero_nonmanifold_edges": true,
+  "variants": [
+    {
+      "id": "shv01_high_aspect_low_sweep",
+      "description": "Longer span, mild sweep, moderate root chord, and narrow tip for endurance-biased lift efficiency.",
+      "stl_path": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_shv01_high_aspect_low_sweep_faired_cap_spacing_1p0.stl",
+      "source_rhai": "dual_contouring/direct_sparse_sdf_mc_experiment/scratch/aircraft_oml_shv01_high_aspect_low_sweep_faired_cap_native_frame.rhai",
+      "metadata_json": "dual_contouring/direct_sparse_sdf_mc_experiment/scratch/aircraft_oml_shv01_high_aspect_low_sweep_faired_cap_native_frame.rhai.metadata.json",
+      "export_result_json": "dual_contouring/direct_sparse_sdf_mc_experiment/logs/shv01_high_aspect_low_sweep_optimizer_export_result.json",
+      "diagnostic_json": "dual_contouring/direct_sparse_sdf_mc_experiment/logs/shv01_high_aspect_low_sweep_diagnostics.json",
+      "output_stem": "direct_sdf_oml_shv01_high_aspect_low_sweep_faired_cap",
+      "feature": "aircraft_oml_shv01_high_aspect_low_sweep_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 860.0,
+        "wing_root_chord": 165.0,
+        "wing_tip_chord": 62.0,
+        "wing_sweep_deg": 6.0,
+        "wing_le_x": 225.0,
+        "htail_span": 420.0
+      },
+      "export_status": "passed",
+      "pass_gate": true,
+      "runtime_total_s": 660.9175106999464,
+      "triangle_count": 1270224,
+      "vertex_count_welded": 635112,
+      "watertight": true,
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0,
+      "connected_components": 1,
+      "duplicate_triangles": 0,
+      "bbox_min_mm": [
+        -0.010000228881835938,
+        -430.0,
+        -50.0
+      ],
+      "bbox_max_mm": [
+        700.010009765625,
+        430.0,
+        138.0
+      ]
+    },
+    {
+      "id": "shv02_broad_root_mild_sweep",
+      "description": "Higher area wing using a broad root and mild sweep without pushing span to the maximum.",
+      "stl_path": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_shv02_broad_root_mild_sweep_faired_cap_spacing_1p0.stl",
+      "source_rhai": "dual_contouring/direct_sparse_sdf_mc_experiment/scratch/aircraft_oml_shv02_broad_root_mild_sweep_faired_cap_native_frame.rhai",
+      "metadata_json": "dual_contouring/direct_sparse_sdf_mc_experiment/scratch/aircraft_oml_shv02_broad_root_mild_sweep_faired_cap_native_frame.rhai.metadata.json",
+      "export_result_json": "dual_contouring/direct_sparse_sdf_mc_experiment/logs/shv02_broad_root_mild_sweep_optimizer_export_result.json",
+      "diagnostic_json": "dual_contouring/direct_sparse_sdf_mc_experiment/logs/shv02_broad_root_mild_sweep_diagnostics.json",
+      "output_stem": "direct_sdf_oml_shv02_broad_root_mild_sweep_faired_cap",
+      "feature": "aircraft_oml_shv02_broad_root_mild_sweep_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 780.0,
+        "wing_root_chord": 195.0,
+        "wing_tip_chord": 88.0,
+        "wing_sweep_deg": 12.0,
+        "wing_le_x": 220.0,
+        "htail_span": 420.0
+      },
+      "export_status": "passed",
+      "pass_gate": true,
+      "runtime_total_s": 605.5056889997795,
+      "triangle_count": 1301546,
+      "vertex_count_welded": 650773,
+      "watertight": true,
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0,
+      "connected_components": 1,
+      "duplicate_triangles": 0,
+      "bbox_min_mm": [
+        -0.010000228881835938,
+        -390.0,
+        -50.0
+      ],
+      "bbox_max_mm": [
+        700.010009765625,
+        390.0,
+        138.0
+      ]
+    },
+    {
+      "id": "shv03_compact_high_sweep",
+      "description": "Compact swept wing to test lower area and higher sweep behavior.",
+      "stl_path": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_shv03_compact_high_sweep_faired_cap_spacing_1p0.stl",
+      "source_rhai": "dual_contouring/direct_sparse_sdf_mc_experiment/scratch/aircraft_oml_shv03_compact_high_sweep_faired_cap_native_frame.rhai",
+      "metadata_json": "dual_contouring/direct_sparse_sdf_mc_experiment/scratch/aircraft_oml_shv03_compact_high_sweep_faired_cap_native_frame.rhai.metadata.json",
+      "export_result_json": "dual_contouring/direct_sparse_sdf_mc_experiment/logs/shv03_compact_high_sweep_optimizer_export_result.json",
+      "diagnostic_json": "dual_contouring/direct_sparse_sdf_mc_experiment/logs/shv03_compact_high_sweep_diagnostics.json",
+      "output_stem": "direct_sdf_oml_shv03_compact_high_sweep_faired_cap",
+      "feature": "aircraft_oml_shv03_compact_high_sweep_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 620.0,
+        "wing_root_chord": 170.0,
+        "wing_tip_chord": 54.0,
+        "wing_sweep_deg": 34.0,
+        "wing_le_x": 235.0,
+        "htail_span": 415.0,
+        "vtail_span": 260.0
+      },
+      "export_status": "passed",
+      "pass_gate": true,
+      "runtime_total_s": 559.9865172000136,
+      "triangle_count": 1152010,
+      "vertex_count_welded": 576005,
+      "watertight": true,
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0,
+      "connected_components": 1,
+      "duplicate_triangles": 0,
+      "bbox_min_mm": [
+        -0.010000228881835938,
+        -310.0,
+        -50.0
+      ],
+      "bbox_max_mm": [
+        700.010009765625,
+        310.0,
+        143.0
+      ]
+    },
+    {
+      "id": "shv04_forward_wing_low_sweep",
+      "description": "Forward wing placement with lower sweep and moderate taper.",
+      "stl_path": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_shv04_forward_wing_low_sweep_faired_cap_spacing_1p0.stl",
+      "source_rhai": "dual_contouring/direct_sparse_sdf_mc_experiment/scratch/aircraft_oml_shv04_forward_wing_low_sweep_faired_cap_native_frame.rhai",
+      "metadata_json": "dual_contouring/direct_sparse_sdf_mc_experiment/scratch/aircraft_oml_shv04_forward_wing_low_sweep_faired_cap_native_frame.rhai.metadata.json",
+      "export_result_json": "dual_contouring/direct_sparse_sdf_mc_experiment/logs/shv04_forward_wing_low_sweep_optimizer_export_result.json",
+      "diagnostic_json": "dual_contouring/direct_sparse_sdf_mc_experiment/logs/shv04_forward_wing_low_sweep_diagnostics.json",
+      "output_stem": "direct_sdf_oml_shv04_forward_wing_low_sweep_faired_cap",
+      "feature": "aircraft_oml_shv04_forward_wing_low_sweep_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 740.0,
+        "wing_root_chord": 175.0,
+        "wing_tip_chord": 78.0,
+        "wing_sweep_deg": 8.0,
+        "wing_le_x": 200.0,
+        "htail_span": 410.0
+      },
+      "export_status": "passed",
+      "pass_gate": true,
+      "runtime_total_s": 627.2104036000092,
+      "triangle_count": 1238806,
+      "vertex_count_welded": 619403,
+      "watertight": true,
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0,
+      "connected_components": 1,
+      "duplicate_triangles": 0,
+      "bbox_min_mm": [
+        -0.010000228881835938,
+        -370.0,
+        -50.0
+      ],
+      "bbox_max_mm": [
+        700.010009765625,
+        370.0,
+        138.0
+      ]
+    },
+    {
+      "id": "shv05_aft_wing_moderate_sweep",
+      "description": "Aft wing placement with moderate sweep and slightly larger tail authority.",
+      "stl_path": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_shv05_aft_wing_moderate_sweep_faired_cap_spacing_1p0.stl",
+      "source_rhai": "dual_contouring/direct_sparse_sdf_mc_experiment/scratch/aircraft_oml_shv05_aft_wing_moderate_sweep_faired_cap_native_frame.rhai",
+      "metadata_json": "dual_contouring/direct_sparse_sdf_mc_experiment/scratch/aircraft_oml_shv05_aft_wing_moderate_sweep_faired_cap_native_frame.rhai.metadata.json",
+      "export_result_json": "dual_contouring/direct_sparse_sdf_mc_experiment/logs/shv05_aft_wing_moderate_sweep_optimizer_export_result.json",
+      "diagnostic_json": "dual_contouring/direct_sparse_sdf_mc_experiment/logs/shv05_aft_wing_moderate_sweep_diagnostics.json",
+      "output_stem": "direct_sdf_oml_shv05_aft_wing_moderate_sweep_faired_cap",
+      "feature": "aircraft_oml_shv05_aft_wing_moderate_sweep_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 720.0,
+        "wing_root_chord": 168.0,
+        "wing_tip_chord": 64.0,
+        "wing_sweep_deg": 22.0,
+        "wing_le_x": 270.0,
+        "htail_span": 430.0,
+        "htail_root_chord": 104.0,
+        "htail_tip_chord": 84.0
+      },
+      "export_status": "passed",
+      "pass_gate": true,
+      "runtime_total_s": 580.4510171001311,
+      "triangle_count": 1217268,
+      "vertex_count_welded": 608634,
+      "watertight": true,
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0,
+      "connected_components": 1,
+      "duplicate_triangles": 0,
+      "bbox_min_mm": [
+        -0.010000228881835938,
+        -360.0,
+        -50.0
+      ],
+      "bbox_max_mm": [
+        700.010009765625,
+        360.0,
+        138.0
+      ]
+    },
+    {
+      "id": "shv06_wide_low_taper",
+      "description": "Wide wing with less taper to test high lift and higher wetted area.",
+      "stl_path": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_shv06_wide_low_taper_faired_cap_spacing_1p0.stl",
+      "source_rhai": "dual_contouring/direct_sparse_sdf_mc_experiment/scratch/aircraft_oml_shv06_wide_low_taper_faired_cap_native_frame.rhai",
+      "metadata_json": "dual_contouring/direct_sparse_sdf_mc_experiment/scratch/aircraft_oml_shv06_wide_low_taper_faired_cap_native_frame.rhai.metadata.json",
+      "export_result_json": "dual_contouring/direct_sparse_sdf_mc_experiment/logs/shv06_wide_low_taper_optimizer_export_result.json",
+      "diagnostic_json": "dual_contouring/direct_sparse_sdf_mc_experiment/logs/shv06_wide_low_taper_diagnostics.json",
+      "output_stem": "direct_sdf_oml_shv06_wide_low_taper_faired_cap",
+      "feature": "aircraft_oml_shv06_wide_low_taper_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 820.0,
+        "wing_root_chord": 178.0,
+        "wing_tip_chord": 105.0,
+        "wing_sweep_deg": 14.0,
+        "wing_le_x": 225.0,
+        "htail_span": 420.0
+      },
+      "export_status": "passed",
+      "pass_gate": true,
+      "runtime_total_s": 633.5420541998465,
+      "triangle_count": 1337934,
+      "vertex_count_welded": 668967,
+      "watertight": true,
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0,
+      "connected_components": 1,
+      "duplicate_triangles": 0,
+      "bbox_min_mm": [
+        -0.010000228881835938,
+        -410.0,
+        -50.0
+      ],
+      "bbox_max_mm": [
+        700.010009765625,
+        410.0,
+        138.0
+      ]
+    },
+    {
+      "id": "shv07_narrow_tip_aggressive_taper",
+      "description": "Moderate span with aggressive taper to test induced-drag and tip sensitivity.",
+      "stl_path": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_shv07_narrow_tip_aggressive_taper_faired_cap_spacing_1p0.stl",
+      "source_rhai": "dual_contouring/direct_sparse_sdf_mc_experiment/scratch/aircraft_oml_shv07_narrow_tip_aggressive_taper_faired_cap_native_frame.rhai",
+      "metadata_json": "dual_contouring/direct_sparse_sdf_mc_experiment/scratch/aircraft_oml_shv07_narrow_tip_aggressive_taper_faired_cap_native_frame.rhai.metadata.json",
+      "export_result_json": "dual_contouring/direct_sparse_sdf_mc_experiment/logs/shv07_narrow_tip_aggressive_taper_optimizer_export_result.json",
+      "diagnostic_json": "dual_contouring/direct_sparse_sdf_mc_experiment/logs/shv07_narrow_tip_aggressive_taper_diagnostics.json",
+      "output_stem": "direct_sdf_oml_shv07_narrow_tip_aggressive_taper_faired_cap",
+      "feature": "aircraft_oml_shv07_narrow_tip_aggressive_taper_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 760.0,
+        "wing_root_chord": 190.0,
+        "wing_tip_chord": 45.0,
+        "wing_sweep_deg": 18.0,
+        "wing_le_x": 225.0,
+        "htail_span": 420.0
+      },
+      "export_status": "passed",
+      "pass_gate": true,
+      "runtime_total_s": 591.0561183998361,
+      "triangle_count": 1221314,
+      "vertex_count_welded": 610657,
+      "watertight": true,
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0,
+      "connected_components": 1,
+      "duplicate_triangles": 0,
+      "bbox_min_mm": [
+        -0.010000228881835938,
+        -380.0,
+        -50.0
+      ],
+      "bbox_max_mm": [
+        700.010009765625,
+        380.0,
+        138.0
+      ]
+    },
+    {
+      "id": "shv08_short_broad_straight",
+      "description": "Shorter broad low-sweep wing to test simple high-area planform behavior.",
+      "stl_path": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_shv08_short_broad_straight_faired_cap_spacing_1p0.stl",
+      "source_rhai": "dual_contouring/direct_sparse_sdf_mc_experiment/scratch/aircraft_oml_shv08_short_broad_straight_faired_cap_native_frame.rhai",
+      "metadata_json": "dual_contouring/direct_sparse_sdf_mc_experiment/scratch/aircraft_oml_shv08_short_broad_straight_faired_cap_native_frame.rhai.metadata.json",
+      "export_result_json": "dual_contouring/direct_sparse_sdf_mc_experiment/logs/shv08_short_broad_straight_optimizer_export_result.json",
+      "diagnostic_json": "dual_contouring/direct_sparse_sdf_mc_experiment/logs/shv08_short_broad_straight_diagnostics.json",
+      "output_stem": "direct_sdf_oml_shv08_short_broad_straight_faired_cap",
+      "feature": "aircraft_oml_shv08_short_broad_straight_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 660.0,
+        "wing_root_chord": 205.0,
+        "wing_tip_chord": 95.0,
+        "wing_sweep_deg": 4.0,
+        "wing_le_x": 218.0,
+        "htail_span": 405.0
+      },
+      "export_status": "passed",
+      "pass_gate": true,
+      "runtime_total_s": 581.2570443002041,
+      "triangle_count": 1238534,
+      "vertex_count_welded": 619267,
+      "watertight": true,
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0,
+      "connected_components": 1,
+      "duplicate_triangles": 0,
+      "bbox_min_mm": [
+        -0.010000228881835938,
+        -330.0,
+        -50.0
+      ],
+      "bbox_max_mm": [
+        700.010009765625,
+        330.0,
+        138.0
+      ]
+    },
+    {
+      "id": "shv09_long_span_swept",
+      "description": "Longer span with meaningful sweep to test whether sweep cost is outweighed by area/span.",
+      "stl_path": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_shv09_long_span_swept_faired_cap_spacing_1p0.stl",
+      "source_rhai": "dual_contouring/direct_sparse_sdf_mc_experiment/scratch/aircraft_oml_shv09_long_span_swept_faired_cap_native_frame.rhai",
+      "metadata_json": "dual_contouring/direct_sparse_sdf_mc_experiment/scratch/aircraft_oml_shv09_long_span_swept_faired_cap_native_frame.rhai.metadata.json",
+      "export_result_json": "dual_contouring/direct_sparse_sdf_mc_experiment/logs/shv09_long_span_swept_optimizer_export_result.json",
+      "diagnostic_json": "dual_contouring/direct_sparse_sdf_mc_experiment/logs/shv09_long_span_swept_diagnostics.json",
+      "output_stem": "direct_sdf_oml_shv09_long_span_swept_faired_cap",
+      "feature": "aircraft_oml_shv09_long_span_swept_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 840.0,
+        "wing_root_chord": 160.0,
+        "wing_tip_chord": 58.0,
+        "wing_sweep_deg": 26.0,
+        "wing_le_x": 235.0,
+        "htail_span": 430.0,
+        "vtail_span": 260.0
+      },
+      "export_status": "passed",
+      "pass_gate": true,
+      "runtime_total_s": 600.1406079998706,
+      "triangle_count": 1260804,
+      "vertex_count_welded": 630402,
+      "watertight": true,
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0,
+      "connected_components": 1,
+      "duplicate_triangles": 0,
+      "bbox_min_mm": [
+        -0.010000228881835938,
+        -420.0,
+        -50.0
+      ],
+      "bbox_max_mm": [
+        700.010009765625,
+        420.0,
+        143.0
+      ]
+    },
+    {
+      "id": "shv10_balanced_reference_mutation",
+      "description": "Moderate all-around mutation near the baseline, useful as a sanity check between aggressive candidates.",
+      "stl_path": "dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_shv10_balanced_reference_mutation_faired_cap_spacing_1p0.stl",
+      "source_rhai": "dual_contouring/direct_sparse_sdf_mc_experiment/scratch/aircraft_oml_shv10_balanced_reference_mutation_faired_cap_native_frame.rhai",
+      "metadata_json": "dual_contouring/direct_sparse_sdf_mc_experiment/scratch/aircraft_oml_shv10_balanced_reference_mutation_faired_cap_native_frame.rhai.metadata.json",
+      "export_result_json": "dual_contouring/direct_sparse_sdf_mc_experiment/logs/shv10_balanced_reference_mutation_optimizer_export_result.json",
+      "diagnostic_json": "dual_contouring/direct_sparse_sdf_mc_experiment/logs/shv10_balanced_reference_mutation_diagnostics.json",
+      "output_stem": "direct_sdf_oml_shv10_balanced_reference_mutation_faired_cap",
+      "feature": "aircraft_oml_shv10_balanced_reference_mutation_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 740.0,
+        "wing_root_chord": 182.0,
+        "wing_tip_chord": 76.0,
+        "wing_sweep_deg": 16.0,
+        "wing_le_x": 232.0,
+        "htail_span": 410.0
+      },
+      "export_status": "passed",
+      "pass_gate": true,
+      "runtime_total_s": 589.5306513002142,
+      "triangle_count": 1243470,
+      "vertex_count_welded": 621735,
+      "watertight": true,
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0,
+      "connected_components": 1,
+      "duplicate_triangles": 0,
+      "bbox_min_mm": [
+        -0.010000228881835938,
+        -370.0,
+        -50.0
+      ],
+      "bbox_max_mm": [
+        700.010009765625,
+        370.0,
+        138.0
+      ]
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "description": "Approved five full-path solid faired-cap inlet STL aircraft variants for OpenFOAM mesher comparison.",
+  "flow": {
+    "velocity_direction": "+X",
+    "velocity_mph": 50.0,
+    "velocity_mps": 22.352
+  },
+  "variants": [
+    {
+      "variant_id": "fcv01_long_glider",
+      "input_stl": "C:/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_fcv01_long_glider_faired_cap_spacing_1p0.stl"
+    },
+    {
+      "variant_id": "fcv02_short_swept",
+      "input_stl": "C:/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_fcv02_short_swept_faired_cap_spacing_1p0.stl"
+    },
+    {
+      "variant_id": "fcv03_high_aspect_mild",
+      "input_stl": "C:/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_fcv03_high_aspect_mild_faired_cap_spacing_1p0.stl"
+    },
+    {
+      "variant_id": "fcv04_compact_wide_tail",
+      "input_stl": "C:/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_fcv04_compact_wide_tail_faired_cap_spacing_1p0.stl"
+    },
+    {
+      "variant_id": "fcv05_aft_wing_fast",
+      "input_stl": "C:/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/dual_contouring/direct_sparse_sdf_mc_experiment/stl/direct_sdf_oml_fcv05_aft_wing_fast_faired_cap_spacing_1p0.stl"
+    }
+  ]
+}

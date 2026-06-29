@@ -1,0 +1,182 @@
+{
+  "schema": "cfd_wing_shakedown_10_variants.v0_1",
+  "description": "Ten faired-cap inlet aircraft candidates for the first rough-CFD optimizer shakedown. Variations are intentionally focused on wing planform and wing placement while keeping the same fuselage/inlet family.",
+  "source_rhai": "dual_contouring/direct_sparse_sdf_mc_experiment/scratch/aircraft_oml_inlet_native_frame.rhai",
+  "inlet_mode": "faired_cap",
+  "export_preset": "direct_sparse_oml_fast",
+  "units": "mm",
+  "candidate_scope": {
+    "family": "same faired-cap fixed-wing UAV family as the fcv baseline set",
+    "topology_changes": "none",
+    "primary_variables": [
+      "wing_span",
+      "wing_sweep_deg",
+      "wing_root_chord",
+      "wing_tip_chord",
+      "wing_le_x"
+    ],
+    "secondary_variables": [
+      "htail_span",
+      "htail_root_chord",
+      "htail_tip_chord",
+      "vtail_span"
+    ],
+    "fixed_family_items": [
+      "fuselage",
+      "single dorsal faired-cap inlet",
+      "tail type",
+      "NACA 2412 main wing airfoil",
+      "NACA 0009 tail airfoils"
+    ],
+    "notes": [
+      "String airfoil swaps are not included because the current faired-cap exporter path cleanly supports numeric Rhai overrides only.",
+      "Dihedral/anhedral is intentionally deferred until the generator exposes that as a stable named parameter."
+    ]
+  },
+  "variants": [
+    {
+      "id": "shv01_high_aspect_low_sweep",
+      "description": "Longer span, mild sweep, moderate root chord, and narrow tip for endurance-biased lift efficiency.",
+      "output_stem": "direct_sdf_oml_shv01_high_aspect_low_sweep_faired_cap",
+      "feature": "aircraft_oml_shv01_high_aspect_low_sweep_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 860.0,
+        "wing_root_chord": 165.0,
+        "wing_tip_chord": 62.0,
+        "wing_sweep_deg": 6.0,
+        "wing_le_x": 225.0,
+        "htail_span": 420.0
+      }
+    },
+    {
+      "id": "shv02_broad_root_mild_sweep",
+      "description": "Higher area wing using a broad root and mild sweep without pushing span to the maximum.",
+      "output_stem": "direct_sdf_oml_shv02_broad_root_mild_sweep_faired_cap",
+      "feature": "aircraft_oml_shv02_broad_root_mild_sweep_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 780.0,
+        "wing_root_chord": 195.0,
+        "wing_tip_chord": 88.0,
+        "wing_sweep_deg": 12.0,
+        "wing_le_x": 220.0,
+        "htail_span": 420.0
+      }
+    },
+    {
+      "id": "shv03_compact_high_sweep",
+      "description": "Compact swept wing to test lower area and higher sweep behavior.",
+      "output_stem": "direct_sdf_oml_shv03_compact_high_sweep_faired_cap",
+      "feature": "aircraft_oml_shv03_compact_high_sweep_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 620.0,
+        "wing_root_chord": 170.0,
+        "wing_tip_chord": 54.0,
+        "wing_sweep_deg": 34.0,
+        "wing_le_x": 235.0,
+        "htail_span": 415.0,
+        "vtail_span": 260.0
+      }
+    },
+    {
+      "id": "shv04_forward_wing_low_sweep",
+      "description": "Forward wing placement with lower sweep and moderate taper.",
+      "output_stem": "direct_sdf_oml_shv04_forward_wing_low_sweep_faired_cap",
+      "feature": "aircraft_oml_shv04_forward_wing_low_sweep_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 740.0,
+        "wing_root_chord": 175.0,
+        "wing_tip_chord": 78.0,
+        "wing_sweep_deg": 8.0,
+        "wing_le_x": 200.0,
+        "htail_span": 410.0
+      }
+    },
+    {
+      "id": "shv05_aft_wing_moderate_sweep",
+      "description": "Aft wing placement with moderate sweep and slightly larger tail authority.",
+      "output_stem": "direct_sdf_oml_shv05_aft_wing_moderate_sweep_faired_cap",
+      "feature": "aircraft_oml_shv05_aft_wing_moderate_sweep_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 720.0,
+        "wing_root_chord": 168.0,
+        "wing_tip_chord": 64.0,
+        "wing_sweep_deg": 22.0,
+        "wing_le_x": 270.0,
+        "htail_span": 430.0,
+        "htail_root_chord": 104.0,
+        "htail_tip_chord": 84.0
+      }
+    },
+    {
+      "id": "shv06_wide_low_taper",
+      "description": "Wide wing with less taper to test high lift and higher wetted area.",
+      "output_stem": "direct_sdf_oml_shv06_wide_low_taper_faired_cap",
+      "feature": "aircraft_oml_shv06_wide_low_taper_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 820.0,
+        "wing_root_chord": 178.0,
+        "wing_tip_chord": 105.0,
+        "wing_sweep_deg": 14.0,
+        "wing_le_x": 225.0,
+        "htail_span": 420.0
+      }
+    },
+    {
+      "id": "shv07_narrow_tip_aggressive_taper",
+      "description": "Moderate span with aggressive taper to test induced-drag and tip sensitivity.",
+      "output_stem": "direct_sdf_oml_shv07_narrow_tip_aggressive_taper_faired_cap",
+      "feature": "aircraft_oml_shv07_narrow_tip_aggressive_taper_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 760.0,
+        "wing_root_chord": 190.0,
+        "wing_tip_chord": 45.0,
+        "wing_sweep_deg": 18.0,
+        "wing_le_x": 225.0,
+        "htail_span": 420.0
+      }
+    },
+    {
+      "id": "shv08_short_broad_straight",
+      "description": "Shorter broad low-sweep wing to test simple high-area planform behavior.",
+      "output_stem": "direct_sdf_oml_shv08_short_broad_straight_faired_cap",
+      "feature": "aircraft_oml_shv08_short_broad_straight_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 660.0,
+        "wing_root_chord": 205.0,
+        "wing_tip_chord": 95.0,
+        "wing_sweep_deg": 4.0,
+        "wing_le_x": 218.0,
+        "htail_span": 405.0
+      }
+    },
+    {
+      "id": "shv09_long_span_swept",
+      "description": "Longer span with meaningful sweep to test whether sweep cost is outweighed by area/span.",
+      "output_stem": "direct_sdf_oml_shv09_long_span_swept_faired_cap",
+      "feature": "aircraft_oml_shv09_long_span_swept_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 840.0,
+        "wing_root_chord": 160.0,
+        "wing_tip_chord": 58.0,
+        "wing_sweep_deg": 26.0,
+        "wing_le_x": 235.0,
+        "htail_span": 430.0,
+        "vtail_span": 260.0
+      }
+    },
+    {
+      "id": "shv10_balanced_reference_mutation",
+      "description": "Moderate all-around mutation near the baseline, useful as a sanity check between aggressive candidates.",
+      "output_stem": "direct_sdf_oml_shv10_balanced_reference_mutation_faired_cap",
+      "feature": "aircraft_oml_shv10_balanced_reference_mutation_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 740.0,
+        "wing_root_chord": 182.0,
+        "wing_tip_chord": 76.0,
+        "wing_sweep_deg": 16.0,
+        "wing_le_x": 232.0,
+        "htail_span": 410.0
+      }
+    }
+  ]
+}

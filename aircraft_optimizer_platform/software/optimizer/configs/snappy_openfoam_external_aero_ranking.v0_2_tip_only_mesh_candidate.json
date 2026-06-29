@@ -1,0 +1,166 @@
+{
+  "id": "snappy_openfoam_external_aero_ranking_v0_2_tip_only_mesh_candidate",
+  "status": "rough_scoring_development_candidate_pending_yplus_strategy",
+  "created": "2026-06-25",
+  "purpose": "STL-native medium-cost OpenFOAM mesh candidate for optimizer raw-export candidates. This preset disables automatic feature-refinement boxes after mesh-only evidence showed better surface-fidelity p95 and lower cell count with corrected tip seed boxes only. It has passed potentialFoam and bounded 60-step no-slip kOmegaSST smoke on the three expanded real-export STLs, but remains rough-scoring development only because y-plus is below the configured wall-function target.",
+  "geometry_units": {
+    "input_stl_units": "mm",
+    "openfoam_case_units": "m",
+    "scale": 0.001
+  },
+  "evaluation_tier": {
+    "name": "rough_scoring_cfd",
+    "scoring_tier": "rough_scoring",
+    "score_usage": "optimizer_relative_ranking",
+    "intended_use": "Score and rank plausible candidates by relative force-coefficient trends before expensive confirmation runs.",
+    "not_intended_for": [
+      "validated absolute lift/drag",
+      "final design selection",
+      "training surrogate labels without later quality tags"
+    ],
+    "rough_scoring_allowed": true,
+    "final_scoring_allowed": false,
+    "scoring_allowed": false
+  },
+  "surface_fidelity_policy": {
+    "priority": "preserve enough STL surface fidelity for relative ranking while keeping runtime low enough for optimizer loops",
+    "minimum_surface_levels": [4, 5],
+    "feature_refinement_boxes_required": false,
+    "minimum_aircraft_patch_faces_observed": 50000,
+    "ranking_review_required_for_surface_p95_mm_gt": 1.0,
+    "ranking_review_required_for_surface_p99_mm_gt": 2.5,
+    "ranking_review_required_for_surface_max_mm_gt": 6.0,
+    "scoring_review_required_for_surface_p95_mm_gt": 0.25
+  },
+  "mesher": {
+    "tool": "OpenFOAM snappyHexMesh",
+    "parallel_procs": 12,
+    "base_cells": "44,28,44",
+    "pad_m": 0.8,
+    "surface_min_level": 4,
+    "surface_max_level": 5,
+    "feature_level": 5,
+    "n_cells_between_levels": 4,
+    "snap_tolerance": 0.5,
+    "n_smooth_patch": 10,
+    "include_known_hotspot_boxes": true,
+    "feature_refinement_boxes": false,
+    "feature_refinement_level": 5,
+    "feature_angle_deg": 24.0,
+    "feature_box_count": 18,
+    "feature_box_grid": "10,10,6",
+    "feature_box_padding_frac": 0.03,
+    "max_global_cells": 6000000,
+    "max_local_cells": 3000000,
+    "check_skew_threshold": 12.0
+  },
+  "layers": {
+    "add_layers": true,
+    "n_surface_layers": 1,
+    "layer_relative_sizes": true,
+    "layer_expansion_ratio": 1.2,
+    "final_layer_thickness": 0.75,
+    "min_layer_thickness": 0.12,
+    "layer_feature_angle_deg": 70.0,
+    "n_layer_iter": 50,
+    "n_relaxed_iter": 20
+  },
+  "solver_smoke": {
+    "freestream_mps": [22.352, 0.0, 0.0],
+    "current_alpha_deg": 0.0,
+    "coordinate_frame": "real_no_inlet_exporter_current_frame_x_length_y_vertical_z_span",
+    "vertical_axis": "y",
+    "drag_dir": [1.0, 0.0, 0.0],
+    "lift_dir": [0.0, 1.0, 0.0],
+    "pitch_axis": [0.0, 0.0, 1.0],
+    "alpha_sweep_policy": {
+      "status": "implemented_for_existing_mesh_reuse",
+      "recommended_angles_deg": [-2.0, 0.0, 4.0, 8.0, 10.0],
+      "adaptive_promotion_policy": {
+        "min_expanded_baseline_candidates": 5,
+        "compare_alpha_deg": 4.0,
+        "max_lift_loss_fraction_vs_baseline_best": 0.65,
+        "behavior": "Default optimizer backend runs use the cheap first-pass stage. Use explicit adaptive or survivor-expanded mode only for baseline-building or promoted survivor confirmation."
+      },
+      "two_stage_policy": {
+        "first_pass": {
+          "angles_deg": [0.0, 4.0, 8.0, 12.0],
+          "summary_name": "alpha_sweep_summary_first_pass_end60_np8.json",
+          "stage_name": "rough_scoring_first_pass",
+          "stage_role": "candidate_screening",
+          "selection_policy": "screening_tolerant_best_positive_lift_ld",
+          "early_pruning": {
+            "enabled": true,
+            "min_completed_alphas": 2,
+            "no_lift_cl_max": 0.02,
+            "weak_lift_cl_max": 0.08,
+            "min_best_ld": 0.5,
+            "max_abs_coefficient": 10.0,
+            "policy_note": "Generous pruning only after multiple alpha results. Never prune after 0 deg alone; skip remaining alphas only for solver failures, coefficient blowup, no meaningful lift, or very weak lift with very poor L/D."
+          },
+          "rejection_policy": "Reject only clearly bad results; pitch-moment concerns are soft review until survivor-expanded sweep."
+        },
+        "survivor_expanded": {
+          "angles_deg": [-2.0, 0.0, 4.0, 8.0, 10.0],
+          "summary_name": "alpha_sweep_summary_survivor_end60_np8.json",
+          "stage_name": "rough_scoring_survivor_expanded",
+          "stage_role": "survivor_expanded_rough_scoring"
+        }
+      },
+      "purpose": "Estimate rough CL/CD versus alpha, best usable L/D, and pitch-moment trend before finalist confirmation CFD.",
+      "run_strategy": "reuse the same mesh per candidate and run separate OpenFOAM solver cases with rotated freestream vectors",
+      "activation_gate": "use when the backend preserves per-alpha case folders and writes the configured alpha_sweep_summary_name"
+    },
+    "potentialFoam_required": true,
+    "no_slip_laminar_start_required": true,
+    "rans_model": "kOmegaSST",
+    "rans_end_time": 60,
+    "rans_timeout_s": 2400,
+    "parallel_procs": 8,
+    "aircraft_wall": "noSlip",
+    "wall_treatment": "wall_function",
+    "scoring_tier": "rough_scoring",
+    "score_usage": "optimizer_relative_ranking",
+    "rough_scoring_allowed": true,
+    "final_scoring_allowed": false,
+    "scoring_allowed": false
+  },
+  "optimizer_import": {
+    "acceptance_mode": "snappy_ranking_cfd_development",
+    "ingest_command": "ingest-snappy-hifi-run",
+    "pipeline_id": "snappy_openfoam_external_aero_ranking",
+    "pipeline_version": "0.1",
+    "surface_fidelity_report_name": "surface_fidelity_vtk_distance_1layer_candidate.json",
+    "alpha_sweep_summary_name": "alpha_sweep_summary_first_pass_end60_np8.json",
+    "rough_scoring_config": "aircraft_optimizer_platform/software/optimizer/configs/rough_cfd_stable_efficient_drone.v0_1.json",
+    "evidence_root": "custom_cfd_mesher_experiment/runs/real_export_expanded_vars_snappy_mesh_only_tip_only_probe_20260627 and custom_cfd_mesher_experiment/runs/real_export_expanded_vars_snappy_mesh_only_tip_only_remaining_20260627",
+    "solver_summary": "custom_cfd_mesher_experiment/runs/real_export_expanded_vars_snappy_tip_only_solver_summary_20260627.json",
+    "potential_smoke_summary": "custom_cfd_mesher_experiment/runs/real_export_expanded_vars_snappy_tip_only_potential_smoke_20260627/potential_smoke_summary.json",
+    "summary_metrics_csv": null
+  },
+  "ranking_gates": {
+    "strict_openfoam_check_required": true,
+    "potentialFoam_required": true,
+    "laminar_start_required": true,
+    "rans_completion_required": true,
+    "floating_point_exception_allowed": false,
+    "max_abs_coefficient": 10.0,
+    "force_tail_stability_required": true,
+    "minimum_aircraft_patch_faces": 50000,
+    "human_review_required": [
+      "new aircraft family",
+      "surface p95 above ranking threshold",
+      "unexpected sign convention",
+      "force coefficient outlier versus nearest neighbor candidates"
+    ]
+  },
+  "known_limitations": [
+    "Ranking coefficients are relative development evidence only.",
+    "No mesh-convergence correction exists yet.",
+    "Y-plus and wall treatment are not yet validated for trusted drag.",
+    "Short 60-step no-slip kOmegaSST force tails were stable on the three expanded real-export STLs, but this is not a mesh-converged or validated scoring campaign.",
+    "Current y-plus values are too low for the wall-function target: median y-plus is about 4.3-4.4 and p95 is about 8.9-10.2 on the three short kOmegaSST runs.",
+    "Surface fidelity can be weaker than final-scoring CFD requirements on large fresh STLs.",
+    "Rank correlation must be calibrated against high-fidelity reruns before optimizer trust is increased."
+  ]
+}

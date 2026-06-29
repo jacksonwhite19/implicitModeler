@@ -1,0 +1,109 @@
+{
+  "schema": "direct_prism_shell_boundary_layer.v0_1",
+  "status": "hybrid_plumbing_validated",
+  "name": "direct_prism_shell_boundary_layer_v0_1",
+  "description": "Custom body-fitted prism-shell boundary-layer component. The standalone shell is not a complete external-flow mesh, but the shell-plus-Gmsh exact-merge hybrid path now produces complete OpenFOAM plumbing meshes.",
+  "scoring_allowed": false,
+  "validated_scope": {
+    "aircraft_family": "small fixed-wing UAV",
+    "evidence_variants": [
+      "fcv01_long_glider",
+      "fcv02_short_swept",
+      "fcv03_high_aspect_mild",
+      "fcv04_compact_wide_tail",
+      "fcv05_aft_wing_fast"
+    ],
+    "evidence_root": "custom_cfd_mesher_experiment/runs/direct_prism_shell_five_variant_v0_1_20260624",
+    "solver_case_status": "standalone shell strict checkMesh only; hybrid exact-merge farfield cases pass strict checkMesh and potentialFoam"
+  },
+  "coordinate_frame": {
+    "x": "forward / drag axis",
+    "y": "right / span axis",
+    "z": "up / lift axis"
+  },
+  "tool": {
+    "script": "custom_cfd_mesher_experiment/scripts/direct_prism_shell_mesher.py",
+    "command": [
+      "python",
+      "custom_cfd_mesher_experiment/scripts/direct_prism_shell_mesher.py",
+      "--input-stl",
+      "custom_cfd_mesher_experiment/runs/gmsh_bl_auto_selector_v0_2_20260623/fcv04_compact_wide_tail/selected_remesh/aircraft_surface_fd15.stl",
+      "--run-dir",
+      "custom_cfd_mesher_experiment/runs/direct_prism_shell_fcv04_86k_layers_small_cap025_20260624",
+      "--target-faces",
+      "0",
+      "--offsets",
+      "0.0002,0.0005,0.001",
+      "--adaptive-offset-caps",
+      "--offset-cap-factor",
+      "0.25",
+      "--offset-cap-floor",
+      "1e-5",
+      "--write-openfoam",
+      "--write-su2"
+    ]
+  },
+  "layer_policy": {
+    "source_surface_faces": 86624,
+    "layers": 3,
+    "cumulative_offsets_m": [0.0002, 0.0005, 0.001],
+    "adaptive_offset_caps": true,
+    "offset_cap_factor": 0.25,
+    "offset_cap_floor_m": 0.00001,
+    "effective_max_offset_m": {
+      "min": 0.00001,
+      "p01": 0.000027534006978914914,
+      "p05": 0.00018064323405014637,
+      "p50": 0.00046664954423351386,
+      "p95": 0.0006624599748451525,
+      "max": 0.0009959376381701612
+    }
+  },
+  "openfoam_checkmesh_evidence": {
+    "five_variant_result": {
+      "pass_count": 5,
+      "variant_count": 5,
+      "note": "fcv01_long_glider required alternate remesh feature angle 45 deg; the original fd25 shell failed only on skewness."
+    },
+    "representative_run_dir": "custom_cfd_mesher_experiment/runs/direct_prism_shell_five_variant_v0_1_20260624/fcv04_compact_wide_tail",
+    "representative_mesh_ok": true,
+    "representative_cells": 259872,
+    "representative_prisms": 259872,
+    "representative_aircraft_faces": 86624,
+    "representative_outer_shell_faces": 86624,
+    "representative_max_non_orthogonality": 81.637043,
+    "representative_severe_non_orthogonal_faces": 343,
+    "representative_max_skewness": 3.5425877
+  },
+  "known_limitations": [
+    "The outer patch is an offset aircraft shell, not a proper farfield box/tunnel.",
+    "The complete hybrid mesh requires a Gmsh tetrahedral external volume and the custom exact interface merge utility.",
+    "OpenFOAM mergeMeshes plus stitchMesh did not produce a valid combined shell-plus-Gmsh mesh; use custom exact merge instead.",
+    "Coarser decimated direct-prism shells can introduce localized degenerate cells near wingtip/trailing-edge areas.",
+    "This preset is solver-plumbing ready but not scoring-CFD ready; aircraft wall treatment, y+ policy, and validated force coefficients are still pending."
+  ],
+  "hybrid_exact_merge_evidence": {
+    "run_root": "custom_cfd_mesher_experiment/runs/hybrid_shell_gmsh_exact_merge_five_variant_netgen_v0_1_20260624",
+    "pass_count": 5,
+    "variant_count": 5,
+    "outer_volume_mesher": "Gmsh tetrahedral external volume",
+    "outer_volume_optimizer": "default,Netgen",
+    "interface_merge_script": "custom_cfd_mesher_experiment/scripts/merge_prism_shell_gmsh_outer.py",
+    "driver_script": "custom_cfd_mesher_experiment/scripts/run_hybrid_shell_gmsh_exact_merge_smoke.py",
+    "strict_checkmesh": "passed all five variants",
+    "potentialFoam": "completed all five variants",
+    "cell_range": [752726, 992789],
+    "severe_nonorthogonal_face_range": [178, 470],
+    "runtime_seconds_range": [103.218, 141.478],
+    "notes": [
+      "The hybrid path uses watertight conditioned aircraft surfaces, not raw exporter STLs.",
+      "A no-optimizer Gmsh outer-volume run produced an isolated high-aspect-cell failure on fcv04; default,Netgen fixed it.",
+      "The current prism shell has three cumulative offsets: 0.2 mm, 0.5 mm, and 1.0 mm."
+    ]
+  },
+  "next_required_work": [
+    "Promote the hybrid exact-merge driver into the optimizer mesher backend contract.",
+    "Add automated localization for direct-shell bad cells and reject decimated surfaces that introduce local prism degeneracy.",
+    "Define the first bounded no-slip OpenFOAM scoring experiment on the hybrid meshes without treating the coefficients as validated scoring output."
+  ]
+}

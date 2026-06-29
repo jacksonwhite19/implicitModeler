@@ -1,0 +1,17 @@
+{
+  "artifact_id": "artifact_example_0001",
+  "candidate_id": "candidate_example_0001",
+  "evaluation_id": "evaluation_example_0001",
+  "module_attempt_id": null,
+  "artifact_type": "geometry_source_rhai",
+  "path": "runs/v0_1_fixture/campaigns/v0_1_fixture/artifacts/artifact_example_0001_direct_sparse_oml_aircraft_no_inlet.rhai",
+  "hash_algorithm": "sha256",
+  "producer_module": "manual_reference_geometry_provider",
+  "producer_version": "0.1.0",
+  "source_kind": "copied_reference",
+  "status": "available",
+  "metadata": {
+    "feature_name": "aircraft_oml_oblique15_y_slice_frame",
+    "coordinate_frame": "oblique_y_slice_frame"
+  }
+}

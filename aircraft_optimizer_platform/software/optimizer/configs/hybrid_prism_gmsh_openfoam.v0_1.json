@@ -1,0 +1,150 @@
+{
+  "schema": "hybrid_prism_gmsh_openfoam.v0_1",
+  "status": "default_openfoam_plumbing_backend",
+  "name": "hybrid_prism_gmsh_openfoam_v0_1",
+  "description": "Default non-scoring OpenFOAM plumbing mesh backend: custom direct body-fitted prism shell near the aircraft, Gmsh tetrahedral external farfield volume, and exact OpenFOAM polyMesh interface merge.",
+  "scoring_allowed": false,
+  "validated_scope": {
+    "aircraft_family": "small fixed-wing UAV",
+    "geometry_set": "approved full-path solid faired-cap inlet variants fcv01 through fcv05",
+    "input_surface_requirement": "watertight conditioned STL surface",
+    "solver_smoke": "potentialFoam -writep",
+    "steady_solver_probe": "foamRun -solver incompressibleFluid, non-scoring only",
+    "freestream_m_per_s": 22.352,
+    "flow_axis": "+X",
+    "coordinate_frame": {
+      "x": "forward / drag axis",
+      "y": "right / span axis",
+      "z": "up / lift axis"
+    }
+  },
+  "source_surface": {
+    "units": "mm",
+    "input_format": "STL",
+    "required_precondition": "watertight, single connected aircraft surface",
+    "conditioning_source": "custom_cfd_mesher_experiment/runs/gmsh_bl_auto_selector_v0_2_20260623 plus fcv01 fd45 shell tuning",
+    "raw_stl_root": "dual_contouring/direct_sparse_sdf_mc_experiment/stl",
+    "raw_stl_note": "Raw exporter STLs are not yet assumed to be direct inputs to this backend; automatic conditioning/gating remains required before optimizer production use."
+  },
+  "direct_prism_shell": {
+    "tool": "custom_cfd_mesher_experiment/scripts/direct_prism_shell_mesher.py",
+    "scale": 0.001,
+    "offsets_m": [0.0002, 0.0005, 0.001],
+    "layers": 3,
+    "adaptive_offset_caps": true,
+    "offset_cap_factor": 0.25,
+    "offset_cap_floor_m": 0.00001,
+    "output_patches": ["aircraft", "farfield"],
+    "exported_interface_surfaces": {
+      "aircraft_wall": "shell/surfaces/aircraft_wall.stl",
+      "outer_shell": "shell/surfaces/outer_shell.stl"
+    }
+  },
+  "gmsh_outer_volume": {
+    "tool": "custom_cfd_mesher_experiment/scripts/gmsh_external_flow_mesher.py",
+    "input_surface": "shell/surfaces/outer_shell.stl",
+    "scale": 1.0,
+    "target_faces": 0,
+    "padding_m": [1.14003, 1.6, 0.38598],
+    "farfield_policy": "fixed-padding",
+    "surface_size_m": 0.004,
+    "farfield_size_m": 0.11,
+    "farfield_patches": "single",
+    "angle_deg": 80.0,
+    "curve_angle_deg": 180.0,
+    "algorithm3d": 4,
+    "geometry_mode": "create-topology",
+    "optimize": "default,Netgen"
+  },
+  "openfoam_merge": {
+    "tool": "custom_cfd_mesher_experiment/scripts/merge_prism_shell_gmsh_outer.py",
+    "method": "exact interface face merge after gmshToFoam conversion",
+    "rejected_method": "OpenFOAM mergeMeshes plus stitchMesh",
+    "match_tolerance_m": 0.00000005,
+    "final_patches": ["aircraft", "farfield"],
+    "aircraft_patch_type": "wall",
+    "farfield_patch_type": "patch"
+  },
+  "openfoam_gates": {
+    "strict_check": "checkMesh -writeSets -writeSurfaces -setFormat vtk -surfaceFormat vtk",
+    "required": {
+      "mesh_ok": true,
+      "failed_checks": 0,
+      "aircraft_patch_faces_positive": true,
+      "farfield_patch_faces_positive": true,
+      "negative_volume_cells": 0,
+      "wrong_oriented_faces": 0,
+      "zero_area_faces": 0
+    },
+    "tracked_metrics": [
+      "cells",
+      "points",
+      "prisms",
+      "tetrahedra",
+      "max_aspect_ratio",
+      "max_skewness",
+      "max_non_orthogonality",
+      "severely_non_orthogonal_faces",
+      "min_volume",
+      "max_volume"
+    ]
+  },
+  "solver_smoke": {
+    "required": true,
+    "solver": "potentialFoam",
+    "command": "potentialFoam -writep",
+    "aircraft_boundary_for_smoke": "slip/symmetry-style setup fields",
+    "not_scoring_reason": "potentialFoam is inviscid plumbing evidence and does not provide trusted drag/lift"
+  },
+  "steady_solver_development": {
+    "solver": "foamRun -solver incompressibleFluid",
+    "openfoam13_note": "OpenFOAM 13 uses the modular foamRun incompressibleFluid solver path for this steady incompressible setup; this is the current simpleFoam-style development path.",
+    "aircraft_boundary": "noSlip",
+    "force_coeffs": {
+      "enabled_for_probe": true,
+      "lift_dir": [0, 0, 1],
+      "drag_dir": [1, 0, 0],
+      "pitch_axis": [0, 1, 0],
+      "reference_policy": "development placeholder only until aerodynamic reference area and moment center are formalized"
+    },
+    "latest_probe": {
+      "run_root": "custom_cfd_mesher_experiment/runs/hybrid_shell_gmsh_simplefoam_forcecoeffs_probe_v0_1_20260624",
+      "variant": "fcv04_compact_wide_tail",
+      "result": "failed_non_scoring",
+      "failure_summary": "laminar no-slip steady solve diverged by time step 2 and hit pressure-solver floating point exception",
+      "failed_checks": [
+        "solver_completed",
+        "fatal_error",
+        "local_continuity",
+        "velocity_final_residual"
+      ]
+    }
+  },
+  "evidence": {
+    "latest_run_root": "custom_cfd_mesher_experiment/runs/hybrid_shell_gmsh_exact_merge_five_variant_netgen_v0_1_20260624",
+    "summary_json": "custom_cfd_mesher_experiment/runs/hybrid_shell_gmsh_exact_merge_five_variant_netgen_v0_1_20260624/hybrid_summary.json",
+    "summary_csv": "custom_cfd_mesher_experiment/runs/hybrid_shell_gmsh_exact_merge_five_variant_netgen_v0_1_20260624/hybrid_summary.csv",
+    "contact_sheet": "custom_cfd_mesher_experiment/runs/hybrid_shell_gmsh_exact_merge_five_variant_netgen_v0_1_20260624/aircraft_iso_contact_sheet.png",
+    "result": {
+      "variant_count": 5,
+      "strict_checkmesh_pass_count": 5,
+      "potentialFoam_pass_count": 5,
+      "cell_range": [752726, 992789],
+      "severe_nonorthogonal_face_range": [178, 470],
+      "runtime_seconds_range": [103.218, 141.478]
+    }
+  },
+  "known_limitations": [
+    "This backend is proven on conditioned watertight surfaces, not arbitrary raw exporter STLs.",
+    "The farfield policy is currently fixed-padding in the evidence run; dynamic optimizer-scale farfield sizing still needs to be ported into this hybrid driver.",
+    "The steady no-slip OpenFOAM probe fails quickly and is not suitable for scoring.",
+    "The current three prism layers are a near-wall development shell, not a validated y-plus/wall-treatment strategy.",
+    "No force or moment coefficient from this backend is scoring-valid yet."
+  ],
+  "next_required_work": [
+    "Add raw-exporter surface conditioning/gating as an explicit upstream step before hybrid meshing.",
+    "Port dynamic farfield sizing into the hybrid driver.",
+    "Localize the pressure-solver failure in the no-slip steady probe and test whether the issue is wall treatment, single farfield boundary policy, prism transition, or solver setup.",
+    "Define reference area, reference length, and moment center from candidate geometry before any force coefficient is used by the optimizer."
+  ]
+}

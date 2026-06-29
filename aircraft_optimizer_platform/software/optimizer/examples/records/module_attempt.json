@@ -1,0 +1,20 @@
+{
+  "module_attempt_id": "module_example_0001",
+  "evaluation_id": "evaluation_example_0001",
+  "candidate_id": "candidate_example_0001",
+  "module_name": "mock_geometry_metrics",
+  "module_version": "0.1.0",
+  "module_kind": "analysis",
+  "status": "success",
+  "inputs": {
+    "geometry_provider_result_id": "geometry_example_0001"
+  },
+  "metrics": {
+    "mock.geometry_reference_valid": {
+      "value": true,
+      "unit": null,
+      "confidence": 1.0,
+      "source": "mock_module"
+    }
+  }
+}

@@ -1,0 +1,127 @@
+{
+  "schema": "cfd_pilot_loop_gen2_3_variants.v0_1",
+  "description": "Second bounded optimizer pilot-loop generation: three children generated from gen-1 rough-CFD results. This intentionally stops after three candidates so the first pilot loop remains reviewable.",
+  "source_results": {
+    "run_root": "custom_cfd_mesher_experiment/runs/pilot_loop_gen1_6_snappy_firstpass_20260626",
+    "optimizer_workspace": "aircraft_optimizer_platform/runs/pilot_loop_gen1_6_snappy_firstpass_import",
+    "alpha_summary": "custom_cfd_mesher_experiment/runs/pilot_loop_gen1_6_snappy_firstpass_20260626/alpha_sweep_summary_first_pass_end60_np8.json",
+    "selection_policy": "Exploit gen-1 winner opg1_06; retain one blended child with opg1_01-style narrower tip and higher sweep to avoid overfitting a single high-lift result."
+  },
+  "source_rhai": "dual_contouring/direct_sparse_sdf_mc_experiment/scratch/aircraft_oml_inlet_native_frame.rhai",
+  "inlet_mode": "faired_cap",
+  "export_preset": "direct_sparse_oml_fast",
+  "units": "mm",
+  "candidate_scope": {
+    "family": "same faired-cap fixed-wing UAV family as the shv and opg1 rough-CFD runs",
+    "topology_changes": "none",
+    "primary_variables": [
+      "wing_span",
+      "wing_sweep_deg",
+      "wing_root_chord",
+      "wing_tip_chord",
+      "wing_le_x"
+    ],
+    "secondary_variables": [
+      "htail_span",
+      "htail_root_chord",
+      "htail_tip_chord",
+      "vtail_span"
+    ],
+    "notes": [
+      "Stop condition for this pilot loop is exactly three gen-2 candidates.",
+      "All candidates remain rough-scoring CFD only; final scoring remains disabled."
+    ]
+  },
+  "variants": [
+    {
+      "id": "opg2_01_opg1_06_span_tip_tune",
+      "description": "Exploit gen-1 winner by adding modest span and tip chord, with slightly aft wing/tail authority to manage Cm.",
+      "parent_id": "opg1_06_shv06_trimmed_high_ld",
+      "mutation_reason": "optimizer exploitation of best gen-1 rough score and best gen-1 L/D",
+      "lineage": {
+        "parent_score": 88.040278272968,
+        "parent_best_ld": 3.575016118477,
+        "mutations": [
+          "wing_span +20 mm",
+          "wing_root_chord -2 mm",
+          "wing_tip_chord +4 mm",
+          "wing_le_x +5 mm",
+          "htail_span +5 mm"
+        ]
+      },
+      "output_stem": "direct_sdf_oml_opg2_01_opg1_06_span_tip_tune_faired_cap",
+      "feature": "aircraft_oml_opg2_01_opg1_06_span_tip_tune_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 840.0,
+        "wing_root_chord": 172.0,
+        "wing_tip_chord": 100.0,
+        "wing_sweep_deg": 16.0,
+        "wing_le_x": 260.0,
+        "htail_span": 445.0,
+        "htail_root_chord": 106.0,
+        "htail_tip_chord": 86.0
+      }
+    },
+    {
+      "id": "opg2_02_opg1_06_drag_trim",
+      "description": "Reduce gen-1 winner area slightly and add sweep/aft placement to test whether L/D holds while reducing moment risk.",
+      "parent_id": "opg1_06_shv06_trimmed_high_ld",
+      "mutation_reason": "optimizer local trade study around drag and pitch moment after gen-1 winner",
+      "lineage": {
+        "parent_score": 88.040278272968,
+        "parent_best_ld": 3.575016118477,
+        "mutations": [
+          "wing_root_chord -4 mm",
+          "wing_tip_chord -6 mm",
+          "wing_sweep_deg +2 deg",
+          "wing_le_x +7 mm",
+          "htail_span +5 mm"
+        ]
+      },
+      "output_stem": "direct_sdf_oml_opg2_02_opg1_06_drag_trim_faired_cap",
+      "feature": "aircraft_oml_opg2_02_opg1_06_drag_trim_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 820.0,
+        "wing_root_chord": 170.0,
+        "wing_tip_chord": 90.0,
+        "wing_sweep_deg": 18.0,
+        "wing_le_x": 262.0,
+        "htail_span": 445.0,
+        "htail_root_chord": 106.0,
+        "htail_tip_chord": 86.0
+      }
+    },
+    {
+      "id": "opg2_03_opg1_06_shv09_blend",
+      "description": "Blend the gen-1 winner back toward the stable long-span swept shv09/opg1_01 family with less tip chord and more sweep.",
+      "parent_id": "opg1_06_shv06_trimmed_high_ld",
+      "secondary_parent_id": "opg1_01_shv09_span_tip_plus",
+      "mutation_reason": "optimizer crossover-style blend to avoid overfitting one high-lift/wide-tip result",
+      "lineage": {
+        "parent_score": 88.040278272968,
+        "secondary_parent_score": 87.180670464862,
+        "mutations": [
+          "wing_span +30 mm from opg1_06",
+          "wing_root_chord -8 mm from opg1_06",
+          "wing_tip_chord -18 mm from opg1_06",
+          "wing_sweep_deg +4 deg from opg1_06",
+          "wing_le_x -5 mm from opg1_06",
+          "htail_span held at 440 mm"
+        ]
+      },
+      "output_stem": "direct_sdf_oml_opg2_03_opg1_06_shv09_blend_faired_cap",
+      "feature": "aircraft_oml_opg2_03_opg1_06_shv09_blend_faired_cap_native_frame",
+      "overrides": {
+        "wing_span": 850.0,
+        "wing_root_chord": 166.0,
+        "wing_tip_chord": 78.0,
+        "wing_sweep_deg": 20.0,
+        "wing_le_x": 250.0,
+        "htail_span": 440.0,
+        "htail_root_chord": 106.0,
+        "htail_tip_chord": 86.0,
+        "vtail_span": 260.0
+      }
+    }
+  ]
+}
