@@ -1,9 +1,9 @@
 // Flight performance: rate of climb, range/endurance, and glide analysis.
 #![allow(dead_code)] // Performance result fields — not all displayed in current UI
 
-use crate::aero::flight_condition::FlightCondition;
 use crate::aero::drag::DragPolarResult;
-use crate::aero::propulsion::{PropulsionSetup, PropulsionResult};
+use crate::aero::flight_condition::FlightCondition;
+use crate::aero::propulsion::{PropulsionResult, PropulsionSetup};
 
 // ── ISA density helper (replicated inline) ────────────────────────────────────
 
@@ -319,9 +319,9 @@ pub fn compute_glide(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::aero::drag::{CD0Breakdown, DragPolarResult};
     use crate::aero::flight_condition::FlightCondition;
     use crate::aero::propulsion_db::PropulsionDatabase;
-    use crate::aero::drag::{DragPolarResult, CD0Breakdown};
 
     fn make_drag_polar() -> DragPolarResult {
         DragPolarResult {

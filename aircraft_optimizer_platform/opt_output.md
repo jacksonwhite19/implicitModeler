@@ -6,6 +6,10 @@ Date: 2026-06-19
 
 Build the optimizer as a campaign orchestration and evidence system, not as an aircraft geometry application. The existing implicit CAD/SDF system remains the geometry provider. The new platform owns design-variable definitions, candidate lifecycle, analysis orchestration, scoring, traceability, artifact capture, optimizer state, dashboards, and later MDAO/ML data readiness.
 
+The longer-term implicit-kernel direction is documented in `implicit_aircraft_design_roadmap.md`. That overlay keeps the same adapter boundary while making the implicit geometry kernel the canonical aircraft representation. STLs, meshes, OpenFOAM cases, datasets, screenshots, dashboards, and AI inputs are derived artifacts. The Phase 0 research gate for local SDF conditioning is recorded in `research/phase0_sdf_conditioning_literature_review.md`: diagnostic-first local conditioning design is unblocked, while production SDF-native CFD and AI-surrogate implementation remain deferred.
+
+The formal geometry architecture split is `canonical geometry graph -> conditioned geometry cache -> clients`. The canonical graph owns the aircraft definition. The conditioned geometry cache is derived, disposable, rebuildable, versioned, incrementally updateable, and query optimized. Downstream clients should consume typed geometry queries or derived artifacts rather than coupling directly to procedural geometry internals.
+
 The central architecture decision is to make every major capability a replaceable module behind typed contracts:
 
 - Geometry is consumed through a geometry-provider adapter.

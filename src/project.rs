@@ -1,13 +1,13 @@
 // Project file management
 
+use crate::sdf::spine::LongitudinalSplines;
+use crate::ui::spline_editor::SplineEditorState;
+use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::io;
 use std::path::Path;
-use indexmap::IndexMap;
-use crate::ui::spline_editor::SplineEditorState;
-use crate::sdf::spine::LongitudinalSplines;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ManufacturingPreset {
@@ -74,7 +74,9 @@ pub struct WorkflowConfig {
     pub variants: Vec<DesignVariant>,
 }
 
-fn default_true() -> bool { true }
+fn default_true() -> bool {
+    true
+}
 
 pub fn apply_assembly_constraints(
     dimensions: &mut IndexMap<String, f64>,
@@ -84,11 +86,14 @@ pub fn apply_assembly_constraints(
 
     for constraint in constraints.iter().filter(|c| c.enabled) {
         let value = match &constraint.formula {
-            AssemblyConstraintFormula::CopyOffset { source, scale, offset } => {
-                dimensions.get(source).map(|v| v * scale + offset)
-            }
+            AssemblyConstraintFormula::CopyOffset {
+                source,
+                scale,
+                offset,
+            } => dimensions.get(source).map(|v| v * scale + offset),
             AssemblyConstraintFormula::AverageOffset { sources, offset } => {
-                let values: Option<Vec<f64>> = sources.iter()
+                let values: Option<Vec<f64>> = sources
+                    .iter()
                     .map(|name| dimensions.get(name).copied())
                     .collect();
                 values.and_then(|vals| {
@@ -111,22 +116,30 @@ pub fn apply_assembly_constraints(
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum Axis { X, Y, Z }
+pub enum Axis {
+    X,
+    Y,
+    Z,
+}
 
 impl Axis {
     pub fn to_index(&self) -> u32 {
-        match self { Axis::X => 0, Axis::Y => 1, Axis::Z => 2 }
+        match self {
+            Axis::X => 0,
+            Axis::Y => 1,
+            Axis::Z => 2,
+        }
     }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SectionPlane {
-    pub axis:     Axis,
+    pub axis: Axis,
     pub position: f32,
-    pub enabled:  bool,
+    pub enabled: bool,
     /// When false, keeps coord >= position. When true, keeps coord <= position (flipped).
     #[serde(default)]
-    pub flip:     bool,
+    pub flip: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -138,7 +151,12 @@ pub struct SectionView {
 impl Default for SectionView {
     fn default() -> Self {
         Self {
-            plane_a: Some(SectionPlane { axis: Axis::X, position: 0.0, enabled: false, flip: false }),
+            plane_a: Some(SectionPlane {
+                axis: Axis::X,
+                position: 0.0,
+                enabled: false,
+                flip: false,
+            }),
             plane_b: None,
         }
     }

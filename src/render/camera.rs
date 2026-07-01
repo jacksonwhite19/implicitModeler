@@ -92,11 +92,7 @@ impl Camera {
         phi = (phi - delta_y * 0.01).clamp(0.01, std::f32::consts::PI - 0.01);
 
         // Convert back to cartesian
-        let new_direction = Vec3::new(
-            phi.sin() * theta.cos(),
-            phi.sin() * theta.sin(),
-            phi.cos(),
-        );
+        let new_direction = Vec3::new(phi.sin() * theta.cos(), phi.sin() * theta.sin(), phi.cos());
 
         self.eye = self.target + new_direction * radius;
     }

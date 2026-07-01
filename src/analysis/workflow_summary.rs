@@ -1,6 +1,6 @@
+use crate::aero::{DragPolarResult, StaticMarginResult, TrimResult};
 use crate::analysis::print_analysis::{PrintAnalysisResult, PrintAnalysisSettings};
 use crate::analysis::thickness::ThicknessResult;
-use crate::aero::{DragPolarResult, StaticMarginResult, TrimResult};
 use crate::geometry_analysis::CgSensitivityResult;
 use crate::scripting::MassPoint;
 
@@ -68,11 +68,27 @@ pub fn summarize_manufacturing(
 
     let (overhang_area_mm2, critical_overhang_area_mm2, issue_errors, issue_warnings) =
         if let Some(result) = print {
-            let errors = result.features.issues.iter()
-                .filter(|i| matches!(i.severity, crate::analysis::print_analysis::IssueSeverity::Error))
+            let errors = result
+                .features
+                .issues
+                .iter()
+                .filter(|i| {
+                    matches!(
+                        i.severity,
+                        crate::analysis::print_analysis::IssueSeverity::Error
+                    )
+                })
                 .count();
-            let warnings = result.features.issues.iter()
-                .filter(|i| matches!(i.severity, crate::analysis::print_analysis::IssueSeverity::Warning))
+            let warnings = result
+                .features
+                .issues
+                .iter()
+                .filter(|i| {
+                    matches!(
+                        i.severity,
+                        crate::analysis::print_analysis::IssueSeverity::Warning
+                    )
+                })
                 .count();
 
             if result.overhang.critical_overhang_area_mm2 > 0.0 || errors > 0 {
@@ -86,12 +102,14 @@ pub fn summarize_manufacturing(
             if result.overhang.overhang_area_mm2 > 0.0 {
                 notes.push(format!(
                     "Overhang area {:.0} mm² with {:.0} mm³ estimated support.",
-                    result.overhang.overhang_area_mm2,
-                    result.overhang.support_volume_estimate_mm3
+                    result.overhang.overhang_area_mm2, result.overhang.support_volume_estimate_mm3
                 ));
             }
             if errors > 0 || warnings > 0 {
-                notes.push(format!("Detected {} errors and {} warnings.", errors, warnings));
+                notes.push(format!(
+                    "Detected {} errors and {} warnings.",
+                    errors, warnings
+                ));
             }
 
             (
@@ -190,8 +208,11 @@ pub fn summarize_flight(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::analysis::print_analysis::{FeatureDetectionResult, OrientationResult, OverhangResult, PrintAnalysisResult, SurfacePoint};
-    use crate::aero::{StaticMarginResult, StabilityCategory};
+    use crate::aero::{StabilityCategory, StaticMarginResult};
+    use crate::analysis::print_analysis::{
+        FeatureDetectionResult, OrientationResult, OverhangResult, PrintAnalysisResult,
+        SurfacePoint,
+    };
     use glam::Vec3;
 
     #[test]
@@ -204,11 +225,8 @@ mod tests {
             bounds_max: Vec3::ONE,
             resolution: 1,
         };
-        let summary = summarize_manufacturing(
-            Some(&thickness),
-            None,
-            &PrintAnalysisSettings::default(),
-        );
+        let summary =
+            summarize_manufacturing(Some(&thickness), None, &PrintAnalysisSettings::default());
         assert_eq!(summary.status, SummaryStatus::Fail);
     }
 
@@ -249,8 +267,14 @@ mod tests {
                 bounds_min: Vec3::ZERO,
                 bounds_max: Vec3::ONE,
             },
-            orientation: OrientationResult { candidates: vec![], recommended: 0 },
-            features: FeatureDetectionResult { issues: vec![], issue_grid: vec![] },
+            orientation: OrientationResult {
+                candidates: vec![],
+                recommended: 0,
+            },
+            features: FeatureDetectionResult {
+                issues: vec![],
+                issue_grid: vec![],
+            },
         };
         let thickness = ThicknessResult {
             min_thickness: 2.0,
@@ -260,7 +284,11 @@ mod tests {
             bounds_max: Vec3::ONE,
             resolution: 1,
         };
-        let summary = summarize_manufacturing(Some(&thickness), Some(&print), &PrintAnalysisSettings::default());
+        let summary = summarize_manufacturing(
+            Some(&thickness),
+            Some(&print),
+            &PrintAnalysisSettings::default(),
+        );
         assert_eq!(summary.status, SummaryStatus::Warning);
     }
 }

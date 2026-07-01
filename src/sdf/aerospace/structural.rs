@@ -2,12 +2,12 @@
 // No new Sdf structs — every function returns an Arc<dyn Sdf> assembled from
 // the existing primitive/transform/boolean toolkit.
 
-use glam::{Vec3, Quat};
+use crate::sdf::Sdf;
+use crate::sdf::primitives::{Cylinder, SdfBox};
+use crate::sdf::transforms::{Rotate, Translate};
+use glam::{Quat, Vec3};
 use std::f32::consts::FRAC_PI_2;
 use std::sync::Arc;
-use crate::sdf::Sdf;
-use crate::sdf::primitives::{SdfBox, Cylinder};
-use crate::sdf::transforms::{Translate, Rotate};
 
 /// A thin slab centred at `span_pos` on the Y axis, extending far in X and Z.
 ///
@@ -60,17 +60,21 @@ mod tests {
     fn test_rib_slab_wide() {
         // Slab must cover wide chord/thickness extents
         let slab = rib_slab(0.0, 0.5);
-        assert!(slab.distance(Vec3::new(100.0, 0.0, 50.0)) < 0.0,
-            "slab should contain large X/Z offsets");
+        assert!(
+            slab.distance(Vec3::new(100.0, 0.0, 50.0)) < 0.0,
+            "slab should contain large X/Z offsets"
+        );
     }
 
     #[test]
     fn test_spar_cylinder_axis() {
         let spar = spar_cylinder(3.0, 0.5);
         // A point on the Y axis at the chord position should be inside the spar tube
-        assert!(spar.distance(Vec3::new(3.0,  0.0, 0.0)) < 0.0);
-        assert!(spar.distance(Vec3::new(3.0, 50.0, 0.0)) < 0.0,
-            "spar should extend along Y");
+        assert!(spar.distance(Vec3::new(3.0, 0.0, 0.0)) < 0.0);
+        assert!(
+            spar.distance(Vec3::new(3.0, 50.0, 0.0)) < 0.0,
+            "spar should extend along Y"
+        );
         // A point displaced radially beyond the radius should be outside
         assert!(spar.distance(Vec3::new(3.0 + 1.0, 0.0, 0.0)) > 0.0);
     }
@@ -80,7 +84,9 @@ mod tests {
         // Verify the spar is NOT still along Z (rotation worked)
         let spar = spar_cylinder(0.0, 0.5);
         // A point far along Z (but on spar axis in XY) should be outside the tube
-        assert!(spar.distance(Vec3::new(0.0, 0.0, 5.0)) > 0.0,
-            "spar should not extend along Z");
+        assert!(
+            spar.distance(Vec3::new(0.0, 0.0, 5.0)) > 0.0,
+            "spar should not extend along Z"
+        );
     }
 }

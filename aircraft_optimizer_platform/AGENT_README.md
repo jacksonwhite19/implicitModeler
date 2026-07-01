@@ -21,6 +21,8 @@ Do not remove or rename these without explicit user approval:
 - `master_platform_manifest.md`
 - `dependency_inventory.md`
 - `environment_strategy.md`
+- `implicit_aircraft_design_roadmap.md`
+- `research/phase0_sdf_conditioning_literature_review.md`
 - `oml_export_contract.md`
 - `roadmap.md`
 - `progress_tracker.md`
@@ -31,6 +33,10 @@ Do not remove or rename these without explicit user approval:
 
 - Do not write production optimizer code unless the user asks to begin implementation.
 - Do not redesign the existing implicit CAD/SDF aircraft modeling system.
+- Treat the implicit geometry kernel as the canonical aircraft representation; meshes, STLs, OpenFOAM cases, dashboards, datasets, and AI inputs are derived artifacts.
+- Treat any conditioned geometry cache as derived, disposable, rebuildable, versioned state between the canonical graph and downstream clients.
+- Do not begin production SDF-native CFD or PhysicsNeMo surrogate implementation until the optimizer loop, local SDF conditioning, CFD data schema, and validation evidence are ready.
+- Phase 1 local SDF conditioning design is unblocked by `research/phase0_sdf_conditioning_literature_review.md`, but implementation should remain diagnostic-first and locally gated.
 - Treat geometry generation as an external provider consumed through an adapter.
 - Treat OML STL export as a separate adapter from geometry definition.
 - Treat OML STL as a surface artifact, not as a solver-ready CFD mesh.

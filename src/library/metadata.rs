@@ -2,12 +2,12 @@
 
 #[derive(Default, Clone, Debug)]
 pub struct ComponentMetadata {
-    pub name:        Option<String>,
+    pub name: Option<String>,
     pub description: Option<String>,
-    pub author:      Option<String>,
-    pub version:     Option<String>,
-    pub tags:        Vec<String>,
-    pub preview_fn:  Option<String>,
+    pub author: Option<String>,
+    pub version: Option<String>,
+    pub tags: Vec<String>,
+    pub preview_fn: Option<String>,
 }
 
 impl ComponentMetadata {
@@ -18,17 +18,25 @@ impl ComponentMetadata {
             let trimmed = line.trim();
             let rest = match trimmed.strip_prefix("//!") {
                 Some(r) => r.trim(),
-                None    => break,
+                None => break,
             };
-            if let Some(v) = rest.strip_prefix("name:")        { meta.name        = Some(v.trim().to_string()); }
-            else if let Some(v) = rest.strip_prefix("description:") { meta.description = Some(v.trim().to_string()); }
-            else if let Some(v) = rest.strip_prefix("author:")  { meta.author      = Some(v.trim().to_string()); }
-            else if let Some(v) = rest.strip_prefix("version:") { meta.version     = Some(v.trim().to_string()); }
-            else if let Some(v) = rest.strip_prefix("tags:")    {
-                meta.tags = v.split(',').map(|s| s.trim().to_string())
-                             .filter(|s| !s.is_empty()).collect();
+            if let Some(v) = rest.strip_prefix("name:") {
+                meta.name = Some(v.trim().to_string());
+            } else if let Some(v) = rest.strip_prefix("description:") {
+                meta.description = Some(v.trim().to_string());
+            } else if let Some(v) = rest.strip_prefix("author:") {
+                meta.author = Some(v.trim().to_string());
+            } else if let Some(v) = rest.strip_prefix("version:") {
+                meta.version = Some(v.trim().to_string());
+            } else if let Some(v) = rest.strip_prefix("tags:") {
+                meta.tags = v
+                    .split(',')
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect();
+            } else if let Some(v) = rest.strip_prefix("preview_fn:") {
+                meta.preview_fn = Some(v.trim().to_string());
             }
-            else if let Some(v) = rest.strip_prefix("preview_fn:") { meta.preview_fn = Some(v.trim().to_string()); }
         }
         meta
     }
@@ -37,8 +45,8 @@ impl ComponentMetadata {
 /// Extract `fn` declaration signatures by scanning source text for `fn name(params)` patterns.
 #[derive(Clone, Debug)]
 pub struct FunctionSignature {
-    pub name:        String,
-    pub params:      Vec<String>,
+    pub name: String,
+    pub params: Vec<String>,
     pub description: Option<String>,
 }
 
@@ -60,8 +68,11 @@ pub fn extract_function_signatures(source: &str) -> Vec<FunctionSignature> {
                     let params: Vec<String> = if params_str.trim().is_empty() {
                         Vec::new()
                     } else {
-                        params_str.split(',').map(|p| p.trim().to_string())
-                                  .filter(|p| !p.is_empty()).collect()
+                        params_str
+                            .split(',')
+                            .map(|p| p.trim().to_string())
+                            .filter(|p| !p.is_empty())
+                            .collect()
                     };
                     sigs.push(FunctionSignature {
                         name,

@@ -1,17 +1,18 @@
 // Aerodynamic inlet geometry: NACA flush inlets, EDF buried inlets, inlet lips,
 // EDF duct system, and exhaust nozzles.
 
-use glam::{Vec2, Vec3};
-use std::sync::Arc;
 use crate::sdf::Sdf;
+use crate::sdf::aerospace::{Section2D, SectionBounds2D};
 use crate::sdf::booleans::{Intersect, Subtract, Union};
+use crate::sdf::conditioning::{SdfBounds, SdfNodeMetadata, union_metadata_bounds};
 use crate::sdf::patterns::Mirror;
 use crate::sdf::profiles::{NGonProfile, RectProfile, RoundedRectProfile, SplineProfile};
 use crate::sdf::query::gradient as sdf_gradient;
 use crate::sdf::sweep::{PolylinePath, SweepPath, project_point_to_surface_with_offset_and_normal};
 use crate::sdf::transforms::{Offset, Translate};
-use crate::sdf::aerospace::Section2D;
+use glam::{Vec2, Vec3};
 use std::any::Any;
+use std::sync::Arc;
 
 // ── Smooth helpers ────────────────────────────────────────────────────────────
 
@@ -32,7 +33,11 @@ pub fn smooth_min(a: f32, b: f32, k: f32) -> f32 {
 /// Returns (forward, right, up).
 fn make_frame(forward: Vec3) -> (Vec3, Vec3, Vec3) {
     let fwd = forward.normalize();
-    let world_up = if fwd.dot(Vec3::Z).abs() < 0.9 { Vec3::Z } else { Vec3::Y };
+    let world_up = if fwd.dot(Vec3::Z).abs() < 0.9 {
+        Vec3::Z
+    } else {
+        Vec3::Y
+    };
     let right = fwd.cross(world_up).normalize();
     let up = right.cross(fwd).normalize();
     (fwd, right, up)
@@ -45,9 +50,134 @@ fn to_local(p: Vec3, origin: Vec3, forward: Vec3) -> Vec3 {
     Vec3::new(rel.dot(fwd), rel.dot(right), rel.dot(up))
 }
 
+fn approximate_metadata_with_bounds(
+    node_kind: impl Into<String>,
+    bounds: Option<SdfBounds>,
+) -> SdfNodeMetadata {
+    let mut metadata = SdfNodeMetadata::new(node_kind).with_approximate_bounds();
+    if let Some(bounds) = bounds.filter(SdfBounds::is_valid) {
+        metadata = metadata.with_support_bounds(bounds);
+    }
+    metadata
+}
+
+fn local_box_bounds(
+    origin: Vec3,
+    x_axis: Vec3,
+    y_axis: Vec3,
+    z_axis: Vec3,
+    local_min: Vec3,
+    local_max: Vec3,
+) -> Option<SdfBounds> {
+    if !origin.is_finite()
+        || !x_axis.is_finite()
+        || !y_axis.is_finite()
+        || !z_axis.is_finite()
+        || x_axis.length_squared() < 1e-8
+        || y_axis.length_squared() < 1e-8
+        || z_axis.length_squared() < 1e-8
+    {
+        return None;
+    }
+
+    let x_axis = x_axis.normalize();
+    let y_axis = y_axis.normalize();
+    let z_axis = z_axis.normalize();
+    let mut points = Vec::with_capacity(8);
+    for x in [local_min.x, local_max.x] {
+        for y in [local_min.y, local_max.y] {
+            for z in [local_min.z, local_max.z] {
+                points.push(origin + x_axis * x + y_axis * y + z_axis * z);
+            }
+        }
+    }
+    SdfBounds::from_points(&points)
+}
+
+fn framed_box_bounds(
+    origin: Vec3,
+    forward: Vec3,
+    local_min: Vec3,
+    local_max: Vec3,
+) -> Option<SdfBounds> {
+    let (fwd, right, up) = make_frame(forward);
+    local_box_bounds(origin, fwd, right, up, local_min, local_max)
+}
+
+fn section_pair_bounds(
+    start_profile: &dyn Section2D,
+    end_profile: &dyn Section2D,
+) -> Option<SectionBounds2D> {
+    match (start_profile.bounds_2d(), end_profile.bounds_2d()) {
+        (Some(start), Some(end)) => Some(start.union(&end)),
+        (Some(start), None) => Some(start),
+        (None, Some(end)) => Some(end),
+        (None, None) => None,
+    }
+}
+
+fn support_bounds_expanded_by_section(
+    path: &dyn SweepPath,
+    start_profile: &dyn Section2D,
+    end_profile: &dyn Section2D,
+) -> Option<SdfBounds> {
+    let section_radius = section_pair_bounds(start_profile, end_profile)?.max_extent();
+    path.support_bounds()
+        .map(|bounds| bounds.expanded(section_radius))
+}
+
 // ── NacaInlet ─────────────────────────────────────────────────────────────────
 
 /// NACA submerged flush inlet (scoop-shaped void in the OML).
+fn endpoint_duct_feature_bounds(
+    path: &dyn SweepPath,
+    frame_samples: &[FrameSample],
+    t: f32,
+    half_width: f32,
+    half_height: f32,
+) -> Option<SdfBounds> {
+    let center = path.evaluate(t);
+    let tangent = path.tangent(t).normalize_or_zero();
+    if tangent.length_squared() < 1e-8 {
+        return None;
+    }
+    let (normal, binormal) = frame_at(frame_samples, tangent, t);
+    let axial_half = half_width.max(half_height).max(1.0e-3) * 0.5;
+    local_box_bounds(
+        center,
+        tangent,
+        normal,
+        binormal,
+        Vec3::new(-axial_half, -half_width.abs(), -half_height.abs()),
+        Vec3::new(axial_half, half_width.abs(), half_height.abs()),
+    )
+}
+
+fn endpoint_profile_feature_bounds(
+    path: &dyn SweepPath,
+    frame_samples: &[FrameSample],
+    t: f32,
+    profile: &dyn Section2D,
+) -> Option<(SdfBounds, f32)> {
+    let profile_bounds = profile.bounds_2d()?;
+    let extent = profile_bounds.max_extent().max(1.0e-3);
+    let center = path.evaluate(t);
+    let tangent = path.tangent(t).normalize_or_zero();
+    if tangent.length_squared() < 1e-8 {
+        return None;
+    }
+    let (normal, binormal) = frame_at(frame_samples, tangent, t);
+    let bounds = local_box_bounds(
+        center,
+        tangent,
+        normal,
+        binormal,
+        Vec3::new(-extent * 0.5, profile_bounds.min.x, profile_bounds.min.y),
+        Vec3::new(extent * 0.5, profile_bounds.max.x, profile_bounds.max.y),
+    )?;
+    Some((bounds, extent))
+}
+
 pub struct NacaInlet {
     pub width: f32,
     pub length: f32,
@@ -95,15 +225,71 @@ impl Sdf for NacaInlet {
         );
         d_interior
     }
+
+    fn metadata(&self) -> SdfNodeMetadata {
+        let x_axis = -self.flow_direction;
+        let z_axis = self.normal;
+        let y_axis = z_axis.cross(x_axis);
+        let smooth_pad = 2.0;
+        let bounds = local_box_bounds(
+            self.position,
+            x_axis,
+            y_axis,
+            z_axis,
+            Vec3::new(
+                -smooth_pad,
+                -self.width * 0.5 - smooth_pad,
+                -self.depth - smooth_pad,
+            ),
+            Vec3::new(
+                self.length + smooth_pad,
+                self.width * 0.5 + smooth_pad,
+                smooth_pad,
+            ),
+        );
+        let mut metadata = approximate_metadata_with_bounds("naca_inlet", bounds.clone())
+            .with_f32_parameters([
+                self.width,
+                self.length,
+                self.depth,
+                self.ramp_angle_deg,
+                self.position.x,
+                self.position.y,
+                self.position.z,
+                self.normal.x,
+                self.normal.y,
+                self.normal.z,
+                self.flow_direction.x,
+                self.flow_direction.y,
+                self.flow_direction.z,
+            ]);
+        if let Some(bounds) = bounds {
+            metadata = metadata.with_feature_region(
+                "naca_inlet.ramp_and_lip",
+                bounds,
+                self.width.abs().min(self.depth.abs()).max(1.0e-3),
+            );
+        }
+        metadata
+    }
 }
 
 // ── InletShape ────────────────────────────────────────────────────────────────
 
 #[derive(Clone)]
 pub enum InletShape {
-    Circular { diameter: f32 },
-    Elliptical { width: f32, height: f32 },
-    DShaped { width: f32, height: f32, flat_fraction: f32 },
+    Circular {
+        diameter: f32,
+    },
+    Elliptical {
+        width: f32,
+        height: f32,
+    },
+    DShaped {
+        width: f32,
+        height: f32,
+        flat_fraction: f32,
+    },
 }
 
 // ── InletLip ─────────────────────────────────────────────────────────────────
@@ -150,7 +336,11 @@ impl Sdf for InletLip {
                 let torus_d = ((r2_scaled - r_maj).powi(2) + lx.powi(2)).sqrt() - self.lip_radius;
                 torus_d
             }
-            InletShape::DShaped { width, height, flat_fraction } => {
+            InletShape::DShaped {
+                width,
+                height,
+                flat_fraction,
+            } => {
                 let r = width / 2.0;
                 let r_maj = (r - self.lip_radius).max(0.0);
                 let r2 = (ly * ly + lz * lz).sqrt();
@@ -160,6 +350,27 @@ impl Sdf for InletLip {
                 torus_d.max(flat_y - lz)
             }
         }
+    }
+
+    fn metadata(&self) -> SdfNodeMetadata {
+        let section_radius = match &self.shape {
+            InletShape::Circular { diameter } => diameter * 0.5,
+            InletShape::Elliptical { width, height } => (*width).max(*height) * 0.5,
+            InletShape::DShaped { width, height, .. } => (*width).max(*height) * 0.5,
+        } + self.lip_radius.abs();
+        approximate_metadata_with_bounds(
+            "inlet_lip",
+            framed_box_bounds(
+                self.position,
+                self.direction,
+                Vec3::new(-self.lip_radius.abs(), -section_radius, -section_radius),
+                Vec3::new(
+                    self.highlight_to_throat + self.lip_radius.abs(),
+                    section_radius,
+                    section_radius,
+                ),
+            ),
+        )
     }
 }
 
@@ -211,6 +422,21 @@ impl Sdf for EdfDuct {
             self.exhaust_radius,
         );
         d1.min(d2)
+    }
+
+    fn metadata(&self) -> SdfNodeMetadata {
+        let radius = self
+            .inlet_radius
+            .max(self.fan_radius)
+            .max(self.exhaust_radius)
+            .abs();
+        let bounds = SdfBounds::from_points(&[
+            self.inlet_position,
+            self.fan_position,
+            self.exhaust_position,
+        ])
+        .map(|bounds| bounds.expanded(radius));
+        approximate_metadata_with_bounds("edf_duct", bounds)
     }
 }
 
@@ -265,9 +491,11 @@ impl Sdf for SDuct {
             let t1 = (i + 1) as f32 / n as f32;
 
             // Sinusoidal centerline: smoothly curves from inlet to exit
-            let cx0 = self.inlet_center + self.flow_dir * (self.length * t0)
+            let cx0 = self.inlet_center
+                + self.flow_dir * (self.length * t0)
                 + Vec3::new(0.0, self.offset_y, self.offset_z) * smoothstep(t0);
-            let cx1 = self.inlet_center + self.flow_dir * (self.length * t1)
+            let cx1 = self.inlet_center
+                + self.flow_dir * (self.length * t1)
                 + Vec3::new(0.0, self.offset_y, self.offset_z) * smoothstep(t1);
 
             let r0 = self.inlet_r + (self.exit_r - self.inlet_r) * t0;
@@ -276,6 +504,21 @@ impl Sdf for SDuct {
             dist = dist.min(capsule_sdf_tapered(p, cx0, cx1, r0, r1));
         }
         dist
+    }
+
+    fn metadata(&self) -> SdfNodeMetadata {
+        let n = self.segments.max(2);
+        let points: Vec<_> = (0..=n)
+            .map(|i| {
+                let t = i as f32 / n as f32;
+                self.inlet_center
+                    + self.flow_dir * (self.length * t)
+                    + Vec3::new(0.0, self.offset_y, self.offset_z) * smoothstep(t)
+            })
+            .collect();
+        let radius = self.inlet_r.max(self.exit_r).abs();
+        let bounds = SdfBounds::from_points(&points).map(|bounds| bounds.expanded(radius));
+        approximate_metadata_with_bounds("s_duct", bounds)
     }
 }
 
@@ -486,6 +729,21 @@ impl Sdf for SplineTube {
         let t = self.closest_t(p);
         self.signed_distance_at(p, t)
     }
+
+    fn metadata(&self) -> SdfNodeMetadata {
+        let radius = self.start_radius.max(self.end_radius).abs();
+        let path_bounds = self.path.support_bounds();
+        let bounds = path_bounds.clone().map(|bounds| bounds.expanded(radius));
+        let mut fingerprint_values = vec![
+            self.start_radius,
+            self.end_radius,
+            self.smoothness,
+            self.coarse_ts.len() as f32,
+        ];
+        fingerprint_values.extend(self.path.metadata_fingerprint_parameters());
+        approximate_metadata_with_bounds("spline_tube", bounds)
+            .with_f32_parameters(fingerprint_values)
+    }
 }
 
 /// Hollow circular tube with open inlet/outlet. The inner void is extended
@@ -514,11 +772,8 @@ impl HollowSplineTube {
         );
         let start_extension = (start_inner_diameter * 0.6).max(wt * 4.0);
         let end_extension = (end_inner_diameter * 0.6).max(wt * 4.0);
-        let inner_path: Arc<dyn SweepPath> = Arc::new(ExtendedPath::new(
-            path,
-            start_extension,
-            end_extension,
-        ));
+        let inner_path: Arc<dyn SweepPath> =
+            Arc::new(ExtendedPath::new(path, start_extension, end_extension));
         let inner = SplineTube::new(
             inner_path,
             start_inner_diameter,
@@ -534,6 +789,20 @@ impl Sdf for HollowSplineTube {
     fn distance(&self, p: Vec3) -> f32 {
         let outer_d = self.outer.distance(p);
         outer_d.max(-self.inner.distance(p))
+    }
+
+    fn metadata(&self) -> SdfNodeMetadata {
+        let outer_metadata = self.outer.metadata();
+        let inner_metadata = self.inner.metadata();
+        let support_bounds = union_metadata_bounds([&outer_metadata, &inner_metadata]);
+        let mut metadata = SdfNodeMetadata::new("hollow_spline_tube")
+            .with_dependency("outer", outer_metadata)
+            .with_dependency("inner", inner_metadata)
+            .with_approximate_bounds();
+        if let Some(bounds) = support_bounds {
+            metadata = metadata.with_support_bounds(bounds);
+        }
+        metadata
     }
 }
 
@@ -559,11 +828,7 @@ fn build_frame_samples(path: &dyn SweepPath, samples: usize) -> Vec<FrameSample>
         .collect()
 }
 
-fn frame_at(
-    samples: &[FrameSample],
-    tangent: Vec3,
-    t: f32,
-) -> (Vec3, Vec3) {
+fn frame_at(samples: &[FrameSample], tangent: Vec3, t: f32) -> (Vec3, Vec3) {
     if samples.is_empty() {
         let (_, n, b) = make_frame(tangent);
         return (n, b);
@@ -620,8 +885,8 @@ fn ellipse_radial_distance(local: glam::Vec2, half_width: f32, half_height: f32)
     let dir = local / r;
     let boundary_r = 1.0
         / ((dir.x * dir.x) / (half_width * half_width).max(1e-8)
-        + (dir.y * dir.y) / (half_height * half_height).max(1e-8))
-            .sqrt();
+            + (dir.y * dir.y) / (half_height * half_height).max(1e-8))
+        .sqrt();
     r - boundary_r
 }
 
@@ -665,11 +930,23 @@ impl VariableDuct {
     }
 
     fn half_width_at(&self, t: f32) -> f32 {
-        smooth_profile_lerp(self.inlet_half_width, self.outlet_half_width, t, self.smoothness).max(1e-4)
+        smooth_profile_lerp(
+            self.inlet_half_width,
+            self.outlet_half_width,
+            t,
+            self.smoothness,
+        )
+        .max(1e-4)
     }
 
     fn half_height_at(&self, t: f32) -> f32 {
-        smooth_profile_lerp(self.inlet_half_height, self.outlet_half_height, t, self.smoothness).max(1e-4)
+        smooth_profile_lerp(
+            self.inlet_half_height,
+            self.outlet_half_height,
+            t,
+            self.smoothness,
+        )
+        .max(1e-4)
     }
 
     fn profile_distance(&self, p: Vec3, t: f32) -> f32 {
@@ -679,7 +956,8 @@ impl VariableDuct {
         let rel = p - center;
         let axial = rel.dot(tangent);
         let local = glam::Vec2::new(rel.dot(normal), rel.dot(binormal));
-        let profile_d = ellipse_radial_distance(local, self.half_width_at(t), self.half_height_at(t));
+        let profile_d =
+            ellipse_radial_distance(local, self.half_width_at(t), self.half_height_at(t));
 
         if t <= 1e-4 && axial < 0.0 {
             let pd = profile_d.max(0.0);
@@ -697,6 +975,63 @@ impl Sdf for VariableDuct {
     fn distance(&self, p: Vec3) -> f32 {
         let t = self.closest_t(p);
         self.profile_distance(p, t)
+    }
+
+    fn metadata(&self) -> SdfNodeMetadata {
+        let section_radius = self
+            .inlet_half_width
+            .max(self.inlet_half_height)
+            .max(self.outlet_half_width)
+            .max(self.outlet_half_height)
+            .abs();
+        let path_bounds = self.path.support_bounds();
+        let bounds = path_bounds
+            .clone()
+            .map(|bounds| bounds.expanded(section_radius));
+        let mut fingerprint_values = vec![
+            self.inlet_half_width,
+            self.inlet_half_height,
+            self.outlet_half_width,
+            self.outlet_half_height,
+            self.smoothness,
+            self.coarse_ts.len() as f32,
+        ];
+        fingerprint_values.extend(self.path.metadata_fingerprint_parameters());
+        let mut metadata = approximate_metadata_with_bounds("variable_duct", bounds)
+            .with_f32_parameters(fingerprint_values);
+        if let Some(bounds) = endpoint_duct_feature_bounds(
+            self.path.as_ref(),
+            &self.frame_samples,
+            0.0,
+            self.inlet_half_width,
+            self.inlet_half_height,
+        ) {
+            metadata = metadata.with_feature_region(
+                "variable_duct.inlet",
+                bounds,
+                self.inlet_half_width
+                    .min(self.inlet_half_height)
+                    .abs()
+                    .max(1.0e-3),
+            );
+        }
+        if let Some(bounds) = endpoint_duct_feature_bounds(
+            self.path.as_ref(),
+            &self.frame_samples,
+            1.0,
+            self.outlet_half_width,
+            self.outlet_half_height,
+        ) {
+            metadata = metadata.with_feature_region(
+                "variable_duct.outlet",
+                bounds,
+                self.outlet_half_width
+                    .min(self.outlet_half_height)
+                    .abs()
+                    .max(1.0e-3),
+            );
+        }
+        metadata
     }
 }
 
@@ -729,11 +1064,8 @@ impl HollowVariableDuct {
             samples,
             smoothness,
         );
-        let inner_path: Arc<dyn SweepPath> = Arc::new(ExtendedPath::new(
-            path,
-            start_extension,
-            end_extension,
-        ));
+        let inner_path: Arc<dyn SweepPath> =
+            Arc::new(ExtendedPath::new(path, start_extension, end_extension));
         let inner = VariableDuct::new(
             inner_path,
             inlet_width,
@@ -750,6 +1082,20 @@ impl HollowVariableDuct {
 impl Sdf for HollowVariableDuct {
     fn distance(&self, p: Vec3) -> f32 {
         self.outer.distance(p).max(-self.inner.distance(p))
+    }
+
+    fn metadata(&self) -> SdfNodeMetadata {
+        let outer_metadata = self.outer.metadata();
+        let inner_metadata = self.inner.metadata();
+        let support_bounds = union_metadata_bounds([&outer_metadata, &inner_metadata]);
+        let mut metadata = SdfNodeMetadata::new("hollow_variable_duct")
+            .with_dependency("outer", outer_metadata)
+            .with_dependency("inner", inner_metadata)
+            .with_approximate_bounds();
+        if let Some(bounds) = support_bounds {
+            metadata = metadata.with_support_bounds(bounds);
+        }
+        metadata
     }
 }
 
@@ -807,7 +1153,9 @@ impl ProfileDuct {
         let rel = p - center;
         let axial = rel.dot(tangent);
         let local = glam::Vec2::new(rel.dot(normal), rel.dot(binormal));
-        let profile_d = self.start_profile.distance_lerped_2d(self.end_profile.as_ref(), t, local);
+        let profile_d = self
+            .start_profile
+            .distance_lerped_2d(self.end_profile.as_ref(), t, local);
 
         if t <= 1e-4 && axial < 0.0 {
             let pd = profile_d.max(0.0);
@@ -825,6 +1173,37 @@ impl Sdf for ProfileDuct {
     fn distance(&self, p: Vec3) -> f32 {
         let t = self.closest_t(p);
         self.profile_distance(p, t)
+    }
+
+    fn metadata(&self) -> SdfNodeMetadata {
+        let bounds = support_bounds_expanded_by_section(
+            self.path.as_ref(),
+            self.start_profile.as_ref(),
+            self.end_profile.as_ref(),
+        );
+        let mut fingerprint_values = vec![self.coarse_ts.len() as f32];
+        fingerprint_values.extend(self.path.metadata_fingerprint_parameters());
+        fingerprint_values.extend(self.start_profile.metadata_fingerprint_parameters());
+        fingerprint_values.extend(self.end_profile.metadata_fingerprint_parameters());
+        let mut metadata = approximate_metadata_with_bounds("profile_duct", bounds)
+            .with_f32_parameters(fingerprint_values);
+        if let Some((bounds, min_feature_size)) = endpoint_profile_feature_bounds(
+            self.path.as_ref(),
+            &self.frame_samples,
+            0.0,
+            self.start_profile.as_ref(),
+        ) {
+            metadata = metadata.with_feature_region("profile_duct.start", bounds, min_feature_size);
+        }
+        if let Some((bounds, min_feature_size)) = endpoint_profile_feature_bounds(
+            self.path.as_ref(),
+            &self.frame_samples,
+            1.0,
+            self.end_profile.as_ref(),
+        ) {
+            metadata = metadata.with_feature_region("profile_duct.end", bounds, min_feature_size);
+        }
+        metadata
     }
 }
 
@@ -847,19 +1226,10 @@ impl HollowProfileDuct {
         end_extension: f32,
         samples: usize,
     ) -> Self {
-        let outer = ProfileDuct::new(
-            Arc::clone(&path),
-            outer_start,
-            outer_end,
-            samples,
-        );
-        let inner_path: Arc<dyn SweepPath> = Arc::new(ExtendedPath::new(path, start_extension, end_extension));
-        let inner = ProfileDuct::new(
-            inner_path,
-            inner_start,
-            inner_end,
-            samples,
-        );
+        let outer = ProfileDuct::new(Arc::clone(&path), outer_start, outer_end, samples);
+        let inner_path: Arc<dyn SweepPath> =
+            Arc::new(ExtendedPath::new(path, start_extension, end_extension));
+        let inner = ProfileDuct::new(inner_path, inner_start, inner_end, samples);
         Self { outer, inner }
     }
 }
@@ -867,6 +1237,20 @@ impl HollowProfileDuct {
 impl Sdf for HollowProfileDuct {
     fn distance(&self, p: Vec3) -> f32 {
         self.outer.distance(p).max(-self.inner.distance(p))
+    }
+
+    fn metadata(&self) -> SdfNodeMetadata {
+        let outer_metadata = self.outer.metadata();
+        let inner_metadata = self.inner.metadata();
+        let support_bounds = union_metadata_bounds([&outer_metadata, &inner_metadata]);
+        let mut metadata = SdfNodeMetadata::new("hollow_profile_duct")
+            .with_dependency("outer", outer_metadata)
+            .with_dependency("inner", inner_metadata)
+            .with_approximate_bounds();
+        if let Some(bounds) = support_bounds {
+            metadata = metadata.with_support_bounds(bounds);
+        }
+        metadata
     }
 }
 
@@ -938,7 +1322,9 @@ impl Sdf for FixedProfileDuct {
         let axial = rel.dot(tangent);
         let local = Vec2::new(rel.y, rel.z);
         let profile_t = self.profile_t(t);
-        let profile_d = self.start_profile.distance_lerped_2d(self.end_profile.as_ref(), profile_t, local);
+        let profile_d =
+            self.start_profile
+                .distance_lerped_2d(self.end_profile.as_ref(), profile_t, local);
 
         if t <= 1e-4 && axial < 0.0 {
             let pd = profile_d.max(0.0);
@@ -949,6 +1335,15 @@ impl Sdf for FixedProfileDuct {
         } else {
             profile_d
         }
+    }
+
+    fn metadata(&self) -> SdfNodeMetadata {
+        let bounds = support_bounds_expanded_by_section(
+            self.path.as_ref(),
+            self.start_profile.as_ref(),
+            self.end_profile.as_ref(),
+        );
+        approximate_metadata_with_bounds("fixed_profile_duct", bounds)
     }
 }
 
@@ -1002,7 +1397,8 @@ impl HollowFixedProfileDuct {
             morph_end,
             samples,
         );
-        let inner_path: Arc<dyn SweepPath> = Arc::new(ExtendedPath::new(path, start_extension, end_extension));
+        let inner_path: Arc<dyn SweepPath> =
+            Arc::new(ExtendedPath::new(path, start_extension, end_extension));
         let inner = FixedProfileDuct::with_schedule(
             inner_path,
             inner_start,
@@ -1018,6 +1414,20 @@ impl HollowFixedProfileDuct {
 impl Sdf for HollowFixedProfileDuct {
     fn distance(&self, p: Vec3) -> f32 {
         self.outer.distance(p).max(-self.inner.distance(p))
+    }
+
+    fn metadata(&self) -> SdfNodeMetadata {
+        let outer_metadata = self.outer.metadata();
+        let inner_metadata = self.inner.metadata();
+        let support_bounds = union_metadata_bounds([&outer_metadata, &inner_metadata]);
+        let mut metadata = SdfNodeMetadata::new("hollow_fixed_profile_duct")
+            .with_dependency("outer", outer_metadata)
+            .with_dependency("inner", inner_metadata)
+            .with_approximate_bounds();
+        if let Some(bounds) = support_bounds {
+            metadata = metadata.with_support_bounds(bounds);
+        }
+        metadata
     }
 }
 
@@ -1059,7 +1469,9 @@ impl Sdf for StraightProfilePatch {
         let x = local.x;
         let yz = Vec2::new(local.y, local.z);
         let t = (x / self.length).clamp(0.0, 1.0);
-        let profile_d = self.start_profile.distance_lerped_2d(self.end_profile.as_ref(), t, yz);
+        let profile_d = self
+            .start_profile
+            .distance_lerped_2d(self.end_profile.as_ref(), t, yz);
         if x < 0.0 {
             let pd = profile_d.max(0.0);
             (pd * pd + x * x).sqrt()
@@ -1070,6 +1482,19 @@ impl Sdf for StraightProfilePatch {
         } else {
             profile_d
         }
+    }
+
+    fn metadata(&self) -> SdfNodeMetadata {
+        let bounds = section_pair_bounds(self.start_profile.as_ref(), self.end_profile.as_ref())
+            .and_then(|section_bounds| {
+                framed_box_bounds(
+                    self.origin,
+                    self.forward,
+                    Vec3::new(0.0, section_bounds.min.x, section_bounds.min.y),
+                    Vec3::new(self.length, section_bounds.max.x, section_bounds.max.y),
+                )
+            });
+        approximate_metadata_with_bounds("straight_profile_patch", bounds)
     }
 }
 
@@ -1096,15 +1521,26 @@ impl Section2D for OffsetSection {
         self.inner.distance_2d(point) + self.offset
     }
 
+    fn bounds_2d(&self) -> Option<SectionBounds2D> {
+        self.inner
+            .bounds_2d()
+            .map(|bounds| bounds.expanded(self.offset.abs()))
+    }
+
     fn distance_lerped_2d(&self, other: &dyn Section2D, t: f32, point: Vec2) -> f32 {
         self.distance_2d(point) * (1.0 - t) + other.distance_2d(point) * t
     }
 
     fn lerp_to(&self, other: &dyn Section2D, t: f32) -> Arc<dyn Section2D> {
-        Arc::new(OffsetSection::new(self.inner.lerp_to(other, t), self.offset))
+        Arc::new(OffsetSection::new(
+            self.inner.lerp_to(other, t),
+            self.offset,
+        ))
     }
 
-    fn as_any(&self) -> &dyn Any { self }
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 impl ScaledSection {
@@ -1124,15 +1560,27 @@ impl Section2D for ScaledSection {
         self.inner.distance_2d(p) * self.sx.min(self.sy)
     }
 
+    fn bounds_2d(&self) -> Option<SectionBounds2D> {
+        self.inner
+            .bounds_2d()
+            .map(|bounds| bounds.scaled(Vec2::new(self.sx.max(1e-4), self.sy.max(1e-4))))
+    }
+
     fn distance_lerped_2d(&self, other: &dyn Section2D, t: f32, point: Vec2) -> f32 {
         self.distance_2d(point) * (1.0 - t) + other.distance_2d(point) * t
     }
 
     fn lerp_to(&self, other: &dyn Section2D, t: f32) -> Arc<dyn Section2D> {
-        Arc::new(ScaledSection::new(self.inner.lerp_to(other, t), self.sx, self.sy))
+        Arc::new(ScaledSection::new(
+            self.inner.lerp_to(other, t),
+            self.sx,
+            self.sy,
+        ))
     }
 
-    fn as_any(&self) -> &dyn Any { self }
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 struct TransposedSection {
@@ -1150,20 +1598,29 @@ impl Section2D for TransposedSection {
         self.inner.distance_2d(Vec2::new(point.y, point.x))
     }
 
+    fn bounds_2d(&self) -> Option<SectionBounds2D> {
+        self.inner.bounds_2d().map(|bounds| bounds.transposed())
+    }
+
     fn distance_lerped_2d(&self, other: &dyn Section2D, t: f32, point: Vec2) -> f32 {
         self.distance_2d(point) * (1.0 - t) + other.distance_2d(point) * t
     }
 
     fn lerp_to(&self, other: &dyn Section2D, t: f32) -> Arc<dyn Section2D> {
-        let other_inner: Arc<dyn Section2D> = if let Some(o) = other.as_any().downcast_ref::<TransposedSection>() {
-            Arc::clone(&o.inner)
-        } else {
-            other.lerp_to(other, 0.0)
-        };
-        Arc::new(TransposedSection::new(self.inner.lerp_to(other_inner.as_ref(), t)))
+        let other_inner: Arc<dyn Section2D> =
+            if let Some(o) = other.as_any().downcast_ref::<TransposedSection>() {
+                Arc::clone(&o.inner)
+            } else {
+                other.lerp_to(other, 0.0)
+            };
+        Arc::new(TransposedSection::new(
+            self.inner.lerp_to(other_inner.as_ref(), t),
+        ))
     }
 
-    fn as_any(&self) -> &dyn Any { self }
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 #[derive(Clone)]
@@ -1191,7 +1648,11 @@ impl Section2D for PolygonSection {
             let ab = b - a;
             let ap = point - a;
             let len2 = ab.dot(ab);
-            let t = if len2 < 1e-12 { 0.0 } else { (ap.dot(ab) / len2).clamp(0.0, 1.0) };
+            let t = if len2 < 1e-12 {
+                0.0
+            } else {
+                (ap.dot(ab) / len2).clamp(0.0, 1.0)
+            };
             let d2 = (point - (a + ab * t)).length_squared();
             min_d2 = min_d2.min(d2);
 
@@ -1208,6 +1669,10 @@ impl Section2D for PolygonSection {
         sign * min_d2.sqrt()
     }
 
+    fn bounds_2d(&self) -> Option<SectionBounds2D> {
+        SectionBounds2D::from_points(&self.points)
+    }
+
     fn lerp_to(&self, other: &dyn Section2D, t: f32) -> Arc<dyn Section2D> {
         let self_pts = self.points.clone();
         let other_pts = sample_section_outline(other, self.points.len().max(64));
@@ -1216,13 +1681,17 @@ impl Section2D for PolygonSection {
         } else {
             sample_section_outline(self, other_pts.len())
         };
-        let pts = self_pts.into_iter().zip(other_pts)
+        let pts = self_pts
+            .into_iter()
+            .zip(other_pts)
             .map(|(a, b)| a.lerp(b, t))
             .collect();
         Arc::new(PolygonSection::new(pts))
     }
 
-    fn as_any(&self) -> &dyn Any { self }
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 #[derive(Clone)]
@@ -1268,16 +1737,27 @@ impl Section2D for RoundedRectLipProfile {
         d_rr.max(d_floor)
     }
 
+    fn bounds_2d(&self) -> Option<SectionBounds2D> {
+        Some(SectionBounds2D::new(
+            Vec2::new(-self.half_w, -self.half_h),
+            Vec2::new(self.half_w, self.half_h),
+        ))
+    }
+
     fn lerp_to(&self, other: &dyn Section2D, t: f32) -> Arc<dyn Section2D> {
         let other_pts = sample_section_outline(other, self.floor_pts.len().max(64));
         let self_pts = sample_section_outline(self, other_pts.len());
-        let pts = self_pts.into_iter().zip(other_pts)
+        let pts = self_pts
+            .into_iter()
+            .zip(other_pts)
             .map(|(a, b)| a.lerp(b, t))
             .collect();
         Arc::new(PolygonSection::new(pts))
     }
 
-    fn as_any(&self) -> &dyn Any { self }
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 fn sample_section_outline(section: &dyn Section2D, samples: usize) -> Vec<Vec2> {
@@ -1312,10 +1792,12 @@ fn sample_section_outline(section: &dyn Section2D, samples: usize) -> Vec<Vec2> 
         return pts;
     }
     if let Some(profile) = section.as_any().downcast_ref::<NGonProfile>() {
-        return (0..profile.sides).map(|i| {
-            let a = std::f32::consts::TAU * i as f32 / profile.sides as f32;
-            Vec2::new(a.cos() * profile.radius, a.sin() * profile.radius)
-        }).collect();
+        return (0..profile.sides)
+            .map(|i| {
+                let a = std::f32::consts::TAU * i as f32 / profile.sides as f32;
+                Vec2::new(a.cos() * profile.radius, a.sin() * profile.radius)
+            })
+            .collect();
     }
 
     let n = samples.max(48);
@@ -1425,8 +1907,8 @@ fn build_oml_matched_start_profile(
             let u = i as f32 / (n - 1) as f32;
             let x = -half_w + u * (half_w * 2.0);
             let probe = mouth_center + lat * x;
-            let surf_point = sample_surface_along_axis(surface, probe, up, 250.0)
-                .unwrap_or_else(|| {
+            let surf_point =
+                sample_surface_along_axis(surface, probe, up, 250.0).unwrap_or_else(|| {
                     project_point_to_surface_with_offset_and_normal(surface, probe, 0.0).0
                 });
             let target = surf_point + up * face_clearance.max(0.0);
@@ -1452,20 +1934,28 @@ fn build_oml_matched_start_profile(
     }
 
     let min_y = outline.iter().map(|p| p.y).fold(f32::INFINITY, f32::min);
-    let span_y = outline.iter().map(|p| p.y).fold(f32::NEG_INFINITY, f32::max) - min_y;
+    let span_y = outline
+        .iter()
+        .map(|p| p.y)
+        .fold(f32::NEG_INFINITY, f32::max)
+        - min_y;
     let blend_band = (span_y * 0.18).max(2.0);
 
-    let pts = outline.into_iter().map(|p| {
-        if p.y > min_y + blend_band {
-            return p;
-        }
-        let probe = mouth_center + lat * p.x;
-        let (surf_point, normal) = project_point_to_surface_with_offset_and_normal(surface, probe, 0.0);
-        let target = surf_point + normal * face_clearance.max(0.0);
-        let target_y = (target - mouth_center).dot(up);
-        let alpha = ((p.y - min_y) / blend_band).clamp(0.0, 1.0);
-        Vec2::new(p.x, target_y * (1.0 - alpha) + p.y * alpha)
-    }).collect();
+    let pts = outline
+        .into_iter()
+        .map(|p| {
+            if p.y > min_y + blend_band {
+                return p;
+            }
+            let probe = mouth_center + lat * p.x;
+            let (surf_point, normal) =
+                project_point_to_surface_with_offset_and_normal(surface, probe, 0.0);
+            let target = surf_point + normal * face_clearance.max(0.0);
+            let target_y = (target - mouth_center).dot(up);
+            let alpha = ((p.y - min_y) / blend_band).clamp(0.0, 1.0);
+            Vec2::new(p.x, target_y * (1.0 - alpha) + p.y * alpha)
+        })
+        .collect();
     Arc::new(PolygonSection::new(pts))
 }
 
@@ -1482,7 +1972,8 @@ fn build_oml_matched_start_profile_directional(
     let lat = lateral.normalize_or_zero();
     let up = upward.normalize_or_zero();
     let inward_w = inward_world.normalize_or_zero();
-    if lat.length_squared() < 1e-8 || up.length_squared() < 1e-8 || inward_w.length_squared() < 1e-8 {
+    if lat.length_squared() < 1e-8 || up.length_squared() < 1e-8 || inward_w.length_squared() < 1e-8
+    {
         return build_oml_matched_start_profile(
             surface,
             base_section,
@@ -1534,30 +2025,34 @@ fn build_oml_matched_start_profile_directional(
     let ortho_mid = 0.5 * (min_ortho + max_ortho);
     let ortho_half = (0.5 * (max_ortho - min_ortho)).max(1e-4);
 
-    let pts = outline.into_iter().map(|p| {
-        let side = p.dot(inward_2d);
-        if side < max_side - blend_band {
-            return p;
-        }
+    let pts = outline
+        .into_iter()
+        .map(|p| {
+            let side = p.dot(inward_2d);
+            if side < max_side - blend_band {
+                return p;
+            }
 
-        let ortho = p.dot(ortho_2d);
-        let probe = mouth_center
-            + lat * (ortho_2d.x * ortho)
-            + up * (ortho_2d.y * ortho);
-        let surf_point = sample_surface_along_axis(surface, probe, -inward_w, 250.0)
-            .unwrap_or_else(|| project_point_to_surface_with_offset_and_normal(surface, probe, 0.0).0);
-        let target = surf_point - inward_w * face_clearance.max(0.0);
-        let target_local = Vec2::new(
-            (target - mouth_center).dot(lat),
-            (target - mouth_center).dot(up),
-        );
-        let target_side = target_local.dot(inward_2d);
-        let alpha = ((max_side - side) / blend_band).clamp(0.0, 1.0);
-        let ortho_norm = ((ortho - ortho_mid).abs() / ortho_half).clamp(0.0, 1.0);
-        let edge_falloff = 1.0 - smoothstep(((ortho_norm - 0.10) / 0.18).clamp(0.0, 1.0));
-        let solved_side = target_side * ((1.0 - alpha) * edge_falloff) + side * (1.0 - (1.0 - alpha) * edge_falloff);
-        ortho_2d * ortho + inward_2d * solved_side
-    }).collect();
+            let ortho = p.dot(ortho_2d);
+            let probe = mouth_center + lat * (ortho_2d.x * ortho) + up * (ortho_2d.y * ortho);
+            let surf_point = sample_surface_along_axis(surface, probe, -inward_w, 250.0)
+                .unwrap_or_else(|| {
+                    project_point_to_surface_with_offset_and_normal(surface, probe, 0.0).0
+                });
+            let target = surf_point - inward_w * face_clearance.max(0.0);
+            let target_local = Vec2::new(
+                (target - mouth_center).dot(lat),
+                (target - mouth_center).dot(up),
+            );
+            let target_side = target_local.dot(inward_2d);
+            let alpha = ((max_side - side) / blend_band).clamp(0.0, 1.0);
+            let ortho_norm = ((ortho - ortho_mid).abs() / ortho_half).clamp(0.0, 1.0);
+            let edge_falloff = 1.0 - smoothstep(((ortho_norm - 0.10) / 0.18).clamp(0.0, 1.0));
+            let solved_side = target_side * ((1.0 - alpha) * edge_falloff)
+                + side * (1.0 - (1.0 - alpha) * edge_falloff);
+            ortho_2d * ortho + inward_2d * solved_side
+        })
+        .collect();
 
     Arc::new(PolygonSection::new(pts))
 }
@@ -1576,10 +2071,17 @@ fn build_matched_inner_start_profile(
         ));
     }
 
-    if let (Some((outer_half_w, outer_half_h, _)), Some((inner_half_w, inner_half_h, inner_radius))) =
-        (rounded_rect_params(outer_section), rounded_rect_params(inner_section))
-    {
-        if let Some(lip) = matched_outer.as_any().downcast_ref::<RoundedRectLipProfile>() {
+    if let (
+        Some((outer_half_w, outer_half_h, _)),
+        Some((inner_half_w, inner_half_h, inner_radius)),
+    ) = (
+        rounded_rect_params(outer_section),
+        rounded_rect_params(inner_section),
+    ) {
+        if let Some(lip) = matched_outer
+            .as_any()
+            .downcast_ref::<RoundedRectLipProfile>()
+        {
             let n = samples.max(17) | 1;
             let mut floor_pts = Vec::with_capacity(n);
             let bottom_thickness = (outer_half_h - inner_half_h).max(0.5);
@@ -1609,7 +2111,8 @@ fn build_matched_inner_start_profile(
     let outer_ref_pts = sample_section_outline(outer_section, matched_outer_pts.len().max(n));
     let inner_ref_pts = sample_section_outline(inner_section, outer_ref_pts.len());
 
-    let pts = matched_outer_pts.into_iter()
+    let pts = matched_outer_pts
+        .into_iter()
         .zip(outer_ref_pts.into_iter().zip(inner_ref_pts))
         .map(|(matched, (outer_ref, inner_ref))| {
             let outer_len = outer_ref.length();
@@ -1636,21 +2139,37 @@ fn infer_section_wall_thickness(
     }
 
     let outer_min_x = outer_pts.iter().map(|p| p.x).fold(f32::INFINITY, f32::min);
-    let outer_max_x = outer_pts.iter().map(|p| p.x).fold(f32::NEG_INFINITY, f32::max);
+    let outer_max_x = outer_pts
+        .iter()
+        .map(|p| p.x)
+        .fold(f32::NEG_INFINITY, f32::max);
     let outer_min_y = outer_pts.iter().map(|p| p.y).fold(f32::INFINITY, f32::min);
-    let outer_max_y = outer_pts.iter().map(|p| p.y).fold(f32::NEG_INFINITY, f32::max);
+    let outer_max_y = outer_pts
+        .iter()
+        .map(|p| p.y)
+        .fold(f32::NEG_INFINITY, f32::max);
 
     let inner_min_x = inner_pts.iter().map(|p| p.x).fold(f32::INFINITY, f32::min);
-    let inner_max_x = inner_pts.iter().map(|p| p.x).fold(f32::NEG_INFINITY, f32::max);
+    let inner_max_x = inner_pts
+        .iter()
+        .map(|p| p.x)
+        .fold(f32::NEG_INFINITY, f32::max);
     let inner_min_y = inner_pts.iter().map(|p| p.y).fold(f32::INFINITY, f32::min);
-    let inner_max_y = inner_pts.iter().map(|p| p.y).fold(f32::NEG_INFINITY, f32::max);
+    let inner_max_y = inner_pts
+        .iter()
+        .map(|p| p.y)
+        .fold(f32::NEG_INFINITY, f32::max);
 
     let tx = ((outer_max_x - outer_min_x) - (inner_max_x - inner_min_x)) * 0.5;
     let ty = ((outer_max_y - outer_min_y) - (inner_max_y - inner_min_y)) * 0.5;
 
     let mut candidates = Vec::new();
-    if tx.is_finite() && tx > 0.0 { candidates.push(tx); }
-    if ty.is_finite() && ty > 0.0 { candidates.push(ty); }
+    if tx.is_finite() && tx > 0.0 {
+        candidates.push(tx);
+    }
+    if ty.is_finite() && ty > 0.0 {
+        candidates.push(ty);
+    }
     if candidates.is_empty() {
         0.0
     } else {
@@ -1746,8 +2265,7 @@ pub fn conformal_rounded_rect_section(
     let probe = Vec3::new(x, center_y, search_z);
     let (surface_point, surface_normal) =
         project_point_to_surface_with_offset_and_normal(surface.as_ref(), probe, 0.0);
-    let mouth_center =
-        surface_point + surface_normal * (half_h + face_clearance.max(0.0) + 0.25);
+    let mouth_center = surface_point + surface_normal * (half_h + face_clearance.max(0.0) + 0.25);
     let section = build_oml_matched_start_profile(
         surface.as_ref(),
         &RoundedRectProfile::new(width, height, radius),
@@ -1770,9 +2288,9 @@ pub fn conformal_profile_section(
 ) -> (Arc<dyn Section2D>, Vec3) {
     let (surface_point, surface_normal) =
         project_point_to_surface_with_offset_and_normal(surface.as_ref(), anchor, 0.0);
-    let mut tangent =
-        (flow_dir.normalize_or_zero() - surface_normal * flow_dir.normalize_or_zero().dot(surface_normal))
-            .normalize_or_zero();
+    let mut tangent = (flow_dir.normalize_or_zero()
+        - surface_normal * flow_dir.normalize_or_zero().dot(surface_normal))
+    .normalize_or_zero();
     if tangent.length_squared() < 1e-8 {
         tangent = Vec3::X;
     }
@@ -1797,7 +2315,12 @@ pub fn conformal_profile_section(
     (section, center)
 }
 
-fn project_point_to_surface_same_x(surface: &dyn Sdf, x: f32, guess_y: f32, guess_z: f32) -> (Vec3, Vec3) {
+fn project_point_to_surface_same_x(
+    surface: &dyn Sdf,
+    x: f32,
+    guess_y: f32,
+    guess_z: f32,
+) -> (Vec3, Vec3) {
     let mut p = Vec3::new(x, guess_y, guess_z);
     for _ in 0..48 {
         let d = surface.distance(p);
@@ -1836,7 +2359,11 @@ pub fn conformal_profile_section_at_x(
     if tangent.length_squared() < 1e-8 {
         tangent = Vec3::X;
     }
-    let reference_up = if tangent.dot(Vec3::Z).abs() < 0.95 { Vec3::Z } else { Vec3::Y };
+    let reference_up = if tangent.dot(Vec3::Z).abs() < 0.95 {
+        Vec3::Z
+    } else {
+        Vec3::Y
+    };
     let mut lateral = reference_up.cross(tangent).normalize_or_zero();
     let mut upward = tangent.cross(lateral).normalize_or_zero();
     if lateral.length_squared() < 1e-8 || upward.length_squared() < 1e-8 {
@@ -1999,8 +2526,11 @@ pub fn build_conformal_profile_duct_at_x(
         ));
         Arc::new(Offset::new(extended_outer_body, -wall_thickness))
     } else {
-        let inner_path: Arc<dyn SweepPath> =
-            Arc::new(ExtendedPath::new(Arc::clone(&shifted_path), start_extension, end_extension));
+        let inner_path: Arc<dyn SweepPath> = Arc::new(ExtendedPath::new(
+            Arc::clone(&shifted_path),
+            start_extension,
+            end_extension,
+        ));
         Arc::new(FixedProfileDuct::with_schedule(
             inner_path,
             Arc::clone(&inner_start_profile),
@@ -2156,8 +2686,10 @@ pub fn build_mirrored_dual_conformal_profile_duct_at_x(
 }
 
 fn symmetrize_about_y(body: Arc<dyn Sdf>, y_center: f32) -> Arc<dyn Sdf> {
-    let shifted: Arc<dyn Sdf> =
-        Arc::new(Translate::new(Arc::clone(&body), Vec3::new(0.0, -y_center, 0.0)));
+    let shifted: Arc<dyn Sdf> = Arc::new(Translate::new(
+        Arc::clone(&body),
+        Vec3::new(0.0, -y_center, 0.0),
+    ));
     let mirrored: Arc<dyn Sdf> = Arc::new(Mirror::new(shifted, Vec3::Y));
     let mirrored_back: Arc<dyn Sdf> =
         Arc::new(Translate::new(mirrored, Vec3::new(0.0, y_center, 0.0)));
@@ -2202,8 +2734,11 @@ pub fn build_conformal_profile_inlet(
         let u = i as f32 / (sample_count - 1) as f32;
         let guide = guide_path.evaluate(u);
         let tangent = guide_path.tangent(u).normalize_or_zero();
-        let (offset_point, normal) =
-            project_point_to_surface_with_offset_and_normal(surface.as_ref(), guide, surface_offset);
+        let (offset_point, normal) = project_point_to_surface_with_offset_and_normal(
+            surface.as_ref(),
+            guide,
+            surface_offset,
+        );
 
         let mut upward = (normal - tangent * tangent.dot(normal)).normalize_or_zero();
         if upward.length_squared() < 1e-8 {
@@ -2239,7 +2774,8 @@ pub fn build_conformal_profile_inlet(
     let mouth_adjust = mouth_target_center - mouth_point;
 
     let mouth_tangent = duct_path.tangent(0.0).normalize_or_zero();
-    let mut mouth_up = (mouth_normal - mouth_tangent * mouth_tangent.dot(mouth_normal)).normalize_or_zero();
+    let mut mouth_up =
+        (mouth_normal - mouth_tangent * mouth_tangent.dot(mouth_normal)).normalize_or_zero();
     if mouth_up.length_squared() < 1e-8 {
         let (_, _, fallback_up) = make_frame(mouth_tangent);
         mouth_up = fallback_up;
@@ -2281,12 +2817,14 @@ pub fn build_conformal_profile_inlet(
         };
         adjusted_duct_points.push(base_point + mouth_adjust * weight);
     }
-    let adjusted_duct_path: Arc<dyn SweepPath> = Arc::new(PolylinePath::new(adjusted_duct_points.clone()));
+    let adjusted_duct_path: Arc<dyn SweepPath> =
+        Arc::new(PolylinePath::new(adjusted_duct_points.clone()));
     let mouth_transition_t = 0.12_f32;
     let mouth_transition_point = adjusted_duct_path.evaluate(mouth_transition_t);
     let mouth_transition_index =
         ((sample_count as f32 - 1.0) * mouth_transition_t).floor() as usize;
-    let mut main_points = Vec::with_capacity(adjusted_duct_points.len() - mouth_transition_index + 1);
+    let mut main_points =
+        Vec::with_capacity(adjusted_duct_points.len() - mouth_transition_index + 1);
     main_points.push(mouth_transition_point);
     main_points.extend(
         adjusted_duct_points
@@ -2311,10 +2849,8 @@ pub fn build_conformal_profile_inlet(
         Arc::clone(&outer_end),
         sample_count,
     ));
-    let outer_body_proto: Arc<dyn Sdf> = Arc::new(Union::new(
-        Arc::clone(&mouth_outer_proto),
-        main_outer_proto,
-    ));
+    let outer_body_proto: Arc<dyn Sdf> =
+        Arc::new(Union::new(Arc::clone(&mouth_outer_proto), main_outer_proto));
     let mouth_inner_proto: Arc<dyn Sdf> = Arc::new(StraightProfilePatch::new(
         adjusted_duct_points[0],
         mouth_transition_point,
@@ -2336,10 +2872,8 @@ pub fn build_conformal_profile_inlet(
         Arc::clone(&mouth_outer_proto),
         Arc::clone(&surface),
     ));
-    let internal_shell: Arc<dyn Sdf> = Arc::new(Intersect::new(
-        internal_shell_proto,
-        Arc::clone(&surface),
-    ));
+    let internal_shell: Arc<dyn Sdf> =
+        Arc::new(Intersect::new(internal_shell_proto, Arc::clone(&surface)));
 
     let extended_duct_path: Arc<dyn SweepPath> = Arc::new(ExtendedPath::new(
         Arc::clone(&main_path),
@@ -2370,7 +2904,11 @@ pub fn build_conformal_profile_inlet(
         internal_shell
     };
 
-    ConformalProfileInletParts { outer_fairing, duct_void, internal_shell }
+    ConformalProfileInletParts {
+        outer_fairing,
+        duct_void,
+        internal_shell,
+    }
 }
 
 // ── BuriedInlet ───────────────────────────────────────────────────────────────
@@ -2395,8 +2933,8 @@ pub struct BuriedInlet {
 impl BuriedInlet {
     pub fn new(throat_r: f32, duct_length: f32, surface_offset: f32) -> Self {
         Self {
-            scoop_width:   throat_r * 1.6,
-            scoop_length:  throat_r * 2.2,
+            scoop_width: throat_r * 1.6,
+            scoop_length: throat_r * 2.2,
             throat_r,
             surface_offset,
             duct_length,
@@ -2407,21 +2945,37 @@ impl BuriedInlet {
 impl Sdf for BuriedInlet {
     fn distance(&self, p: Vec3) -> f32 {
         // Scoop: flattened hemi-ellipsoid at z = surface_offset
-        let sc = Vec3::new(p.x / self.scoop_length, p.y / self.scoop_width,
-                           (p.z - self.surface_offset) / self.throat_r);
-        let d_scoop = sc.length() - 1.0;  // normalised sphere (squashed)
+        let sc = Vec3::new(
+            p.x / self.scoop_length,
+            p.y / self.scoop_width,
+            (p.z - self.surface_offset) / self.throat_r,
+        );
+        let d_scoop = sc.length() - 1.0; // normalised sphere (squashed)
         // Only the lower half (z < surface_offset)
         let d_scoop = d_scoop.max(-(p.z - self.surface_offset));
 
         // Duct: cylinder running from z=surface_offset down to z=surface_offset-duct_length
         let r2 = (p.x * p.x + p.y * p.y).sqrt();
         let z_lo = self.surface_offset - self.duct_length;
-        let d_duct_r  = r2 - self.throat_r;
+        let d_duct_r = r2 - self.throat_r;
         let d_duct_top = p.z - self.surface_offset;
         let d_duct_bot = z_lo - p.z;
         let d_duct = d_duct_r.max(d_duct_top).max(d_duct_bot);
 
         d_scoop.min(d_duct)
+    }
+
+    fn metadata(&self) -> SdfNodeMetadata {
+        let half_x = self.scoop_length.abs().max(self.throat_r.abs());
+        let half_y = self.scoop_width.abs().max(self.throat_r.abs());
+        let bottom_z = self.surface_offset - self.duct_length.abs().max(self.throat_r.abs());
+        approximate_metadata_with_bounds(
+            "buried_inlet",
+            Some(SdfBounds::new(
+                Vec3::new(-half_x, -half_y, bottom_z),
+                Vec3::new(half_x, half_y, self.surface_offset),
+            )),
+        )
     }
 }
 
@@ -2430,9 +2984,10 @@ impl Sdf for BuriedInlet {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sdf::profiles::{RoundedRectProfile, SplineProfile};
-    use crate::sdf::sweep::SplinePath;
+    use crate::sdf::conditioning::{BoundQuality, assert_conditionable_geometry};
     use crate::sdf::primitives::Sphere;
+    use crate::sdf::profiles::{RoundedRectProfile, SplineProfile};
+    use crate::sdf::sweep::{LinePath, SplinePath};
 
     #[test]
     fn test_naca_inlet_finite() {
@@ -2450,6 +3005,42 @@ mod tests {
     }
 
     #[test]
+    fn naca_inlet_metadata_tracks_live_dimensions() {
+        let inlet = NacaInlet {
+            width: 20.0,
+            length: 40.0,
+            depth: 5.0,
+            ramp_angle_deg: 7.0,
+            position: Vec3::ZERO,
+            normal: Vec3::Z,
+            flow_direction: -Vec3::X,
+        };
+        let metadata = inlet.metadata();
+        let bounds = metadata
+            .support_bounds
+            .as_ref()
+            .expect("NACA inlet should expose live support bounds");
+
+        assert!(bounds.contains(Vec3::new(40.0, 10.0, -5.0)));
+        assert!(bounds.contains(Vec3::new(0.0, -10.0, 0.0)));
+        assert!(metadata.bounds_are_approximate);
+        assert_eq!(metadata.bound_quality, BoundQuality::Conservative);
+        assert!(
+            metadata
+                .feature_ids
+                .iter()
+                .any(|id| id == "naca_inlet.ramp_and_lip")
+        );
+        assert!(
+            metadata
+                .feature_regions
+                .iter()
+                .any(|region| region.bounds.contains(Vec3::new(20.0, 0.0, -2.0)))
+        );
+        assert!(assert_conditionable_geometry(&metadata).is_ok());
+    }
+
+    #[test]
     fn test_edf_duct_tapered_capsule() {
         let d = capsule_sdf_tapered(
             Vec3::new(5.0, 0.0, 0.0),
@@ -2458,7 +3049,11 @@ mod tests {
             5.0,
             5.0,
         );
-        assert!(d < 0.0, "point inside capsule should be negative, got {}", d);
+        assert!(
+            d < 0.0,
+            "point inside capsule should be negative, got {}",
+            d
+        );
     }
 
     #[test]
@@ -2474,7 +3069,11 @@ mod tests {
             control_points: vec![],
         };
         let d = duct.distance(Vec3::new(50.0, 100.0, 0.0));
-        assert!(d > 0.0, "point far outside duct should be positive, got {}", d);
+        assert!(
+            d > 0.0,
+            "point far outside duct should be positive, got {}",
+            d
+        );
     }
 
     #[test]
@@ -2493,6 +3092,22 @@ mod tests {
     }
 
     #[test]
+    fn buried_inlet_metadata_tracks_scoop_and_duct() {
+        let inlet = BuriedInlet::new(5.0, 30.0, 2.0);
+        let metadata = inlet.metadata();
+        let bounds = metadata
+            .support_bounds
+            .as_ref()
+            .expect("buried inlet should expose support bounds");
+
+        assert!(bounds.contains(Vec3::new(11.0, 8.0, 2.0)));
+        assert!(bounds.min.z <= -28.0);
+        assert!(metadata.bounds_are_approximate);
+        assert_eq!(metadata.bound_quality, BoundQuality::Conservative);
+        assert!(assert_conditionable_geometry(&metadata).is_ok());
+    }
+
+    #[test]
     fn test_spline_tube_centerline_is_inside() {
         let path: Arc<dyn SweepPath> = Arc::new(SplinePath::new(vec![
             Vec3::new(0.0, 0.0, 46.0),
@@ -2503,8 +3118,30 @@ mod tests {
         let tube = SplineTube::new(path, 94.0, 94.0, 96, 0.95);
         for t in [0.0_f32, 0.2, 0.5, 0.8, 1.0] {
             let p = tube.path.evaluate(t);
-            assert!(tube.distance(p) < -40.0, "centerline should be deep inside at t={}", t);
+            assert!(
+                tube.distance(p) < -40.0,
+                "centerline should be deep inside at t={}",
+                t
+            );
         }
+    }
+
+    #[test]
+    fn spline_tube_metadata_tracks_path_radius() {
+        let path: Arc<dyn SweepPath> = Arc::new(LinePath {
+            start: Vec3::ZERO,
+            end: Vec3::new(100.0, 0.0, 0.0),
+        });
+        let tube = SplineTube::new(path, 20.0, 10.0, 16, 0.0);
+        let metadata = tube.metadata();
+        let bounds = metadata
+            .support_bounds
+            .expect("spline tube should expose path support bounds");
+
+        assert!(bounds.min.x <= -10.0);
+        assert!(bounds.max.x >= 110.0);
+        assert!(bounds.contains(Vec3::new(50.0, 10.0, 0.0)));
+        assert!(metadata.bounds_are_approximate);
     }
 
     #[test]
@@ -2517,7 +3154,27 @@ mod tests {
         ]));
         let tube = HollowSplineTube::new(path, 90.0, 90.0, 2.0, 96, 0.95);
         let near_start_axis = Vec3::new(-20.0, 0.0, 46.0);
-        assert!(tube.distance(near_start_axis) > 0.0, "open mouth axis should remain empty");
+        assert!(
+            tube.distance(near_start_axis) > 0.0,
+            "open mouth axis should remain empty"
+        );
+    }
+
+    #[test]
+    fn hollow_spline_tube_metadata_unions_inner_extension() {
+        let path: Arc<dyn SweepPath> = Arc::new(LinePath {
+            start: Vec3::ZERO,
+            end: Vec3::new(100.0, 0.0, 0.0),
+        });
+        let tube = HollowSplineTube::new(path, 20.0, 20.0, 2.0, 16, 0.0);
+        let metadata = tube.metadata();
+        let bounds = metadata
+            .support_bounds
+            .expect("hollow spline tube should expose unioned support bounds");
+
+        assert!(bounds.min.x < -15.0);
+        assert!(bounds.max.x > 115.0);
+        assert_eq!(metadata.dependencies.len(), 2);
     }
 
     #[test]
@@ -2536,8 +3193,43 @@ mod tests {
         let duct = VariableDuct::new(path, 96.0, 88.0, 90.0, 90.0, 160, 0.98);
         for t in [0.1_f32, 0.25, 0.45, 0.65, 0.85] {
             let p = duct.path.evaluate(t);
-            assert!(duct.distance(p) < -38.0, "centerline should stay inside at t={}", t);
+            assert!(
+                duct.distance(p) < -38.0,
+                "centerline should stay inside at t={}",
+                t
+            );
         }
+    }
+
+    #[test]
+    fn variable_duct_metadata_tracks_path_and_section_size() {
+        let path: Arc<dyn SweepPath> = Arc::new(LinePath {
+            start: Vec3::ZERO,
+            end: Vec3::new(80.0, 0.0, 0.0),
+        });
+        let duct = VariableDuct::new(path, 20.0, 12.0, 10.0, 8.0, 24, 0.5);
+        let metadata = duct.metadata();
+        let bounds = metadata
+            .support_bounds
+            .expect("variable duct should expose path support bounds");
+
+        assert!(bounds.min.x <= -10.0);
+        assert!(bounds.max.x >= 90.0);
+        assert!(bounds.max.y >= 10.0);
+        assert!(metadata.bounds_are_approximate);
+        assert!(
+            metadata
+                .feature_ids
+                .iter()
+                .any(|id| id == "variable_duct.inlet")
+        );
+        assert!(
+            metadata
+                .feature_ids
+                .iter()
+                .any(|id| id == "variable_duct.outlet")
+        );
+        assert_eq!(metadata.feature_regions.len(), 2);
     }
 
     #[test]
@@ -2558,8 +3250,45 @@ mod tests {
         let duct = ProfileDuct::new(path, start, end, 160);
         for t in [0.1_f32, 0.25, 0.45, 0.65, 0.85] {
             let p = duct.path.evaluate(t);
-            assert!(duct.distance(p) < -30.0, "profile centerline should stay inside at t={}", t);
+            assert!(
+                duct.distance(p) < -30.0,
+                "profile centerline should stay inside at t={}",
+                t
+            );
         }
+    }
+
+    #[test]
+    fn profile_duct_metadata_tracks_profile_bounds() {
+        let path: Arc<dyn SweepPath> = Arc::new(LinePath {
+            start: Vec3::ZERO,
+            end: Vec3::new(80.0, 0.0, 0.0),
+        });
+        let start: Arc<dyn Section2D> = Arc::new(RoundedRectProfile::new(20.0, 12.0, 2.0));
+        let end: Arc<dyn Section2D> = Arc::new(SplineProfile::circle(16, 5.0));
+        let duct = ProfileDuct::new(path, start, end, 24);
+        let metadata = duct.metadata();
+        let bounds = metadata
+            .support_bounds
+            .expect("profile duct should expose profile-derived bounds");
+
+        assert!(bounds.min.x <= -10.0);
+        assert!(bounds.max.x >= 90.0);
+        assert!(bounds.contains(Vec3::new(40.0, 10.0, 0.0)));
+        assert!(metadata.bounds_are_approximate);
+        assert!(
+            metadata
+                .feature_ids
+                .iter()
+                .any(|id| id == "profile_duct.start")
+        );
+        assert!(
+            metadata
+                .feature_ids
+                .iter()
+                .any(|id| id == "profile_duct.end")
+        );
+        assert_eq!(metadata.feature_regions.len(), 2);
     }
 
     #[test]
@@ -2594,8 +3323,23 @@ mod tests {
             48,
         );
 
-        assert!(parts.outer_fairing.distance(Vec3::new(0.0, 0.0, 12.5)).is_finite());
-        assert!(parts.duct_void.distance(Vec3::new(5.5, 0.0, 0.0)).is_finite());
-        assert!(parts.internal_shell.distance(Vec3::new(3.5, 0.0, 7.0)).is_finite());
+        assert!(
+            parts
+                .outer_fairing
+                .distance(Vec3::new(0.0, 0.0, 12.5))
+                .is_finite()
+        );
+        assert!(
+            parts
+                .duct_void
+                .distance(Vec3::new(5.5, 0.0, 0.0))
+                .is_finite()
+        );
+        assert!(
+            parts
+                .internal_shell
+                .distance(Vec3::new(3.5, 0.0, 7.0))
+                .is_finite()
+        );
     }
 }

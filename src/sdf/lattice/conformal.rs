@@ -13,11 +13,12 @@
 // parallelised via rayon; no further caching is attempted beyond what is
 // natural within a single distance() call.
 
+use crate::sdf::Sdf;
+use crate::sdf::conditioning::{BoundQuality, SdfNodeMetadata};
+use crate::sdf::field::Field;
+use glam::Vec3;
 use std::f32::consts::TAU;
 use std::sync::Arc;
-use glam::Vec3;
-use crate::sdf::Sdf;
-use crate::sdf::field::Field;
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
 
@@ -67,8 +68,8 @@ fn conformal_coords(parent: &dyn Sdf, p: Vec3, cell_size: f32) -> (f32, f32, f32
     let eps = cell_size * 0.01;
     let depth = parent.distance(p);
 
-    let cp   = closest_surface_point(parent, p, eps);
-    let u    = gradient(parent, cp, eps).normalize_or_zero();
+    let cp = closest_surface_point(parent, p, eps);
+    let u = gradient(parent, cp, eps).normalize_or_zero();
     let (v, w) = tangent_frame(u);
 
     let s = cp.dot(v) / cell_size;
@@ -91,34 +92,56 @@ fn lattice_dist(f: f32, thickness: f32, cell_size: f32) -> f32 {
 /// The lattice struts follow the surface curvature and have no frame
 /// discontinuities, making them suitable for 3D printing.
 pub struct ConformalGyroid {
-    pub parent:        Arc<dyn Sdf>,
-    pub cell_size:     f32,
-    pub thickness:     f32,
+    pub parent: Arc<dyn Sdf>,
+    pub cell_size: f32,
+    pub thickness: f32,
     /// When `Some`, modulates the effective cell size spatially:
     /// `effective_cell_size = cell_size / field.evaluate(p).max(0.01)`.
     pub density_field: Option<Arc<dyn Field>>,
     /// When `Some`, restrict the lattice to the masked region;
     /// outside it returns `parent.distance(p)` unchanged.
-    pub region_mask:   Option<Arc<dyn Sdf>>,
+    pub region_mask: Option<Arc<dyn Sdf>>,
 }
 
 impl ConformalGyroid {
     pub fn new(parent: Arc<dyn Sdf>, cell_size: f32, thickness: f32) -> Self {
-        Self { parent, cell_size, thickness, density_field: None, region_mask: None }
+        Self {
+            parent,
+            cell_size,
+            thickness,
+            density_field: None,
+            region_mask: None,
+        }
     }
 
     pub fn with_density_field(
-        parent: Arc<dyn Sdf>, cell_size: f32, thickness: f32,
+        parent: Arc<dyn Sdf>,
+        cell_size: f32,
+        thickness: f32,
         density_field: Arc<dyn Field>,
     ) -> Self {
-        Self { parent, cell_size, thickness, density_field: Some(density_field), region_mask: None }
+        Self {
+            parent,
+            cell_size,
+            thickness,
+            density_field: Some(density_field),
+            region_mask: None,
+        }
     }
 
     pub fn with_region_mask(
-        parent: Arc<dyn Sdf>, cell_size: f32, thickness: f32,
+        parent: Arc<dyn Sdf>,
+        cell_size: f32,
+        thickness: f32,
         region_mask: Arc<dyn Sdf>,
     ) -> Self {
-        Self { parent, cell_size, thickness, density_field: None, region_mask: Some(region_mask) }
+        Self {
+            parent,
+            cell_size,
+            thickness,
+            density_field: None,
+            region_mask: Some(region_mask),
+        }
     }
 }
 
@@ -139,10 +162,26 @@ impl Sdf for ConformalGyroid {
         };
 
         let (s, t, d) = conformal_coords(&*self.parent, point, effective_cell);
-        let sa = s * TAU; let ta = t * TAU; let da = d * TAU;
+        let sa = s * TAU;
+        let ta = t * TAU;
+        let da = d * TAU;
         let f = sa.sin() * ta.cos() + ta.sin() * da.cos() + da.sin() * sa.cos();
         let lsdf = lattice_dist(f, self.thickness, effective_cell);
         parent_dist.max(lsdf)
+    }
+
+    fn metadata(&self) -> SdfNodeMetadata {
+        let parent_metadata = self.parent.metadata();
+        let support_bounds = parent_metadata.support_bounds.clone();
+        let mut metadata = SdfNodeMetadata::new("conformal_gyroid")
+            .with_dependency("parent", parent_metadata)
+            .inherit_dependency_feature_ids()
+            .with_approximate_bounds();
+        if let Some(mask) = &self.region_mask {
+            metadata = metadata.with_dependency("region_mask", mask.metadata());
+        }
+        metadata.set_support_bounds(support_bounds, BoundQuality::Estimated);
+        metadata
     }
 }
 
@@ -150,23 +189,37 @@ impl Sdf for ConformalGyroid {
 
 /// Diamond TPMS conformally mapped to the parent SDF level sets.
 pub struct ConformalDiamond {
-    pub parent:        Arc<dyn Sdf>,
-    pub cell_size:     f32,
-    pub thickness:     f32,
+    pub parent: Arc<dyn Sdf>,
+    pub cell_size: f32,
+    pub thickness: f32,
     pub density_field: Option<Arc<dyn Field>>,
-    pub region_mask:   Option<Arc<dyn Sdf>>,
+    pub region_mask: Option<Arc<dyn Sdf>>,
 }
 
 impl ConformalDiamond {
     pub fn new(parent: Arc<dyn Sdf>, cell_size: f32, thickness: f32) -> Self {
-        Self { parent, cell_size, thickness, density_field: None, region_mask: None }
+        Self {
+            parent,
+            cell_size,
+            thickness,
+            density_field: None,
+            region_mask: None,
+        }
     }
 
     pub fn with_density_field(
-        parent: Arc<dyn Sdf>, cell_size: f32, thickness: f32,
+        parent: Arc<dyn Sdf>,
+        cell_size: f32,
+        thickness: f32,
         density_field: Arc<dyn Field>,
     ) -> Self {
-        Self { parent, cell_size, thickness, density_field: Some(density_field), region_mask: None }
+        Self {
+            parent,
+            cell_size,
+            thickness,
+            density_field: Some(density_field),
+            region_mask: None,
+        }
     }
 }
 
@@ -187,13 +240,29 @@ impl Sdf for ConformalDiamond {
         };
 
         let (s, t, d) = conformal_coords(&*self.parent, point, effective_cell);
-        let sa = s * TAU; let ta = t * TAU; let da = d * TAU;
+        let sa = s * TAU;
+        let ta = t * TAU;
+        let da = d * TAU;
         let f = sa.sin() * ta.sin() * da.sin()
-              + sa.sin() * ta.cos() * da.cos()
-              + sa.cos() * ta.sin() * da.cos()
-              + sa.cos() * ta.cos() * da.sin();
+            + sa.sin() * ta.cos() * da.cos()
+            + sa.cos() * ta.sin() * da.cos()
+            + sa.cos() * ta.cos() * da.sin();
         let lsdf = lattice_dist(f, self.thickness, effective_cell);
         parent_dist.max(lsdf)
+    }
+
+    fn metadata(&self) -> SdfNodeMetadata {
+        let parent_metadata = self.parent.metadata();
+        let support_bounds = parent_metadata.support_bounds.clone();
+        let mut metadata = SdfNodeMetadata::new("conformal_diamond")
+            .with_dependency("parent", parent_metadata)
+            .inherit_dependency_feature_ids()
+            .with_approximate_bounds();
+        if let Some(mask) = &self.region_mask {
+            metadata = metadata.with_dependency("region_mask", mask.metadata());
+        }
+        metadata.set_support_bounds(support_bounds, BoundQuality::Estimated);
+        metadata
     }
 }
 
@@ -201,24 +270,38 @@ impl Sdf for ConformalDiamond {
 
 /// Schwarz-P TPMS conformally mapped to the parent SDF level sets.
 pub struct ConformalSchwarzP {
-    pub parent:        Arc<dyn Sdf>,
-    pub cell_size:     f32,
-    pub thickness:     f32,
+    pub parent: Arc<dyn Sdf>,
+    pub cell_size: f32,
+    pub thickness: f32,
     pub density_field: Option<Arc<dyn Field>>,
-    pub region_mask:   Option<Arc<dyn Sdf>>,
+    pub region_mask: Option<Arc<dyn Sdf>>,
 }
 
 impl ConformalSchwarzP {
     pub fn new(parent: Arc<dyn Sdf>, cell_size: f32, thickness: f32) -> Self {
-        Self { parent, cell_size, thickness, density_field: None, region_mask: None }
+        Self {
+            parent,
+            cell_size,
+            thickness,
+            density_field: None,
+            region_mask: None,
+        }
     }
 
     #[allow(dead_code)] // Part of graded lattice construction API
     pub fn with_density_field(
-        parent: Arc<dyn Sdf>, cell_size: f32, thickness: f32,
+        parent: Arc<dyn Sdf>,
+        cell_size: f32,
+        thickness: f32,
         density_field: Arc<dyn Field>,
     ) -> Self {
-        Self { parent, cell_size, thickness, density_field: Some(density_field), region_mask: None }
+        Self {
+            parent,
+            cell_size,
+            thickness,
+            density_field: Some(density_field),
+            region_mask: None,
+        }
     }
 }
 
@@ -242,6 +325,20 @@ impl Sdf for ConformalSchwarzP {
         let f = (s * TAU).cos() + (t * TAU).cos() + (d * TAU).cos();
         let lsdf = lattice_dist(f, self.thickness, effective_cell);
         parent_dist.max(lsdf)
+    }
+
+    fn metadata(&self) -> SdfNodeMetadata {
+        let parent_metadata = self.parent.metadata();
+        let support_bounds = parent_metadata.support_bounds.clone();
+        let mut metadata = SdfNodeMetadata::new("conformal_schwarz_p")
+            .with_dependency("parent", parent_metadata)
+            .inherit_dependency_feature_ids()
+            .with_approximate_bounds();
+        if let Some(mask) = &self.region_mask {
+            metadata = metadata.with_dependency("region_mask", mask.metadata());
+        }
+        metadata.set_support_bounds(support_bounds, BoundQuality::Estimated);
+        metadata
     }
 }
 
@@ -288,21 +385,24 @@ mod tests {
         // We verify by sampling the lattice on a grid and confirming that every
         // interior point (SDF < 0) has a non-NaN distance and is contiguous with
         // its neighbours (no single-voxel isolated islands indicating discontinuities).
-        let cell_size  = 3.0_f32;
-        let thickness  = 0.8_f32;
-        let sphere_r   = 8.0_f32;
+        let cell_size = 3.0_f32;
+        let thickness = 0.8_f32;
+        let sphere_r = 8.0_f32;
 
         let parent: Arc<dyn Sdf> = Arc::new(Sphere::new(sphere_r));
         // Region mask: inset by 1.5 * thickness so struts don't hit the outer skin.
-        let inset_r    = sphere_r - 1.5 * thickness;
+        let inset_r = sphere_r - 1.5 * thickness;
         let region: Arc<dyn Sdf> = Arc::new(Sphere::new(inset_r));
         let lattice = ConformalGyroid::with_region_mask(
-            Arc::clone(&parent), cell_size, thickness, Arc::clone(&region),
+            Arc::clone(&parent),
+            cell_size,
+            thickness,
+            Arc::clone(&region),
         );
 
         // Verify: inside the inset region, no point should be positive-infinity.
         let mut inside_count = 0;
-        let mut strut_count  = 0;
+        let mut strut_count = 0;
         let res = 10;
         let step = (inset_r * 2.0) / res as f32;
         for ix in 0..res {
@@ -313,16 +413,23 @@ mod tests {
                         iy as f32 * step - inset_r,
                         iz as f32 * step - inset_r,
                     );
-                    if region.distance(p) >= 0.0 { continue; }
+                    if region.distance(p) >= 0.0 {
+                        continue;
+                    }
                     inside_count += 1;
                     let d = lattice.distance(p);
                     assert!(d.is_finite(), "Lattice produced non-finite at {p:?}");
-                    if d < 0.0 { strut_count += 1; }
+                    if d < 0.0 {
+                        strut_count += 1;
+                    }
                 }
             }
         }
         // There should be a meaningful number of strut voxels (lattice isn't empty).
-        assert!(inside_count > 0,  "No voxels sampled inside region");
-        assert!(strut_count  > 0,  "No strut voxels found inside region — lattice is empty");
+        assert!(inside_count > 0, "No voxels sampled inside region");
+        assert!(
+            strut_count > 0,
+            "No strut voxels found inside region — lattice is empty"
+        );
     }
 }

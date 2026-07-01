@@ -1,8 +1,8 @@
 // Library component manager — scans lib/ directory, parses metadata, manages thumbnail state.
 
+use crate::library::metadata::{ComponentMetadata, FunctionSignature, extract_function_signatures};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::Receiver;
-use crate::library::metadata::{ComponentMetadata, FunctionSignature, extract_function_signatures};
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum ThumbnailState {
@@ -14,28 +14,31 @@ pub enum ThumbnailState {
 
 #[allow(dead_code)] // Library component data model — error_message not yet displayed in UI
 pub struct LibraryComponent {
-    pub name:               String,
-    pub file_path:          PathBuf,
-    pub metadata:           ComponentMetadata,
-    pub source:             String,
+    pub name: String,
+    pub file_path: PathBuf,
+    pub metadata: ComponentMetadata,
+    pub source: String,
     pub exported_functions: Vec<FunctionSignature>,
-    pub thumbnail_state:    ThumbnailState,
+    pub thumbnail_state: ThumbnailState,
     /// Raw RGBA pixels (128x128x4) once generated.
-    pub thumbnail_pixels:   Option<Vec<u8>>,
+    pub thumbnail_pixels: Option<Vec<u8>>,
     /// Channel receiver for background thumbnail generation.
     pub thumbnail_receiver: Option<Receiver<Result<Vec<u8>, String>>>,
     /// True if the component had a parse/eval error.
-    pub has_error:          bool,
-    pub error_message:      Option<String>,
+    pub has_error: bool,
+    pub error_message: Option<String>,
 }
 
 impl LibraryComponent {
     fn from_file(path: PathBuf) -> Option<Self> {
         let source = std::fs::read_to_string(&path).ok()?;
-        let stem   = path.file_stem()?.to_string_lossy().to_string();
-        let meta   = ComponentMetadata::parse(&source);
-        let name   = meta.name.clone().unwrap_or_else(|| stem.replace('_', " ").replace('-', " "));
-        let fns    = extract_function_signatures(&source);
+        let stem = path.file_stem()?.to_string_lossy().to_string();
+        let meta = ComponentMetadata::parse(&source);
+        let name = meta
+            .name
+            .clone()
+            .unwrap_or_else(|| stem.replace('_', " ").replace('-', " "));
+        let fns = extract_function_signatures(&source);
         Some(LibraryComponent {
             name,
             file_path: path,
@@ -65,25 +68,28 @@ impl LibraryComponent {
         }
         let receiver = match self.thumbnail_receiver.as_ref() {
             Some(r) => r,
-            None    => { self.thumbnail_state = ThumbnailState::Failed; return true; }
+            None => {
+                self.thumbnail_state = ThumbnailState::Failed;
+                return true;
+            }
         };
         use std::sync::mpsc::TryRecvError;
         match receiver.try_recv() {
             Ok(Ok(pixels)) => {
-                self.thumbnail_pixels  = Some(pixels);
-                self.thumbnail_state   = ThumbnailState::Ready;
+                self.thumbnail_pixels = Some(pixels);
+                self.thumbnail_state = ThumbnailState::Ready;
                 self.thumbnail_receiver = None;
                 true
             }
             Ok(Err(e)) => {
                 eprintln!("Thumbnail generation failed: {}", e);
-                self.thumbnail_state   = ThumbnailState::Failed;
+                self.thumbnail_state = ThumbnailState::Failed;
                 self.thumbnail_receiver = None;
                 true
             }
-            Err(TryRecvError::Empty)        => false,
+            Err(TryRecvError::Empty) => false,
             Err(TryRecvError::Disconnected) => {
-                self.thumbnail_state   = ThumbnailState::Failed;
+                self.thumbnail_state = ThumbnailState::Failed;
                 self.thumbnail_receiver = None;
                 true
             }
@@ -92,13 +98,16 @@ impl LibraryComponent {
 }
 
 pub struct LibraryManager {
-    pub lib_dir:    PathBuf,
+    pub lib_dir: PathBuf,
     pub components: Vec<LibraryComponent>,
 }
 
 impl LibraryManager {
     pub fn new(lib_dir: PathBuf) -> Self {
-        LibraryManager { lib_dir, components: Vec::new() }
+        LibraryManager {
+            lib_dir,
+            components: Vec::new(),
+        }
     }
 
     /// Scan lib_dir and reload all .rhai files.
@@ -110,7 +119,10 @@ impl LibraryManager {
         }
         let entries = match std::fs::read_dir(dir) {
             Ok(e) => e,
-            Err(_) => { self.components.clear(); return; }
+            Err(_) => {
+                self.components.clear();
+                return;
+            }
         };
 
         let mut new_components = Vec::new();
@@ -130,7 +142,11 @@ impl LibraryManager {
     /// Reload a single component file (after editing).
     #[allow(dead_code)] // Available for hot-reload in file-watcher integration
     pub fn reload_component(&mut self, file_path: &Path) {
-        if let Some(idx) = self.components.iter().position(|c| c.file_path == file_path) {
+        if let Some(idx) = self
+            .components
+            .iter()
+            .position(|c| c.file_path == file_path)
+        {
             if let Some(comp) = LibraryComponent::from_file(file_path.to_path_buf()) {
                 self.components[idx] = comp;
             }
@@ -139,7 +155,8 @@ impl LibraryManager {
 
     /// Returns (module_name, source) pairs for all valid components, for passing to the Rhai engine.
     pub fn module_sources(&self) -> Vec<(String, String)> {
-        self.components.iter()
+        self.components
+            .iter()
             .filter(|c| !c.has_error)
             .map(|c| (c.module_name(), c.source.clone()))
             .collect()

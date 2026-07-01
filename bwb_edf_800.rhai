@@ -213,6 +213,72 @@ let structure = union(
 let structure = subtract(structure, duct_void);
 
 // ---------------------------------------------------------------------------
+// Aero export metadata
+// ---------------------------------------------------------------------------
+
+let aero_parts = [
+    #{
+        name: "aircraft_oml",
+        sdf: body_outer,
+        aero_role: "outer_mold_line",
+        patch_name: "aircraft",
+        bounds_min_mm: [-8.0, -404.0, -60.0],
+        bounds_max_mm: [548.0, 404.0, 150.0],
+        include_in_modes: ["external", "external_plus_inlets", "full_fluid_boundary"],
+        preserve_feature: true,
+        feature_tags: ["leading_edge", "trailing_edge", "wing_body_junction", "tail_body_junction"],
+        min_export_scale_mm: 0.7,
+        feature_protection_strength: 3.0,
+        priority: 0
+    },
+    #{
+        name: "inlet_oml",
+        sdf: inlet_outer,
+        aero_role: "outer_mold_line",
+        patch_name: "inlet",
+        bounds_min_mm: [150.0, -52.0, -10.0],
+        bounds_max_mm: [560.0, 52.0, 110.0],
+        include_in_modes: ["external", "external_plus_inlets", "full_fluid_boundary"],
+        preserve_feature: true,
+        feature_tags: ["inlet_lip"],
+        min_export_scale_mm: 0.5,
+        feature_protection_strength: 2.5,
+        priority: 1
+    },
+    #{
+        name: "duct_internal",
+        sdf: duct_shell_internal,
+        aero_role: "flow_path_internal",
+        patch_name: "duct",
+        bounds_min_mm: [140.0, -52.0, -45.0],
+        bounds_max_mm: [570.0, 52.0, 110.0],
+        include_in_modes: ["external_plus_inlets", "full_fluid_boundary"],
+        preserve_feature: true,
+        feature_tags: ["inlet_lip", "nozzle_exit"],
+        min_export_scale_mm: 0.6,
+        feature_protection_strength: 2.0,
+        priority: 1
+    },
+    #{
+        name: "internal_structure",
+        sdf: structure,
+        aero_role: "internal_structure",
+        patch_name: "structure",
+        bounds_min_mm: [40.0, -320.0, -35.0],
+        bounds_max_mm: [430.0, 320.0, 85.0],
+        include_in_modes: [],
+        preserve_feature: false,
+        min_export_scale_mm: 1.0,
+        feature_protection_strength: 0.0,
+        priority: 0
+    }
+];
+
+let aero_export = #{
+    parts: aero_parts
+};
+
+// ---------------------------------------------------------------------------
 // Output
 // ---------------------------------------------------------------------------
 

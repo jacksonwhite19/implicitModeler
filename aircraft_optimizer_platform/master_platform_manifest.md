@@ -35,6 +35,8 @@ It should not silently fork existing CAD/exporter code. Any imported code should
 |---|---|---|---|
 | Platform architecture | `aircraft_optimizer_platform\opt_output.md` | In master folder | Current platform architecture report. |
 | Roadmap | `aircraft_optimizer_platform\roadmap.md` | In master folder | Current phase roadmap and release milestones. |
+| Implicit aircraft design roadmap | `aircraft_optimizer_platform\implicit_aircraft_design_roadmap.md` | In master folder | Kernel-first roadmap overlay for local SDF conditioning, geometry-query APIs, CFD datasets, and future AI surrogates. |
+| Phase 0 SDF conditioning review | `aircraft_optimizer_platform\research\phase0_sdf_conditioning_literature_review.md` | In master folder | Focused literature review and recommendation gate for SDF conditioning architecture, SDF-native CFD research, and AI-surrogate timing. |
 | Progress tracker | `aircraft_optimizer_platform\progress_tracker.md` | In master folder | Running execution log. |
 | Dependency inventory | `aircraft_optimizer_platform\dependency_inventory.md` | In master folder | Tracks source locations, copied inputs, skipped inputs, and dependency contracts still needed. |
 | OML STL export contract | `aircraft_optimizer_platform\oml_export_contract.md` | In master folder | Contract for direct sparse SDF OML exporter. |
@@ -62,11 +64,14 @@ aircraft_optimizer_platform/
   AGENT_README.md
   progress_tracker.md
   roadmap.md
+  implicit_aircraft_design_roadmap.md
   opt_output.md
   opt_prompt.md
   oml_export_contract.md
   master_platform_manifest.md
   dependency_inventory.md
+  research/
+    phase0_sdf_conditioning_literature_review.md
 
   software/
     README.md

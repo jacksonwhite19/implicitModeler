@@ -1,9 +1,10 @@
 // Lattice primitives - periodic structures
 
+use super::Field;
+use crate::sdf::Sdf;
+use crate::sdf::conditioning::SdfNodeMetadata;
 use glam::Vec3;
 use std::sync::Arc;
-use crate::sdf::Sdf;
-use super::Field;
 
 /// Gyroid lattice - TPMS (triply periodic minimal surface)
 /// Based on the implicit function: sin(x)cos(y) + sin(y)cos(z) + sin(z)cos(x) = 0
@@ -39,6 +40,10 @@ impl Sdf for GyroidLattice {
         // Gyroid value oscillates around zero, we want thickness/2 at gyroid=0
         let scale_factor = self.cell_size / (2.0 * PI);
         (gyroid.abs() - self.thickness / (2.0 * scale_factor)) * scale_factor
+    }
+
+    fn metadata(&self) -> SdfNodeMetadata {
+        SdfNodeMetadata::new("gyroid_lattice").with_approximate_bounds()
     }
 }
 
@@ -87,6 +92,10 @@ impl Sdf for CubicLattice {
         let min_dist = to_x_strut.min(to_y_strut).min(to_z_strut);
         min_dist - self.strut_radius
     }
+
+    fn metadata(&self) -> SdfNodeMetadata {
+        SdfNodeMetadata::new("cubic_lattice").with_approximate_bounds()
+    }
 }
 
 /// Diamond lattice - BCC (body-centered cubic) structure
@@ -126,6 +135,10 @@ impl Sdf for DiamondLattice {
         let scale_factor = self.cell_size / (2.0 * PI);
         (diamond.abs() - self.thickness / (2.0 * scale_factor)) * scale_factor
     }
+
+    fn metadata(&self) -> SdfNodeMetadata {
+        SdfNodeMetadata::new("diamond_lattice").with_approximate_bounds()
+    }
 }
 
 /// Gyroid lattice with variable thickness controlled by a field
@@ -159,6 +172,10 @@ impl Sdf for GyroidWithField {
         // Convert to distance with variable thickness
         let scale_factor = self.cell_size / (2.0 * PI);
         (gyroid.abs() - thickness / (2.0 * scale_factor)) * scale_factor
+    }
+
+    fn metadata(&self) -> SdfNodeMetadata {
+        SdfNodeMetadata::new("gyroid_with_field").with_approximate_bounds()
     }
 }
 
@@ -194,9 +211,24 @@ mod tests {
         let d4 = lattice.distance(p4);
 
         // Should be approximately equal due to periodicity
-        assert!((d1 - d2).abs() < 0.1, "X periodicity failed: {} vs {}", d1, d2);
-        assert!((d1 - d3).abs() < 0.1, "Y periodicity failed: {} vs {}", d1, d3);
-        assert!((d1 - d4).abs() < 0.1, "Z periodicity failed: {} vs {}", d1, d4);
+        assert!(
+            (d1 - d2).abs() < 0.1,
+            "X periodicity failed: {} vs {}",
+            d1,
+            d2
+        );
+        assert!(
+            (d1 - d3).abs() < 0.1,
+            "Y periodicity failed: {} vs {}",
+            d1,
+            d3
+        );
+        assert!(
+            (d1 - d4).abs() < 0.1,
+            "Z periodicity failed: {} vs {}",
+            d1,
+            d4
+        );
     }
 
     #[test]
@@ -220,7 +252,10 @@ mod tests {
         // Point at cell center should be farther from struts
         let center = Vec3::new(5.0, 5.0, 5.0);
         let dist_center = lattice.distance(center);
-        assert!(dist_center > dist_corner, "Center should be farther from struts");
+        assert!(
+            dist_center > dist_corner,
+            "Center should be farther from struts"
+        );
     }
 
     #[test]
@@ -234,7 +269,12 @@ mod tests {
         let d2 = lattice.distance(p2);
 
         // Should be approximately equal
-        assert!((d1 - d2).abs() < 0.01, "Periodicity failed: {} vs {}", d1, d2);
+        assert!(
+            (d1 - d2).abs() < 0.01,
+            "Periodicity failed: {} vs {}",
+            d1,
+            d2
+        );
     }
 
     #[test]
@@ -275,7 +315,12 @@ mod tests {
         let d1 = gyroid_field.distance(p);
         let d2 = gyroid_const.distance(p);
 
-        assert!((d1 - d2).abs() < 0.01, "Constant field should match: {} vs {}", d1, d2);
+        assert!(
+            (d1 - d2).abs() < 0.01,
+            "Constant field should match: {} vs {}",
+            d1,
+            d2
+        );
     }
 
     #[test]

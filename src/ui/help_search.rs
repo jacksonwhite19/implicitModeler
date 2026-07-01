@@ -8,12 +8,14 @@ pub struct HelpSearchState {
     pub results: Vec<usize>,              // indices into FUNCTION_DOCS
     pub selected_function: Option<usize>, // index of currently expanded entry
     pub scroll_to: Option<usize>,
-    pub recent_searches: Vec<String>,     // max 10, newest first
+    pub recent_searches: Vec<String>, // max 10, newest first
     pub show_recent: bool,
 }
 
 impl Default for HelpSearchState {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl HelpSearchState {
@@ -52,7 +54,9 @@ impl HelpSearchState {
             .filter_map(|(i, doc)| {
                 // Category filter
                 if let Some(ref cat) = self.selected_category {
-                    if doc.category != cat { return None; }
+                    if doc.category != cat {
+                        return None;
+                    }
                 }
 
                 if q.is_empty() {
@@ -91,24 +95,30 @@ impl HelpSearchState {
             })
             .collect();
 
-        scored.sort_by(|a, b| b.1.cmp(&a.1).then(
-            FUNCTION_DOCS[a.0].name.cmp(FUNCTION_DOCS[b.0].name)
-        ));
+        scored.sort_by(|a, b| {
+            b.1.cmp(&a.1)
+                .then(FUNCTION_DOCS[a.0].name.cmp(FUNCTION_DOCS[b.0].name))
+        });
 
         self.results = scored.into_iter().map(|(i, _)| i).collect();
     }
 
     pub fn push_recent(&mut self, query: &str) {
-        if query.trim().is_empty() { return; }
+        if query.trim().is_empty() {
+            return;
+        }
         self.recent_searches.retain(|s| s != query);
         self.recent_searches.insert(0, query.to_string());
         self.recent_searches.truncate(10);
     }
 
     pub fn move_selection(&mut self, delta: i32) {
-        if self.results.is_empty() { return; }
+        if self.results.is_empty() {
+            return;
+        }
         let n = self.results.len() as i32;
-        let current = self.selected_function
+        let current = self
+            .selected_function
             .and_then(|sel| self.results.iter().position(|&r| r == sel))
             .map(|p| p as i32)
             .unwrap_or(-1);

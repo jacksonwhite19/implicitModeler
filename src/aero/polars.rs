@@ -7,20 +7,20 @@ use std::path::Path;
 /// Complete aerodynamic polar for one airfoil at one Reynolds number.
 #[derive(Clone, Debug)]
 pub struct AirfoilPolar {
-    pub designation:       String,
-    pub reynolds_number:   f32,
+    pub designation: String,
+    pub reynolds_number: f32,
     /// Angle of attack in degrees, ascending order.
-    pub alpha_deg:         Vec<f32>,
-    pub cl:                Vec<f32>,
-    pub cd:                Vec<f32>,
-    pub cm:                Vec<f32>,
-    pub cl_max:            f32,
-    pub alpha_stall_deg:   f32,
+    pub alpha_deg: Vec<f32>,
+    pub cl: Vec<f32>,
+    pub cd: Vec<f32>,
+    pub cm: Vec<f32>,
+    pub cl_max: f32,
+    pub alpha_stall_deg: f32,
     pub alpha_zero_lift_deg: f32,
     /// Lift-curve slope per radian.
-    pub cl_alpha:          f32,
+    pub cl_alpha: f32,
     /// Lift-curve slope per degree.
-    pub cl_alpha_per_deg:  f32,
+    pub cl_alpha_per_deg: f32,
 }
 
 impl AirfoilPolar {
@@ -85,23 +85,35 @@ impl AirfoilPolar {
     // ── Private helpers ──────────────────────────────────────────────────────
 
     fn interp(xs: &[f32], ys: &[f32], x: f32) -> f32 {
-        if xs.is_empty() { return 0.0; }
-        if x <= xs[0]  { return ys[0]; }
-        if x >= xs[xs.len() - 1] { return ys[ys.len() - 1]; }
+        if xs.is_empty() {
+            return 0.0;
+        }
+        if x <= xs[0] {
+            return ys[0];
+        }
+        if x >= xs[xs.len() - 1] {
+            return ys[ys.len() - 1];
+        }
         // Binary search for bracket.
         let idx = xs.partition_point(|&v| v <= x);
-        let i   = idx.saturating_sub(1);
-        let j   = idx.min(xs.len() - 1);
-        if i == j { return ys[i]; }
+        let i = idx.saturating_sub(1);
+        let j = idx.min(xs.len() - 1);
+        if i == j {
+            return ys[i];
+        }
         let t = (x - xs[i]) / (xs[j] - xs[i]);
         ys[i] * (1.0 - t) + ys[j] * t
     }
 
     fn find_stall(alpha: &[f32], cl: &[f32]) -> (f32, f32) {
-        if cl.is_empty() { return (1.0, 15.0); }
+        if cl.is_empty() {
+            return (1.0, 15.0);
+        }
         let mut best_i = 0;
         for (i, &v) in cl.iter().enumerate() {
-            if v > cl[best_i] { best_i = i; }
+            if v > cl[best_i] {
+                best_i = i;
+            }
         }
         (cl[best_i], alpha[best_i])
     }
@@ -120,18 +132,24 @@ impl AirfoilPolar {
 
     fn compute_cl_alpha(alpha: &[f32], cl: &[f32]) -> f32 {
         // Use points in -5..+5 deg range.
-        let pairs: Vec<(f32, f32)> = alpha.iter().zip(cl.iter())
+        let pairs: Vec<(f32, f32)> = alpha
+            .iter()
+            .zip(cl.iter())
             .filter(|(a, _)| **a >= -5.0 && **a <= 5.0)
             .map(|(a, c)| (*a, *c))
             .collect();
-        if pairs.len() < 2 { return 0.1097; } // 2π/deg
-        let n   = pairs.len() as f32;
-        let sx  = pairs.iter().map(|(a, _)| a).sum::<f32>();
-        let sy  = pairs.iter().map(|(_, c)| c).sum::<f32>();
+        if pairs.len() < 2 {
+            return 0.1097;
+        } // 2π/deg
+        let n = pairs.len() as f32;
+        let sx = pairs.iter().map(|(a, _)| a).sum::<f32>();
+        let sy = pairs.iter().map(|(_, c)| c).sum::<f32>();
         let sxx = pairs.iter().map(|(a, _)| a * a).sum::<f32>();
         let sxy = pairs.iter().map(|(a, c)| a * c).sum::<f32>();
         let denom = n * sxx - sx * sx;
-        if denom.abs() < 1e-10 { return 0.1097; }
+        if denom.abs() < 1e-10 {
+            return 0.1097;
+        }
         (n * sxy - sx * sy) / denom
     }
 }
@@ -140,7 +158,7 @@ impl AirfoilPolar {
 
 /// Collection of airfoil polars keyed by (designation, reynolds_number_rounded).
 pub struct PolarDatabase {
-    pub polars:      HashMap<(String, u32), AirfoilPolar>,
+    pub polars: HashMap<(String, u32), AirfoilPolar>,
     pub user_polars: HashMap<String, AirfoilPolar>,
 }
 
@@ -150,11 +168,19 @@ impl PolarDatabase {
         use super::polar_data::generate_naca_polar;
 
         let profiles = &[
-            "NACA 0006", "NACA 0009", "NACA 0012", "NACA 0015", "NACA 0018",
-            "NACA 2412", "NACA 2415",
-            "NACA 4412", "NACA 4415",
-            "NACA 23012", "NACA 23015",
-            "NACA 63-412", "NACA 64-412",
+            "NACA 0006",
+            "NACA 0009",
+            "NACA 0012",
+            "NACA 0015",
+            "NACA 0018",
+            "NACA 2412",
+            "NACA 2415",
+            "NACA 4412",
+            "NACA 4415",
+            "NACA 23012",
+            "NACA 23015",
+            "NACA 63-412",
+            "NACA 64-412",
         ];
         let reynolds_list = [200_000_f32, 500_000_f32];
 
@@ -162,18 +188,22 @@ impl PolarDatabase {
         for &desig in profiles {
             for &re in &reynolds_list {
                 let polar = generate_naca_polar(desig, re);
-                let key   = (desig.to_string(), Self::round_re(re));
+                let key = (desig.to_string(), Self::round_re(re));
                 polars.insert(key, polar);
             }
         }
 
-        Self { polars, user_polars: HashMap::new() }
+        Self {
+            polars,
+            user_polars: HashMap::new(),
+        }
     }
 
     /// Retrieve a stored polar at exact (rounded) Reynolds number.
     pub fn get(&self, designation: &str, reynolds: f32) -> Option<&AirfoilPolar> {
         let key = (designation.to_string(), Self::round_re(reynolds));
-        self.polars.get(&key)
+        self.polars
+            .get(&key)
             .or_else(|| self.user_polars.get(designation))
     }
 
@@ -181,24 +211,37 @@ impl PolarDatabase {
     /// Falls back to nearest stored if out of range.
     pub fn get_interpolated(&self, designation: &str, reynolds: f32) -> Option<AirfoilPolar> {
         // Collect all stored polars for this designation.
-        let mut candidates: Vec<(&AirfoilPolar, f32)> = self.polars.iter()
+        let mut candidates: Vec<(&AirfoilPolar, f32)> = self
+            .polars
+            .iter()
             .filter(|((d, _), _)| d == designation)
             .map(|(_, p)| (p, p.reynolds_number))
             .collect();
         candidates.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
 
-        if candidates.is_empty() { return None; }
-        if candidates.len() == 1 { return Some(candidates[0].0.clone()); }
+        if candidates.is_empty() {
+            return None;
+        }
+        if candidates.len() == 1 {
+            return Some(candidates[0].0.clone());
+        }
 
         // Check exact match.
-        if let Some((p, _)) = candidates.iter().find(|(_, r)| (*r - reynolds).abs() < 1000.0) {
+        if let Some((p, _)) = candidates
+            .iter()
+            .find(|(_, r)| (*r - reynolds).abs() < 1000.0)
+        {
             return Some((*p).clone());
         }
 
         // Find bracket.
-        let lo_idx = candidates.partition_point(|(_, r)| *r < reynolds).saturating_sub(1);
+        let lo_idx = candidates
+            .partition_point(|(_, r)| *r < reynolds)
+            .saturating_sub(1);
         let hi_idx = (lo_idx + 1).min(candidates.len() - 1);
-        if lo_idx == hi_idx { return Some(candidates[lo_idx].0.clone()); }
+        if lo_idx == hi_idx {
+            return Some(candidates[lo_idx].0.clone());
+        }
 
         let (p_lo, re_lo) = candidates[lo_idx];
         let (p_hi, re_hi) = candidates[hi_idx];
@@ -229,23 +272,27 @@ impl PolarDatabase {
 
     /// Parse a simple CSV user polar: columns alpha, CL, CD, CM.
     pub fn load_user_polar(path: &Path) -> Result<AirfoilPolar, String> {
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| format!("Cannot read polar file: {e}"))?;
+        let content =
+            std::fs::read_to_string(path).map_err(|e| format!("Cannot read polar file: {e}"))?;
 
-        let designation = path.file_stem()
+        let designation = path
+            .file_stem()
             .and_then(|s| s.to_str())
             .unwrap_or("user")
             .to_string();
 
         let mut alpha = Vec::new();
-        let mut cl    = Vec::new();
-        let mut cd    = Vec::new();
-        let mut cm    = Vec::new();
+        let mut cl = Vec::new();
+        let mut cd = Vec::new();
+        let mut cm = Vec::new();
 
         for line in content.lines() {
             let line = line.trim();
-            if line.is_empty() || line.starts_with('#') { continue; }
-            let cols: Vec<f32> = line.split(',')
+            if line.is_empty() || line.starts_with('#') {
+                continue;
+            }
+            let cols: Vec<f32> = line
+                .split(',')
                 .filter_map(|s| s.trim().parse().ok())
                 .collect();
             if cols.len() >= 3 {
@@ -274,5 +321,7 @@ impl PolarDatabase {
 }
 
 impl Default for PolarDatabase {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }

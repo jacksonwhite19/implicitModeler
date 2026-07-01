@@ -1,9 +1,9 @@
 // Core field types
 
+use super::Field;
+use crate::sdf::Sdf;
 use glam::Vec3;
 use std::sync::Arc;
-use crate::sdf::Sdf;
-use super::Field;
 
 /// Constant field - returns the same value everywhere
 #[derive(Clone)]
@@ -109,7 +109,10 @@ mod tests {
 
         // At origin (center of sphere), distance should be -10
         let dist_center = field.evaluate(Vec3::ZERO);
-        assert!((dist_center + 10.0).abs() < 0.01, "Center should be -radius");
+        assert!(
+            (dist_center + 10.0).abs() < 0.01,
+            "Center should be -radius"
+        );
 
         // At radius, distance should be ~0
         let dist_surface = field.evaluate(Vec3::new(10.0, 0.0, 0.0));

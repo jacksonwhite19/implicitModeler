@@ -39,6 +39,8 @@ Explicit early exclusions:
 - `master_platform_manifest.md`: master-folder component inventory, current source-of-truth map, and migration policy.
 - `dependency_inventory.md`: inventory of current dependencies, copied inputs, skipped inputs, and open contract work.
 - `environment_strategy.md`: local-first environment decision and when to add Docker later.
+- `implicit_aircraft_design_roadmap.md`: long-term implicit-kernel, local SDF conditioning, geometry-query, CFD-dataset, and AI-surrogate roadmap overlay.
+- `research/phase0_sdf_conditioning_literature_review.md`: Phase 0 literature review and recommendation gate for SDF conditioning, SDF-native CFD research, and AI-surrogate timing.
 - `oml_export_contract.md`: current direct sparse OML/CFD STL export contract for optimizer integration.
 - `roadmap.md`: phased roadmap from platform foundation to autonomous optimizer ecosystem.
 - `progress_tracker.md`: running progress log, decisions, notes, blockers, and next actions.
@@ -65,6 +67,13 @@ Explicit early exclusions:
 Current phase: Phase 1 - Headless Candidate Evaluation Platform.
 
 Next target: run a larger real optimizer shakedown through the resumable pilot CLI, then tighten promotion/finalist controls and dashboard monitoring around the real export/mesh/rough-CFD loop.
+
+Current implicit-kernel research decision:
+
+- `implicit_aircraft_design_roadmap.md` records the long-term kernel-first architecture: the implicit geometry kernel is canonical, while STLs, meshes, OpenFOAM cases, datasets, and dashboards are derived artifacts.
+- The formal architecture split is now `canonical geometry graph -> conditioned geometry cache -> clients`; the cache is derived, disposable, rebuildable, versioned, and query optimized.
+- `research/phase0_sdf_conditioning_literature_review.md` completes the focused Phase 0 research gate for local SDF conditioning architecture work.
+- Phase 1 conditioning design is unblocked, but production SDF-native CFD and PhysicsNeMo surrogate work remain deferred until optimizer automation, conditioning stability, and CFD data quality mature.
 
 Current validated exporter decision:
 

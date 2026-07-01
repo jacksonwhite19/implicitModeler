@@ -7,6 +7,10 @@ from aircraft_optimizer.artifacts.registry import sha256_file
 from aircraft_optimizer.jsonutil import dumps
 from aircraft_optimizer.records import CandidateSeed
 from aircraft_optimizer.schemas import VariableSchema
+from geometry_generator_conditioning.metadata import (
+    full_geometry_dirty_region,
+    unavailable_conditioned_cache_metadata,
+)
 
 
 @dataclass(frozen=True)
@@ -77,14 +81,16 @@ def generate_fixed_wing_fixture_geometry(
     )
     script_path.write_text(header + template_text, encoding="utf-8")
     trace_path.write_text(dumps(parameter_trace), encoding="utf-8")
+    bbox_min_mm = [-128.0, -512.0, -128.0]
+    bbox_max_mm = [1024.0, 512.0, 256.0]
 
     return FixtureGeneratedGeometry(
         script_path=script_path,
         trace_path=trace_path,
         feature_name=feature_name,
         coordinate_frame="native_aircraft_frame_x_length_y_span_z_vertical",
-        bbox_min_mm=[-128.0, -512.0, -128.0],
-        bbox_max_mm=[1024.0, 512.0, 256.0],
+        bbox_min_mm=bbox_min_mm,
+        bbox_max_mm=bbox_max_mm,
         source_hash=sha256_file(script_path),
         parameter_trace=parameter_trace,
         metadata={
@@ -95,5 +101,19 @@ def generate_fixed_wing_fixture_geometry(
             "trace_path": str(trace_path),
             "trace_hash": sha256_file(trace_path),
             "fixture_generation_only": True,
+            "conditioned_geometry_cache": unavailable_conditioned_cache_metadata(),
+            "dirty_regions": [
+                full_geometry_dirty_region(
+                    bbox_min_mm=bbox_min_mm,
+                    bbox_max_mm=bbox_max_mm,
+                    recommended_grid_spacing_mm=1.0,
+                    recommended_halo_mm=3.0,
+                    feature_ids=[feature_name],
+                    notes=(
+                        "Conservative full-candidate dirty region; fixture "
+                        "generator does not run conditioning."
+                    ),
+                )
+            ],
         },
     )

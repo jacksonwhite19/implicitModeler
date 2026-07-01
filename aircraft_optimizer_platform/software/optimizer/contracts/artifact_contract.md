@@ -48,6 +48,13 @@ Initial types:
 - `screenshot_isometric`
 - `metrics_json`
 - `score_result_json`
+- `conditioning_request_json`
+- `conditioning_result_json`
+- `conditioned_cache_manifest_json`
+- `conditioned_sdf_block_store`
+- `conditioning_diagnostics_json`
+- `conditioning_slice_plot`
+- `conditioning_comparison_report`
 
 Future types:
 
@@ -79,3 +86,9 @@ Metadata should include:
 - Runtime environment references.
 
 Exporter-specific tile settings belong in artifact or module metadata, not in the candidate record.
+
+Conditioning-specific metadata should include canonical graph version/hash,
+cache contract version, cache state, update mode, dirty-region summary,
+conditioning backend, confidence, and fallback mode. A conditioned geometry cache
+artifact is derived state; it must not be treated as the aircraft source of
+truth.

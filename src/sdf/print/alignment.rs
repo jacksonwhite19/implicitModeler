@@ -2,13 +2,13 @@
 // dovetail, and bolt holes.
 #![allow(dead_code)] // Print alignment feature API — not all fields exposed in UI yet
 
-use std::sync::Arc;
-use glam::Vec3;
-use crate::sdf::Sdf;
-use crate::sdf::primitives::{Cylinder, SdfBox};
-use crate::sdf::booleans::{Union, Subtract};
-use crate::sdf::transforms::Translate;
 use super::split::SplitPlane;
+use crate::sdf::Sdf;
+use crate::sdf::booleans::{Subtract, Union};
+use crate::sdf::primitives::{Cylinder, SdfBox};
+use crate::sdf::transforms::Translate;
+use glam::Vec3;
+use std::sync::Arc;
 
 // ── AlignmentFeature ─────────────────────────────────────────────────────────
 
@@ -73,10 +73,19 @@ impl AlignmentFeature {
             AlignmentFeature::None => (half_a, half_b),
 
             AlignmentFeature::PinsAndSockets {
-                pin_radius, pin_height, socket_clearance, count, pattern_radius,
+                pin_radius,
+                pin_height,
+                socket_clearance,
+                count,
+                pattern_radius,
             } => {
                 let (pos_sdf, neg_sdf) = pins_and_sockets(
-                    *pin_radius, *pin_height, *socket_clearance, *count, *pattern_radius, plane,
+                    *pin_radius,
+                    *pin_height,
+                    *socket_clearance,
+                    *count,
+                    *pattern_radius,
+                    plane,
                 );
                 // Add pins to part_a
                 let part_a: Arc<dyn Sdf> = Arc::new(Union::new(half_a, pos_sdf));
@@ -86,30 +95,44 @@ impl AlignmentFeature {
             }
 
             AlignmentFeature::TongueAndGroove {
-                tongue_width, tongue_height, groove_clearance,
+                tongue_width,
+                tongue_height,
+                groove_clearance,
             } => {
-                let (pos_sdf, neg_sdf) = tongue_and_groove(
-                    *tongue_width, *tongue_height, *groove_clearance, plane,
-                );
+                let (pos_sdf, neg_sdf) =
+                    tongue_and_groove(*tongue_width, *tongue_height, *groove_clearance, plane);
                 let part_a: Arc<dyn Sdf> = Arc::new(Union::new(half_a, pos_sdf));
                 let part_b: Arc<dyn Sdf> = Arc::new(Subtract::new(half_b, neg_sdf));
                 (part_a, part_b)
             }
 
-            AlignmentFeature::Dovetail { width, height, angle_deg, clearance } => {
-                let (pos_sdf, neg_sdf) = dovetail(
-                    *width, *height, *angle_deg, *clearance, plane,
-                );
+            AlignmentFeature::Dovetail {
+                width,
+                height,
+                angle_deg,
+                clearance,
+            } => {
+                let (pos_sdf, neg_sdf) = dovetail(*width, *height, *angle_deg, *clearance, plane);
                 let part_a: Arc<dyn Sdf> = Arc::new(Union::new(half_a, pos_sdf));
                 let part_b: Arc<dyn Sdf> = Arc::new(Subtract::new(half_b, neg_sdf));
                 (part_a, part_b)
             }
 
             AlignmentFeature::BoltHoles {
-                bolt_radius, boss_radius, boss_height, count, pattern_radius, countersink: _,
+                bolt_radius,
+                boss_radius,
+                boss_height,
+                count,
+                pattern_radius,
+                countersink: _,
             } => {
                 let holes = bolt_hole_pattern(
-                    *bolt_radius, *boss_radius, *boss_height, *count, *pattern_radius, plane,
+                    *bolt_radius,
+                    *boss_radius,
+                    *boss_height,
+                    *count,
+                    *pattern_radius,
+                    plane,
                 );
                 // Both halves get the hole pattern subtracted
                 let part_a: Arc<dyn Sdf> = Arc::new(Subtract::new(half_a, Arc::clone(&holes)));
@@ -122,7 +145,14 @@ impl AlignmentFeature {
 
 // ── Helper: build a union of N translated SDFs in a circle ──────────────────
 
-fn circular_pattern<F>(count: usize, radius: f32, center: Vec3, t1: Vec3, t2: Vec3, mut make: F) -> Arc<dyn Sdf>
+fn circular_pattern<F>(
+    count: usize,
+    radius: f32,
+    center: Vec3,
+    t1: Vec3,
+    t2: Vec3,
+    mut make: F,
+) -> Arc<dyn Sdf>
 where
     F: FnMut() -> Arc<dyn Sdf>,
 {
@@ -162,18 +192,34 @@ fn pins_and_sockets(
     let pin_offset = normal * (pin_height * 0.5);
 
     let socket_radius = pin_radius + clearance;
-    let socket_depth   = pin_height + clearance;
-    let socket_offset  = -normal * (socket_depth * 0.5); // sinks into part_b
+    let socket_depth = pin_height + clearance;
+    let socket_offset = -normal * (socket_depth * 0.5); // sinks into part_b
 
     // Build axis-aligned cylinders then translate them to their pattern positions.
     // The plane normal determines the cylinder orientation. We handle the three
     // principal axes; for arbitrary normals we use an approximating box (simpler).
 
-    let make_pin_cyl  = || -> Arc<dyn Sdf> { make_cylinder_along(normal, pin_radius, pin_height * 0.5) };
-    let make_sock_cyl = || -> Arc<dyn Sdf> { make_cylinder_along(normal, socket_radius, socket_depth * 0.5) };
+    let make_pin_cyl =
+        || -> Arc<dyn Sdf> { make_cylinder_along(normal, pin_radius, pin_height * 0.5) };
+    let make_sock_cyl =
+        || -> Arc<dyn Sdf> { make_cylinder_along(normal, socket_radius, socket_depth * 0.5) };
 
-    let pins    = circular_pattern(count, pattern_radius, center + pin_offset,   t1, t2, make_pin_cyl);
-    let sockets = circular_pattern(count, pattern_radius, center + socket_offset, t1, t2, make_sock_cyl);
+    let pins = circular_pattern(
+        count,
+        pattern_radius,
+        center + pin_offset,
+        t1,
+        t2,
+        make_pin_cyl,
+    );
+    let sockets = circular_pattern(
+        count,
+        pattern_radius,
+        center + socket_offset,
+        t1,
+        t2,
+        make_sock_cyl,
+    );
 
     (pins, sockets)
 }
@@ -307,7 +353,7 @@ fn make_cylinder_along(axis: Vec3, radius: f32, half_height: f32) -> Arc<dyn Sdf
 mod tests {
     use super::*;
     use crate::sdf::primitives::Sphere;
-    use crate::sdf::print::split::{split_body, SplitPlane};
+    use crate::sdf::print::split::{SplitPlane, split_body};
 
     #[test]
     fn pins_protrude_from_part_a() {
@@ -348,7 +394,11 @@ mod tests {
         let socket_center = Vec3::new(8.0, 0.0, -1.575);
         let d = result.part_b.distance(socket_center);
         // The socket is subtracted so the cavity should read positive (outside material).
-        assert!(d > 0.0, "socket cavity should be empty in part_b, got {}", d);
+        assert!(
+            d > 0.0,
+            "socket cavity should be empty in part_b, got {}",
+            d
+        );
     }
 
     #[test]

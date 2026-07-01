@@ -8,14 +8,14 @@
 // part_b (or the mating direction). `position` is the centre of the joint
 // interface. `length` is the joint extent along the third direction.
 
-use std::sync::Arc;
-use glam::Vec3;
+use super::fasteners::{NullSdf, orient_along};
 use crate::sdf::Sdf;
-use crate::sdf::primitives::{Cylinder, SdfBox};
-use crate::sdf::booleans::{Union, Subtract};
-use crate::sdf::transforms::{Translate, Rotate};
 use crate::sdf::aerospace::mechanical::CappedCone;
-use super::fasteners::{orient_along, NullSdf};
+use crate::sdf::booleans::{Subtract, Union};
+use crate::sdf::primitives::{Cylinder, SdfBox};
+use crate::sdf::transforms::{Rotate, Translate};
+use glam::Vec3;
+use std::sync::Arc;
 
 // ── Joint delta ───────────────────────────────────────────────────────────────
 
@@ -25,7 +25,7 @@ use super::fasteners::{orient_along, NullSdf};
 #[derive(Clone)]
 pub struct JointDelta {
     pub addition: Arc<dyn Sdf>,
-    pub void:     Arc<dyn Sdf>,
+    pub void: Arc<dyn Sdf>,
 }
 
 impl JointDelta {
@@ -37,7 +37,7 @@ impl JointDelta {
     pub fn null() -> Self {
         Self {
             addition: Arc::new(NullSdf),
-            void:     Arc::new(NullSdf),
+            void: Arc::new(NullSdf),
         }
     }
 
@@ -75,17 +75,17 @@ fn place_along_axis(child: Arc<dyn Sdf>, pos: Vec3, axis: Vec3) -> Arc<dyn Sdf> 
 ///
 /// Returns `(delta_a, delta_b)`.
 pub fn dovetail_joint(
-    length:    f32,
-    width:     f32,
-    height:    f32,
+    length: f32,
+    width: f32,
+    height: f32,
     angle_deg: f32,
     clearance: f32,
-    position:  Vec3,
-    axis:      Vec3,
+    position: Vec3,
+    axis: Vec3,
 ) -> (JointDelta, JointDelta) {
     // Average width approximation (see alignment.rs dovetail)
-    let taper   = height * angle_deg.to_radians().tan();
-    let avg_w   = width + taper;
+    let taper = height * angle_deg.to_radians().tan();
+    let avg_w = width + taper;
 
     // Male protrusion on part_a: along +axis from position, half-height = height/2
     let male_z: Arc<dyn Sdf> = box_at(
@@ -98,7 +98,7 @@ pub fn dovetail_joint(
 
     // Female socket on part_b: along -axis from position, with clearance.
     // Build extending in +Z so orient_along(-axis) flips it into -axis direction.
-    let cl      = clearance;
+    let cl = clearance;
     let fem_z: Arc<dyn Sdf> = box_at(
         (avg_w + cl) / 2.0,
         (length + cl) / 2.0,
@@ -121,13 +121,13 @@ pub fn dovetail_joint(
 ///
 /// Returns `(delta_a, delta_b)`.
 pub fn finger_joint(
-    length:       f32,
+    length: f32,
     finger_width: f32,
     finger_height: f32,
-    count:        usize,
-    clearance:    f32,
-    position:     Vec3,
-    axis:         Vec3,
+    count: usize,
+    clearance: f32,
+    position: Vec3,
+    axis: Vec3,
 ) -> (JointDelta, JointDelta) {
     let count = count.max(1);
     let total = count as f32 * finger_width;
@@ -140,7 +140,7 @@ pub fn finger_joint(
 
     let push = |acc: &mut Option<Arc<dyn Sdf>>, s: Arc<dyn Sdf>| {
         *acc = Some(match acc.take() {
-            None    => s,
+            None => s,
             Some(r) => Arc::new(Union::new(r, s)),
         });
     };
@@ -162,7 +162,7 @@ pub fn finger_joint(
         let socket: Arc<dyn Sdf> = Arc::new(Translate::new(
             Arc::new(SdfBox::new(Vec3::new(
                 (finger_width + clearance) / 2.0,
-                (length       + clearance) / 2.0,
+                (length + clearance) / 2.0,
                 (finger_height + clearance) / 2.0,
             ))),
             Vec3::new(x_center, 0.0, -(finger_height + clearance) / 2.0),
@@ -198,12 +198,12 @@ pub fn finger_joint(
 ///
 /// Returns `(delta_a, delta_b)`.
 pub fn press_fit(
-    pin_radius:    f32,
-    pin_length:    f32,
-    socket_depth:  f32,
-    interference:  f32,
-    position:      Vec3,
-    direction:     Vec3,
+    pin_radius: f32,
+    pin_length: f32,
+    socket_depth: f32,
+    interference: f32,
+    position: Vec3,
+    direction: Vec3,
 ) -> (JointDelta, JointDelta) {
     // Pin: cylinder from z=0 to z=pin_length along direction
     let pin_z: Arc<dyn Sdf> = Arc::new(Translate::new(
@@ -234,25 +234,29 @@ pub fn press_fit(
 ///
 /// Returns `(delta_a, delta_b)`.
 pub fn snap_connector(
-    width:      f32,
-    height:     f32,
+    width: f32,
+    height: f32,
     engagement: f32,
-    clearance:  f32,
-    position:   Vec3,
-    direction:  Vec3,
+    clearance: f32,
+    position: Vec3,
+    direction: Vec3,
 ) -> (JointDelta, JointDelta) {
     // Arm: a thin rectangular beam extending from z=0 to z=height along direction
     let arm_thickness = 0.8_f32;
     let arm_z: Arc<dyn Sdf> = Arc::new(Translate::new(
-        Arc::new(SdfBox::new(Vec3::new(width / 2.0, arm_thickness / 2.0, height / 2.0))),
+        Arc::new(SdfBox::new(Vec3::new(
+            width / 2.0,
+            arm_thickness / 2.0,
+            height / 2.0,
+        ))),
         Vec3::new(0.0, 0.0, height / 2.0),
     ));
     // Wedge tip at the end of the arm
     let _tip_z: Arc<dyn Sdf> = Arc::new(Translate::new(
         Arc::new(CappedCone {
-            r1: arm_thickness / 2.0 + engagement,  // wide at entry
-            r2: arm_thickness / 2.0,                // narrow at tip
-            h:  engagement / 2.0,
+            r1: arm_thickness / 2.0 + engagement, // wide at entry
+            r2: arm_thickness / 2.0,              // narrow at tip
+            h: engagement / 2.0,
         }),
         Vec3::new(0.0, 0.0, height + engagement / 2.0),
     ));
@@ -297,11 +301,11 @@ pub fn snap_connector(
 /// Returns `(delta_a, delta_b)` — both parts get the hinge addition and the
 /// hinge occupies the space between them.
 pub fn living_hinge_strip(
-    width:     f32,
+    width: f32,
     thickness: f32,
-    length:    f32,
-    position:  Vec3,
-    axis:      Vec3,
+    length: f32,
+    position: Vec3,
+    axis: Vec3,
 ) -> (JointDelta, JointDelta) {
     let axis = axis.normalize();
 
@@ -313,13 +317,17 @@ pub fn living_hinge_strip(
 
     // Thin hinge strip: width along axis, thickness along perp, length spans both parts
     let strip: Arc<dyn Sdf> = Arc::new(Translate::new(
-        Arc::new(SdfBox::new(Vec3::new(width / 2.0, thickness / 2.0, length / 2.0))),
+        Arc::new(SdfBox::new(Vec3::new(
+            width / 2.0,
+            thickness / 2.0,
+            length / 2.0,
+        ))),
         Vec3::ZERO,
     ));
     // Rotate so the strip length runs along perp (perpendicular to axis)
-    let q       = glam::Quat::from_rotation_arc(Vec3::Z, perp);
+    let q = glam::Quat::from_rotation_arc(Vec3::Z, perp);
     let strip_r: Arc<dyn Sdf> = Arc::new(Rotate::new(strip, q));
-    let strip   = Arc::new(Translate::new(strip_r, position));
+    let strip = Arc::new(Translate::new(strip_r, position));
 
     // Reinforcement bosses at each end of the hinge strip
     let end_boss = |side: f32| -> Arc<dyn Sdf> {
@@ -329,7 +337,7 @@ pub fn living_hinge_strip(
         ))
     };
     let bosses: Arc<dyn Sdf> = Arc::new(Union::new(end_boss(1.0), end_boss(-1.0)));
-    let hinge: Arc<dyn Sdf>  = Arc::new(Union::new(strip, bosses));
+    let hinge: Arc<dyn Sdf> = Arc::new(Union::new(strip, bosses));
 
     // Both parts share the hinge addition; neither needs a void
     let delta_a = JointDelta::new(Arc::clone(&hinge), Arc::new(NullSdf));
@@ -345,9 +353,7 @@ mod tests {
 
     #[test]
     fn dovetail_male_protrudes() {
-        let (delta_a, _delta_b) = dovetail_joint(
-            20.0, 8.0, 5.0, 15.0, 0.15, Vec3::ZERO, Vec3::Z,
-        );
+        let (delta_a, _delta_b) = dovetail_joint(20.0, 8.0, 5.0, 15.0, 0.15, Vec3::ZERO, Vec3::Z);
         // Male protrudes in +Z from origin. At (0,0,2.5) we should be inside.
         let d = delta_a.addition.distance(Vec3::new(0.0, 0.0, 2.5));
         assert!(d < 0.0, "Male dovetail centre should be solid, got {}", d);
@@ -356,19 +362,25 @@ mod tests {
     #[test]
     fn dovetail_clearance_gap() {
         let clearance = 0.15_f32;
-        let (_, delta_b) = dovetail_joint(
-            20.0, 8.0, 5.0, 15.0, clearance, Vec3::ZERO, Vec3::Z,
-        );
+        let (_, delta_b) = dovetail_joint(20.0, 8.0, 5.0, 15.0, clearance, Vec3::ZERO, Vec3::Z);
         // The female void should extend in -Z from origin. At (0,0,-2.5) we should be inside the void.
         let d = delta_b.void.distance(Vec3::new(0.0, 0.0, -2.5));
-        assert!(d < 0.0, "Female socket centre should be inside void, got {}", d);
+        assert!(
+            d < 0.0,
+            "Female socket centre should be inside void, got {}",
+            d
+        );
 
         // The male (avg_w=width+taper) at (5,0,-2.5) should be OUTSIDE the female void (gap).
         // avg_w = 8 + 5*tan(15°) ≈ 8 + 1.34 = 9.34, so male half_w ≈ 4.67.
         // Female half_w = (9.34 + 0.15)/2 ≈ 4.75.
         // At x=4.8: outside female (x > female_hw), confirming clearance.
         let d_gap = delta_b.void.distance(Vec3::new(4.8, 0.0, -2.5));
-        assert!(d_gap > 0.0, "Point at gap width should be outside void, got {}", d_gap);
+        assert!(
+            d_gap > 0.0,
+            "Point at gap width should be outside void, got {}",
+            d_gap
+        );
     }
 
     #[test]
@@ -382,19 +394,21 @@ mod tests {
 
     #[test]
     fn finger_joint_alternates() {
-        let (delta_a, delta_b) = finger_joint(
-            10.0, 3.0, 4.0, 3, 0.1, Vec3::ZERO, Vec3::Z,
-        );
+        let (delta_a, delta_b) = finger_joint(10.0, 3.0, 4.0, 3, 0.1, Vec3::ZERO, Vec3::Z);
         // With 3 fingers: fingers 0,2 go to part_a; finger 1 goes to part_b.
         // Finger 0 centre: x = -total/2 + 0.5*3 = -4.5 + 1.5 = -3.0
         // Finger 1 centre: x = -4.5 + 4.5 = 0.0
         // Finger 2 centre: x = -4.5 + 7.5 = 3.0
         // Part_a addition at (-3, 0, 2): should be solid (finger 0 → part_a)
-        assert!(delta_a.addition.distance(Vec3::new(-3.0, 0.0, 2.0)) < 0.0,
-            "Part_a finger at x=-3 should be solid");
+        assert!(
+            delta_a.addition.distance(Vec3::new(-3.0, 0.0, 2.0)) < 0.0,
+            "Part_a finger at x=-3 should be solid"
+        );
         // Part_b addition at (0, 0, 2): should be solid (finger 1 → part_b)
-        assert!(delta_b.addition.distance(Vec3::new(0.0, 0.0, 2.0)) < 0.0,
-            "Part_b finger at x=0 should be solid");
+        assert!(
+            delta_b.addition.distance(Vec3::new(0.0, 0.0, 2.0)) < 0.0,
+            "Part_b finger at x=0 should be solid"
+        );
     }
 
     #[test]
@@ -404,8 +418,11 @@ mod tests {
         let result = delta.apply(Arc::clone(&sphere));
         // NullSdf void has no effect; NullSdf addition has no effect.
         // Result at origin should be same as original sphere (-10).
-        let d_orig   = sphere.distance(Vec3::ZERO);
+        let d_orig = sphere.distance(Vec3::ZERO);
         let d_result = result.distance(Vec3::ZERO);
-        assert!((d_orig - d_result).abs() < 0.01, "Null delta should not change sphere");
+        assert!(
+            (d_orig - d_result).abs() < 0.01,
+            "Null delta should not change sphere"
+        );
     }
 }

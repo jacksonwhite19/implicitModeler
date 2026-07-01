@@ -6,26 +6,41 @@
 // Origin = center of the box bottom face.
 
 fn screw_at(x, y, shaft_r, head_r, head_d, shaft_d, z_top) {
-    translate(
-        countersink(shaft_r, head_r, head_d, shaft_d),
-        x, y, z_top
-    )
+    let head = translate(
+        cylinder(head_r, head_d),
+        x, y, z_top - head_d * 0.5
+    );
+    let shaft = translate(
+        cylinder(shaft_r, shaft_d),
+        x, y, z_top - head_d - shaft_d * 0.5
+    );
+    union(head, shaft)
 }
 
 fn screw_keepout_at(x, y, shaft_r, head_r, head_d, shaft_d, z_top, above_h, below_extra, top_open_below) {
-    let hole = translate(
-        countersink(shaft_r, head_r, head_d, shaft_d),
-        x, y, z_top
-    );
+    let hole = screw_at(x, y, shaft_r, head_r, head_d, shaft_d, z_top);
     let head_clear = translate(
-        cylinder(head_r, above_h + top_open_below),
-        x, y, z_top + (above_h - top_open_below) * 0.5
+        cylinder(head_r, head_d + above_h + top_open_below),
+        x, y, z_top + (above_h - head_d + top_open_below) * 0.5 - top_open_below
     );
     let tail_clear = translate(
         cylinder(shaft_r, below_extra),
         x, y, z_top - head_d - shaft_d - below_extra * 0.5
     );
     union(union(hole, head_clear), tail_clear)
+}
+
+fn dumb_fastener_keepout_at(x, y, shaft_r, head_r, body_z, extra_top, extra_bottom) {
+    let shaft_h = body_z + extra_top + extra_bottom;
+    let shaft = translate(
+        cylinder(shaft_r, shaft_h),
+        x, y, body_z * 0.5 + (extra_top - extra_bottom) * 0.5
+    );
+    let head = translate(
+        cylinder(head_r, extra_top + 1.2),
+        x, y, body_z + (extra_top + 1.2) * 0.5 - 0.6
+    );
+    union(shaft, head)
 }
 
 fn screw_pad_seed_at(x, y, shaft_r, below_len) {
@@ -49,18 +64,12 @@ fn component() {
     let screw_edge_inset = 5.0;
     let screw_shaft_r = 1.7;
     let screw_head_r = 3.1;
-    let screw_head_d = 2.0;
     let screw_penetration_below = 3.0;
-    let screw_shaft_d = body_z - screw_head_d + screw_penetration_below;
-    let screw_cut_head_radius_extra = 0.2;
-
     let wall_clearance = 0.5;
     let top_keepout_z = body_z * 0.5;
     let top_keepout_h = body_z * 0.5 + 6.0;
     let screw_keepout_margin = 0.35;
-    let screw_head_relief_above = 1.5;
-    let screw_head_relief_below = 0.8;
-    let screw_head_clear_above = 1.0;
+    let screw_head_clear_above = 2.0;
     let screw_tail_keepout_extra = 0.8;
     let fastener_pad_limit_r = screw_head_r + 1.8;
     let fastener_pad_below_len = screw_penetration_below + screw_tail_keepout_extra;
@@ -68,25 +77,14 @@ fn component() {
     let screw_x = body_x * 0.5 - screw_edge_inset;
     let screw_y = body_y * 0.5 - screw_edge_inset;
 
-    let screw_cut = union(
-        union(
-            screw_keepout_at( screw_x,  screw_y, screw_shaft_r, screw_head_r + screw_cut_head_radius_extra, screw_head_d, screw_shaft_d, body_z, screw_head_relief_above, 0.0, screw_head_relief_below),
-            screw_keepout_at(-screw_x,  screw_y, screw_shaft_r, screw_head_r + screw_cut_head_radius_extra, screw_head_d, screw_shaft_d, body_z, screw_head_relief_above, 0.0, screw_head_relief_below)
-        ),
-        union(
-            screw_keepout_at( screw_x, -screw_y, screw_shaft_r, screw_head_r + screw_cut_head_radius_extra, screw_head_d, screw_shaft_d, body_z, screw_head_relief_above, 0.0, screw_head_relief_below),
-            screw_keepout_at(-screw_x, -screw_y, screw_shaft_r, screw_head_r + screw_cut_head_radius_extra, screw_head_d, screw_shaft_d, body_z, screw_head_relief_above, 0.0, screw_head_relief_below)
-        )
-    );
-
     let fastener_keepout = union(
         union(
-            screw_keepout_at( screw_x,  screw_y, screw_shaft_r + screw_keepout_margin, screw_head_r + screw_keepout_margin, screw_head_d + 0.2, screw_shaft_d + 0.2, body_z, screw_head_clear_above, screw_tail_keepout_extra, screw_head_relief_below + 0.2),
-            screw_keepout_at(-screw_x,  screw_y, screw_shaft_r + screw_keepout_margin, screw_head_r + screw_keepout_margin, screw_head_d + 0.2, screw_shaft_d + 0.2, body_z, screw_head_clear_above, screw_tail_keepout_extra, screw_head_relief_below + 0.2)
+            dumb_fastener_keepout_at( screw_x,  screw_y, screw_shaft_r + screw_keepout_margin, screw_head_r + screw_keepout_margin + 0.4, body_z, screw_head_clear_above, screw_penetration_below + screw_tail_keepout_extra),
+            dumb_fastener_keepout_at(-screw_x,  screw_y, screw_shaft_r + screw_keepout_margin, screw_head_r + screw_keepout_margin + 0.4, body_z, screw_head_clear_above, screw_penetration_below + screw_tail_keepout_extra)
         ),
         union(
-            screw_keepout_at( screw_x, -screw_y, screw_shaft_r + screw_keepout_margin, screw_head_r + screw_keepout_margin, screw_head_d + 0.2, screw_shaft_d + 0.2, body_z, screw_head_clear_above, screw_tail_keepout_extra, screw_head_relief_below + 0.2),
-            screw_keepout_at(-screw_x, -screw_y, screw_shaft_r + screw_keepout_margin, screw_head_r + screw_keepout_margin, screw_head_d + 0.2, screw_shaft_d + 0.2, body_z, screw_head_clear_above, screw_tail_keepout_extra, screw_head_relief_below + 0.2)
+            dumb_fastener_keepout_at( screw_x, -screw_y, screw_shaft_r + screw_keepout_margin, screw_head_r + screw_keepout_margin + 0.4, body_z, screw_head_clear_above, screw_penetration_below + screw_tail_keepout_extra),
+            dumb_fastener_keepout_at(-screw_x, -screw_y, screw_shaft_r + screw_keepout_margin, screw_head_r + screw_keepout_margin + 0.4, body_z, screw_head_clear_above, screw_penetration_below + screw_tail_keepout_extra)
         )
     );
 

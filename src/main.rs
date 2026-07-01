@@ -1,27 +1,30 @@
+mod aero;
+mod analysis;
 mod app;
-mod version_control;
+mod components;
+mod export;
+mod fea;
+mod geometry_analysis;
+mod gpu;
+mod headless;
+mod library;
 mod materials;
-mod sdf;
 mod mesh;
+mod pipeline;
+mod project;
 mod render;
 mod scripting;
-mod export;
-mod project;
-mod headless;
-mod pipeline;
-mod gpu;
-mod components;
-mod ui;
-mod analysis;
-mod geometry_analysis;
-mod aero;
-mod fea;
+mod sdf;
 mod settings;
+mod ui;
 mod undo;
-mod library;
+mod version_control;
 
 use clap::Parser;
 use std::path::PathBuf;
+use std::process::{Command, Stdio};
+use std::thread;
+use std::time::{Duration, Instant};
 
 #[derive(Parser)]
 #[command(name = "implicit-cad")]
@@ -70,6 +73,45 @@ struct Args {
     /// Mesh quality: draft, normal, fine, ultra
     #[arg(long, default_value = "normal")]
     mesh_quality: String,
+
+    /// Aero export mode for --format aero
+    #[arg(long, default_value = "external")]
+    aero_mode: String,
+
+    /// Aero adaptive target error in mm
+    #[arg(long, default_value = "0.5")]
+    aero_target_error_mm: f32,
+
+    /// Aero adaptive minimum cell size in mm
+    #[arg(long, default_value = "1.0")]
+    aero_min_cell_mm: f32,
+
+    /// Aero adaptive maximum octree depth
+    #[arg(long, default_value = "6")]
+    aero_max_depth: u32,
+
+    /// Also write OBJ per aero patch
+    #[arg(long)]
+    aero_write_obj: bool,
+
+    /// Minimal fast CFD export: write only patch files + manifest, skip composite/report/helper outputs
+    #[arg(long)]
+    aero_fast_mode: bool,
+
+    /// Force dense uniform grid sampling for aero export and bypass scout/adaptive backend selection
+    #[arg(long)]
+    aero_uniform_reference: bool,
+
+    /// Kill headless aero export if it runs longer than this many seconds
+    #[arg(long, default_value = "600")]
+    aero_timeout_seconds: u64,
+
+    /// Abort a patch before meshing if its estimated equivalent uniform grid exceeds this many voxels
+    #[arg(long, default_value = "128000000")]
+    aero_max_patch_voxels: u64,
+
+    #[arg(long, hide = true)]
+    aero_worker: bool,
 }
 
 fn mesh_quality_resolution(mesh_quality: &str) -> Result<u32, String> {
@@ -98,19 +140,75 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         args.resolution
     };
 
+    if args.headless
+        && args.format.eq_ignore_ascii_case("aero")
+        && !args.aero_worker
+        && args.script.is_some()
+    {
+        let exe = std::env::current_exe()?;
+        let mut child_args: Vec<_> = std::env::args_os().skip(1).collect();
+        child_args.push("--aero-worker".into());
+        let mut child = Command::new(exe)
+            .args(child_args)
+            .stdin(Stdio::null())
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit())
+            .spawn()?;
+        let timeout = Duration::from_secs(args.aero_timeout_seconds.max(1));
+        let start = Instant::now();
+        loop {
+            if let Some(status) = child.try_wait()? {
+                if status.success() {
+                    return Ok(());
+                }
+                return Err(format!("Headless aero worker exited with status {}", status).into());
+            }
+            if start.elapsed() >= timeout {
+                let _ = child.kill();
+                let _ = child.wait();
+                return Err(format!(
+                    "Headless aero export exceeded {} seconds and was terminated",
+                    args.aero_timeout_seconds.max(1)
+                )
+                .into());
+            }
+            thread::sleep(Duration::from_millis(250));
+        }
+    }
+
     if args.headless {
         // Parse dimension overrides
-        let dim_overrides: Vec<(String, f64)> = args.dim.iter().filter_map(|s| {
-            let mut parts = s.splitn(2, '=');
-            let name  = parts.next()?.trim().to_string();
-            let value = parts.next()?.trim().parse::<f64>().ok()?;
-            Some((name, value))
-        }).collect();
+        let dim_overrides: Vec<(String, f64)> = args
+            .dim
+            .iter()
+            .filter_map(|s| {
+                let mut parts = s.splitn(2, '=');
+                let name = parts.next()?.trim().to_string();
+                let value = parts.next()?.trim().parse::<f64>().ok()?;
+                Some((name, value))
+            })
+            .collect();
 
         // Headless mode
         if let Some(batch_dir) = args.batch {
-            let output_dir = args.batch_output.unwrap_or_else(|| PathBuf::from("./output"));
-            headless::execute_batch(&batch_dir, &output_dir, &args.format, resolution, args.smooth_normals)?;
+            let output_dir = args
+                .batch_output
+                .unwrap_or_else(|| PathBuf::from("./output"));
+            headless::execute_batch(
+                &batch_dir,
+                &output_dir,
+                &args.format,
+                resolution,
+                args.smooth_normals,
+                &args.aero_mode,
+                args.aero_target_error_mm,
+                args.aero_min_cell_mm,
+                args.aero_max_depth,
+                args.aero_write_obj,
+                args.aero_fast_mode,
+                args.aero_uniform_reference,
+                args.aero_max_patch_voxels,
+            )?;
             Ok(())
         } else if let Some(script_path) = args.script {
             headless::execute_script_headless_extended(
@@ -121,6 +219,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 args.smooth_normals,
                 &dim_overrides,
                 args.output_metrics.as_deref(),
+                &args.aero_mode,
+                args.aero_target_error_mm,
+                args.aero_min_cell_mm,
+                args.aero_max_depth,
+                args.aero_write_obj,
+                args.aero_fast_mode,
+                args.aero_uniform_reference,
+                args.aero_max_patch_voxels,
             )?;
             Ok(())
         } else {
@@ -131,8 +237,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // GUI mode
         use eframe::egui;
         let options = eframe::NativeOptions {
-            viewport: egui::ViewportBuilder::default()
-                .with_inner_size([1200.0, 800.0]),
+            viewport: egui::ViewportBuilder::default().with_inner_size([1200.0, 800.0]),
             renderer: eframe::Renderer::Wgpu,
             ..Default::default()
         };

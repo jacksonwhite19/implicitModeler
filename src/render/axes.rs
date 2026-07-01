@@ -1,8 +1,8 @@
 // XYZ axis indicator rendering
 
+use super::camera::Camera;
 use eframe::wgpu;
 use wgpu::util::DeviceExt;
-use super::camera::Camera;
 
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -130,14 +130,32 @@ impl AxesRenderer {
         // Generate axis vertices (lines from origin)
         let vertices = vec![
             // X axis (red) - pointing right
-            AxesVertex { position: [0.0, 0.0, 0.0], color: [1.0, 0.0, 0.0] },
-            AxesVertex { position: [1.0, 0.0, 0.0], color: [1.0, 0.0, 0.0] },
+            AxesVertex {
+                position: [0.0, 0.0, 0.0],
+                color: [1.0, 0.0, 0.0],
+            },
+            AxesVertex {
+                position: [1.0, 0.0, 0.0],
+                color: [1.0, 0.0, 0.0],
+            },
             // Y axis (green) - pointing forward
-            AxesVertex { position: [0.0, 0.0, 0.0], color: [0.0, 1.0, 0.0] },
-            AxesVertex { position: [0.0, 1.0, 0.0], color: [0.0, 1.0, 0.0] },
+            AxesVertex {
+                position: [0.0, 0.0, 0.0],
+                color: [0.0, 1.0, 0.0],
+            },
+            AxesVertex {
+                position: [0.0, 1.0, 0.0],
+                color: [0.0, 1.0, 0.0],
+            },
             // Z axis (blue) - pointing up
-            AxesVertex { position: [0.0, 0.0, 0.0], color: [0.0, 0.0, 1.0] },
-            AxesVertex { position: [0.0, 0.0, 1.0], color: [0.0, 0.0, 1.0] },
+            AxesVertex {
+                position: [0.0, 0.0, 0.0],
+                color: [0.0, 0.0, 1.0],
+            },
+            AxesVertex {
+                position: [0.0, 0.0, 1.0],
+                color: [0.0, 0.0, 1.0],
+            },
         ];
         let num_vertices = vertices.len() as u32;
 

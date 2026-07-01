@@ -1,50 +1,40 @@
 // Marching cubes mesh extraction
 
-use glam::Vec3;
-use crate::sdf::Sdf;
 use crate::mesh::Mesh;
+use crate::sdf::Sdf;
+use glam::Vec3;
 
 // Edge table: for each of the 256 possible cube configurations,
 // this table indicates which edges are intersected by the isosurface
 pub(crate) const EDGE_TABLE: [u16; 256] = [
-    0x0, 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
-    0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00,
-    0x190, 0x99, 0x393, 0x29a, 0x596, 0x49f, 0x795, 0x69c,
-    0x99c, 0x895, 0xb9f, 0xa96, 0xd9a, 0xc93, 0xf99, 0xe90,
-    0x230, 0x339, 0x33, 0x13a, 0x636, 0x73f, 0x435, 0x53c,
-    0xa3c, 0xb35, 0x83f, 0x936, 0xe3a, 0xf33, 0xc39, 0xd30,
-    0x3a0, 0x2a9, 0x1a3, 0xaa, 0x7a6, 0x6af, 0x5a5, 0x4ac,
-    0xbac, 0xaa5, 0x9af, 0x8a6, 0xfaa, 0xea3, 0xda9, 0xca0,
-    0x460, 0x569, 0x663, 0x76a, 0x66, 0x16f, 0x265, 0x36c,
-    0xc6c, 0xd65, 0xe6f, 0xf66, 0x86a, 0x963, 0xa69, 0xb60,
-    0x5f0, 0x4f9, 0x7f3, 0x6fa, 0x1f6, 0xff, 0x3f5, 0x2fc,
-    0xdfc, 0xcf5, 0xfff, 0xef6, 0x9fa, 0x8f3, 0xbf9, 0xaf0,
-    0x650, 0x759, 0x453, 0x55a, 0x256, 0x35f, 0x55, 0x15c,
-    0xe5c, 0xf55, 0xc5f, 0xd56, 0xa5a, 0xb53, 0x859, 0x950,
-    0x7c0, 0x6c9, 0x5c3, 0x4ca, 0x3c6, 0x2cf, 0x1c5, 0xcc,
-    0xfcc, 0xec5, 0xdcf, 0xcc6, 0xbca, 0xac3, 0x9c9, 0x8c0,
-    0x8c0, 0x9c9, 0xac3, 0xbca, 0xcc6, 0xdcf, 0xec5, 0xfcc,
-    0xcc, 0x1c5, 0x2cf, 0x3c6, 0x4ca, 0x5c3, 0x6c9, 0x7c0,
-    0x950, 0x859, 0xb53, 0xa5a, 0xd56, 0xc5f, 0xf55, 0xe5c,
-    0x15c, 0x55, 0x35f, 0x256, 0x55a, 0x453, 0x759, 0x650,
-    0xaf0, 0xbf9, 0x8f3, 0x9fa, 0xef6, 0xfff, 0xcf5, 0xdfc,
-    0x2fc, 0x3f5, 0xff, 0x1f6, 0x6fa, 0x7f3, 0x4f9, 0x5f0,
-    0xb60, 0xa69, 0x963, 0x86a, 0xf66, 0xe6f, 0xd65, 0xc6c,
-    0x36c, 0x265, 0x16f, 0x66, 0x76a, 0x663, 0x569, 0x460,
-    0xca0, 0xda9, 0xea3, 0xfaa, 0x8a6, 0x9af, 0xaa5, 0xbac,
-    0x4ac, 0x5a5, 0x6af, 0x7a6, 0xaa, 0x1a3, 0x2a9, 0x3a0,
-    0xd30, 0xc39, 0xf33, 0xe3a, 0x936, 0x83f, 0xb35, 0xa3c,
-    0x53c, 0x435, 0x73f, 0x636, 0x13a, 0x33, 0x339, 0x230,
-    0xe90, 0xf99, 0xc93, 0xd9a, 0xa96, 0xb9f, 0x895, 0x99c,
-    0x69c, 0x795, 0x49f, 0x596, 0x29a, 0x393, 0x99, 0x190,
-    0xf00, 0xe09, 0xd03, 0xc0a, 0xb06, 0xa0f, 0x905, 0x80c,
+    0x0, 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c, 0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03,
+    0xe09, 0xf00, 0x190, 0x99, 0x393, 0x29a, 0x596, 0x49f, 0x795, 0x69c, 0x99c, 0x895, 0xb9f,
+    0xa96, 0xd9a, 0xc93, 0xf99, 0xe90, 0x230, 0x339, 0x33, 0x13a, 0x636, 0x73f, 0x435, 0x53c,
+    0xa3c, 0xb35, 0x83f, 0x936, 0xe3a, 0xf33, 0xc39, 0xd30, 0x3a0, 0x2a9, 0x1a3, 0xaa, 0x7a6,
+    0x6af, 0x5a5, 0x4ac, 0xbac, 0xaa5, 0x9af, 0x8a6, 0xfaa, 0xea3, 0xda9, 0xca0, 0x460, 0x569,
+    0x663, 0x76a, 0x66, 0x16f, 0x265, 0x36c, 0xc6c, 0xd65, 0xe6f, 0xf66, 0x86a, 0x963, 0xa69,
+    0xb60, 0x5f0, 0x4f9, 0x7f3, 0x6fa, 0x1f6, 0xff, 0x3f5, 0x2fc, 0xdfc, 0xcf5, 0xfff, 0xef6,
+    0x9fa, 0x8f3, 0xbf9, 0xaf0, 0x650, 0x759, 0x453, 0x55a, 0x256, 0x35f, 0x55, 0x15c, 0xe5c,
+    0xf55, 0xc5f, 0xd56, 0xa5a, 0xb53, 0x859, 0x950, 0x7c0, 0x6c9, 0x5c3, 0x4ca, 0x3c6, 0x2cf,
+    0x1c5, 0xcc, 0xfcc, 0xec5, 0xdcf, 0xcc6, 0xbca, 0xac3, 0x9c9, 0x8c0, 0x8c0, 0x9c9, 0xac3,
+    0xbca, 0xcc6, 0xdcf, 0xec5, 0xfcc, 0xcc, 0x1c5, 0x2cf, 0x3c6, 0x4ca, 0x5c3, 0x6c9, 0x7c0,
+    0x950, 0x859, 0xb53, 0xa5a, 0xd56, 0xc5f, 0xf55, 0xe5c, 0x15c, 0x55, 0x35f, 0x256, 0x55a,
+    0x453, 0x759, 0x650, 0xaf0, 0xbf9, 0x8f3, 0x9fa, 0xef6, 0xfff, 0xcf5, 0xdfc, 0x2fc, 0x3f5,
+    0xff, 0x1f6, 0x6fa, 0x7f3, 0x4f9, 0x5f0, 0xb60, 0xa69, 0x963, 0x86a, 0xf66, 0xe6f, 0xd65,
+    0xc6c, 0x36c, 0x265, 0x16f, 0x66, 0x76a, 0x663, 0x569, 0x460, 0xca0, 0xda9, 0xea3, 0xfaa,
+    0x8a6, 0x9af, 0xaa5, 0xbac, 0x4ac, 0x5a5, 0x6af, 0x7a6, 0xaa, 0x1a3, 0x2a9, 0x3a0, 0xd30,
+    0xc39, 0xf33, 0xe3a, 0x936, 0x83f, 0xb35, 0xa3c, 0x53c, 0x435, 0x73f, 0x636, 0x13a, 0x33,
+    0x339, 0x230, 0xe90, 0xf99, 0xc93, 0xd9a, 0xa96, 0xb9f, 0x895, 0x99c, 0x69c, 0x795, 0x49f,
+    0x596, 0x29a, 0x393, 0x99, 0x190, 0xf00, 0xe09, 0xd03, 0xc0a, 0xb06, 0xa0f, 0x905, 0x80c,
     0x70c, 0x605, 0x50f, 0x406, 0x30a, 0x203, 0x109, 0x0,
 ];
 
 // Triangle table: for each cube configuration, lists which edges form triangles
 // -1 indicates end of list for that configuration
 pub(crate) const TRI_TABLE: [[i8; 16]; 256] = [
-    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+    [
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    ],
     [0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
     [0, 1, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
     [1, 8, 3, 9, 8, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
@@ -299,21 +289,37 @@ pub(crate) const TRI_TABLE: [[i8; 16]; 256] = [
     [1, 3, 8, 9, 1, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
     [0, 9, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
     [0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
-    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+    [
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    ],
 ];
-
 
 // Cube corner offsets
 pub(crate) const CUBE_CORNERS: [[u32; 3]; 8] = [
-    [0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0],
-    [0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1],
+    [0, 0, 0],
+    [1, 0, 0],
+    [1, 1, 0],
+    [0, 1, 0],
+    [0, 0, 1],
+    [1, 0, 1],
+    [1, 1, 1],
+    [0, 1, 1],
 ];
 
 // Edge vertex pairs
 pub(crate) const EDGE_VERTICES: [[usize; 2]; 12] = [
-    [0, 1], [1, 2], [2, 3], [3, 0],
-    [4, 5], [5, 6], [6, 7], [7, 4],
-    [0, 4], [1, 5], [2, 6], [3, 7],
+    [0, 1],
+    [1, 2],
+    [2, 3],
+    [3, 0],
+    [4, 5],
+    [5, 6],
+    [6, 7],
+    [7, 4],
+    [0, 4],
+    [1, 5],
+    [2, 6],
+    [3, 7],
 ];
 
 // Helper function for grid indexing
@@ -345,20 +351,21 @@ fn compute_normal_grid(
             let y = ((idx / res_plus_1_usize) % res_plus_1_usize) as u32;
             let z = (idx / (res_plus_1_usize * res_plus_1_usize)) as u32;
 
-            let pos = bounds_min + Vec3::new(
-                x as f32 * grid_step.x,
-                y as f32 * grid_step.y,
-                z as f32 * grid_step.z,
-            );
+            let pos = bounds_min
+                + Vec3::new(
+                    x as f32 * grid_step.x,
+                    y as f32 * grid_step.y,
+                    z as f32 * grid_step.z,
+                );
 
             // Compute gradient at grid vertex (central differences)
             let gradient = Vec3::new(
-                sdf.distance(pos + Vec3::new(epsilon, 0.0, 0.0)) -
-                sdf.distance(pos - Vec3::new(epsilon, 0.0, 0.0)),
-                sdf.distance(pos + Vec3::new(0.0, epsilon, 0.0)) -
-                sdf.distance(pos - Vec3::new(0.0, epsilon, 0.0)),
-                sdf.distance(pos + Vec3::new(0.0, 0.0, epsilon)) -
-                sdf.distance(pos - Vec3::new(0.0, 0.0, epsilon)),
+                sdf.distance(pos + Vec3::new(epsilon, 0.0, 0.0))
+                    - sdf.distance(pos - Vec3::new(epsilon, 0.0, 0.0)),
+                sdf.distance(pos + Vec3::new(0.0, epsilon, 0.0))
+                    - sdf.distance(pos - Vec3::new(0.0, epsilon, 0.0)),
+                sdf.distance(pos + Vec3::new(0.0, 0.0, epsilon))
+                    - sdf.distance(pos - Vec3::new(0.0, 0.0, epsilon)),
             );
             gradient.normalize_or_zero()
         })
@@ -396,11 +403,12 @@ pub fn extract_mesh(
             let y = ((idx / res_plus_1) % res_plus_1) as u32;
             let z = (idx / (res_plus_1 * res_plus_1)) as u32;
 
-            let pos = bounds_min + Vec3::new(
-                x as f32 * grid_step.x,
-                y as f32 * grid_step.y,
-                z as f32 * grid_step.z,
-            );
+            let pos = bounds_min
+                + Vec3::new(
+                    x as f32 * grid_step.x,
+                    y as f32 * grid_step.y,
+                    z as f32 * grid_step.z,
+                );
             sdf.distance(pos)
         })
         .collect();
@@ -426,11 +434,12 @@ pub fn extract_mesh(
     for z in 0..resolution {
         for y in 0..resolution {
             for x in 0..resolution {
-                let cell_pos = bounds_min + Vec3::new(
-                    x as f32 * grid_step.x,
-                    y as f32 * grid_step.y,
-                    z as f32 * grid_step.z,
-                );
+                let cell_pos = bounds_min
+                    + Vec3::new(
+                        x as f32 * grid_step.x,
+                        y as f32 * grid_step.y,
+                        z as f32 * grid_step.z,
+                    );
 
                 // Get corner values and compute cube index
                 let mut cube_index = 0u8;
@@ -459,16 +468,18 @@ pub fn extract_mesh(
                 for edge in 0..12 {
                     if edge_flags & (1 << edge) != 0 {
                         let [v0, v1] = EDGE_VERTICES[edge];
-                        let p0 = cell_pos + Vec3::new(
-                            CUBE_CORNERS[v0][0] as f32 * grid_step.x,
-                            CUBE_CORNERS[v0][1] as f32 * grid_step.y,
-                            CUBE_CORNERS[v0][2] as f32 * grid_step.z,
-                        );
-                        let p1 = cell_pos + Vec3::new(
-                            CUBE_CORNERS[v1][0] as f32 * grid_step.x,
-                            CUBE_CORNERS[v1][1] as f32 * grid_step.y,
-                            CUBE_CORNERS[v1][2] as f32 * grid_step.z,
-                        );
+                        let p0 = cell_pos
+                            + Vec3::new(
+                                CUBE_CORNERS[v0][0] as f32 * grid_step.x,
+                                CUBE_CORNERS[v0][1] as f32 * grid_step.y,
+                                CUBE_CORNERS[v0][2] as f32 * grid_step.z,
+                            );
+                        let p1 = cell_pos
+                            + Vec3::new(
+                                CUBE_CORNERS[v1][0] as f32 * grid_step.x,
+                                CUBE_CORNERS[v1][1] as f32 * grid_step.y,
+                                CUBE_CORNERS[v1][2] as f32 * grid_step.z,
+                            );
                         let val0 = corner_values[v0];
                         let val1 = corner_values[v1];
 
@@ -579,8 +590,12 @@ pub fn extract_mesh(
     let total_time = total_start.elapsed();
 
     // Print performance breakdown
-    eprintln!("Mesh generation (res={}): {} vertices, {} triangles",
-              resolution, vertices.len(), indices.len() / 3);
+    eprintln!(
+        "Mesh generation (res={}): {} vertices, {} triangles",
+        resolution,
+        vertices.len(),
+        indices.len() / 3
+    );
     eprintln!("  Grid sampling:  {:?}", sample_time);
     eprintln!("  Normal grid:    {:?}", normal_time);
     eprintln!("  Extraction:     {:?}", extract_time);
@@ -606,7 +621,10 @@ fn apply_smooth_normals(vertices: &mut [crate::mesh::Vertex]) {
             quantize(vertex.position[1]),
             quantize(vertex.position[2]),
         ];
-        position_to_normals.entry(key).or_insert_with(Vec::new).push(idx);
+        position_to_normals
+            .entry(key)
+            .or_insert_with(Vec::new)
+            .push(idx);
     }
 
     // For each group of vertices at the same position, average their normals
@@ -634,7 +652,7 @@ fn apply_smooth_normals(vertices: &mut [crate::mesh::Vertex]) {
 mod tests {
     use super::*;
     use crate::sdf::primitives::Sphere;
-    
+
     #[test]
     fn test_extract_mesh_sphere() {
         let sphere = Sphere::new(5.0);
@@ -650,15 +668,20 @@ mod tests {
 
         // All normals should be unit length (or close to it)
         for vertex in &mesh.vertices {
-            let normal_len = (vertex.normal[0].powi(2) + vertex.normal[1].powi(2) + vertex.normal[2].powi(2)).sqrt();
-            assert!((normal_len - 1.0).abs() < 0.1, "Normal should be approximately unit length");
+            let normal_len =
+                (vertex.normal[0].powi(2) + vertex.normal[1].powi(2) + vertex.normal[2].powi(2))
+                    .sqrt();
+            assert!(
+                (normal_len - 1.0).abs() < 0.1,
+                "Normal should be approximately unit length"
+            );
         }
     }
 
     #[test]
     fn test_extract_mesh_compound() {
-        use crate::sdf::primitives::SdfBox;
         use crate::sdf::booleans::Subtract;
+        use crate::sdf::primitives::SdfBox;
         use crate::sdf::transforms::Translate;
         use std::sync::Arc;
 
@@ -674,12 +697,18 @@ mod tests {
         let mesh = extract_mesh(&compound, bounds_min, bounds_max, 16, false);
 
         // Mesh should be non-empty and well-formed
-        assert!(mesh.vertices.len() > 0, "Compound mesh should have vertices");
+        assert!(
+            mesh.vertices.len() > 0,
+            "Compound mesh should have vertices"
+        );
         assert!(mesh.indices.len() > 0, "Compound mesh should have indices");
         assert_eq!(mesh.indices.len() % 3, 0, "Indices should form triangles");
 
         // Verify mesh is non-degenerate
-        println!("Compound mesh: {} vertices, {} triangles",
-                 mesh.vertices.len(), mesh.indices.len() / 3);
+        println!(
+            "Compound mesh: {} vertices, {} triangles",
+            mesh.vertices.len(),
+            mesh.indices.len() / 3
+        );
     }
 }

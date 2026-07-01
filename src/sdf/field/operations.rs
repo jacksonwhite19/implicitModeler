@@ -1,9 +1,10 @@
 // Field-driven SDF operations
 
+use super::Field;
+use crate::sdf::Sdf;
+use crate::sdf::conditioning::{BoundQuality, SdfNodeMetadata, union_metadata_bounds};
 use glam::Vec3;
 use std::sync::Arc;
-use crate::sdf::Sdf;
-use super::Field;
 
 /// Variable thickness offset - offsets an SDF by an amount driven by a field
 pub struct OffsetByField {
@@ -22,6 +23,17 @@ impl Sdf for OffsetByField {
         let base_distance = self.child.distance(point);
         let offset_amount = self.field.evaluate(point);
         base_distance - offset_amount
+    }
+
+    fn metadata(&self) -> SdfNodeMetadata {
+        let child_metadata = self.child.metadata();
+        let support_bounds = child_metadata.support_bounds.clone();
+        let mut metadata = SdfNodeMetadata::new("offset_by_field")
+            .with_dependency("child", child_metadata)
+            .inherit_dependency_feature_ids()
+            .with_approximate_bounds();
+        metadata.set_support_bounds(support_bounds, BoundQuality::Estimated);
+        metadata
     }
 }
 
@@ -45,6 +57,17 @@ impl Sdf for ShellWithField {
         let base_distance = self.child.distance(point).abs();
         let thickness = self.thickness_field.evaluate(point);
         base_distance - thickness / 2.0
+    }
+
+    fn metadata(&self) -> SdfNodeMetadata {
+        let child_metadata = self.child.metadata();
+        let support_bounds = child_metadata.support_bounds.clone();
+        let mut metadata = SdfNodeMetadata::new("shell_with_field")
+            .with_dependency("child", child_metadata)
+            .inherit_dependency_feature_ids()
+            .with_approximate_bounds();
+        metadata.set_support_bounds(support_bounds, BoundQuality::Estimated);
+        metadata
     }
 }
 
@@ -78,14 +101,28 @@ impl Sdf for BlendByField {
         let k = self.smoothness_field.evaluate(point);
         Self::smin(d1, d2, k)
     }
+
+    fn metadata(&self) -> SdfNodeMetadata {
+        let a_metadata = self.a.metadata();
+        let b_metadata = self.b.metadata();
+        let support_bounds = union_metadata_bounds([&a_metadata, &b_metadata]);
+        let mut metadata = SdfNodeMetadata::new("blend_by_field")
+            .with_dependency("a", a_metadata)
+            .with_dependency("b", b_metadata)
+            .inherit_dependency_feature_ids()
+            .with_approximate_bounds();
+        metadata.set_support_bounds(support_bounds, BoundQuality::Estimated);
+        metadata
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sdf::primitives::Sphere;
-    use crate::sdf::field::primitives::ConstantField;
+    use crate::sdf::conditioning::{FeatureTaggedSdf, SdfBounds};
     use crate::sdf::field::gradients::RadialField;
+    use crate::sdf::field::primitives::ConstantField;
+    use crate::sdf::primitives::Sphere;
 
     #[test]
     fn test_offset_by_field_constant() {
@@ -246,5 +283,39 @@ mod tests {
         // Inside original (d=-1), abs(-1) - 0 = 1
         let dist_inside = shell.distance(Vec3::new(9.0, 0.0, 0.0));
         assert!((dist_inside - 1.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn field_operations_expose_approximate_graph_metadata() {
+        let sphere = Arc::new(FeatureTaggedSdf::new(
+            "variable_skin",
+            Arc::new(Sphere::new(10.0)),
+        ));
+        let field = Arc::new(ConstantField::new(2.0));
+        let offset = OffsetByField::new(sphere.clone(), field.clone());
+        let shell = ShellWithField::new(sphere.clone(), field.clone());
+        let blend = BlendByField::new(sphere, Arc::new(Sphere::new(5.0)), field);
+
+        let offset_metadata = offset.metadata();
+        let shell_metadata = shell.metadata();
+        let blend_metadata = blend.metadata();
+
+        assert!(offset_metadata.bounds_are_approximate);
+        assert!(shell_metadata.bounds_are_approximate);
+        assert!(blend_metadata.bounds_are_approximate);
+        assert_eq!(
+            offset_metadata.support_bounds,
+            Some(SdfBounds::new(Vec3::splat(-10.0), Vec3::splat(10.0)))
+        );
+        assert_eq!(
+            shell_metadata.support_bounds,
+            Some(SdfBounds::new(Vec3::splat(-10.0), Vec3::splat(10.0)))
+        );
+        assert!(
+            blend_metadata
+                .feature_ids
+                .contains(&"variable_skin".to_string())
+        );
+        assert_eq!(blend_metadata.dependencies.len(), 2);
     }
 }

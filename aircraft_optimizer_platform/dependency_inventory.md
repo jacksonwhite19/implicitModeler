@@ -25,6 +25,7 @@ Use this alongside `master_platform_manifest.md`:
 | Fixed-wing variable schema | Started | Initial v0.1 schema lives at `software\optimizer\schemas\fixed_wing_uav_reference.variables.v0_1.json`. |
 | Dashboard | Not started | No dependency inventory yet. |
 | Analysis tools | Planning only | Open-source tool recommendations exist in `opt_output.md`; implementation dependencies not selected yet. |
+| SDF conditioning research tools | Reference only | Phase 0 review covers OpenVDB/NanoVDB, scikit-fmm, Voxblox/nvblox, Lethe, AMReX EB, Basilisk EB, and PhysicsNeMo; no production dependency has been adopted. |
 | CFD/mesh tool environment | Installed externally | WSL user-local `aop-cfd` micromamba env installed with SU2 8.5.0, Gmsh 4.15.2, and meshio; documented under `tools\cfd`. |
 
 ## Manual Rhai/SDF Inputs
@@ -77,6 +78,28 @@ Reason:
 - The master folder should only carry a few high-value reference Rhai files.
 - Broader history remains discoverable in the source tree.
 - Specific files can be copied later if they become canonical inputs or useful regression references.
+
+## SDF Conditioning Research Tools
+
+Current review:
+
+```text
+aircraft_optimizer_platform\research\phase0_sdf_conditioning_literature_review.md
+```
+
+Status:
+
+- Reference only.
+- No new production runtime dependency has been adopted.
+- OpenVDB/NanoVDB should be evaluated before building a custom sparse-volume
+  tree.
+- scikit-fmm may be useful for prototype fixtures or regression oracles.
+- Voxblox/nvblox provide useful incremental block-update patterns, but their
+  TSDF/robotics assumptions should not replace the analytic CAD kernel.
+- Lethe, AMReX embedded boundaries, and Basilisk embedded boundaries remain
+  SDF-native CFD research candidates.
+- PhysicsNeMo remains deferred until optimizer automation, conditioning
+  stability, CFD dataset schema, and data quality are ready.
 
 ## Automatic Rhai/SDF Generation Scripts
 

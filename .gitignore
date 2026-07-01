@@ -20,6 +20,7 @@
 *.gif
 *.mp4
 *.avi
+*.csv
 *.log
 log.*
 badFaces
@@ -52,3 +53,11 @@ custom_cfd_mesher_experiment/runs/
 *.db
 *.duckdb
 *.parquet
+
+# Local scratch/debug exports
+/tmp_*/
+/tmp_*.rhai
+/tmp_*.jsonl
+*_stats.jsonl
+*.pdb
+.claude/worktrees/

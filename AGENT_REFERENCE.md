@@ -1,6 +1,6 @@
 # AGENT_REFERENCE.md — Implicit CAD Modeler
 
-**Last updated**: 2026-03-17
+**Last updated**: 2026-06-30
 **Purpose**: Comprehensive agent/developer reference for the Implicit CAD Modeler codebase. Read this before making any changes. Prefer MasterPlan.md for high-level goals and scope.
 
 ---
@@ -8,6 +8,10 @@
 ## Table of Contents
 
 1. [Project Summary](#1-project-summary)
+   - 1.1 [Start Here](#11-start-here)
+   - 1.2 [Current Project State](#12-current-project-state)
+   - 1.3 [Sandbox Clone: dual_contouring](#13-sandbox-clone-dual_contouring)
+   - 1.4 [Current Working Files](#14-current-working-files)
 2. [Dependency Inventory](#2-dependency-inventory)
 3. [Repository Layout](#3-repository-layout)
 4. [Architecture Overview](#4-architecture-overview)
@@ -73,13 +77,115 @@
 
 The Implicit CAD Modeler is a code-first, SDF-based (signed distance field) parametric geometry system. Users write Rhai scripts to build geometry through primitives, booleans, and transforms. A native desktop viewer (egui + wgpu) renders the result in a two-pane layout: code editor on the left, 3D viewport on the right.
 
-**Core philosophy**: geometry is a computable field, not a mesh. A sphere is `f(x,y,z) = length(xyz) - r`, not a collection of triangles. Meshes are extracted at the final step only, via marching cubes. This enables smooth SDF blends, variable offsets, and topology-independent booleans.
+**Core philosophy**: geometry is a computable field, not a mesh. A sphere is `f(x,y,z) = length(xyz) - r`, not a collection of triangles. Meshes are extracted at the final step only. Historically this repo has used marching-cubes-based extraction for STL/export work; keep that material as reference for legacy behavior, not as an assumption about the forward export direction. This enables smooth SDF blends, variable offsets, and topology-independent booleans.
 
 **Inspiration**: nTop (SDF-based modeling) and OpenSCAD (code-first UI).
 
 **Primary target OS**: Windows (DX12 via wgpu). Architecture is cross-platform ready.
 
 **Language**: Rust + Rhai scripting language.
+
+### 1.1 Start Here
+
+If you are a new agent picking up work, read these files in this order:
+
+1. `CLAUDE.md` â€” local agent working rules and repo-specific expectations.
+2. `MasterPlan.md` â€” high-level product goals.
+3. `AGENT_REFERENCE.md` â€” this file; current codebase and workflow summary.
+4. `output.md` â€” current export/debug log history.
+5. `scratchpad.md` â€” current queued task, if the user is actively driving work through it.
+
+Then inspect the current active code path before changing anything:
+
+- `src/mesh/adaptive_mc.rs`
+- `src/export/aero.rs`
+- `src/mesh/marching_cubes.rs`
+- `scratchpad_plane.rhai`
+- `tmp_inlet_only_debug.rhai`
+- `bwb_edf_800.rhai`
+
+### 1.2 Current Project State
+
+This repo is not in a generic greenfield state. The recent active engineering problem has been STL/aero export topology reliability for adaptive mesh extraction on aircraft-like SDF geometry.
+
+Current status as of 2026-05-14:
+
+- The core product is still an SDF-first CAD/modeling system written in Rust with a Rhai scripting front-end and egui/wgpu viewer.
+- The viewer, scripting engine, aerospace primitives, and headless export paths are present and usable.
+- The current weak subsystem is the existing adaptive aero meshing/export path, centered on `src/mesh/adaptive_mc.rs`.
+- The main open problem is topology preservation across adaptive extraction, welding, transition repair, and coarse/fine boundary handling.
+- Recent high-signal work has used narrow standalone repros like `wing_safe` and `inlet_only`, not full-aircraft sweeps.
+- Treat the current marching-cubes/octree/aero STL path as legacy reference material that may be removed or replaced. Keep its diagnostics and failure history because they explain what was tried and what to avoid, but do not assume new export work should extend that path.
+
+Recent debugging conclusions that matter immediately:
+
+- Raw marching-cubes emission is not the only failure mode. In at least one clean repro (`wing_safe`), the first large-epsilon weld pass was shown to be a primary topology breaker.
+- The adaptive path now contains several targeted repair stages:
+  - constrained weld behavior
+  - boundary-edge pairing repair
+  - guarded T-junction repair
+  - tiny-loop fill
+  - late duplicate/degenerate cleanup
+- These improve narrow repros materially, but do not yet make the inlet transition corridor reliable.
+- Remaining inlet defects are concentrated around coarse/fine transition layout, especially `PartialOverlap` and true different-size edge-contact cases.
+- `transition_emission` currently handles only exact coarse/fine face tilings. It does not solve the edge-contact T-junction class that dominates the inlet corridor diagnostics.
+- `EdgeTransitionRecord` collection and a first `emit_edge_transitions(...)` prototype now exist in `adaptive_mc.rs`, but the first pass emitted zero triangles because it could not reconstruct the needed fine half-edge endpoints reliably.
+
+What not to assume:
+
+- `scratchpad.md` is a task queue, not authoritative architecture documentation.
+- A visually acceptable viewer result does not mean STL topology is acceptable.
+- `balance_surface_cells` is not currently a complete enforcement pass for conforming transitions.
+- More refinement alone is not a complete fix. Several tests already showed that increased local refinement without conforming transitions is insufficient or regressive.
+
+### 1.3 Sandbox Clone: dual_contouring
+
+A fully separate sandbox clone now exists at `dual_contouring/`.
+
+Purpose:
+
+- experiment with a new export option such as dual contouring
+- perform invasive meshing work without destabilizing the main workspace
+
+Important facts:
+
+- It is a near-full mirror of the main repo created on 2026-05-14.
+- It includes its own `.git`, source tree, scripts, shaders, tests, copied artifacts, and build tree.
+- It has already been built independently inside the clone.
+- Its separate executable is `dual_contouring/target/release/implicit-cad.exe`.
+
+Workflow rule:
+
+- Use `dual_contouring/` for new export-backend experiments.
+- Use the main repo for maintaining or auditing the current adaptive-MC/aero path unless the user explicitly wants the experiment moved.
+- Be explicit in notes, commits, and logs about which tree you are editing.
+
+### 1.4 Current Working Files
+
+The most relevant current files are:
+
+- `src/mesh/adaptive_mc.rs`
+  - adaptive extraction, welding, transition diagnostics, boundary repair, and current experimental transition-edge work
+- `src/export/aero.rs`
+  - aero export orchestration and cleanup stages
+- `src/mesh/marching_cubes.rs`
+  - base marching-cubes extraction logic
+- `output.md`
+  - chronological debug log of recent export/mesh investigations
+- `scratchpad.md`
+  - current queued task prompt from the user
+- `scratchpad_plane.rhai`
+  - updated scratchpad aircraft model using current export-safe tools
+- `tmp_inlet_only_debug.rhai`
+  - narrow standalone inlet repro used for transition-layout and repair testing
+- `bwb_edf_800.rhai`
+  - broader aircraft model
+
+Current model notes:
+
+- `scratchpad_plane.rhai` was restored and modernized from the old deleted root script.
+- Its inlet was intentionally made much smaller than the old version, then widened by 50 percent.
+- The current scratchpad aero export configuration is expensive because it enables many local refinement regions and spline-path refinement boxes.
 
 ---
 
@@ -162,6 +268,7 @@ implicit-cad/
 │   │   ├── sweep.rs            # Sweep operations, SweepPath trait
 │   │   ├── mesh_import.rs      # Mesh-as-SDF (closest-point SDF from triangle mesh)
 │   │   ├── query.rs            # SDF query utilities (bounding box, surface snapping)
+│   │   ├── conditioning.rs     # Dirty-region and SDF-conditioning diagnostics
 │   │   ├── aerospace/          # Aerospace-specific geometry
 │   │   │   ├── mod.rs
 │   │   │   ├── section.rs      # Section2D trait (2D cross-sections)
@@ -365,6 +472,7 @@ components  (no deps on other project modules)
 ```rust
 pub trait Sdf: Send + Sync {
     fn distance(&self, point: Vec3) -> f32;
+    fn metadata(&self) -> SdfNodeMetadata;
 }
 ```
 
@@ -374,6 +482,189 @@ All geometry is represented as types implementing `Sdf`. The `distance` function
 - Positive value: point is **outside** the shape
 
 All SDF types are wrapped in `Arc<dyn Sdf>` for shared ownership. This is the fundamental composition mechanism — booleans and transforms hold `Arc<dyn Sdf>` children.
+
+#### Conditioning (`sdf/conditioning.rs`)
+
+Initial backend foundation for robust SDF conditioning. This is core geometry
+kernel code, not downstream automation plumbing.
+
+- `DirtyRegion`: records local geometry changes and halo bounds.
+- `GeometryEdit`: records live kernel edits such as blend-radius changes.
+- `GeometryEditTransaction`: groups one or more emitted edits into a single
+  live model mutation.
+- `condition_sdf_after_backend_edit(previous, next_canonical)`: advances an
+  existing `ConditionedGeometryKernel` snapshot with metadata-derived dirty
+  regions when possible, falling back to fresh backend conditioning when the
+  previous SDF is not conditioned or the new graph cannot be bounded.
+- `ConditionedGeometryKernel`: owns the active canonical SDF graph and its
+  conditioned cache so edits and cache conditioning are applied together. Its
+  `distance()` method and `Sdf` implementation prefer conditioned cache values
+  only when they preserve the canonical graph's inside/outside sign; they fall
+  back to canonical distance outside the cache domain or on sign mismatch. It
+  also exposes first-class conditioned geometry queries for inside/outside
+  classification, closest-surface projection, ray intersection, gradients, and
+  normals. Projection attempts the conditioned path first and then falls back to
+  canonical projection if the cache path cannot converge.
+- `ConditionedGeometryModel`: owns conditioned block state, generations,
+  dirty history, local/full regeneration decisions, and conditioned-distance
+  cache queries.
+- `ConditionedCacheQualityDiagnostics`: reports live cache sign mismatch,
+  surface residual, gradient error percentiles, and confidence.
+- `recondition_signed_distance_samples()`: restores generated block samples
+  toward signed-distance behavior using exact-zero anchors, edge-crossing
+  interface anchors, projection/gradient-corrected near-interface anchors, and
+  eight-direction fast sweeping.
+- `ReconditioningReport`: records sample count, active narrow-band sample count,
+  anchor count, projection-anchor count, sweep iteration count, maximum sweep
+  change, whether fast sweeping ran, and whether the sparse narrow-band fallback
+  was used.
+- `ReconditioningStats`: aggregate update-summary stats for regenerated block
+  count, reconditioned block count, narrow-band block/sample count, anchor
+  count, projection-anchor count, max iteration count, and max conditioning
+  change.
+- `SdfNodeMetadata`: live graph metadata reported by SDF nodes, including node
+  kind, support bounds, feature IDs, child dependencies, approximate-bound
+  compatibility flags, explicit bound quality, parameter fingerprints,
+  operation/interface dirty-propagation metadata, and optional live conditioned
+  cache metadata.
+- `ConditionedCacheMetadata`: optional `SdfNodeMetadata` payload attached by
+  `ConditionedGeometryKernel::metadata()` with cache state, generation, block
+  count, grid spacing, interface band, confidence, anchor counts, narrow-band
+  block count, and max iteration count.
+- `BoundQuality`: labels support bounds as `Exact`, `Conservative`,
+  `Estimated`, or `Unknown`. Local conditioning may use exact, conservative, and
+  estimated bounds with the appropriate diagnostics; unknown bounds are a full
+  rebuild signal.
+- `audit_conditionable_geometry()` / `assert_conditionable_geometry()`:
+  dependency-tree audits that reject missing support bounds, invalid bounds, or
+  unknown bound quality before local conditioning relies on the metadata.
+- `FeatureTaggedSdf`: attaches feature ownership to an SDF subtree so local
+  edits, diagnostics, and future query APIs can trace affected geometry back to
+  the owning feature.
+- `ConditioningPolicy`: stores sampling and acceptance thresholds.
+  `max_region_sample_count` bounds dense connected-region solves; oversized
+  components are split deterministically before reconditioning. Oversized
+  regions that still exceed the dense budget use a sparse narrow-band solve.
+  `local_validation_mode` selects the default real-time local cache-quality
+  validator or the stricter full-comparison regression validator.
+- `ConditioningDiagnostics`: reports local-vs-full error, sign mismatches,
+  gradient error, cache state, and confidence.
+- `compare_local_update_to_full()` and `compare_local_update_regions_to_full()`:
+  diagnostic harnesses for proving whether local updates cover the same
+  near-interface geometry as full recomputation.
+
+The conditioned field is integral kernel-owned state. It is still derived and
+disposable; the canonical SDF graph remains the source of truth.
+
+Rhai evaluation now enters this backend path by default. `evaluate_script_full`,
+`evaluate_script_cells`, component preview extraction, aero export part
+extraction, and refinement SDF extraction all pass returned SDF handles through
+`condition_sdf_for_backend(...)`. If the graph metadata is conditionable, the
+handle is a `ConditionedGeometryKernel`; if not, the raw SDF remains evaluable
+and the metadata/audit gap is explicit. Do not add exporter-owned conditioning
+wrappers around script results.
+
+`ScriptResult` also carries `canonical_sdf`. Backend/UI edit paths that have a
+previous model should call `condition_sdf_after_backend_edit(...)` with the
+previous conditioned SDF plus the new canonical graph, not wrap the new graph
+from scratch. The app's script, cell, dimension, profile, spine, component, and
+snippet mutation paths follow this pattern so normal edits feed the same live
+conditioned cache.
+
+Backend bounds should prefer live metadata where safe. `pipeline::auto_bounds()`
+uses finite `SdfNodeMetadata::support_bounds` with padding before broad SDF
+sampling. `sdf::query::bounding_points()` only uses metadata when
+`BoundQuality::Exact`; conservative aircraft envelopes still use directional
+searches so analysis dimensions are not silently widened.
+
+Regeneration groups affected cache blocks into connected components, expands
+each component with a ghost-cell halo, samples the canonical SDF over that
+region, derives fixed interface anchors from exact zero samples and
+sign-changing grid edges, adds projection-style near-interface anchors from
+`abs(phi) / abs(grad phi)`, then fast-sweeps the absolute field to satisfy
+`|grad phi| = 1` before restoring the canonical sign and splitting the region
+back into cache blocks. Full rebuilds use the same connected-region path.
+Disjoint dirty components are solved separately so local work does not fill the
+empty space between unrelated edits. Same-sign near-interface samples can now
+seed conditioning through projection anchors even when no grid edge crosses the
+surface.
+
+Dense region size is bounded by `ConditioningPolicy::max_region_sample_count`.
+Oversized components split along their widest block-index axis, then each split
+is reconnected and solved recursively. Single blocks are the minimum unit and
+may exceed the budget. Keep the budget high enough for normal dirty-region
+halos; setting it too low can reduce cross-block conditioning context.
+
+When a region still exceeds the dense budget, regeneration switches to a sparse
+narrow-band store. It samples active grid points near the interface, includes
+edge-crossing anchors plus a small halo, fast-sweeps only those active samples,
+and falls back to canonical samples outside the active band when extracting the
+dense cache block. This keeps oversized updates finite without moving
+conditioning out of the geometry kernel.
+
+Aero export patch bounds now prefer live SDF metadata before falling back to
+sampling-based `auto_bounds(...)`. Small bounded components such as inlet ducts
+should not fall back to broad default scan boxes when the graph has exact or
+conservative support bounds.
+
+Local edit validation is policy-driven:
+
+- `LocalValidationMode::LocalCacheQuality` is the default runtime path. It
+  regenerates the affected blocks, validates those local blocks against the new
+  canonical graph, and reports confidence. Coarse-grid residuals and gradient
+  percentiles can produce `Partial` telemetry without forcing a full rebuild.
+- `LocalValidationMode::FullComparison` is the strict regression path. It
+  compares local coverage against a full-domain recomputation and falls back
+  when the dirty region is under-specified.
+
+The conditioned kernel exposes `inside_outside(...)`,
+`closest_surface_point(...)`, `ray_intersection(...)`, `gradient(...)`,
+`surface_normal(...)`, and `project_to_surface(...)` backed by the conditioned
+cache. It also exposes `canonical_distance(...)` for raw source-field debugging and
+`from_conditionable_metadata(...)` for constructing a conditioned kernel from a
+bounded metadata tree.
+
+Headless metrics schema version 3 includes a `conditioning` object copied from
+live cache metadata. It records cache state, generation, block count, spacing,
+interface band, confidence, anchor counts, narrow-band block count, and max
+iteration count alongside geometry validation.
+
+Graph metadata is also integral. Supported SDF nodes should expose their own
+support bounds, dependencies, and feature ownership through `Sdf::metadata()`
+as part of normal tree evaluation. Do not build separate post-export metadata
+maps when the node can report the information directly.
+Profile/path-driven nodes should surface their source bounds through
+`Section2D::bounds_2d()` and `SweepPath::support_bounds()` so sweeps, lofts,
+inlets, and ducts can derive dirty regions from the active geometry tree.
+`Section2D::metadata_fingerprint_parameters()` and
+`SweepPath::metadata_fingerprint_parameters()` should report shape-driving
+values so same-envelope profile/path edits still invalidate the conditioned
+cache. Metadata is locality evidence, not the geometry definition; the
+canonical `distance(point)` implementation remains the source of truth.
+Boolean and smooth-boolean nodes should use operation metadata to propagate
+changed child dirty regions into nearby sibling/interface bands by spatial
+radius, not by aircraft-specific wing/fuselage semantics.
+Deformation nodes should preserve conservative child-derived bounds when they
+can prove a finite envelope; `Twist` bounds the child's swept radial extent
+around the twist axis, and `Bend` bounds the child's bend-plane radius plus
+preserved perpendicular interval.
+
+Bound quality must be propagated whenever a node rewrites support metadata. Use
+`set_support_bounds(...)` or the metadata builder helpers rather than assigning
+`support_bounds` directly. Exact primitive bounds should stay exact. Booleans,
+rotations, arrays, sweeps, lofts, offsets, shells, and deformation envelopes are
+usually conservative. Mesh-backed and field-driven nodes are estimated until
+they have stronger validity or range contracts. Nodes that cannot prove finite
+support should remain unknown and force full conditioning.
+
+Supported geometry nodes should emit their own conditioning edits when a
+parameter changes. Current examples include sphere radius, cylinder dimensions,
+translation offset, smooth blend radius, offset distance, and shell thickness.
+For bounded profile/path/section updates without a specialized helper, compare
+the previous and next `SdfNodeMetadata` with `GeometryEdit::metadata_changed`.
+It emits a feature dirty region from the union of both support bounds and
+returns `None` when bounds are missing, invalid, or unknown-quality so the
+kernel can fall back safely.
 
 #### Primitives (`sdf/primitives.rs`)
 
@@ -507,6 +798,12 @@ Computes signed mesh volume using the divergence theorem (signed tetrahedral vol
 
 Standard uniform-grid marching cubes. Evaluates the SDF at each grid vertex, interpolates crossing points, generates triangles. Used for preview at coarse resolution.
 
+Status note:
+
+- Keep this section as legacy/reference behavior.
+- Do not assume marching cubes is the desired future STL/export path.
+- If you are working on new export architecture, use this code primarily as a baseline to compare against or to remove/replace safely.
+
 #### Adaptive Marching Cubes (`mesh/adaptive_mc.rs`)
 
 Parallel adaptive marching cubes with quality settings:
@@ -521,6 +818,12 @@ pub enum MeshQuality {
 ```
 
 This is the primary mesh extraction path used by the app. Parallelized with rayon.
+
+Status note:
+
+- This has been the active STL/aero export path under investigation.
+- It is currently documented here so a new agent understands the existing implementation and its failure modes.
+- It should not be treated as a protected long-term direction for STL export work.
 
 #### Mesh Import (`mesh/import.rs`)
 
@@ -1009,6 +1312,11 @@ Export functions for geometry and manufacturing packages:
 - STL export
 - `ManufacturingPackage` — bundles geometry, material spec, FEA results, and print analysis for handoff
 
+Status note:
+
+- This section documents the current/legacy STL export implementation, not a committed future direction.
+- Keep it as codebase context so a new agent understands what exists today and what may need to be removed or replaced.
+
 ---
 
 ### 5.20 `undo` — Undo/Redo
@@ -1039,6 +1347,11 @@ Command types:
 **Path**: `src/headless.rs`
 
 Batch evaluation without a UI window. Used for scripted geometry generation, CI pipelines, or automated STL export. Selected via CLI flags (parsed by `clap` in `main.rs`).
+
+Status note:
+
+- Headless export remains operationally important.
+- The extraction backend used by headless STL export is not fixed; treat the current marching-cubes/adaptive path as replaceable.
 
 ---
 

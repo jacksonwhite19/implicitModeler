@@ -3,12 +3,13 @@
 // Uses the rotation-minimizing (Bishop) frame algorithm for stable orientation,
 // with optional linear twist from twist_start to twist_end degrees.
 
-use std::sync::Arc;
-use glam::{Vec2, Vec3, Mat3, Quat};
+use glam::{Mat3, Quat, Vec2, Vec3};
 use std::f32::consts::PI;
+use std::sync::Arc;
 
 use crate::sdf::Sdf;
 use crate::sdf::aerospace::Section2D;
+use crate::sdf::conditioning::{SdfBounds, SdfNodeMetadata};
 
 // ── SweepPath trait ───────────────────────────────────────────────────────────
 
@@ -20,6 +21,45 @@ pub trait SweepPath: Send + Sync {
     fn tangent(&self, t: f32) -> Vec3;
     /// Total path length (used for frame-density estimation).
     fn arc_length(&self) -> f32;
+
+    /// Conservative world-space support bounds for the path centerline.
+    fn support_bounds(&self) -> Option<SdfBounds> {
+        let samples = 64usize;
+        let points: Vec<_> = (0..samples)
+            .map(|i| self.evaluate(i as f32 / (samples - 1) as f32))
+            .collect();
+        SdfBounds::from_points(&points)
+    }
+
+    /// Stable numeric parameters used by SDF metadata fingerprints.
+    ///
+    /// Implementations with explicit control points should override this. The
+    /// default uses the current support bounds and arc length, which is useful
+    /// but cannot distinguish every same-envelope path edit.
+    fn metadata_fingerprint_parameters(&self) -> Vec<f32> {
+        let mut values = vec![self.arc_length()];
+        if let Some(bounds) = self.support_bounds() {
+            values.extend_from_slice(&[
+                bounds.min.x,
+                bounds.min.y,
+                bounds.min.z,
+                bounds.max.x,
+                bounds.max.y,
+                bounds.max.z,
+            ]);
+        }
+        values
+    }
+}
+
+fn path_points_fingerprint_values(points: &[Vec3], total_length: f32) -> Vec<f32> {
+    let mut values = Vec::with_capacity(points.len() * 3 + 2);
+    values.push(points.len() as f32);
+    values.push(total_length);
+    for point in points {
+        values.extend_from_slice(&[point.x, point.y, point.z]);
+    }
+    values
 }
 
 // ── Shared surface-projection helper ─────────────────────────────────────────
@@ -70,22 +110,36 @@ pub fn project_point_to_surface_with_offset_and_normal(
 /// Straight line from `start` to `end`.
 pub struct LinePath {
     pub start: Vec3,
-    pub end:   Vec3,
+    pub end: Vec3,
 }
 
 impl SweepPath for LinePath {
-    fn evaluate(&self, t: f32) -> Vec3 { self.start.lerp(self.end, t) }
-    fn tangent(&self, _t: f32) -> Vec3 { (self.end - self.start).normalize_or_zero() }
-    fn arc_length(&self) -> f32 { (self.end - self.start).length() }
+    fn evaluate(&self, t: f32) -> Vec3 {
+        self.start.lerp(self.end, t)
+    }
+    fn tangent(&self, _t: f32) -> Vec3 {
+        (self.end - self.start).normalize_or_zero()
+    }
+    fn arc_length(&self) -> f32 {
+        (self.end - self.start).length()
+    }
+
+    fn support_bounds(&self) -> Option<SdfBounds> {
+        SdfBounds::from_points(&[self.start, self.end])
+    }
+
+    fn metadata_fingerprint_parameters(&self) -> Vec<f32> {
+        path_points_fingerprint_values(&[self.start, self.end], self.arc_length())
+    }
 }
 
 // ── PolylinePath ──────────────────────────────────────────────────────────────
 
 /// Piecewise-linear path through a series of points.
 pub struct PolylinePath {
-    points:   Vec<Vec3>,
-    seg_ends: Vec<f32>,   // cumulative arc length at end of each segment
-    total:    f32,
+    points: Vec<Vec3>,
+    seg_ends: Vec<f32>, // cumulative arc length at end of each segment
+    total: f32,
 }
 
 impl PolylinePath {
@@ -97,34 +151,58 @@ impl PolylinePath {
             acc += (points[i] - points[i - 1]).length();
             seg_ends.push(acc);
         }
-        Self { points, seg_ends, total: acc }
+        Self {
+            points,
+            seg_ends,
+            total: acc,
+        }
     }
 
     fn seg_and_u(&self, t: f32) -> (usize, f32) {
-        if self.points.len() < 2 { return (0, 0.0); }
+        if self.points.len() < 2 {
+            return (0, 0.0);
+        }
         let arc = (t * self.total).clamp(0.0, self.total);
         // Find segment whose end >= arc.
         let i = self.seg_ends.partition_point(|&l| l < arc);
         let i = i.min(self.seg_ends.len().saturating_sub(1));
         let start = if i == 0 { 0.0 } else { self.seg_ends[i - 1] };
         let seg_len = self.seg_ends[i] - start;
-        let u = if seg_len > 1e-8 { (arc - start) / seg_len } else { 0.0 };
+        let u = if seg_len > 1e-8 {
+            (arc - start) / seg_len
+        } else {
+            0.0
+        };
         (i, u.clamp(0.0, 1.0))
     }
 }
 
 impl SweepPath for PolylinePath {
     fn evaluate(&self, t: f32) -> Vec3 {
-        if self.points.len() < 2 { return Vec3::ZERO; }
+        if self.points.len() < 2 {
+            return Vec3::ZERO;
+        }
         let (i, u) = self.seg_and_u(t);
         self.points[i].lerp(self.points[i + 1], u)
     }
     fn tangent(&self, t: f32) -> Vec3 {
-        if self.points.len() < 2 { return Vec3::Z; }
+        if self.points.len() < 2 {
+            return Vec3::Z;
+        }
         let (i, _) = self.seg_and_u(t);
         (self.points[i + 1] - self.points[i]).normalize_or_zero()
     }
-    fn arc_length(&self) -> f32 { self.total }
+    fn arc_length(&self) -> f32 {
+        self.total
+    }
+
+    fn support_bounds(&self) -> Option<SdfBounds> {
+        SdfBounds::from_points(&self.points)
+    }
+
+    fn metadata_fingerprint_parameters(&self) -> Vec<f32> {
+        path_points_fingerprint_values(&self.points, self.total)
+    }
 }
 
 // ── SplinePath ────────────────────────────────────────────────────────────────
@@ -143,7 +221,11 @@ impl SplinePath {
         // Approximate arc length by sampling each segment at 16 sub-samples.
         let n = points.len();
         if n < 2 {
-            return Self { points, seg_ends: vec![], total: 0.0 };
+            return Self {
+                points,
+                seg_ends: vec![],
+                total: 0.0,
+            };
         }
         let segs = n - 1;
         let mut seg_ends = Vec::with_capacity(segs);
@@ -158,17 +240,27 @@ impl SplinePath {
             }
             seg_ends.push(acc);
         }
-        Self { points, seg_ends, total: acc }
+        Self {
+            points,
+            seg_ends,
+            total: acc,
+        }
     }
 
     fn seg_and_u(&self, t: f32) -> (usize, f32) {
-        if self.points.len() < 2 { return (0, 0.0); }
+        if self.points.len() < 2 {
+            return (0, 0.0);
+        }
         let arc = (t * self.total).clamp(0.0, self.total);
         let i = self.seg_ends.partition_point(|&l| l < arc);
         let i = i.min(self.seg_ends.len().saturating_sub(1));
         let start = if i == 0 { 0.0 } else { self.seg_ends[i - 1] };
         let seg_len = self.seg_ends[i] - start;
-        let u = if seg_len > 1e-8 { (arc - start) / seg_len } else { 0.0 };
+        let u = if seg_len > 1e-8 {
+            (arc - start) / seg_len
+        } else {
+            0.0
+        };
         (i, u.clamp(0.0, 1.0))
     }
 }
@@ -188,9 +280,9 @@ fn catmull_rom_3d(pts: &[Vec3], seg: usize, u: f32) -> Vec3 {
     let u2 = u * u;
     let u3 = u2 * u;
     0.5 * ((2.0 * p1)
-         + (-p0 + p2) * u
-         + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * u2
-         + (-p0 + 3.0 * p1 - 3.0 * p2 + p3) * u3)
+        + (-p0 + p2) * u
+        + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * u2
+        + (-p0 + 3.0 * p1 - 3.0 * p2 + p3) * u3)
 }
 
 /// Analytic tangent of the Catmull-Rom spline.
@@ -206,22 +298,32 @@ fn catmull_rom_3d_tangent(pts: &[Vec3], seg: usize, u: f32) -> Vec3 {
     let p3 = pts[i3];
     let u2 = u * u;
     0.5 * ((-p0 + p2)
-         + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * (2.0 * u)
-         + (-p0 + 3.0 * p1 - 3.0 * p2 + p3) * (3.0 * u2))
+        + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * (2.0 * u)
+        + (-p0 + 3.0 * p1 - 3.0 * p2 + p3) * (3.0 * u2))
 }
 
 impl SweepPath for SplinePath {
     fn evaluate(&self, t: f32) -> Vec3 {
-        if self.points.len() < 2 { return Vec3::ZERO; }
+        if self.points.len() < 2 {
+            return Vec3::ZERO;
+        }
         let (seg, u) = self.seg_and_u(t);
         catmull_rom_3d(&self.points, seg, u)
     }
     fn tangent(&self, t: f32) -> Vec3 {
-        if self.points.len() < 2 { return Vec3::Z; }
+        if self.points.len() < 2 {
+            return Vec3::Z;
+        }
         let (seg, u) = self.seg_and_u(t);
         catmull_rom_3d_tangent(&self.points, seg, u).normalize_or_zero()
     }
-    fn arc_length(&self) -> f32 { self.total }
+    fn arc_length(&self) -> f32 {
+        self.total
+    }
+
+    fn metadata_fingerprint_parameters(&self) -> Vec<f32> {
+        path_points_fingerprint_values(&self.points, self.total)
+    }
 }
 
 // ── SurfaceSpinePath ──────────────────────────────────────────────────────────
@@ -241,14 +343,30 @@ impl SurfaceSpinePath {
             let p = start.lerp(end, t);
             points.push(closest_surface_point(&*surface, p));
         }
-        Self { inner: PolylinePath::new(points) }
+        Self {
+            inner: PolylinePath::new(points),
+        }
     }
 }
 
 impl SweepPath for SurfaceSpinePath {
-    fn evaluate(&self, t: f32) -> Vec3 { self.inner.evaluate(t) }
-    fn tangent(&self, t: f32) -> Vec3 { self.inner.tangent(t) }
-    fn arc_length(&self) -> f32 { self.inner.arc_length() }
+    fn evaluate(&self, t: f32) -> Vec3 {
+        self.inner.evaluate(t)
+    }
+    fn tangent(&self, t: f32) -> Vec3 {
+        self.inner.tangent(t)
+    }
+    fn arc_length(&self) -> f32 {
+        self.inner.arc_length()
+    }
+
+    fn support_bounds(&self) -> Option<SdfBounds> {
+        self.inner.support_bounds()
+    }
+
+    fn metadata_fingerprint_parameters(&self) -> Vec<f32> {
+        self.inner.metadata_fingerprint_parameters()
+    }
 }
 
 /// A smooth guide spline projected onto an SDF surface, then offset along the
@@ -259,23 +377,48 @@ pub struct ConformalSplinePath {
 }
 
 impl ConformalSplinePath {
-    pub fn new(surface: Arc<dyn Sdf>, guide_points: Vec<Vec3>, offset: f32, samples: usize) -> Self {
+    pub fn new(
+        surface: Arc<dyn Sdf>,
+        guide_points: Vec<Vec3>,
+        offset: f32,
+        samples: usize,
+    ) -> Self {
         let guide = SplinePath::new(guide_points);
         let sample_count = samples.max(2);
         let mut points = Vec::with_capacity(sample_count);
         for i in 0..sample_count {
             let t = i as f32 / (sample_count - 1) as f32;
             let p = guide.evaluate(t);
-            points.push(closest_surface_point_with_offset(surface.as_ref(), p, offset));
+            points.push(closest_surface_point_with_offset(
+                surface.as_ref(),
+                p,
+                offset,
+            ));
         }
-        Self { inner: PolylinePath::new(points) }
+        Self {
+            inner: PolylinePath::new(points),
+        }
     }
 }
 
 impl SweepPath for ConformalSplinePath {
-    fn evaluate(&self, t: f32) -> Vec3 { self.inner.evaluate(t) }
-    fn tangent(&self, t: f32) -> Vec3 { self.inner.tangent(t) }
-    fn arc_length(&self) -> f32 { self.inner.arc_length() }
+    fn evaluate(&self, t: f32) -> Vec3 {
+        self.inner.evaluate(t)
+    }
+    fn tangent(&self, t: f32) -> Vec3 {
+        self.inner.tangent(t)
+    }
+    fn arc_length(&self) -> f32 {
+        self.inner.arc_length()
+    }
+
+    fn support_bounds(&self) -> Option<SdfBounds> {
+        self.inner.support_bounds()
+    }
+
+    fn metadata_fingerprint_parameters(&self) -> Vec<f32> {
+        self.inner.metadata_fingerprint_parameters()
+    }
 }
 
 // ── Bishop (rotation-minimizing) frame computation ────────────────────────────
@@ -310,7 +453,9 @@ fn min_rotation(from: Vec3, to: Vec3) -> Quat {
 
 /// Rotate `(n, b)` around `tangent` by `angle_rad`.
 fn apply_twist(n: Vec3, b: Vec3, tangent: Vec3, angle_rad: f32) -> (Vec3, Vec3) {
-    if angle_rad.abs() < 1e-6 { return (n, b); }
+    if angle_rad.abs() < 1e-6 {
+        return (n, b);
+    }
     let rot = Quat::from_axis_angle(tangent, angle_rad);
     let n2 = (rot * n).normalize_or_zero();
     let b2 = tangent.cross(n2).normalize_or_zero();
@@ -324,33 +469,33 @@ fn apply_twist(n: Vec3, b: Vec3, tangent: Vec3, angle_rad: f32) -> (Vec3, Vec3) 
 /// Returns `Vec<(position, frame_matrix)>` where each `Mat3` column layout is
 /// `[tangent | normal | binormal]`.
 pub fn compute_frames(
-    path:        &dyn SweepPath,
-    samples:     usize,
+    path: &dyn SweepPath,
+    samples: usize,
     twist_start: f32,
-    twist_end:   f32,
+    twist_end: f32,
 ) -> Vec<(Vec3, Mat3)> {
     let n = samples.max(2);
     let mut frames: Vec<(Vec3, Mat3)> = Vec::with_capacity(n);
 
     // ── First frame ──────────────────────────────────────────────────────────
-    let t0  = path.tangent(0.0).normalize_or_zero();
-    let n0  = hughes_moller_perp(t0);
-    let b0  = t0.cross(n0).normalize_or_zero();
+    let t0 = path.tangent(0.0).normalize_or_zero();
+    let n0 = hughes_moller_perp(t0);
+    let b0 = t0.cross(n0).normalize_or_zero();
     let (n0t, b0t) = apply_twist(n0, b0, t0, twist_start.to_radians());
     frames.push((path.evaluate(0.0), Mat3::from_cols(t0, n0t, b0t)));
 
     // ── Propagate ────────────────────────────────────────────────────────────
     for i in 1..n {
-        let s       = i as f32 / (n - 1) as f32;
-        let pos     = path.evaluate(s);
-        let t_curr  = path.tangent(s).normalize_or_zero();
+        let s = i as f32 / (n - 1) as f32;
+        let pos = path.evaluate(s);
+        let t_curr = path.tangent(s).normalize_or_zero();
 
         let (_, prev_mat) = &frames[i - 1];
         let t_prev = prev_mat.col(0);
         let n_prev = prev_mat.col(1);
 
         // Rotate previous normal to align with new tangent (Bishop propagation).
-        let rot    = min_rotation(t_prev, t_curr);
+        let rot = min_rotation(t_prev, t_curr);
         let n_curr = (rot * n_prev).normalize_or_zero();
         let b_curr = t_curr.cross(n_curr).normalize_or_zero();
 
@@ -370,8 +515,8 @@ pub fn compute_frames(
 ///
 /// Frames are precomputed at construction; distance queries are O(frames) per call.
 pub struct Sweep {
-    profile:     Arc<dyn Section2D>,
-    frames:      Vec<(Vec3, Mat3)>,
+    profile: Arc<dyn Section2D>,
+    frames: Vec<(Vec3, Mat3)>,
     /// Pre-cached axial component of the last and first frame tangents (for endcap test).
     _arc_length: f32,
 }
@@ -379,42 +524,48 @@ pub struct Sweep {
 impl Sweep {
     /// Construct a sweep with default 128 frame samples and optional twist (degrees).
     pub fn new(
-        profile:     Arc<dyn Section2D>,
-        path:        Arc<dyn SweepPath>,
+        profile: Arc<dyn Section2D>,
+        path: Arc<dyn SweepPath>,
         twist_start: f32,
-        twist_end:   f32,
+        twist_end: f32,
     ) -> Self {
         let arc_length = path.arc_length();
-        let samples    = 128.max((arc_length * 4.0) as usize).min(512);
-        let frames     = compute_frames(&*path, samples, twist_start, twist_end);
-        Self { profile, frames, _arc_length: arc_length }
+        let samples = 128.max((arc_length * 4.0) as usize).min(512);
+        let frames = compute_frames(&*path, samples, twist_start, twist_end);
+        Self {
+            profile,
+            frames,
+            _arc_length: arc_length,
+        }
     }
 }
 
 impl Sdf for Sweep {
     fn distance(&self, p: Vec3) -> f32 {
         let n = self.frames.len();
-        if n == 0 { return f32::MAX; }
+        if n == 0 {
+            return f32::MAX;
+        }
 
         // Find the nearest frame by 3D distance to frame positions.
         // For most paths this is equivalent to finding the orthogonal projection
         // of p onto the path.
         let mut best_d2 = f32::MAX;
-        let mut best_i  = 0usize;
+        let mut best_i = 0usize;
         for (i, (pos, _)) in self.frames.iter().enumerate() {
             let d2 = (*pos - p).length_squared();
             if d2 < best_d2 {
                 best_d2 = d2;
-                best_i  = i;
+                best_i = i;
             }
         }
 
         let (frame_pos, frame_mat) = &self.frames[best_i];
-        let rel     = p - *frame_pos;
-        let axial   = frame_mat.col(0).dot(rel); // along tangent
+        let rel = p - *frame_pos;
+        let axial = frame_mat.col(0).dot(rel); // along tangent
         let local_2d = Vec2::new(
-            frame_mat.col(1).dot(rel),  // normal
-            frame_mat.col(2).dot(rel),  // binormal
+            frame_mat.col(1).dot(rel), // normal
+            frame_mat.col(2).dot(rel), // binormal
         );
 
         let profile_d = self.profile.distance_2d(local_2d);
@@ -430,6 +581,56 @@ impl Sdf for Sweep {
             (pd * pd + overshoot * overshoot).sqrt()
         } else {
             profile_d
+        }
+    }
+
+    fn metadata(&self) -> SdfNodeMetadata {
+        let Some(section_bounds) = self.profile.bounds_2d() else {
+            return SdfNodeMetadata::new("sweep").with_approximate_bounds();
+        };
+
+        let points: Vec<_> = self
+            .frames
+            .iter()
+            .flat_map(|(position, frame)| {
+                section_bounds.corners().into_iter().map(move |corner| {
+                    *position + frame.col(1) * corner.x + frame.col(2) * corner.y
+                })
+            })
+            .collect();
+
+        let centerline_points: Vec<_> = self.frames.iter().map(|(position, _)| *position).collect();
+        let centerline_bounds = SdfBounds::from_points(&centerline_points)
+            .map(|bounds| bounds.expanded(section_bounds.max_extent()));
+        let section_bounds = SdfBounds::from_points(&points);
+        let support_bounds = match (section_bounds, centerline_bounds) {
+            (Some(section_bounds), Some(centerline_bounds)) => {
+                Some(section_bounds.union(&centerline_bounds))
+            }
+            (Some(section_bounds), None) => Some(section_bounds),
+            (None, Some(centerline_bounds)) => Some(centerline_bounds),
+            (None, None) => None,
+        };
+
+        match support_bounds {
+            Some(bounds) => SdfNodeMetadata::new("sweep")
+                .with_support_bounds(bounds)
+                .with_approximate_bounds()
+                .with_f32_parameters({
+                    let mut values = vec![self._arc_length, self.frames.len() as f32];
+                    for (position, frame) in &self.frames {
+                        let tangent = frame.col(0);
+                        let normal = frame.col(1);
+                        let binormal = frame.col(2);
+                        values.extend_from_slice(&[
+                            position.x, position.y, position.z, tangent.x, tangent.y, tangent.z,
+                            normal.x, normal.y, normal.z, binormal.x, binormal.y, binormal.z,
+                        ]);
+                    }
+                    values.extend(self.profile.metadata_fingerprint_parameters());
+                    values
+                }),
+            None => SdfNodeMetadata::new("sweep").with_approximate_bounds(),
         }
     }
 }
@@ -448,7 +649,7 @@ mod tests {
         let profile: Arc<dyn Section2D> = Arc::new(SplineProfile::circle(12, 2.0));
         let path: Arc<dyn SweepPath> = Arc::new(LinePath {
             start: Vec3::ZERO,
-            end:   Vec3::new(0.0, 0.0, 10.0),
+            end: Vec3::new(0.0, 0.0, 10.0),
         });
         let sweep = Sweep::new(profile, path, 0.0, 0.0);
 
@@ -458,7 +659,30 @@ mod tests {
 
         // Exterior point — outside radius
         let d_outside = sweep.distance(Vec3::new(5.0, 0.0, 5.0));
-        assert!(d_outside > 0.0, "outside point should be positive, got {}", d_outside);
+        assert!(
+            d_outside > 0.0,
+            "outside point should be positive, got {}",
+            d_outside
+        );
+    }
+
+    #[test]
+    fn sweep_metadata_includes_profile_and_endcaps() {
+        let profile: Arc<dyn Section2D> = Arc::new(SplineProfile::circle(32, 2.0));
+        let path: Arc<dyn SweepPath> = Arc::new(LinePath {
+            start: Vec3::ZERO,
+            end: Vec3::new(0.0, 0.0, 10.0),
+        });
+        let sweep = Sweep::new(profile, path, 0.0, 0.0);
+        let metadata = sweep.metadata();
+        let bounds = metadata
+            .support_bounds
+            .expect("sweep should expose live support bounds");
+
+        assert!(bounds.contains(Vec3::new(2.0, 0.0, 5.0)));
+        assert!(bounds.contains(Vec3::new(0.0, 0.0, -2.0)));
+        assert!(bounds.contains(Vec3::new(0.0, 0.0, 12.0)));
+        assert!(metadata.bounds_are_approximate);
     }
 
     /// SplinePath with 3 collinear points behaves like LinePath.
@@ -471,7 +695,11 @@ mod tests {
         ];
         let path = SplinePath::new(pts);
         let mid = path.evaluate(0.5);
-        assert!((mid.x - 5.0).abs() < 1.0, "midpoint x should be near 5, got {}", mid.x);
+        assert!(
+            (mid.x - 5.0).abs() < 1.0,
+            "midpoint x should be near 5, got {}",
+            mid.x
+        );
     }
 
     /// Zero twist and full-turn twist both produce valid sweeps.
@@ -480,9 +708,14 @@ mod tests {
         let profile: Arc<dyn Section2D> = Arc::new(SplineProfile::circle(8, 1.0));
         let path: Arc<dyn SweepPath> = Arc::new(LinePath {
             start: Vec3::ZERO,
-            end:   Vec3::new(0.0, 0.0, 5.0),
+            end: Vec3::new(0.0, 0.0, 5.0),
         });
-        let s0   = Sweep::new(Arc::clone(&profile), Arc::clone(&path) as Arc<dyn SweepPath>, 0.0, 0.0);
+        let s0 = Sweep::new(
+            Arc::clone(&profile),
+            Arc::clone(&path) as Arc<dyn SweepPath>,
+            0.0,
+            0.0,
+        );
         let s360 = Sweep::new(profile, path, 0.0, 360.0);
         // Both should return negative distance at the center axis.
         let q = Vec3::new(0.0, 0.0, 2.5);
@@ -495,14 +728,19 @@ mod tests {
     fn surface_path_stays_near_surface() {
         use crate::sdf::primitives::Sphere;
         let sphere: Arc<dyn Sdf> = Arc::new(Sphere::new(5.0));
-        let start  = Vec3::new(0.0, 0.0, 5.0);
-        let end    = Vec3::new(5.0, 0.0, 0.0);
-        let sp     = SurfaceSpinePath::new(Arc::clone(&sphere), start, end, 32);
+        let start = Vec3::new(0.0, 0.0, 5.0);
+        let end = Vec3::new(5.0, 0.0, 0.0);
+        let sp = SurfaceSpinePath::new(Arc::clone(&sphere), start, end, 32);
         for k in 0..=8 {
             let t = k as f32 / 8.0;
             let p = sp.evaluate(t);
             let d = sphere.distance(p).abs();
-            assert!(d < 0.5, "surface path point {} should be near surface, dist={}", k, d);
+            assert!(
+                d < 0.5,
+                "surface path point {} should be near surface, dist={}",
+                k,
+                d
+            );
         }
     }
 }

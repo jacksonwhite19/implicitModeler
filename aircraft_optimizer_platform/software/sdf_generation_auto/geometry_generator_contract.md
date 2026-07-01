@@ -4,7 +4,9 @@ Date created: 2026-06-20
 
 ## Purpose
 
-This document defines the future production contract for converting optimizer candidate variables into a geometry-provider output that downstream modules can consume.
+This document defines the future production contract for converting typed
+aircraft design requests into geometry-generator outputs that downstream
+clients can consume.
 
 This is not an implementation and does not adopt the existing `make_*.py` scripts as production code. Those scripts remain reference material for prior Rhai emission patterns.
 
@@ -13,7 +15,7 @@ This is not an implementation and does not adopt the existing `make_*.py` script
 The automatic geometry generator is responsible for:
 
 - Reading a typed aircraft-family schema.
-- Reading a candidate design vector.
+- Reading a design vector.
 - Producing a parameterized geometry definition artifact.
 - Returning feature name, coordinate frame, bounding box, source hash, and parameter trace.
 
@@ -23,8 +25,10 @@ The generator is not responsible for:
 - Mesh validation.
 - CFD.
 - Scoring.
-- Optimizer ask/tell logic.
 - Dashboard state.
+
+The generator is responsible for the canonical geometry graph boundary and for
+owning any conditioned-geometry cache subsystem derived from that graph.
 
 ## v1 Aircraft Family Scope
 
@@ -53,7 +57,7 @@ cache_policy: input_hash
 
 ```yaml
 request_id: string
-candidate_id: string
+geometry_revision_id: string
 evaluation_id: string | null
 aircraft_family: fixed_wing_uav_reference
 family_schema_version: string
@@ -84,17 +88,21 @@ output_policy:
   output_directory: string
   include_debug_trace: boolean
 metadata:
-  requested_by: optimizer | human | test
+  requested_by: kernel | ui | script | test | background_worker
   reason: string | null
 ```
 
 The request should include every variable needed to reproduce the generated definition. Defaults must be captured explicitly in the emitted parameter trace.
 
+Dirty-region metadata may initially cover the full generated geometry bbox.
+That conservative metadata is still useful: it gives future conditioning modules
+a stable attachment point without changing current exporter behavior.
+
 ## Result Schema
 
 ```yaml
 geometry_provider_result_id: string
-candidate_id: string
+geometry_revision_id: string
 evaluation_id: string | null
 provider_name: fixed_wing_uav_rhai_generator
 provider_version: string
@@ -120,6 +128,17 @@ metadata:
   generator_source_hash: string
   generator_entrypoint: string
   source_template_hash: string | null
+  conditioned_geometry_cache:
+    cache_contract_version: conditioned_geometry_cache.v1
+    canonical_graph_role: source_of_truth
+    cache_role: derived_query_acceleration
+    cache_state: unavailable | experimental | ready | partial
+    update_mode: not_run | local_incremental | full_rebuild | direct_analytic
+    fallback_available: boolean
+    fallback_mode: exporter_direct_sampling | direct_analytic | full_conditioning | none
+    client_awareness_required: boolean
+  dirty_regions:
+    - dirty_region
   warnings:
     - string
 failure: failure_record | null
@@ -185,6 +204,11 @@ The generator should perform cheap pre-export checks:
 
 It should not perform mesh topology validation. That belongs to export or geometry-validation modules.
 
+It also should not run local conditioning in the first Phase 1 contract pass.
+The generator records cache-readiness and dirty-region metadata; a
+generator-side conditioning subsystem owns cache construction, validation, and
+fallback.
+
 ## Failure Mapping
 
 | Failure code | Category | Stage | Retryable | Meaning |
@@ -213,7 +237,8 @@ Use them to understand previous parameterization patterns only. Do not treat the
 ## Implementation Phases
 
 1. Schema-only: define fixed-wing variable schema, bounds, and derived parameters.
-2. Fixture generator: emit one deterministic checked-in Rhai source from a candidate record.
+2. Fixture generator: emit one deterministic checked-in Rhai source from a
+   design-revision record.
 3. Validation-only adapter: persist generated source, trace, and metadata without calling exporter.
 4. Export handoff: pass geometry-provider result to the OML STL adapter.
 5. Family expansion: add VTOL/tailsitter schemas only after fixed-wing schema is stable.

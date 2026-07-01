@@ -3,7 +3,9 @@ use std::path::PathBuf;
 
 use clap::Parser;
 use glam::Vec3;
-use implicit_cad::gpu::{lower_sdf_ir, sample_section_from_grid_gpu, sample_section_gpu, SectionPlane};
+use implicit_cad::gpu::{
+    SectionPlane, lower_sdf_ir, sample_section_from_grid_gpu, sample_section_gpu,
+};
 use implicit_cad::pipeline::compute_sdf_grid;
 use implicit_cad::scripting::evaluate_script;
 
@@ -39,7 +41,8 @@ fn main() -> Result<(), String> {
     let args = Args::parse();
     let source = fs::read_to_string(&args.script)
         .map_err(|e| format!("Failed to read script {}: {}", args.script.display(), e))?;
-    let result = evaluate_script(&source)?;
+    let mut result = evaluate_script(&source)?;
+    result.condition_for_backend();
 
     if args.na < 2 || args.nb < 2 {
         return Err("na and nb must be at least 2".into());
@@ -66,16 +69,10 @@ fn main() -> Result<(), String> {
         "gpu" | "auto" => {
             if let Some(ir) = lower_sdf_ir(result.sdf.as_ref()) {
                 sample_section_gpu(
-                    &ir,
-                    gpu_plane,
-                    args.coord,
-                    args.amin,
-                    args.amax,
-                    args.bmin,
-                    args.bmax,
-                    args.na,
-                    args.nb,
-                ).ok()
+                    &ir, gpu_plane, args.coord, args.amin, args.amax, args.bmin, args.bmax,
+                    args.na, args.nb,
+                )
+                .ok()
             } else {
                 let a0 = args.amin.min(args.amax);
                 let a1 = args.amin.max(args.amax);
@@ -99,16 +96,10 @@ fn main() -> Result<(), String> {
                     .max(((max_span / 2.0).ceil() as u32).clamp(0, 192));
                 let grid = compute_sdf_grid(result.sdf.as_ref(), bounds_min, bounds_max, grid_res);
                 sample_section_from_grid_gpu(
-                    &grid,
-                    gpu_plane,
-                    args.coord,
-                    args.amin,
-                    args.amax,
-                    args.bmin,
-                    args.bmax,
-                    args.na,
-                    args.nb,
-                ).ok()
+                    &grid, gpu_plane, args.coord, args.amin, args.amax, args.bmin, args.bmax,
+                    args.na, args.nb,
+                )
+                .ok()
             }
         }
         _ => return Err("backend must be one of: auto, cpu, gpu".into()),

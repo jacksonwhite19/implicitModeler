@@ -1,6 +1,7 @@
 use implicit_cad::export::build_export_mesh;
 use implicit_cad::headless::compute_metrics;
 use implicit_cad::headless::execute_script_headless_extended;
+use implicit_cad::mesh::MeshQuality;
 use implicit_cad::pipeline::auto_bounds;
 use implicit_cad::project::Project;
 use implicit_cad::scripting::evaluate_script_full;
@@ -9,7 +10,10 @@ use std::collections::HashMap;
 use tempfile::TempDir;
 
 fn fixed_wing_instance(wingspan: f64) -> implicit_cad::ui::templates::TemplateInstance {
-    let template = get_templates().iter().find(|t| t.id == "fixed_wing").unwrap();
+    let template = get_templates()
+        .iter()
+        .find(|t| t.id == "fixed_wing")
+        .unwrap();
     let mut params = HashMap::new();
     params.insert("wingspan".to_string(), wingspan);
     params.insert("root_chord".to_string(), 180.0);
@@ -36,10 +40,19 @@ fn fixed_wing_complete_800mm_workflow_generates_mesh() {
     .expect("fixed-wing template should evaluate");
 
     let (bounds_min, bounds_max) = auto_bounds(result.sdf.as_ref());
-    let mesh = build_export_mesh(result.sdf.as_ref(), bounds_min, bounds_max, 32, false);
+    let mesh = build_export_mesh(
+        result.sdf.as_ref(),
+        bounds_min,
+        bounds_max,
+        MeshQuality::Normal,
+        false,
+    );
     let mass_names: Vec<_> = result.mass_points.iter().map(|m| m.name.as_str()).collect();
 
-    assert!(!mesh.vertices.is_empty(), "fixed-wing workflow should produce a mesh");
+    assert!(
+        !mesh.vertices.is_empty(),
+        "fixed-wing workflow should produce a mesh"
+    );
     assert!(mass_names.contains(&"battery"));
     assert!(mass_names.contains(&"servo_l"));
     assert!(mass_names.contains(&"servo_r"));
@@ -78,12 +91,40 @@ fn fixed_wing_dimension_change_regenerates_expected_span() {
     .unwrap();
 
     let (small_min, small_max) = auto_bounds(eval_small.sdf.as_ref());
-    let small_mesh = build_export_mesh(eval_small.sdf.as_ref(), small_min, small_max, 24, false);
-    let small_metrics = compute_metrics(eval_small.sdf.as_ref(), &small_mesh, &eval_small, 24, 0, &small.dimensions);
+    let small_mesh = build_export_mesh(
+        eval_small.sdf.as_ref(),
+        small_min,
+        small_max,
+        MeshQuality::Draft,
+        false,
+    );
+    let small_metrics = compute_metrics(
+        &eval_small.sdf,
+        &small_mesh,
+        &eval_small,
+        24,
+        0,
+        0,
+        &small.dimensions,
+    );
 
     let (large_min, large_max) = auto_bounds(eval_large.sdf.as_ref());
-    let large_mesh = build_export_mesh(eval_large.sdf.as_ref(), large_min, large_max, 24, false);
-    let large_metrics = compute_metrics(eval_large.sdf.as_ref(), &large_mesh, &eval_large, 24, 0, &large.dimensions);
+    let large_mesh = build_export_mesh(
+        eval_large.sdf.as_ref(),
+        large_min,
+        large_max,
+        MeshQuality::Draft,
+        false,
+    );
+    let large_metrics = compute_metrics(
+        &eval_large.sdf,
+        &large_mesh,
+        &eval_large,
+        24,
+        0,
+        0,
+        &large.dimensions,
+    );
 
     assert!(
         (large_metrics.volume_mm3 - small_metrics.volume_mm3).abs() > 1_000.0,
@@ -125,11 +166,25 @@ fn fixed_wing_project_round_trips_to_icad_and_headless_export() {
         false,
         &[],
         Some(&metrics_path),
+        "external",
+        0.5,
+        1.0,
+        6,
+        false,
+        false,
+        false,
+        128_000_000,
     )
     .unwrap();
 
-    assert!(mesh_path.exists(), "headless fixed-wing export should write STL");
-    assert!(metrics_path.exists(), "headless fixed-wing export should write metrics");
+    assert!(
+        mesh_path.exists(),
+        "headless fixed-wing export should write STL"
+    );
+    assert!(
+        metrics_path.exists(),
+        "headless fixed-wing export should write metrics"
+    );
     let metrics = std::fs::read_to_string(metrics_path).unwrap();
     assert!(metrics.contains("\"wingspan\""));
     assert!(metrics.contains("800.0"));
@@ -168,6 +223,14 @@ fn fixed_wing_package_export_writes_manufacturing_artifacts() {
         false,
         &[],
         None,
+        "external",
+        0.5,
+        1.0,
+        6,
+        false,
+        false,
+        false,
+        128_000_000,
     )
     .unwrap();
 

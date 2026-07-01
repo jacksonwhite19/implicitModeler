@@ -58,7 +58,7 @@ fn find_on_path() -> Option<PathBuf> {
 pub fn verify_calculix(override_path: Option<&str>) {
     match find_calculix(override_path) {
         Some(p) => eprintln!("[FEA] CalculiX found: {}", p.display()),
-        None    => eprintln!(
+        None => eprintln!(
             "[FEA] WARNING: CalculiX (ccx) not found. \
              Place it in assets/calculix/ or set a path override in settings."
         ),

@@ -1,41 +1,41 @@
 // In-app function reference panel.
 
-use eframe::egui::{self, Context, RichText, ScrollArea, TextEdit, Frame, Color32, Stroke};
-use crate::ui::help_data::{FUNCTION_DOCS, CATEGORIES, FunctionStatus, function_status};
+use crate::ui::help_data::{CATEGORIES, FUNCTION_DOCS, FunctionStatus, function_status};
 use crate::ui::help_search::HelpSearchState;
+use eframe::egui::{self, Color32, Context, Frame, RichText, ScrollArea, Stroke, TextEdit};
 
 /// Map category name to a display color.
 pub fn category_color(category: &str) -> Color32 {
     match category {
-        "Primitives"            => Color32::from_rgb(100, 149, 237),
-        "Booleans"              => Color32::from_rgb(255, 165,   0),
-        "Transforms"            => Color32::from_rgb( 50, 205,  50),
-        "Assembly"              => Color32::from_rgb(135, 206, 235),
-        "Math"                  => Color32::from_rgb(200, 200, 200),
-        "Wing and Airfoil"      => Color32::from_rgb(220,  20,  60),
-        "Wing Measurements"     => Color32::from_rgb(255, 100, 100),
-        "Control Surfaces"      => Color32::from_rgb(255, 140,   0),
-        "Nose and Tail"         => Color32::from_rgb(210, 105,  30),
-        "Inlets"                => Color32::from_rgb(160,  32, 240),
-        "Structural"            => Color32::from_rgb(112, 128, 144),
-        "Components"            => Color32::from_rgb(  0, 128, 128),
-        "Fasteners"             => Color32::from_rgb(169, 169, 169),
-        "Fuselage and Sections" => Color32::from_rgb(205,  92,  92),
-        "Fields"                => Color32::from_rgb( 64, 224, 208),
-        "Lattice"               => Color32::from_rgb( 32, 178, 170),
-        "Splines and Sweeps"    => Color32::from_rgb( 72, 209, 204),
-        "FEA and Loads"         => Color32::from_rgb(255, 215,   0),
-        "Mesh Import"           => Color32::from_rgb(152, 251, 152),
-        "Composite Layup"       => Color32::from_rgb(147, 112, 219),
-        "Print and Split"       => Color32::from_rgb(176, 196, 222),
-        "Joints and Panels"     => Color32::from_rgb(188, 143, 143),
-        "Aerodynamic Analysis"  => Color32::from_rgb(100, 149, 237),
-        "Geometry Analysis"     => Color32::from_rgb( 70, 130, 180),
-        "Points and Queries"    => Color32::from_rgb(144, 238, 144),
-        "Placement"             => Color32::from_rgb(240, 230, 140),
-        "Instancing"            => Color32::from_rgb(255, 228, 196),
-        "Propulsion"            => Color32::from_rgb(255, 215,   0),
-        _                       => Color32::from_rgb(150, 150, 150),
+        "Primitives" => Color32::from_rgb(100, 149, 237),
+        "Booleans" => Color32::from_rgb(255, 165, 0),
+        "Transforms" => Color32::from_rgb(50, 205, 50),
+        "Assembly" => Color32::from_rgb(135, 206, 235),
+        "Math" => Color32::from_rgb(200, 200, 200),
+        "Wing and Airfoil" => Color32::from_rgb(220, 20, 60),
+        "Wing Measurements" => Color32::from_rgb(255, 100, 100),
+        "Control Surfaces" => Color32::from_rgb(255, 140, 0),
+        "Nose and Tail" => Color32::from_rgb(210, 105, 30),
+        "Inlets" => Color32::from_rgb(160, 32, 240),
+        "Structural" => Color32::from_rgb(112, 128, 144),
+        "Components" => Color32::from_rgb(0, 128, 128),
+        "Fasteners" => Color32::from_rgb(169, 169, 169),
+        "Fuselage and Sections" => Color32::from_rgb(205, 92, 92),
+        "Fields" => Color32::from_rgb(64, 224, 208),
+        "Lattice" => Color32::from_rgb(32, 178, 170),
+        "Splines and Sweeps" => Color32::from_rgb(72, 209, 204),
+        "FEA and Loads" => Color32::from_rgb(255, 215, 0),
+        "Mesh Import" => Color32::from_rgb(152, 251, 152),
+        "Composite Layup" => Color32::from_rgb(147, 112, 219),
+        "Print and Split" => Color32::from_rgb(176, 196, 222),
+        "Joints and Panels" => Color32::from_rgb(188, 143, 143),
+        "Aerodynamic Analysis" => Color32::from_rgb(100, 149, 237),
+        "Geometry Analysis" => Color32::from_rgb(70, 130, 180),
+        "Points and Queries" => Color32::from_rgb(144, 238, 144),
+        "Placement" => Color32::from_rgb(240, 230, 140),
+        "Instancing" => Color32::from_rgb(255, 228, 196),
+        "Propulsion" => Color32::from_rgb(255, 215, 0),
+        _ => Color32::from_rgb(150, 150, 150),
     }
 }
 
@@ -55,7 +55,9 @@ pub fn show_help_panel(
     cursor_byte: Option<usize>,
     _search_focused: bool,
 ) {
-    if !*open { return; }
+    if !*open {
+        return;
+    }
 
     let mut close = false;
 
@@ -109,11 +111,15 @@ pub fn show_help_panel(
 
             // Keyboard navigation
             let escape_pressed = ui.input(|i| i.key_pressed(egui::Key::Escape));
-            let up_pressed     = ui.input(|i| i.key_pressed(egui::Key::ArrowUp));
-            let down_pressed   = ui.input(|i| i.key_pressed(egui::Key::ArrowDown));
+            let up_pressed = ui.input(|i| i.key_pressed(egui::Key::ArrowUp));
+            let down_pressed = ui.input(|i| i.key_pressed(egui::Key::ArrowDown));
 
-            if up_pressed   { state.move_selection(-1); }
-            if down_pressed { state.move_selection(1); }
+            if up_pressed {
+                state.move_selection(-1);
+            }
+            if down_pressed {
+                state.move_selection(1);
+            }
             if escape_pressed {
                 if !state.query.is_empty() {
                     state.query.clear();
@@ -125,46 +131,57 @@ pub fn show_help_panel(
 
             // ── Category chips ───────────────────────────────────────────────
             ui.add_space(4.0);
-            egui::ScrollArea::horizontal().id_salt("cat_chips").show(ui, |ui| {
-                ui.horizontal(|ui| {
-                    let all_active = state.selected_category.is_none();
-                    let all_btn = if all_active {
-                        ui.add(egui::Button::new(RichText::new("All").color(Color32::WHITE))
-                            .fill(Color32::from_rgb(80, 80, 200)))
-                    } else {
-                        ui.button("All")
-                    };
-                    if all_btn.clicked() {
-                        state.selected_category = None;
-                        state.update_results();
-                    }
-
-                    for &cat in CATEGORIES {
-                        let active = state.selected_category.as_deref() == Some(cat);
-                        let col = category_color(cat);
-                        let btn = if active {
-                            ui.add(egui::Button::new(RichText::new(cat).color(Color32::WHITE).small())
-                                .fill(col))
+            egui::ScrollArea::horizontal()
+                .id_salt("cat_chips")
+                .show(ui, |ui| {
+                    ui.horizontal(|ui| {
+                        let all_active = state.selected_category.is_none();
+                        let all_btn = if all_active {
+                            ui.add(
+                                egui::Button::new(RichText::new("All").color(Color32::WHITE))
+                                    .fill(Color32::from_rgb(80, 80, 200)),
+                            )
                         } else {
-                            ui.add(egui::Button::new(RichText::new(cat).small()))
+                            ui.button("All")
                         };
-                        if btn.clicked() {
-                            state.selected_category = if active { None } else { Some(cat.to_string()) };
+                        if all_btn.clicked() {
+                            state.selected_category = None;
                             state.update_results();
                         }
-                    }
+
+                        for &cat in CATEGORIES {
+                            let active = state.selected_category.as_deref() == Some(cat);
+                            let col = category_color(cat);
+                            let btn = if active {
+                                ui.add(
+                                    egui::Button::new(
+                                        RichText::new(cat).color(Color32::WHITE).small(),
+                                    )
+                                    .fill(col),
+                                )
+                            } else {
+                                ui.add(egui::Button::new(RichText::new(cat).small()))
+                            };
+                            if btn.clicked() {
+                                state.selected_category =
+                                    if active { None } else { Some(cat.to_string()) };
+                                state.update_results();
+                            }
+                        }
+                    });
                 });
-            });
 
             // ── Results count ────────────────────────────────────────────────
             ui.add_space(2.0);
-            ui.label(RichText::new(format!(
-                "Showing {} of {} functions",
-                state.results.len(),
-                FUNCTION_DOCS.len()
-            ))
-            .small()
-            .color(Color32::GRAY));
+            ui.label(
+                RichText::new(format!(
+                    "Showing {} of {} functions",
+                    state.results.len(),
+                    FUNCTION_DOCS.len()
+                ))
+                .small()
+                .color(Color32::GRAY),
+            );
             ui.separator();
 
             // ── Empty state ──────────────────────────────────────────────────
@@ -204,10 +221,9 @@ pub fn show_help_panel(
                             .show(ui, |ui| {
                                 // ── Collapsed header ────────────────────────
                                 ui.horizontal(|ui| {
-                                    ui.label(RichText::new(doc.name)
-                                        .monospace()
-                                        .strong()
-                                        .color(col));
+                                    ui.label(
+                                        RichText::new(doc.name).monospace().strong().color(col),
+                                    );
                                     ui.label(
                                         RichText::new(format!("[{}]", status.label()))
                                             .small()
@@ -252,9 +268,7 @@ pub fn show_help_panel(
                                     ui.add_space(4.0);
                                     ui.horizontal(|ui| {
                                         ui.label(RichText::new("Returns:").strong().small());
-                                        ui.label(
-                                            RichText::new(doc.returns).monospace().small(),
-                                        );
+                                        ui.label(RichText::new(doc.returns).monospace().small());
                                     });
                                     ui.horizontal(|ui| {
                                         ui.label(RichText::new("Status:").strong().small());
@@ -310,9 +324,7 @@ pub fn show_help_panel(
                                     ui.horizontal_wrapped(|ui| {
                                         for &tag in doc.tags {
                                             ui.label(
-                                                RichText::new(tag)
-                                                    .small()
-                                                    .color(Color32::GRAY),
+                                                RichText::new(tag).small().color(Color32::GRAY),
                                             );
                                         }
                                     });
@@ -339,11 +351,7 @@ pub fn show_help_panel(
                         }
 
                         // Click to expand/collapse
-                        if row_resp
-                            .response
-                            .interact(egui::Sense::click())
-                            .clicked()
-                        {
+                        if row_resp.response.interact(egui::Sense::click()).clicked() {
                             if is_expanded {
                                 state.selected_function = None;
                             } else {

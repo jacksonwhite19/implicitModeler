@@ -2,11 +2,11 @@
 // between component keepout volumes.
 #![allow(dead_code)] // Analysis result fields — not all displayed in the current UI
 
-use glam::Vec3;
-use std::sync::Arc;
 use crate::sdf::Sdf;
 use crate::sdf::query::bounding_points;
+use glam::Vec3;
 use rayon::prelude::*;
+use std::sync::Arc;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum InterferenceSeverity {
@@ -67,9 +67,15 @@ pub fn check_assembly_interference(
                     let bj = &bboxes_ref[j];
 
                     // Axis-aligned bounding box pre-filter.
-                    if bi.max.x < bj.min.x || bj.max.x < bi.min.x { return None; }
-                    if bi.max.y < bj.min.y || bj.max.y < bi.min.y { return None; }
-                    if bi.max.z < bj.min.z || bj.max.z < bi.min.z { return None; }
+                    if bi.max.x < bj.min.x || bj.max.x < bi.min.x {
+                        return None;
+                    }
+                    if bi.max.y < bj.min.y || bj.max.y < bi.min.y {
+                        return None;
+                    }
+                    if bi.max.z < bj.min.z || bj.max.z < bi.min.z {
+                        return None;
+                    }
 
                     // Intersection bounding box.
                     let overlap_min = Vec3::new(
@@ -106,11 +112,12 @@ pub fn check_assembly_interference(
                     for ix in 0..res {
                         for iy in 0..res {
                             for iz in 0..res {
-                                let p = overlap_min + Vec3::new(
-                                    (ix as f32 + 0.5) * dx.x,
-                                    (iy as f32 + 0.5) * dx.y,
-                                    (iz as f32 + 0.5) * dx.z,
-                                );
+                                let p = overlap_min
+                                    + Vec3::new(
+                                        (ix as f32 + 0.5) * dx.x,
+                                        (iy as f32 + 0.5) * dx.y,
+                                        (iz as f32 + 0.5) * dx.z,
+                                    );
                                 if sdf_a.distance(p) < 0.0 && sdf_b.distance(p) < 0.0 {
                                     vol += voxel_vol;
                                     centroid_sum += p;
@@ -166,7 +173,10 @@ pub fn check_assembly_interference(
             .zip(bboxes.iter())
             .filter_map(|((name, _, _), bbox)| {
                 // Any corner of the keepout bbox outside parent by > 5mm → flag it.
-                let outside = bbox.corners.iter().any(|&corner| parent.distance(corner) > 5.0);
+                let outside = bbox
+                    .corners
+                    .iter()
+                    .any(|&corner| parent.distance(corner) > 5.0);
                 if outside { Some(name.clone()) } else { None }
             })
             .collect()
@@ -175,7 +185,9 @@ pub fn check_assembly_interference(
     };
 
     let total = pairs.len();
-    let critical = pairs.iter().any(|p| p.severity == InterferenceSeverity::Critical);
+    let critical = pairs
+        .iter()
+        .any(|p| p.severity == InterferenceSeverity::Critical);
 
     // Sort by descending interference volume.
     let mut sorted_pairs = pairs;

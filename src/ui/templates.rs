@@ -1,29 +1,30 @@
 // Project templates for the New Project wizard
 #![allow(dead_code)] // Templates are used by project_wizard which is not yet wired into the main UI
 
-use std::collections::HashMap;
 use indexmap::IndexMap;
+use std::collections::HashMap;
 
 use crate::project::{
-    AssemblyConstraint, AssemblyConstraintFormula, DesignVariant, ManufacturingPreset, WorkflowConfig,
+    AssemblyConstraint, AssemblyConstraintFormula, DesignVariant, ManufacturingPreset,
+    WorkflowConfig,
 };
 
 pub struct ProjectTemplate {
-    pub id:          &'static str,
-    pub name:        &'static str,
+    pub id: &'static str,
+    pub name: &'static str,
     pub description: &'static str,
-    pub tags:        &'static [&'static str],
-    pub script:      &'static str,
-    pub params:      &'static [TemplateParam],
-    pub workflow:    Option<TemplateWorkflow>,
+    pub tags: &'static [&'static str],
+    pub script: &'static str,
+    pub params: &'static [TemplateParam],
+    pub workflow: Option<TemplateWorkflow>,
 }
 
 pub struct TemplateParam {
-    pub name:    &'static str,
-    pub label:   &'static str,
+    pub name: &'static str,
+    pub label: &'static str,
     pub default: f64,
-    pub min:     f64,
-    pub max:     f64,
+    pub min: f64,
+    pub max: f64,
 }
 
 #[derive(Clone)]
@@ -33,11 +34,11 @@ pub struct TemplateWorkflow {
 }
 
 pub struct TemplateInstance {
-    pub script:                  String,
-    pub dimensions:              IndexMap<String, f64>,
-    pub workflow_config:         Option<WorkflowConfig>,
+    pub script: String,
+    pub dimensions: IndexMap<String, f64>,
+    pub workflow_config: Option<WorkflowConfig>,
     pub print_analysis_settings: Option<crate::analysis::print_analysis::PrintAnalysisSettings>,
-    pub tolerance_settings:      Option<crate::sdf::print::ToleranceSettings>,
+    pub tolerance_settings: Option<crate::sdf::print::ToleranceSettings>,
 }
 
 // ── Template scripts ──────────────────────────────────────────────────────────
@@ -154,82 +155,154 @@ box_(w, h, d)"#;
 // ── Template parameter definitions ───────────────────────────────────────────
 
 static FIXED_WING_PARAMS: &[TemplateParam] = &[
-    TemplateParam { name: "wingspan",         label: "Wingspan (mm)",        default: 800.0, min: 100.0, max: 5000.0 },
-    TemplateParam { name: "root_chord",       label: "Root chord (mm)",      default: 180.0, min: 50.0,  max: 1000.0 },
-    TemplateParam { name: "tip_chord",        label: "Tip chord (mm)",       default: 110.0, min: 30.0,  max: 800.0 },
-    TemplateParam { name: "fuse_width",       label: "Fuselage width (mm)",  default: 70.0,  min: 20.0,  max: 300.0 },
-    TemplateParam { name: "fuse_height",      label: "Fuselage height (mm)", default: 85.0,  min: 20.0,  max: 300.0 },
+    TemplateParam {
+        name: "wingspan",
+        label: "Wingspan (mm)",
+        default: 800.0,
+        min: 100.0,
+        max: 5000.0,
+    },
+    TemplateParam {
+        name: "root_chord",
+        label: "Root chord (mm)",
+        default: 180.0,
+        min: 50.0,
+        max: 1000.0,
+    },
+    TemplateParam {
+        name: "tip_chord",
+        label: "Tip chord (mm)",
+        default: 110.0,
+        min: 30.0,
+        max: 800.0,
+    },
+    TemplateParam {
+        name: "fuse_width",
+        label: "Fuselage width (mm)",
+        default: 70.0,
+        min: 20.0,
+        max: 300.0,
+    },
+    TemplateParam {
+        name: "fuse_height",
+        label: "Fuselage height (mm)",
+        default: 85.0,
+        min: 20.0,
+        max: 300.0,
+    },
 ];
 
 static FLYING_WING_PARAMS: &[TemplateParam] = &[
-    TemplateParam { name: "wingspan",    label: "Wingspan (mm)",    default: 700.0, min: 100.0, max: 5000.0 },
-    TemplateParam { name: "sweep_angle", label: "Sweep angle (°)",  default: 30.0,  min: 0.0,   max: 60.0  },
+    TemplateParam {
+        name: "wingspan",
+        label: "Wingspan (mm)",
+        default: 700.0,
+        min: 100.0,
+        max: 5000.0,
+    },
+    TemplateParam {
+        name: "sweep_angle",
+        label: "Sweep angle (°)",
+        default: 30.0,
+        min: 0.0,
+        max: 60.0,
+    },
 ];
 
 static QUADCOPTER_PARAMS: &[TemplateParam] = &[
-    TemplateParam { name: "arm_length",   label: "Arm length (mm)",   default: 150.0, min: 50.0,  max: 500.0 },
-    TemplateParam { name: "arm_diameter", label: "Arm diameter (mm)", default: 12.0,  min: 4.0,   max: 50.0  },
+    TemplateParam {
+        name: "arm_length",
+        label: "Arm length (mm)",
+        default: 150.0,
+        min: 50.0,
+        max: 500.0,
+    },
+    TemplateParam {
+        name: "arm_diameter",
+        label: "Arm diameter (mm)",
+        default: 12.0,
+        min: 4.0,
+        max: 50.0,
+    },
 ];
 
 static STRUCTURAL_PARAMS: &[TemplateParam] = &[
-    TemplateParam { name: "width",  label: "Width (mm)",  default: 50.0, min: 1.0, max: 1000.0 },
-    TemplateParam { name: "height", label: "Height (mm)", default: 30.0, min: 1.0, max: 1000.0 },
-    TemplateParam { name: "depth",  label: "Depth (mm)",  default: 20.0, min: 1.0, max: 1000.0 },
+    TemplateParam {
+        name: "width",
+        label: "Width (mm)",
+        default: 50.0,
+        min: 1.0,
+        max: 1000.0,
+    },
+    TemplateParam {
+        name: "height",
+        label: "Height (mm)",
+        default: 30.0,
+        min: 1.0,
+        max: 1000.0,
+    },
+    TemplateParam {
+        name: "depth",
+        label: "Depth (mm)",
+        default: 20.0,
+        min: 1.0,
+        max: 1000.0,
+    },
 ];
 
 // ── Template list ─────────────────────────────────────────────────────────────
 
 static TEMPLATES: &[ProjectTemplate] = &[
     ProjectTemplate {
-        id:          "blank",
-        name:        "Blank",
+        id: "blank",
+        name: "Blank",
         description: "Empty project with a placeholder sphere",
-        tags:        &["general"],
-        script:      BLANK_SCRIPT,
-        params:      &[],
-        workflow:    None,
+        tags: &["general"],
+        script: BLANK_SCRIPT,
+        params: &[],
+        workflow: None,
     },
     ProjectTemplate {
-        id:          "fixed_wing",
-        name:        "Fixed Wing",
+        id: "fixed_wing",
+        name: "Fixed Wing",
         description: "Conventional fixed-wing aircraft with fuselage",
-        tags:        &["aerospace", "aircraft"],
-        script:      FIXED_WING_SCRIPT,
-        params:      FIXED_WING_PARAMS,
-        workflow:    Some(TemplateWorkflow {
+        tags: &["aerospace", "aircraft"],
+        script: FIXED_WING_SCRIPT,
+        params: FIXED_WING_PARAMS,
+        workflow: Some(TemplateWorkflow {
             vehicle_type: "fixed_wing",
             manufacturing_preset: ManufacturingPreset::CarbonTubeSpar,
         }),
     },
     ProjectTemplate {
-        id:          "flying_wing",
-        name:        "Flying Wing",
+        id: "flying_wing",
+        name: "Flying Wing",
         description: "Tailless flying wing with configurable sweep",
-        tags:        &["aerospace", "aircraft"],
-        script:      FLYING_WING_SCRIPT,
-        params:      FLYING_WING_PARAMS,
-        workflow:    Some(TemplateWorkflow {
+        tags: &["aerospace", "aircraft"],
+        script: FLYING_WING_SCRIPT,
+        params: FLYING_WING_PARAMS,
+        workflow: Some(TemplateWorkflow {
             vehicle_type: "flying_wing",
             manufacturing_preset: ManufacturingPreset::Foamboard,
         }),
     },
     ProjectTemplate {
-        id:          "quadcopter",
-        name:        "Quadcopter",
+        id: "quadcopter",
+        name: "Quadcopter",
         description: "Four-arm multirotor frame",
-        tags:        &["drone", "multirotor"],
-        script:      QUADCOPTER_SCRIPT,
-        params:      QUADCOPTER_PARAMS,
-        workflow:    None,
+        tags: &["drone", "multirotor"],
+        script: QUADCOPTER_SCRIPT,
+        params: QUADCOPTER_PARAMS,
+        workflow: None,
     },
     ProjectTemplate {
-        id:          "structural_part",
-        name:        "Structural Part",
+        id: "structural_part",
+        name: "Structural Part",
         description: "Simple rectangular structural part",
-        tags:        &["mechanical", "structural"],
-        script:      STRUCTURAL_SCRIPT,
-        params:      STRUCTURAL_PARAMS,
-        workflow:    None,
+        tags: &["mechanical", "structural"],
+        script: STRUCTURAL_SCRIPT,
+        params: STRUCTURAL_PARAMS,
+        workflow: None,
     },
 ];
 
@@ -353,19 +426,47 @@ fn fixed_wing_dimension_defaults() -> IndexMap<String, f64> {
 
 fn fixed_wing_parameter_groups() -> IndexMap<String, Vec<String>> {
     let mut groups = IndexMap::new();
-    groups.insert("Airframe".into(), vec![
-        "wingspan".into(), "root_chord".into(), "tip_chord".into(), "fuse_width".into(), "fuse_height".into(),
-    ]);
-    groups.insert("Tail".into(), vec![
-        "htail_span".into(), "htail_root_chord".into(), "htail_tip_chord".into(), "vtail_span".into(),
-    ]);
-    groups.insert("Internals".into(), vec![
-        "battery_len".into(), "battery_width".into(), "battery_height".into(), "servo_len".into(), "servo_width".into(),
-        "rx_len".into(), "rx_width".into(), "rx_height".into(),
-    ]);
-    groups.insert("Manufacturing".into(), vec![
-        "shell_thickness".into(), "spar_outer_diam".into(), "spar_inner_diam".into(), "split_station_x".into(),
-    ]);
+    groups.insert(
+        "Airframe".into(),
+        vec![
+            "wingspan".into(),
+            "root_chord".into(),
+            "tip_chord".into(),
+            "fuse_width".into(),
+            "fuse_height".into(),
+        ],
+    );
+    groups.insert(
+        "Tail".into(),
+        vec![
+            "htail_span".into(),
+            "htail_root_chord".into(),
+            "htail_tip_chord".into(),
+            "vtail_span".into(),
+        ],
+    );
+    groups.insert(
+        "Internals".into(),
+        vec![
+            "battery_len".into(),
+            "battery_width".into(),
+            "battery_height".into(),
+            "servo_len".into(),
+            "servo_width".into(),
+            "rx_len".into(),
+            "rx_width".into(),
+            "rx_height".into(),
+        ],
+    );
+    groups.insert(
+        "Manufacturing".into(),
+        vec![
+            "shell_thickness".into(),
+            "spar_outer_diam".into(),
+            "spar_inner_diam".into(),
+            "split_station_x".into(),
+        ],
+    );
     groups
 }
 
@@ -470,7 +571,10 @@ pub fn preset_tolerance_settings(
     preset: &ManufacturingPreset,
 ) -> crate::sdf::print::ToleranceSettings {
     let mut tolerance_settings = crate::sdf::print::ToleranceSettings::default();
-    if !matches!(preset, ManufacturingPreset::Foamboard | ManufacturingPreset::MoldedShell) {
+    if !matches!(
+        preset,
+        ManufacturingPreset::Foamboard | ManufacturingPreset::MoldedShell
+    ) {
         tolerance_settings.apply_preset(&crate::sdf::print::TolerancePreset::StandardFDM);
     }
     tolerance_settings
@@ -505,12 +609,17 @@ fn workflow_defaults(workflow: &TemplateWorkflow) -> TemplateInstance {
             assembly_constraints,
             variants,
         }),
-        print_analysis_settings: Some(preset_print_analysis_settings(&workflow.manufacturing_preset)),
+        print_analysis_settings: Some(preset_print_analysis_settings(
+            &workflow.manufacturing_preset,
+        )),
         tolerance_settings: Some(preset_tolerance_settings(&workflow.manufacturing_preset)),
     }
 }
 
-pub fn instantiate_project(template: &ProjectTemplate, params: &HashMap<String, f64>) -> TemplateInstance {
+pub fn instantiate_project(
+    template: &ProjectTemplate,
+    params: &HashMap<String, f64>,
+) -> TemplateInstance {
     let mut instance = if let Some(workflow) = &template.workflow {
         workflow_defaults(workflow)
     } else {
@@ -544,7 +653,10 @@ mod tests {
 
     #[test]
     fn fixed_wing_template_exposes_project_dimensions() {
-        let tmpl = get_templates().iter().find(|t| t.id == "fixed_wing").unwrap();
+        let tmpl = get_templates()
+            .iter()
+            .find(|t| t.id == "fixed_wing")
+            .unwrap();
         let mut params = HashMap::new();
         params.insert("wingspan".to_string(), 800.0);
         params.insert("root_chord".to_string(), 180.0);
@@ -557,13 +669,23 @@ mod tests {
         assert_eq!(instance.dimensions.get("wingspan"), Some(&800.0));
         assert!(instance.dimensions.contains_key("shell_thickness"));
         assert!(instance.workflow_config.is_some());
-        assert!(!instance.workflow_config.as_ref().unwrap().assembly_constraints.is_empty());
+        assert!(
+            !instance
+                .workflow_config
+                .as_ref()
+                .unwrap()
+                .assembly_constraints
+                .is_empty()
+        );
         assert_eq!(instance.workflow_config.as_ref().unwrap().variants.len(), 1);
     }
 
     #[test]
     fn fixed_wing_template_evaluates() {
-        let tmpl = get_templates().iter().find(|t| t.id == "fixed_wing").unwrap();
+        let tmpl = get_templates()
+            .iter()
+            .find(|t| t.id == "fixed_wing")
+            .unwrap();
         let mut params = HashMap::new();
         params.insert("wingspan".to_string(), 800.0);
         params.insert("root_chord".to_string(), 180.0);
@@ -583,6 +705,10 @@ mod tests {
             None,
             &[],
         );
-        assert!(result.is_ok(), "Fixed-wing template should evaluate: {:?}", result.err());
+        assert!(
+            result.is_ok(),
+            "Fixed-wing template should evaluate: {:?}",
+            result.err()
+        );
     }
 }

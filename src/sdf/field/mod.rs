@@ -19,8 +19,8 @@ pub trait Field: Send + Sync {
     }
 }
 
-pub mod primitives;
 pub mod arithmetic;
 pub mod gradients;
-pub mod operations;
 pub mod lattice;
+pub mod operations;
+pub mod primitives;

@@ -16,6 +16,8 @@ Current phase: Phase 1 - Headless Candidate Evaluation Platform, initial skeleto
 
 Next build target: run a larger real optimizer shakedown through the resumable pilot CLI, then tighten promotion/finalist controls and dashboard monitoring around the real export/mesh/rough-CFD loop.
 
+Implicit-kernel research status: Phase 0 SDF conditioning literature review complete enough to unblock diagnostic-first local conditioning design. Production SDF-native CFD and PhysicsNeMo surrogate implementation remain deferred until optimizer automation, conditioning stability, CFD data schema, and validation evidence mature.
+
 ## Roadmap Phase Status
 
 | Phase | Name | Status | Notes |
@@ -4870,3 +4872,89 @@ python custom_cfd_mesher_experiment\scripts\run_snappy_layer_comparison.py --run
     for Snappy so trailing edges, wing/tail roots, and selected fuselage/blend
     areas can receive targeted surface refinement without refining large
     volumes.
+
+### 2026-06-30 - Implicit aircraft roadmap and Phase 0 SDF conditioning review
+
+- Added `implicit_aircraft_design_roadmap.md` as the long-term kernel-first
+  roadmap overlay for local SDF conditioning, geometry-query APIs,
+  high-fidelity CFD datasets, future PhysicsNeMo-style surrogates, and later
+  SDF-native CFD research.
+- Added `research\phase0_sdf_conditioning_literature_review.md` with a focused
+  literature review covering SDF redistancing, fast marching, fast sweeping,
+  narrow-band level sets, OpenVDB/NanoVDB, scikit-fmm, Voxblox/nvblox, Lethe,
+  AMReX embedded boundaries, Basilisk embedded boundaries, immersed-boundary
+  CFD, cut-cell CFD, and PhysicsNeMo/FNO surrogate timing.
+- Gate decision:
+  - Phase 1 local SDF conditioning architecture work is unblocked.
+  - Production SDF-native CFD remains deferred research.
+  - Production PhysicsNeMo or other AI-surrogate training remains deferred until
+    optimizer automation and CFD data quality are trusted.
+  - Current OpenFOAM/snappyHexMesh optimizer path remains the production CFD
+    path.
+- Updated `README.md`, `roadmap.md`, `AGENT_README.md`, and
+  `master_platform_manifest.md` to reference the new roadmap and research gate.
+
+### 2026-06-30 - Phase 0 review hardening and conditioned-cache architecture
+
+- Strengthened `research\phase0_sdf_conditioning_literature_review.md` with:
+  - explicit success criteria for local conditioning,
+  - explicit non-goals,
+  - a first-class `Conditioned Geometry Cache` subsystem,
+  - technical risk register,
+  - fallback architecture if incremental conditioning fails.
+- Clarified the main architecture split:
+  `canonical geometry graph -> conditioned geometry cache -> clients`.
+- Added Phase 7, `Continuous Geometry Platform`, to
+  `implicit_aircraft_design_roadmap.md`.
+- Updated `AGENT_README.md` so future agents preserve the cache as derived,
+  disposable, rebuildable, versioned state rather than a source of truth.
+
+### 2026-06-30 - Phase 1 conditioned-cache execution plan
+
+Planned execution order:
+
+1. Add a formal conditioned geometry cache contract under
+   `software\sdf_generation_auto`.
+2. Extend artifact/module vocabulary with conditioning artifact kinds, metric
+   names, confidence semantics, and fallback status.
+3. Add a local-vs-full conditioning prototype fixture using simple analytic
+   shapes so dirty-region behavior can be tested without changing the real
+   aircraft exporter.
+4. Wire dirty-region/cache-readiness metadata into geometry-provider outputs
+   while preserving current exporter and optimizer behavior.
+5. Run focused tests and documentation checks.
+
+### 2026-06-30 - Phase 1 conditioned-cache contract and fixture pass
+
+- Added `software\sdf_generation_auto\conditioned_geometry_cache_contract.md`
+  as the Phase 1 contract for the derived, disposable conditioned geometry
+  cache.
+- Extended optimizer artifact and module-adapter contracts with conditioning
+  artifact types, metric names, confidence semantics, and fallback flags.
+- Added a pure-Python local-vs-full conditioning fixture covering radius edits,
+  box/corner edits, wing-tip-like edits, and thin-shell edits.
+- Added geometry-provider metadata for:
+  - `conditioned_geometry_cache`
+  - `dirty_regions`
+  - `fallback_mode`
+  - `optimizer_awareness_required`
+- Current production behavior is unchanged:
+  - exporters still sample the existing geometry path directly,
+  - the conditioned cache is marked `unavailable`,
+  - the optimizer does not need to know that conditioning exists.
+- Verification:
+  - `python -m pytest tests/test_conditioning_fixture.py`: `3 passed`
+  - `python -m pytest`: `78 passed`
+  - `git diff --check` on touched Phase 1 files: no whitespace errors
+
+### 2026-06-30 - Corrected conditioning ownership boundary
+
+- Clarified that SDF conditioning and the conditioned geometry cache are core
+  geometry-generator features, not optimizer features.
+- Moved reusable conditioning fixture and metadata helpers from the optimizer
+  package into generator-owned package code under
+  `software\sdf_generation_auto\src\geometry_generator_conditioning`.
+- Kept optimizer wiring as downstream evidence consumption only:
+  - geometry-provider outputs can record cache state and dirty regions,
+  - optimizer tests can verify the metadata contract,
+  - optimizer logic still does not own or implement cache construction.

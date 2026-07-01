@@ -1,11 +1,11 @@
 // Engine nacelle primitives
 
-use std::sync::Arc;
-use glam::Vec3;
 use crate::sdf::Sdf;
-use crate::sdf::primitives::{Cylinder, Sphere, Cone};
 use crate::sdf::booleans::SmoothUnion;
+use crate::sdf::primitives::{Cone, Cylinder, Sphere};
 use crate::sdf::transforms::Translate;
+use glam::Vec3;
+use std::sync::Arc;
 
 /// Create a simple nacelle using composite primitives
 ///
@@ -33,18 +33,18 @@ pub fn nacelle_simple(
     let inlet_sphere = Arc::new(Sphere::new(inlet_radius * 1.2)) as Arc<dyn Sdf>;
     let inlet = Arc::new(Translate::new(
         inlet_sphere,
-        Vec3::new(-length / 2.0, 0.0, 0.0)
+        Vec3::new(-length / 2.0, 0.0, 0.0),
     )) as Arc<dyn Sdf>;
 
     // Exhaust: tapered cone at rear
     let exhaust_cone = Arc::new(Cone::new(exhaust_radius, length * 0.25)) as Arc<dyn Sdf>;
     let exhaust = Arc::new(Translate::new(
         exhaust_cone,
-        Vec3::new(length / 2.0 + length * 0.125, 0.0, 0.0)
+        Vec3::new(length / 2.0 + length * 0.125, 0.0, 0.0),
     )) as Arc<dyn Sdf>;
 
     // Smooth blend everything together
-    let smoothness = diameter * 0.15;  // 15% of diameter for blend radius
+    let smoothness = diameter * 0.15; // 15% of diameter for blend radius
 
     let nacelle = Arc::new(SmoothUnion::new(body, inlet, smoothness)) as Arc<dyn Sdf>;
     Arc::new(SmoothUnion::new(nacelle, exhaust, smoothness))
@@ -80,6 +80,9 @@ mod tests {
 
         // Point far outside should be positive
         let dist_far = nacelle.distance(Vec3::new(50.0, 50.0, 50.0));
-        assert!(dist_far > 40.0, "Point far outside should have large positive distance");
+        assert!(
+            dist_far > 40.0,
+            "Point far outside should have large positive distance"
+        );
     }
 }

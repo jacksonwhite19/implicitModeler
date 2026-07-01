@@ -18,10 +18,14 @@ pub struct FrdResult {
 /// `num_nodes` must match the node count in the mesh (used to pre-allocate).
 pub fn parse_frd(content: &str, num_nodes: usize) -> Result<FrdResult, String> {
     let mut displacements: HashMap<usize, [f32; 3]> = HashMap::new();
-    let mut stresses:      HashMap<usize, [f32; 6]> = HashMap::new();
+    let mut stresses: HashMap<usize, [f32; 6]> = HashMap::new();
 
     #[derive(Clone, Copy, PartialEq)]
-    enum Block { None, Disp, Stress }
+    enum Block {
+        None,
+        Disp,
+        Stress,
+    }
 
     let mut block = Block::None;
 
@@ -31,7 +35,8 @@ pub fn parse_frd(content: &str, num_nodes: usize) -> Result<FrdResult, String> {
             let upper = line.to_uppercase();
             if upper.contains("DISP") {
                 block = Block::Disp;
-            } else if upper.contains("STRESS") || upper.contains("S  ") || upper.contains("STRESS") {
+            } else if upper.contains("STRESS") || upper.contains("S  ") || upper.contains("STRESS")
+            {
                 block = Block::Stress;
             } else {
                 block = Block::None;
@@ -54,7 +59,9 @@ pub fn parse_frd(content: &str, num_nodes: usize) -> Result<FrdResult, String> {
         if line.starts_with(" -1") && block != Block::None {
             // Fields: " -1" (3 chars), node_id (12 chars), then 12-char value fields
             let data = &line[3..];
-            if data.len() < 12 { continue; }
+            if data.len() < 12 {
+                continue;
+            }
 
             let node_id: usize = match data[..12].trim().parse::<i64>() {
                 Ok(n) if n >= 1 => (n - 1) as usize, // convert to 0-based
@@ -68,7 +75,10 @@ pub fn parse_frd(content: &str, num_nodes: usize) -> Result<FrdResult, String> {
                     displacements.insert(node_id, [vals[0], vals[1], vals[2]]);
                 }
                 Block::Stress if vals.len() >= 6 => {
-                    stresses.insert(node_id, [vals[0], vals[1], vals[2], vals[3], vals[4], vals[5]]);
+                    stresses.insert(
+                        node_id,
+                        [vals[0], vals[1], vals[2], vals[3], vals[4], vals[5]],
+                    );
                 }
                 _ => {}
             }
@@ -80,11 +90,12 @@ pub fn parse_frd(content: &str, num_nodes: usize) -> Result<FrdResult, String> {
     }
 
     let mut displacement_out = vec![0.0f32; num_nodes];
-    let mut von_mises_out    = vec![0.0f32; num_nodes];
+    let mut von_mises_out = vec![0.0f32; num_nodes];
 
     for (node_id, uvw) in &displacements {
         if *node_id < num_nodes {
-            displacement_out[*node_id] = (uvw[0]*uvw[0] + uvw[1]*uvw[1] + uvw[2]*uvw[2]).sqrt();
+            displacement_out[*node_id] =
+                (uvw[0] * uvw[0] + uvw[1] * uvw[1] + uvw[2] * uvw[2]).sqrt();
         }
     }
 
@@ -94,7 +105,10 @@ pub fn parse_frd(content: &str, num_nodes: usize) -> Result<FrdResult, String> {
         }
     }
 
-    Ok(FrdResult { displacement: displacement_out, von_mises: von_mises_out })
+    Ok(FrdResult {
+        displacement: displacement_out,
+        von_mises: von_mises_out,
+    })
 }
 
 /// Parse packed 12-character float fields from a value record tail.
@@ -118,7 +132,7 @@ fn von_mises(sxx: f32, syy: f32, szz: f32, sxy: f32, syz: f32, szx: f32) -> f32 
     let d1 = sxx - syy;
     let d2 = syy - szz;
     let d3 = szz - sxx;
-    (0.5 * (d1*d1 + d2*d2 + d3*d3 + 6.0*(sxy*sxy + syz*syz + szx*szx))).sqrt()
+    (0.5 * (d1 * d1 + d2 * d2 + d3 * d3 + 6.0 * (sxy * sxy + syz * syz + szx * szx))).sqrt()
 }
 
 #[cfg(test)]
@@ -169,7 +183,10 @@ mod tests {
         );
         let result = parse_frd(frd, 2).unwrap();
         // Node 0: displacement = sqrt(9+16+0) = 5.0
-        assert!((result.displacement[0] - 5.0).abs() < 0.01,
-            "disp = {}", result.displacement[0]);
+        assert!(
+            (result.displacement[0] - 5.0).abs() < 0.01,
+            "disp = {}",
+            result.displacement[0]
+        );
     }
 }

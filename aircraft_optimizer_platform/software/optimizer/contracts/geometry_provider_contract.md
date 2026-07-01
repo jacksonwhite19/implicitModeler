@@ -49,6 +49,17 @@ metadata:
   source_label: string
   source_original_path: string | null
   notes: string | null
+  conditioned_geometry_cache:
+    cache_contract_version: conditioned_geometry_cache.v1
+    canonical_graph_role: source_of_truth
+    cache_role: derived_query_acceleration
+    cache_state: unavailable | experimental | ready | partial
+    update_mode: not_run | local_incremental | full_rebuild | direct_analytic
+    fallback_available: boolean
+    fallback_mode: exporter_direct_sampling | direct_analytic | full_conditioning | none
+    client_awareness_required: boolean
+  dirty_regions:
+    - dirty_region
 warnings:
   - string
 failure: failure_record | null
@@ -105,5 +116,37 @@ The geometry provider should not:
 - Score candidates.
 - Decide optimizer ranking.
 - Store final artifacts directly.
+
+## Conditioned Cache Metadata
+
+Geometry-provider results should expose cache planning metadata even before a
+conditioning backend exists. For current generated or manual Rhai outputs, this
+metadata should usually be:
+
+```yaml
+conditioned_geometry_cache:
+  cache_contract_version: conditioned_geometry_cache.v1
+  canonical_graph_role: source_of_truth
+  cache_role: derived_query_acceleration
+  cache_state: unavailable
+  update_mode: not_run
+  fallback_available: true
+  fallback_mode: exporter_direct_sampling
+  client_awareness_required: false
+```
+
+The initial dirty region may conservatively cover the full geometry bbox:
+
+```yaml
+dirty_regions:
+  - source: full_geometry
+    operation_type: geometry_generation
+    bbox_min_mm: [number, number, number]
+    bbox_max_mm: [number, number, number]
+    topology_change_expected: false
+```
+
+This metadata does not prove local conditioning. It records where future
+conditioning work will attach while preserving current exporter behavior.
 
 Those are downstream module and artifact registry responsibilities.

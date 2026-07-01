@@ -8,8 +8,8 @@ pub mod spine_editor;
 
 pub mod project_tree;
 
-pub mod syntax;
 pub mod autocomplete;
+pub mod syntax;
 pub use autocomplete::AutocompleteState;
 
 pub mod dimensions;
@@ -20,13 +20,13 @@ pub use script_variable_detector::DetectionType;
 
 pub mod library_panel;
 
-pub mod templates;
 pub mod project_wizard;
+pub mod templates;
 
 pub mod version_control_panel;
 pub use version_control_panel::VCPanelState;
 
 pub mod help_data;
-pub mod help_search;
 pub mod help_panel;
+pub mod help_search;
 pub use help_search::HelpSearchState;

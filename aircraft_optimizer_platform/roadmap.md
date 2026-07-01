@@ -10,6 +10,16 @@ The platform should grow in controlled layers. Do not start with high-fidelity C
 
 The primary autonomous execution model is sequential and gated: propose one candidate, run cheap pre-export checks, export only when policy allows it, analyze only when policy allows it, record the result, update optimizer state, and then propose the next candidate. Batch studies remain useful secondary workflows for diagnostics, DOE, parallel campaigns, and future surrogate-data generation.
 
+## Implicit-Kernel Roadmap Overlay
+
+`implicit_aircraft_design_roadmap.md` adds the long-term kernel-first sequence for local SDF conditioning, geometry-query APIs, high-fidelity CFD dataset generation, and future PhysicsNeMo-style surrogate evaluation. That roadmap does not replace the optimizer-platform phases below. It clarifies that:
+
+- The implicit geometry kernel is canonical.
+- The conditioned geometry cache is derived, disposable, rebuildable, versioned, and query optimized.
+- Meshes, STLs, OpenFOAM cases, datasets, and dashboards are derived artifacts.
+- Local SDF conditioning design is gated by the Phase 0 literature review in `research/phase0_sdf_conditioning_literature_review.md`.
+- Production SDF-native CFD and AI surrogate work remain deferred research tracks until the optimizer, conditioning diagnostics, and CFD data quality are mature.
+
 ## Phase 0: Platform Foundation Definition
 
 Goal: freeze the platform contracts before implementation.

@@ -1,12 +1,12 @@
-// Scratchpad plane from scratchpad.md
+// Updated scratchpad aircraft using current export-safe surface tools
+// and profile-based inlet/duct geometry.
 // Coordinate convention:
 //   X = longitudinal (nose to tail)
 //   Y = spanwise
 //   Z = vertical
 
 // ---------------------------------------------------------------------------
-// Top-level dimensions
-// Edit these directly or expose them in the Dimensions panel.
+// Primary dimensions
 // ---------------------------------------------------------------------------
 
 let fuselage_length = 700.0;
@@ -16,7 +16,11 @@ let nose_length = 120.0;
 let tail_length = 65.0;
 let nose_bluntness = 1.80;
 let tail_bluntness = 0.97;
-let fuselage_smoothness = 0.70;   // 0 = rigid frame match, 1 = stronger fairing
+let fuselage_smoothness = 0.74;
+
+let shell_thickness = 1.6;
+let min_te_thickness = 1.6;
+let min_le_radius = 1.6;
 
 let wing_span = 700.0;
 let wing_root_chord = 170.0;
@@ -24,36 +28,6 @@ let wing_tip_chord = 65.0;
 let wing_sweep_deg = 15.0;
 let wing_le_x = 230.0;
 let wing_root_blend_k = 16.0;
-let shell_thickness = 1.0;
-let wing_rib_thickness = 2.2;
-let fuselage_bulkhead_thickness = 3.0;
-let show_shell = true;
-let show_structure = true;
-let inspect_cutaway = false;
-let cutaway_y_min = 0.0;
-let cutaway_z_min = 15.0;
-let inlet_mode = "single";   // "none", "single", "dual"
-
-let intake_x = 250.0;
-let intake_top_z = 68.0;
-let intake_outer_width = fuselage_width * 0.675;
-let intake_outer_height = intake_outer_width * 0.70;
-let intake_inner_width = intake_outer_width - 12.0;
-let intake_inner_height = intake_outer_height - 10.0;
-let duct_diameter = 90.0;
-let intake_surface_offset = 10.0;
-let intake_blend_k = 14.0;
-let duct_blend_k = 16.0;
-let duct_profile_samples = 160;
-let duct_open_extension = 70.0;
-let intake_mouth_clearance = 8.0;
-let intake_face_extension = 10.0;
-let intake_front_raise = 5.0;
-let inlet_morph_start = 0.10;
-let inlet_morph_end = 0.90;
-let dual_inlet_guess_y = 52.0;
-let dual_inlet_guess_z = 52.0;
-let dual_inlet_end_diameter = 70.0;
 
 let htail_span = 400.0;
 let htail_root_chord = 98.0;
@@ -69,155 +43,206 @@ let vtail_sweep_deg = 35.0;
 let vtail_le_x = 500.0;
 
 // ---------------------------------------------------------------------------
-// Fuselage
-// Elliptical body with direct nose/tail control.
+// Inlet / duct
+// Smaller and cleaner than the old scratchpad version.
 // ---------------------------------------------------------------------------
-let fuselage = fuselage_elliptical(
-    fuselage_length, fuselage_width, fuselage_height,
-    nose_length, tail_length,
-    nose_bluntness, tail_bluntness,
-    fuselage_smoothness
-);
-let fuselage_top_z = fuselage_height * 0.5;
-let intake_mouth_z = fuselage_top_z + intake_outer_height * 0.5 + intake_mouth_clearance + intake_front_raise;
+
+let inlet_mode = "single";   // "none" or "single"
+let intake_x = 286.0;
+let intake_outer_width = 69.0;
+let intake_outer_height = 30.0;
+let inlet_wall = shell_thickness;
+let intake_inner_width = intake_outer_width - inlet_wall * 2.0;
+let intake_inner_height = intake_outer_height - inlet_wall * 2.0;
+let duct_diameter = 44.0;
+let inlet_clearance = 9.0;
+let intake_face_extension = 8.0;
+let duct_open_extension = 36.0;
+let duct_profile_samples = 160;
+let inlet_blend_k = 10.0;
 
 // ---------------------------------------------------------------------------
-// Wing
-// 700 mm span, 15 deg sweep, 80 mm root chord, 65 mm tip chord
-// LE at x = 375 mm
+// Structure / display
+// ---------------------------------------------------------------------------
+
+let wing_rib_thickness = 2.2;
+let fuselage_bulkhead_thickness = 3.0;
+let show_shell = true;
+let show_structure = true;
+let inspect_cutaway = false;
+let cutaway_y_min = 0.0;
+let cutaway_z_min = 15.0;
+
+// ---------------------------------------------------------------------------
+// Fuselage
+// ---------------------------------------------------------------------------
+
+let fuselage = fuselage_elliptical(
+    fuselage_length,
+    fuselage_width,
+    fuselage_height,
+    nose_length,
+    tail_length,
+    nose_bluntness,
+    tail_bluntness,
+    fuselage_smoothness
+);
+
+let fuselage_top_z = fuselage_height * 0.5;
+let intake_mouth_z = fuselage_top_z + intake_outer_height * 0.5 + inlet_clearance;
+
+// ---------------------------------------------------------------------------
+// Lifting surfaces using export-safe airfoil generation
 // ---------------------------------------------------------------------------
 
 let wing = translate(
-    wing_with_airfoil("2412", wing_root_chord, wing_tip_chord, wing_span, wing_sweep_deg, 0.0, 0.0),
-    wing_le_x, 0.0, 0.0
+    wing_with_airfoil_export_safe(
+        "2412",
+        wing_root_chord,
+        wing_tip_chord,
+        wing_span,
+        wing_sweep_deg,
+        0.0,
+        0.0,
+        min_te_thickness,
+        min_le_radius
+    ),
+    wing_le_x,
+    0.0,
+    0.0
 );
 
 let body_outer = smooth_union(fuselage, wing, wing_root_blend_k);
 
-// ---------------------------------------------------------------------------
-// Tail
-// Conventional tail, no control surfaces
-// H-tail: 325 mm span, 65/65 chord, no sweep, LE at x = 500 mm
-// V-tail: 200 mm total span, 60/30 chord, 30 deg sweep, centered on h-tail
-// ---------------------------------------------------------------------------
-
-// wing_with_airfoil already returns a full-span surface.
 let htail = translate(
-    wing_with_airfoil("0009", htail_root_chord, htail_tip_chord, htail_span, 0.0, 0.0, 0.0),
-    htail_le_x, 0.0, tail_z
+    wing_with_airfoil_export_safe(
+        "0009",
+        htail_root_chord,
+        htail_tip_chord,
+        htail_span,
+        0.0,
+        0.0,
+        0.0,
+        min_te_thickness,
+        min_le_radius
+    ),
+    htail_le_x,
+    0.0,
+    tail_z
 );
 
-// Build the fin from the same wing primitive, rotate it upright, then clip away
-// the lower half so the root sits on the fuselage centerplane without a hacky cant.
 let vtail_raw = rotate(
-    wing_with_airfoil("0009", vtail_root_chord, vtail_tip_chord, vtail_span, vtail_sweep_deg, 0.0, 0.0),
-    90.0, 0.0, 0.0
+    wing_with_airfoil_export_safe(
+        "0009",
+        vtail_root_chord,
+        vtail_tip_chord,
+        vtail_span,
+        vtail_sweep_deg,
+        0.0,
+        0.0,
+        min_te_thickness,
+        min_le_radius
+    ),
+    90.0,
+    0.0,
+    0.0
 );
+
 let vtail_upper_only = intersect(
     vtail_raw,
     translate(box_(1200.0, 1200.0, 1200.0), 0.0, 0.0, 600.0)
 );
 let vtail = translate(vtail_upper_only, vtail_le_x, 0.0, tail_z);
 
-// Final outer mold line
 let body_outer = smooth_union(body_outer, htail, tail_blend_k);
 let body_outer = smooth_union(body_outer, vtail, tail_blend_k);
 
 // ---------------------------------------------------------------------------
-// Intake + internal duct
-// Canonical path using conformal_profile_duct_x(...) for a single dorsal inlet
-// or mirrored_dual_conformal_profile_duct_x(...) for a symmetric dual inlet.
+// Profile-based dorsal inlet and internal duct
 // ---------------------------------------------------------------------------
-let single_outer_start = rounded_rect_profile(
+
+let duct_path_points = [
+    [intake_x - 4.0, 0.0, intake_mouth_z],
+    [intake_x + 8.0, 0.0, intake_mouth_z],
+    [intake_x + 22.0, 0.0, intake_mouth_z - 1.0],
+    [intake_x + 42.0, 0.0, intake_mouth_z - 4.0],
+    [intake_x + 72.0, 0.0, intake_mouth_z - 10.0],
+    [intake_x + 116.0, 0.0, 25.0],
+    [intake_x + 156.0, 0.0, 10.0],
+    [intake_x + 194.0, 0.0, 2.0],
+    [fuselage_length - 20.0, 0.0, 0.0]
+];
+let duct_void_path_points = [
+    [intake_x - 4.0 - intake_face_extension, 0.0, intake_mouth_z],
+    [intake_x - 4.0, 0.0, intake_mouth_z],
+    [intake_x + 8.0, 0.0, intake_mouth_z],
+    [intake_x + 22.0, 0.0, intake_mouth_z - 1.0],
+    [intake_x + 42.0, 0.0, intake_mouth_z - 4.0],
+    [intake_x + 72.0, 0.0, intake_mouth_z - 10.0],
+    [intake_x + 116.0, 0.0, 25.0],
+    [intake_x + 156.0, 0.0, 10.0],
+    [intake_x + 194.0, 0.0, 2.0],
+    [fuselage_length - 20.0, 0.0, 0.0],
+    [fuselage_length + duct_open_extension, 0.0, 0.0]
+];
+
+let duct_path = spline_path(duct_path_points);
+let duct_void_path = spline_path(duct_void_path_points);
+
+let outer_start = rounded_rect_profile(
     intake_outer_width,
     intake_outer_height,
-    intake_outer_height * 0.24
+    intake_outer_height * 0.22
 );
-let single_inner_start = rounded_rect_profile(
+let inner_start = rounded_rect_profile(
     intake_inner_width,
     intake_inner_height,
-    intake_inner_height * 0.24
+    intake_inner_height * 0.20
 );
-let single_outer_end = circle_profile((duct_diameter + shell_thickness * 2.0) * 0.5);
-let single_inner_end = circle_profile(duct_diameter * 0.5);
-let single_duct_path = spline_path([
-    [intake_x, 0.0, intake_mouth_z],
-    [intake_x + 14.0, 0.0, intake_mouth_z],
-    [intake_x + 42.0, 0.0, intake_mouth_z - 1.5],
-    [intake_x + 86.0, 0.0, intake_mouth_z - 5.5],
-    [intake_x + 140.0, 0.0, intake_mouth_z - 12.0],
-    [intake_x + 208.0, 0.0, 28.0],
-    [intake_x + 268.0, 0.0, 8.0],
-    [intake_x + 308.0, 0.0, 0.0],
-    [fuselage_length - 22.0, 0.0, 0.0]
-]);
+let outer_end = circle_profile((duct_diameter + inlet_wall * 2.0) * 0.5);
+let inner_end = circle_profile(duct_diameter * 0.5);
 
-let dual_outer_start = rounded_rect_profile(50.0, 28.0, 4.0);
-let dual_inner_start = rounded_rect_profile(46.0, 24.0, 3.0);
-let dual_outer_end = circle_profile(dual_inlet_end_diameter * 0.5 + shell_thickness);
-let dual_inner_end = circle_profile(dual_inlet_end_diameter * 0.5);
-let dual_left_path = spline_path([
-    [intake_x, dual_inlet_guess_y, intake_mouth_z - 6.0],
-    [intake_x + 75.0, dual_inlet_guess_y - 10.0, intake_mouth_z - 18.0],
-    [intake_x + 145.0, 22.0, 24.0],
-    [intake_x + 210.0, 8.0, 8.0],
-    [intake_x + 250.0, 0.0, 0.0],
-    [fuselage_length - 22.0, 0.0, 0.0]
-]);
+let inlet_outer = profile_duct_solid(
+    duct_path,
+    outer_start,
+    outer_end,
+    duct_profile_samples
+);
 
-let inlet_parts = if inlet_mode == "single" {
-    conformal_profile_duct_x(
-        fuselage,
-        single_outer_start,
-        single_inner_start,
-        intake_x,
-        0.0,
-        intake_mouth_z,
-        point(1.0, 0.0, 0.0),
-        intake_surface_offset,
-        single_duct_path,
-        single_outer_end,
-        single_inner_end,
-        intake_face_extension,
-        duct_open_extension,
-        inlet_morph_start,
-        inlet_morph_end,
-        duct_profile_samples
-    )
-} else if inlet_mode == "dual" {
-    mirrored_dual_conformal_profile_duct_x(
-        fuselage,
-        dual_outer_start,
-        dual_inner_start,
-        intake_x,
-        dual_inlet_guess_y,
-        dual_inlet_guess_z,
-        point(1.0, 0.0, 0.0),
-        dual_left_path,
-        dual_outer_end,
-        dual_inner_end,
-        intake_surface_offset,
-        intake_face_extension,
-        duct_open_extension + 20.0,
-        0.15,
-        0.75,
-        duct_profile_samples
-    )
-} else {
-    [box_(0.01, 0.01, 0.01), box_(0.01, 0.01, 0.01), box_(0.01, 0.01, 0.01)]
-};
+let duct_void = profile_duct_solid(
+    duct_void_path,
+    inner_start,
+    inner_end,
+    duct_profile_samples
+);
 
-let inlet_outer = inlet_parts[0];
-let duct_void = inlet_parts[1];
-let duct_shell_internal = inlet_parts[2];
+let duct_shell_internal = profile_duct(
+    duct_path,
+    outer_start,
+    outer_end,
+    inner_start,
+    inner_end,
+    60.0,
+    60.0,
+    duct_profile_samples
+);
 
 let body_outer = if inlet_mode != "none" {
-    smooth_union(body_outer, inlet_outer, intake_blend_k)
+    smooth_union(body_outer, inlet_outer, inlet_blend_k)
 } else {
     body_outer
 };
 
-// Hollow shell
+let aero_body_outer = if inlet_mode != "none" {
+    subtract(body_outer, duct_void)
+} else {
+    body_outer
+};
+
+// ---------------------------------------------------------------------------
+// Shell and structure
+// ---------------------------------------------------------------------------
+
 let shell_body = if inlet_mode != "none" {
     union(
         subtract(shell(body_outer, shell_thickness), duct_void),
@@ -226,9 +251,9 @@ let shell_body = if inlet_mode != "none" {
 } else {
     shell(body_outer, shell_thickness)
 };
+
 let fuselage_structure_keepout = offset(fuselage, shell_thickness + 1.0);
 
-// Wing internal structure
 let wing_rib_inboard_l = subtract(rib_at_station(wing, 95.0, wing_rib_thickness), fuselage_structure_keepout);
 let wing_rib_inboard_r = subtract(rib_at_station(wing, -95.0, wing_rib_thickness), fuselage_structure_keepout);
 let wing_rib_mid_l = subtract(rib_at_station(wing, 185.0, wing_rib_thickness), fuselage_structure_keepout);
@@ -236,22 +261,23 @@ let wing_rib_mid_r = subtract(rib_at_station(wing, -185.0, wing_rib_thickness), 
 let wing_rib_out_l = subtract(rib_at_station(wing, 285.0, wing_rib_thickness), fuselage_structure_keepout);
 let wing_rib_out_r = subtract(rib_at_station(wing, -285.0, wing_rib_thickness), fuselage_structure_keepout);
 
-// Fuselage bulkheads
-let bh_nose_x = 120.0;
-let bh_wing_x = 300.0;
-let bh_aft_x = 520.0;
-
 let bh_nose = lightening_hole_pattern(
-    bulkhead_at_station(fuselage, bh_nose_x, fuselage_bulkhead_thickness),
-    4, 10.0, 8.0
+    bulkhead_at_station(fuselage, 120.0, fuselage_bulkhead_thickness),
+    4,
+    10.0,
+    8.0
 );
 let bh_wing = lightening_hole_pattern(
-    bulkhead_at_station(fuselage, bh_wing_x, fuselage_bulkhead_thickness),
-    6, 14.0, 10.0
+    bulkhead_at_station(fuselage, 300.0, fuselage_bulkhead_thickness),
+    6,
+    14.0,
+    10.0
 );
 let bh_aft = lightening_hole_pattern(
-    bulkhead_at_station(fuselage, bh_aft_x, fuselage_bulkhead_thickness),
-    5, 10.0, 8.0
+    bulkhead_at_station(fuselage, 520.0, fuselage_bulkhead_thickness),
+    5,
+    10.0,
+    8.0
 );
 
 let structure = union(
@@ -266,6 +292,79 @@ let structure = if inlet_mode != "none" {
 } else {
     structure
 };
+
+// ---------------------------------------------------------------------------
+// Aero export metadata
+// ---------------------------------------------------------------------------
+
+let refinement_radii = [18.0, 18.0, 18.0, 18.0, 18.0, 18.0, 16.0, 16.0, 16.0];
+
+let aero_parts = [
+    #{
+        name: "aircraft_oml",
+        sdf: aero_body_outer,
+        aero_role: "outer_mold_line",
+        patch_name: "aircraft",
+        bounds_min_mm: [-20.0, -360.0, -40.0],
+        bounds_max_mm: [740.0, 360.0, 120.0],
+        include_in_modes: ["external", "external_plus_inlets", "full_fluid_boundary"],
+        preserve_feature: true,
+        feature_tags: ["leading_edge", "trailing_edge", "wing_body_junction", "tail_body_junction", "inlet_lip"],
+        min_export_scale_mm: 0.8,
+        min_feature_size_mm: shell_thickness,
+        feature_protection_strength: 3.0,
+        refinement_body_sdf: body_outer,
+        refinement_void_sdf: duct_void,
+        refinement_path_points_mm: duct_path_points,
+        refinement_path_radii_mm: refinement_radii,
+        refinement_path_forward_extend_mm: 8.0,
+        refinement_path_aft_extend_mm: 12.0,
+        refinement_path_target_cell_mm: 0.5,
+        priority: 0
+    },
+    #{
+        name: "duct_internal",
+        sdf: duct_shell_internal,
+        aero_role: "flow_path_internal",
+        patch_name: "duct",
+        bounds_min_mm: [240.0, -32.0, -24.0],
+        bounds_max_mm: [740.0, 32.0, 92.0],
+        include_in_modes: ["external_plus_inlets", "full_fluid_boundary"],
+        preserve_feature: true,
+        feature_tags: ["inlet_lip", "nozzle_exit"],
+        min_export_scale_mm: 0.6,
+        min_feature_size_mm: inlet_wall,
+        feature_protection_strength: 2.5,
+        refinement_path_points_mm: duct_path_points,
+        refinement_path_radii_mm: refinement_radii,
+        refinement_path_forward_extend_mm: 8.0,
+        refinement_path_aft_extend_mm: 12.0,
+        refinement_path_target_cell_mm: 0.5,
+        priority: 1
+    },
+    #{
+        name: "internal_structure",
+        sdf: structure,
+        aero_role: "internal_structure",
+        patch_name: "structure",
+        bounds_min_mm: [40.0, -320.0, -30.0],
+        bounds_max_mm: [620.0, 320.0, 90.0],
+        include_in_modes: [],
+        preserve_feature: false,
+        min_export_scale_mm: 1.0,
+        min_feature_size_mm: wing_rib_thickness,
+        feature_protection_strength: 0.0,
+        priority: 2
+    }
+];
+
+let aero_export = #{
+    parts: aero_parts
+};
+
+// ---------------------------------------------------------------------------
+// Output
+// ---------------------------------------------------------------------------
 
 let shell_visible = if show_shell { shell_body } else { box_(0.01, 0.01, 0.01) };
 let structure_visible = if show_structure { structure } else { box_(0.01, 0.01, 0.01) };

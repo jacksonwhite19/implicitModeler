@@ -89,7 +89,9 @@ pub fn create_branch(
     if vc.branches.contains_key(&name) {
         return Err(format!("Branch '{}' already exists", name));
     }
-    let head_id = vc.head_commit_id.clone()
+    let head_id = vc
+        .head_commit_id
+        .clone()
         .ok_or_else(|| "No commits yet".to_string())?;
 
     let branch = Branch {
@@ -112,12 +114,18 @@ pub fn checkout_branch(
     branch_name: &str,
 ) -> Result<(), String> {
     if vc.working_changes {
-        return Err("Cannot checkout: uncommitted changes present. Commit or discard first.".to_string());
+        return Err(
+            "Cannot checkout: uncommitted changes present. Commit or discard first.".to_string(),
+        );
     }
-    let branch = vc.branches.get(branch_name)
+    let branch = vc
+        .branches
+        .get(branch_name)
         .ok_or_else(|| format!("Branch '{}' not found", branch_name))?;
     let commit_id = branch.head_commit_id.clone();
-    let commit = vc.commits.get(&commit_id)
+    let commit = vc
+        .commits
+        .get(&commit_id)
         .ok_or_else(|| format!("Commit not found: {:?}", commit_id))?;
 
     commit.state.apply_to_app_state(app_state);
@@ -136,9 +144,13 @@ pub fn checkout_commit(
     commit_id: &CommitId,
 ) -> Result<(), String> {
     if vc.working_changes {
-        return Err("Cannot checkout: uncommitted changes present. Commit or discard first.".to_string());
+        return Err(
+            "Cannot checkout: uncommitted changes present. Commit or discard first.".to_string(),
+        );
     }
-    let commit = vc.commits.get(commit_id)
+    let commit = vc
+        .commits
+        .get(commit_id)
         .ok_or_else(|| format!("Commit not found: {:?}", commit_id))?;
 
     commit.state.apply_to_app_state(app_state);
@@ -167,7 +179,10 @@ pub fn delete_branch(vc: &mut VersionControlState, branch_name: &str) -> Result<
         return Err("Cannot delete the 'main' branch".to_string());
     }
     if branch_name == vc.current_branch {
-        return Err(format!("Cannot delete the current branch '{}'", branch_name));
+        return Err(format!(
+            "Cannot delete the current branch '{}'",
+            branch_name
+        ));
     }
     if !vc.branches.contains_key(branch_name) {
         return Err(format!("Branch '{}' not found", branch_name));
@@ -202,7 +217,8 @@ pub fn get_commit_graph(vc: &VersionControlState) -> Vec<CommitGraphNode> {
     // Build map from commit_id → branch names that point to it.
     let mut branch_map: HashMap<&CommitId, Vec<String>> = HashMap::new();
     for (name, branch) in &vc.branches {
-        branch_map.entry(&branch.head_commit_id)
+        branch_map
+            .entry(&branch.head_commit_id)
             .or_default()
             .push(name.clone());
     }
@@ -228,14 +244,14 @@ pub fn get_commit_graph(vc: &VersionControlState) -> Vec<CommitGraphNode> {
         }
     }
 
-    let current_branch_head = vc.branches.get(&vc.current_branch)
+    let current_branch_head = vc
+        .branches
+        .get(&vc.current_branch)
         .map(|b| b.head_commit_id.clone());
 
     while let Some(commit_id) = queue.pop_front() {
         if let Some(commit) = vc.commits.get(&commit_id) {
-            let branch_names = branch_map.get(&commit_id)
-                .cloned()
-                .unwrap_or_default();
+            let branch_names = branch_map.get(&commit_id).cloned().unwrap_or_default();
             let is_head = vc.head_commit_id.as_ref() == Some(&commit_id);
             let is_current_branch_head = current_branch_head.as_ref() == Some(&commit_id);
             let short_id = commit_id.short().to_string();
@@ -273,7 +289,9 @@ pub fn merge(
     source_branch: &str,
 ) -> Result<MergeResult, MergeConflict> {
     // Get source and current head commit IDs.
-    let source_head_id = vc.branches.get(source_branch)
+    let source_head_id = vc
+        .branches
+        .get(source_branch)
         .map(|b| b.head_commit_id.clone())
         .ok_or_else(|| MergeConflict {
             script_conflicts: vec![],
@@ -283,11 +301,13 @@ pub fn merge(
 
     let current_head_id = match vc.head_commit_id.clone() {
         Some(id) => id,
-        None => return Err(MergeConflict {
-            script_conflicts: vec![],
-            dimension_conflicts: vec![],
-            profile_conflicts: vec![],
-        }),
+        None => {
+            return Err(MergeConflict {
+                script_conflicts: vec![],
+                dimension_conflicts: vec![],
+                profile_conflicts: vec![],
+            });
+        }
     };
 
     // If already up to date.
@@ -298,17 +318,20 @@ pub fn merge(
     // Find merge base (LCA).
     let base_id = find_merge_base(vc, &current_head_id, &source_head_id);
 
-    let base_state = base_id.as_ref()
+    let base_state = base_id
+        .as_ref()
         .and_then(|id| vc.commits.get(id))
         .map(|c| c.state.clone());
 
     let source_state = match vc.commits.get(&source_head_id) {
         Some(c) => c.state.clone(),
-        None => return Err(MergeConflict {
-            script_conflicts: vec![],
-            dimension_conflicts: vec![],
-            profile_conflicts: vec![],
-        }),
+        None => {
+            return Err(MergeConflict {
+                script_conflicts: vec![],
+                dimension_conflicts: vec![],
+                profile_conflicts: vec![],
+            });
+        }
     };
 
     let current_state = ProjectState::from_app_state(app_state);
@@ -331,8 +354,12 @@ pub fn merge(
 
         // Find all changed line indices from both diffs.
         let mut all_changed: HashSet<usize> = HashSet::new();
-        for k in current_diff.keys() { all_changed.insert(*k); }
-        for k in source_diff.keys() { all_changed.insert(*k); }
+        for k in current_diff.keys() {
+            all_changed.insert(*k);
+        }
+        for k in source_diff.keys() {
+            all_changed.insert(*k);
+        }
 
         let mut sorted_changed: Vec<usize> = all_changed.into_iter().collect();
         sorted_changed.sort();
@@ -371,8 +398,11 @@ pub fn merge(
                         line_end: ctx_end,
                         current_lines: current_diff[&base_line_idx].clone(),
                         source_lines: source_diff[&base_line_idx].clone(),
-                        base_lines: base_lines[ctx_start..=ctx_end.min(base_lines.len().saturating_sub(1))]
-                            .iter().map(|s| s.to_string()).collect(),
+                        base_lines: base_lines
+                            [ctx_start..=ctx_end.min(base_lines.len().saturating_sub(1))]
+                            .iter()
+                            .map(|s| s.to_string())
+                            .collect(),
                     });
                 }
                 (false, false) => {}
@@ -390,19 +420,25 @@ pub fn merge(
     let mut dim_conflicts: Vec<(String, f64, f64)> = Vec::new();
 
     for (key, source_val) in &source_state.dimensions {
-        let base_val = base_state.as_ref()
+        let base_val = base_state
+            .as_ref()
             .and_then(|b| b.dimensions.get(key))
             .copied();
         let current_val = current_state.dimensions.get(key).copied();
 
         match (base_val, current_val) {
-            (Some(bv), Some(cv)) if (bv - source_val).abs() > f64::EPSILON && (bv - cv).abs() > f64::EPSILON => {
+            (Some(bv), Some(cv))
+                if (bv - source_val).abs() > f64::EPSILON && (bv - cv).abs() > f64::EPSILON =>
+            {
                 // Both changed from base — conflict.
                 dim_conflicts.push((key.clone(), cv, *source_val));
             }
             (_, _) => {
                 // Source added or only source changed — use source value.
-                if base_val.map(|bv| (bv - source_val).abs() > f64::EPSILON).unwrap_or(true) {
+                if base_val
+                    .map(|bv| (bv - source_val).abs() > f64::EPSILON)
+                    .unwrap_or(true)
+                {
                     merged_dims.insert(key.clone(), *source_val);
                 }
             }
@@ -415,10 +451,13 @@ pub fn merge(
 
     for (key, source_profile) in &source_state.profiles {
         let source_json = serde_json::to_string(source_profile).unwrap_or_default();
-        let base_json = base_state.as_ref()
+        let base_json = base_state
+            .as_ref()
             .and_then(|b| b.profiles.get(key))
             .map(|p| serde_json::to_string(p).unwrap_or_default());
-        let current_json = current_state.profiles.get(key)
+        let current_json = current_state
+            .profiles
+            .get(key)
             .map(|p| serde_json::to_string(p).unwrap_or_default());
 
         match (&base_json, &current_json) {
@@ -479,11 +518,7 @@ pub fn merge(
 // ── find_merge_base ───────────────────────────────────────────────────────────
 
 /// BFS from both sides to find the lowest common ancestor commit.
-fn find_merge_base(
-    vc: &VersionControlState,
-    a: &CommitId,
-    b: &CommitId,
-) -> Option<CommitId> {
+fn find_merge_base(vc: &VersionControlState, a: &CommitId, b: &CommitId) -> Option<CommitId> {
     // Collect all ancestors of A (inclusive).
     let mut ancestors_a: HashSet<CommitId> = HashSet::new();
     let mut queue_a: VecDeque<CommitId> = VecDeque::new();
@@ -553,7 +588,11 @@ fn compute_line_diff(base: &[&str], modified: &[&str]) -> HashMap<usize, Vec<Str
             // Line deleted or replaced.
             let mut replacement: Vec<String> = Vec::new();
             // Collect inserted lines at position j.
-            while j < m && (i + 1 >= n || dp[i + 1][j] < dp[i][j + 1] || (i + 1 < n && base[i + 1] != modified[j])) {
+            while j < m
+                && (i + 1 >= n
+                    || dp[i + 1][j] < dp[i][j + 1]
+                    || (i + 1 < n && base[i + 1] != modified[j]))
+            {
                 if j < m && (i + 1 >= n || dp[i][j + 1] > dp[i + 1][j]) {
                     replacement.push(modified[j].to_string());
                     j += 1;
@@ -637,7 +676,12 @@ mod tests {
 
         // Commit a different script on the feature branch.
         app.script_text = "box_(5.0, 5.0, 5.0)".to_string();
-        let feature_commit_id = commit(&mut vc, &app, "Feature work".to_string(), "User".to_string());
+        let feature_commit_id = commit(
+            &mut vc,
+            &app,
+            "Feature work".to_string(),
+            "User".to_string(),
+        );
         vc.branches.get_mut("feature").unwrap().head_commit_id = feature_commit_id;
 
         // Go back to main.
@@ -664,7 +708,12 @@ mod tests {
         create_branch(&mut vc, "feature".to_string(), String::new()).unwrap();
         checkout_branch(&mut vc, &mut app, "feature").unwrap();
         app.dimensions.insert("h".to_string(), 5.0);
-        commit(&mut vc, &app, "Add h dimension".to_string(), "User".to_string());
+        commit(
+            &mut vc,
+            &app,
+            "Add h dimension".to_string(),
+            "User".to_string(),
+        );
         vc.branches.get_mut("feature").unwrap().head_commit_id = vc.head_commit_id.clone().unwrap();
 
         // Back to main.
@@ -692,14 +741,19 @@ mod tests {
         // Back to main and make a conflicting change to shared line.
         checkout_branch(&mut vc, &mut app, "main").unwrap();
         app.script_text = "line1\nshared_line_modified_by_current\nline3".to_string();
-        commit(&mut vc, &app, "Current edit".to_string(), "User".to_string());
+        commit(
+            &mut vc,
+            &app,
+            "Current edit".to_string(),
+            "User".to_string(),
+        );
         vc.working_changes = false;
 
         let result = merge(&mut vc, &mut app, "feature");
         // Should return conflict (either via Ok(Conflict) or Err).
         match result {
             Ok(MergeResult::Conflict(_)) => {}
-            Ok(MergeResult::Success) => {}  // Simple diff might not always conflict on small scripts
+            Ok(MergeResult::Success) => {} // Simple diff might not always conflict on small scripts
             Err(_) => {}
         }
     }
@@ -747,7 +801,12 @@ mod tests {
         let mut vc = VersionControlState::new_with_root(&app);
 
         let app2 = make_app("box_(5.0, 5.0, 5.0)");
-        commit(&mut vc, &app2, "Second commit".to_string(), "User".to_string());
+        commit(
+            &mut vc,
+            &app2,
+            "Second commit".to_string(),
+            "User".to_string(),
+        );
 
         let graph = get_commit_graph(&vc);
         assert_eq!(graph.len(), 2);

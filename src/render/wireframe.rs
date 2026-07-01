@@ -1,10 +1,10 @@
 // Wireframe overlay renderer
 
-use eframe::wgpu;
-use eframe::wgpu::util::DeviceExt;
 use crate::mesh::Mesh;
 use crate::render::Camera;
 use bytemuck::{Pod, Zeroable};
+use eframe::wgpu;
+use eframe::wgpu::util::DeviceExt;
 
 #[repr(C)]
 #[derive(Copy, Clone, Pod, Zeroable)]
@@ -131,16 +131,16 @@ impl WireframeRenderer {
         }
 
         // Extract positions only
-        let positions: Vec<[f32; 3]> = mesh.vertices.iter()
-            .map(|v| v.position)
-            .collect();
+        let positions: Vec<[f32; 3]> = mesh.vertices.iter().map(|v| v.position).collect();
 
         // Create vertex buffer
-        self.vertex_buffer = Some(device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Wireframe Vertex Buffer"),
-            contents: bytemuck::cast_slice(&positions),
-            usage: wgpu::BufferUsages::VERTEX,
-        }));
+        self.vertex_buffer = Some(
+            device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Wireframe Vertex Buffer"),
+                contents: bytemuck::cast_slice(&positions),
+                usage: wgpu::BufferUsages::VERTEX,
+            }),
+        );
 
         // Convert triangle indices to line indices (each triangle becomes 3 edges)
         let mut line_indices = Vec::new();
@@ -163,11 +163,13 @@ impl WireframeRenderer {
         self.num_indices = line_indices.len() as u32;
 
         // Create index buffer
-        self.index_buffer = Some(device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Wireframe Index Buffer"),
-            contents: bytemuck::cast_slice(&line_indices),
-            usage: wgpu::BufferUsages::INDEX,
-        }));
+        self.index_buffer = Some(
+            device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Wireframe Index Buffer"),
+                contents: bytemuck::cast_slice(&line_indices),
+                usage: wgpu::BufferUsages::INDEX,
+            }),
+        );
     }
 
     pub fn update_uniforms(&self, queue: &wgpu::Queue, camera: &Camera) {
@@ -187,7 +189,8 @@ impl WireframeRenderer {
         render_pass.set_pipeline(&self.pipeline);
         render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
 
-        if let (Some(vertex_buffer), Some(index_buffer)) = (&self.vertex_buffer, &self.index_buffer) {
+        if let (Some(vertex_buffer), Some(index_buffer)) = (&self.vertex_buffer, &self.index_buffer)
+        {
             render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
             render_pass.set_index_buffer(index_buffer.slice(..), wgpu::IndexFormat::Uint32);
             render_pass.draw_indexed(0..self.num_indices, 0, 0..1);

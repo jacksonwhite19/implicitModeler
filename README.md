@@ -19,6 +19,9 @@ A code-first CAD modeler using signed distance fields (SDFs). Write scripts to c
 - **Project Management**: Save/load projects with full state preservation
 - **Batch Processing**: Headless mode for automation and CI/CD integration
 - **Undo/Redo**: Full edit history for productive workflows
+- **SDF Conditioning Backend**: Kernel-owned dirty-region tracking,
+  live graph metadata, transaction-based cache regeneration, and local/full
+  rebuild diagnostics
 - **Aircraft Workflow**: Template-driven fixed-wing project setup with manufacturing presets
 - **Workflow Constraints and Variants**: Project-level assembly rules and saved design variants for dimension-driven iteration
 - **Workflow Summaries**: Consolidated manufacturing and flight checks in the project workflow panel
@@ -112,6 +115,9 @@ implicit-cad --headless --script input.rhai --output result.stl --mesh-quality f
 
 # Manufacturing package from a project
 implicit-cad --headless --script aircraft.icad --output ./package --format package
+
+# CFD-oriented aero surface export
+implicit-cad --headless --script scratchpad_plane.rhai --output ./aero_export --format aero --aero-mode external
 ```
 
 **CLI Options**:
@@ -126,6 +132,7 @@ implicit-cad --headless --script aircraft.icad --output ./package --format packa
 - `--smooth-normals` - Enable smooth normal averaging
 - `--dim <NAME=VALUE>` - Override named dimensions in headless mode
 - `--output-metrics <file>` - Write metrics JSON for the evaluated model
+- `--aero-mode <external|external_plus_inlets|full_fluid_boundary>` - Aero export selection mode for `--format aero`
 
 ## Scripting API
 
@@ -165,6 +172,138 @@ support_density(component_map, level)   // 1..10
 hide_part(value_map, "component_physical")
 hide_parts(value_map, ["component_physical", "raw_bracket"])
 ```
+
+### Geometry Validation
+
+The backend exposes a first-pass geometry validation layer for scripts,
+headless export, manufacturing checks, and automated design workflows.
+
+Headless metrics JSON (`--output-metrics`) now includes:
+
+- `validation.valid`
+- `validation.hard_failures`
+- `validation.warnings`
+- `validation.penalties`
+- `validation.metrics`
+
+The current validation pass checks:
+
+- empty or non-finite geometry
+- disconnected solid body count
+- minimum wall thickness against a configured threshold
+- overhang / support-volume estimates
+- unusually high surface-area-to-volume ratios
+
+Scripting helpers:
+
+```rhai
+let metrics = geometry_metrics(body);
+let check = validate_geometry(body);
+let strict = validate_geometry(body, 1.2, 1, 40); // min wall, max bodies, grid resolution
+```
+
+The SDF conditioning backend is tracked separately in
+[`docs/sdf_conditioning_backend.md`](docs/sdf_conditioning_backend.md). Its
+current code anchors are `src/sdf/mod.rs` and `src/sdf/conditioning.rs`. SDF
+nodes expose live support bounds, feature ownership, and dependency metadata
+through the geometry kernel itself.
+
+These are intended for backend quality gates. A practical pattern is:
+
+1. reject any geometry revision where `check.valid == false`
+2. add soft penalties from `check.penalties`
+3. record the returned metrics JSON alongside downstream artifacts
+
+Additional geometry-analysis helpers:
+
+```rhai
+let asm = validate_assembly(names, keepouts, parent_shell, 50.0);
+let af = airframe_metrics(wing, htail, vtail, fuse);
+let duct = duct_continuity(inlet_or_duct, 0, 120.0, 420.0, 24); // axis 0=X
+```
+
+These cover:
+
+- component/keepout-aware assembly validation
+- wing/tail/fuselage sizing summaries
+- duct pinch / continuity checks across a station sweep
+
+### Aero Export For CFD
+
+There is now a first dedicated aero export path for CFD/OpenFOAM-oriented surface extraction.
+
+Scripts can expose:
+
+```rhai
+let aero_export = #{
+    parts: [
+        #{
+            name: "aircraft_oml",
+            sdf: body_outer,
+            aero_role: "outer_mold_line",
+            patch_name: "aircraft",
+            include_in_modes: ["external", "external_plus_inlets", "full_fluid_boundary"],
+            preserve_feature: true,
+            feature_tags: ["leading_edge", "trailing_edge", "wing_body_junction"],
+            min_export_scale_mm: 1.0,
+            feature_protection_strength: 2.0,
+            priority: 0
+        },
+        #{
+            name: "duct_internal",
+            sdf: duct_shell_internal,
+            aero_role: "flow_path_internal",
+            patch_name: "duct",
+            include_in_modes: ["external_plus_inlets", "full_fluid_boundary"],
+            reachability_seed: "inlet"
+        },
+        #{
+            name: "ribs",
+            sdf: structure,
+            aero_role: "internal_structure",
+            patch_name: "structure"
+        }
+    ]
+};
+```
+
+Current aero roles:
+
+- `outer_mold_line`
+- `flow_path_internal`
+- `internal_structure`
+- `construction_only`
+- `ignore`
+
+Current modes:
+
+- `external`
+- `external_plus_inlets`
+- `full_fluid_boundary`
+
+Headless aero export writes:
+
+- one STL per included patch
+- optional OBJ per patch with `--aero-write-obj`
+- `composite_aero.stl`
+- `combined_patches.obj`
+- `manifest.json`
+- `patch_summary.json`
+- `export_report.md`
+- OpenFOAM helper files
+
+Example:
+
+```bash
+implicit-cad --headless --script scratchpad_plane.rhai --output ./aero_export --format aero --aero-mode external_plus_inlets --aero-write-obj
+```
+
+Current scope and limits:
+
+- this is a filtered CFD-boundary export, not a generic “export the whole scene” mesh dump
+- it already excludes tagged internal structure
+- it does not yet implement flow-reachability filtering
+- cleanup/manifold diagnostics are reported, but difficult aircraft junctions may still need refinement
 
 The mounting pipeline is:
 

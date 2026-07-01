@@ -3,35 +3,35 @@
 // AppState holds all user-editable fields.  Commands implement apply() + undo()
 // against AppState.  UndoHistory owns the past/future stacks.
 
+use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
-use indexmap::IndexMap;
 
-use crate::ui::spline_editor::SplineEditorState;
-use crate::sdf::spine::LongitudinalSplines;
 use crate::fea::setup::FEASetup;
+use crate::sdf::spine::LongitudinalSplines;
+use crate::ui::spline_editor::SplineEditorState;
 
 // ── User-editable application state ──────────────────────────────────────────
 
 pub struct AppState {
-    pub script_text:    String,
-    pub profiles:       HashMap<String, SplineEditorState>,
-    pub splines:        LongitudinalSplines,
-    pub fea_setup:      FEASetup,
+    pub script_text: String,
+    pub profiles: HashMap<String, SplineEditorState>,
+    pub splines: LongitudinalSplines,
+    pub fea_setup: FEASetup,
     pub active_profile: Option<String>,
     /// Named dimensions — injected as global constants into Rhai before eval.
-    pub dimensions:     IndexMap<String, f64>,
+    pub dimensions: IndexMap<String, f64>,
 }
 
 impl AppState {
     pub fn new(script_text: String) -> Self {
         Self {
             script_text,
-            profiles:       HashMap::new(),
-            splines:        LongitudinalSplines::default(),
-            fea_setup:      FEASetup::default(),
+            profiles: HashMap::new(),
+            splines: LongitudinalSplines::default(),
+            fea_setup: FEASetup::default(),
             active_profile: None,
-            dimensions:     IndexMap::new(),
+            dimensions: IndexMap::new(),
         }
     }
 }
@@ -45,31 +45,33 @@ pub trait Command: Send + Sync {
     /// Allow downcast for coalescing.
     fn as_any(&self) -> &dyn std::any::Any;
     /// Try to coalesce `newer` into self (absorbing it).  Return true if coalesced.
-    fn try_coalesce(&mut self, _newer: &dyn Command) -> bool { false }
+    fn try_coalesce(&mut self, _newer: &dyn Command) -> bool {
+        false
+    }
 }
 
 // ── History entry ─────────────────────────────────────────────────────────────
 
 struct UndoEntry {
-    cmd:  Box<dyn Command>,
+    cmd: Box<dyn Command>,
     time: Instant,
 }
 
 // ── UndoHistory ───────────────────────────────────────────────────────────────
 
 pub struct UndoHistory {
-    past:             Vec<UndoEntry>,
-    future:           Vec<Box<dyn Command>>,
-    pub max_history:  usize,
+    past: Vec<UndoEntry>,
+    future: Vec<Box<dyn Command>>,
+    pub max_history: usize,
     /// Description of the last undo or redo action for status bar display.
-    pub last_action:  Option<(String, Instant)>,  // (text, when)
+    pub last_action: Option<(String, Instant)>, // (text, when)
 }
 
 impl Default for UndoHistory {
     fn default() -> Self {
         Self {
-            past:        Vec::new(),
-            future:      Vec::new(),
+            past: Vec::new(),
+            future: Vec::new(),
             max_history: 200,
             last_action: None,
         }
@@ -148,8 +150,12 @@ impl UndoHistory {
         }
     }
 
-    pub fn can_undo(&self) -> bool { !self.past.is_empty() }
-    pub fn can_redo(&self) -> bool { !self.future.is_empty() }
+    pub fn can_undo(&self) -> bool {
+        !self.past.is_empty()
+    }
+    pub fn can_redo(&self) -> bool {
+        !self.future.is_empty()
+    }
 
     pub fn undo_description(&self) -> Option<&str> {
         self.past.last().map(|e| e.cmd.description())
@@ -168,26 +174,40 @@ impl UndoHistory {
 
 pub struct ScriptTextCommand {
     pub before: String,
-    pub after:  String,
-    pub desc:   String,
+    pub after: String,
+    pub desc: String,
 }
 
 impl ScriptTextCommand {
     pub fn new(before: String, after: String) -> Self {
-        Self { before, after, desc: "Edit script".to_owned() }
+        Self {
+            before,
+            after,
+            desc: "Edit script".to_owned(),
+        }
     }
 }
 
 impl Command for ScriptTextCommand {
-    fn apply(&self, state: &mut AppState) { state.script_text = self.after.clone(); }
-    fn undo(&self,  state: &mut AppState) { state.script_text = self.before.clone(); }
-    fn description(&self) -> &str { &self.desc }
-    fn as_any(&self) -> &dyn std::any::Any { self }
+    fn apply(&self, state: &mut AppState) {
+        state.script_text = self.after.clone();
+    }
+    fn undo(&self, state: &mut AppState) {
+        state.script_text = self.before.clone();
+    }
+    fn description(&self) -> &str {
+        &self.desc
+    }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn try_coalesce(&mut self, newer: &dyn Command) -> bool {
         if let Some(n) = newer.as_any().downcast_ref::<Self>() {
             self.after = n.after.clone();
             true
-        } else { false }
+        } else {
+            false
+        }
     }
 }
 
@@ -195,46 +215,68 @@ impl Command for ScriptTextCommand {
 
 pub struct SplineShapeResetCommand {
     pub profile_name: String,
-    pub before:       SplineEditorState,
-    pub after:        SplineEditorState,
-    pub desc:         String,
+    pub before: SplineEditorState,
+    pub after: SplineEditorState,
+    pub desc: String,
 }
 
 impl Command for SplineShapeResetCommand {
     fn apply(&self, state: &mut AppState) {
-        state.profiles.insert(self.profile_name.clone(), self.after.clone());
+        state
+            .profiles
+            .insert(self.profile_name.clone(), self.after.clone());
     }
     fn undo(&self, state: &mut AppState) {
-        state.profiles.insert(self.profile_name.clone(), self.before.clone());
+        state
+            .profiles
+            .insert(self.profile_name.clone(), self.before.clone());
     }
-    fn description(&self) -> &str { &self.desc }
-    fn as_any(&self) -> &dyn std::any::Any { self }
+    fn description(&self) -> &str {
+        &self.desc
+    }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
 
 // ── LongitudinalSpineEditCommand ──────────────────────────────────────────────
 
 pub struct LongitudinalSpineEditCommand {
     pub before: LongitudinalSplines,
-    pub after:  LongitudinalSplines,
-    pub desc:   String,
+    pub after: LongitudinalSplines,
+    pub desc: String,
 }
 
 impl LongitudinalSpineEditCommand {
     pub fn new(before: LongitudinalSplines, after: LongitudinalSplines) -> Self {
-        Self { before, after, desc: "Edit spine".to_owned() }
+        Self {
+            before,
+            after,
+            desc: "Edit spine".to_owned(),
+        }
     }
 }
 
 impl Command for LongitudinalSpineEditCommand {
-    fn apply(&self, state: &mut AppState) { state.splines = self.after.clone(); }
-    fn undo(&self,  state: &mut AppState) { state.splines = self.before.clone(); }
-    fn description(&self) -> &str { &self.desc }
-    fn as_any(&self) -> &dyn std::any::Any { self }
+    fn apply(&self, state: &mut AppState) {
+        state.splines = self.after.clone();
+    }
+    fn undo(&self, state: &mut AppState) {
+        state.splines = self.before.clone();
+    }
+    fn description(&self) -> &str {
+        &self.desc
+    }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn try_coalesce(&mut self, newer: &dyn Command) -> bool {
         if let Some(n) = newer.as_any().downcast_ref::<Self>() {
             self.after = n.after.clone();
             true
-        } else { false }
+        } else {
+            false
+        }
     }
 }
 
@@ -245,7 +287,7 @@ pub struct RenameCommand {
     pub new_name: String,
     /// Full before-script (since rename does a find-replace across whole text).
     pub script_before: String,
-    pub script_after:  String,
+    pub script_after: String,
 }
 
 impl Command for RenameCommand {
@@ -267,8 +309,12 @@ impl Command for RenameCommand {
             state.active_profile = Some(self.old_name.clone());
         }
     }
-    fn description(&self) -> &str { "Rename" }
-    fn as_any(&self) -> &dyn std::any::Any { self }
+    fn description(&self) -> &str {
+        "Rename"
+    }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
 
 // ── DimensionEditCommand ──────────────────────────────────────────────────────
@@ -276,21 +322,32 @@ impl Command for RenameCommand {
 /// Covers both value edits and name renames for a single dimension entry.
 /// Coalesces value changes to the same name within 800ms (slider drag).
 pub struct DimensionEditCommand {
-    pub before_name:  String,
+    pub before_name: String,
     pub before_value: f64,
-    pub after_name:   String,
-    pub after_value:  f64,
+    pub after_name: String,
+    pub after_value: f64,
     /// Insertion index (preserved across undo so order is stable).
-    pub index:        usize,
+    pub index: usize,
 }
 
 impl DimensionEditCommand {
     pub fn new_value(name: String, before: f64, after: f64, index: usize) -> Self {
-        Self { before_name: name.clone(), before_value: before,
-               after_name: name, after_value: after, index }
+        Self {
+            before_name: name.clone(),
+            before_value: before,
+            after_name: name,
+            after_value: after,
+            index,
+        }
     }
     pub fn new_rename(old: String, val: f64, new: String, index: usize) -> Self {
-        Self { before_name: old, before_value: val, after_name: new, after_value: val, index }
+        Self {
+            before_name: old,
+            before_value: val,
+            after_name: new,
+            after_value: val,
+            index,
+        }
     }
 }
 
@@ -299,15 +356,23 @@ impl Command for DimensionEditCommand {
         state.dimensions.swap_remove(&self.before_name);
         // Re-insert preserving approximate position.
         let target = self.index.min(state.dimensions.len());
-        state.dimensions.shift_insert(target, self.after_name.clone(), self.after_value);
+        state
+            .dimensions
+            .shift_insert(target, self.after_name.clone(), self.after_value);
     }
     fn undo(&self, state: &mut AppState) {
         state.dimensions.swap_remove(&self.after_name);
         let target = self.index.min(state.dimensions.len());
-        state.dimensions.shift_insert(target, self.before_name.clone(), self.before_value);
+        state
+            .dimensions
+            .shift_insert(target, self.before_name.clone(), self.before_value);
     }
-    fn description(&self) -> &str { "Edit dimension" }
-    fn as_any(&self) -> &dyn std::any::Any { self }
+    fn description(&self) -> &str {
+        "Edit dimension"
+    }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn try_coalesce(&mut self, newer: &dyn Command) -> bool {
         if let Some(n) = newer.as_any().downcast_ref::<Self>() {
             // Only coalesce pure-value changes to the same dimension.
@@ -323,7 +388,7 @@ impl Command for DimensionEditCommand {
 // ── DimensionDeleteCommand ────────────────────────────────────────────────────
 
 pub struct DimensionDeleteCommand {
-    pub name:  String,
+    pub name: String,
     pub value: f64,
     pub index: usize,
 }
@@ -334,8 +399,14 @@ impl Command for DimensionDeleteCommand {
     }
     fn undo(&self, state: &mut AppState) {
         let target = self.index.min(state.dimensions.len());
-        state.dimensions.shift_insert(target, self.name.clone(), self.value);
+        state
+            .dimensions
+            .shift_insert(target, self.name.clone(), self.value);
     }
-    fn description(&self) -> &str { "Delete dimension" }
-    fn as_any(&self) -> &dyn std::any::Any { self }
+    fn description(&self) -> &str {
+        "Delete dimension"
+    }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }

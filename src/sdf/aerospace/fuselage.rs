@@ -1,11 +1,12 @@
 // Fuselage lofting with cross-section interpolation
 
+use super::section::{Section2D, SectionBounds2D};
+use crate::sdf::Sdf;
+use crate::sdf::conditioning::{SdfBounds, SdfNodeMetadata};
+use crate::sdf::spine::LongitudinalSplines;
 use glam::{Vec2, Vec3};
 use std::any::Any;
 use std::sync::Arc;
-use crate::sdf::Sdf;
-use crate::sdf::spine::LongitudinalSplines;
-use super::section::Section2D;
 
 /// Cross-section shape types for fuselage lofting.
 /// Implements `Section2D` so custom shapes can substitute it anywhere.
@@ -21,22 +22,36 @@ impl CrossSection {
     fn lerp(&self, other: &CrossSection, t: f32) -> CrossSection {
         match (self, other) {
             (CrossSection::Circle { radius: r1 }, CrossSection::Circle { radius: r2 }) => {
-                CrossSection::Circle { radius: r1 + (r2 - r1) * t }
+                CrossSection::Circle {
+                    radius: r1 + (r2 - r1) * t,
+                }
             }
-            (CrossSection::Ellipse { width: w1, height: h1 },
-             CrossSection::Ellipse { width: w2, height: h2 }) => {
+            (
                 CrossSection::Ellipse {
-                    width:  w1 + (w2 - w1) * t,
-                    height: h1 + (h2 - h1) * t,
-                }
-            }
-            (CrossSection::Rect { width: w1, height: h1 },
-             CrossSection::Rect { width: w2, height: h2 }) => {
+                    width: w1,
+                    height: h1,
+                },
+                CrossSection::Ellipse {
+                    width: w2,
+                    height: h2,
+                },
+            ) => CrossSection::Ellipse {
+                width: w1 + (w2 - w1) * t,
+                height: h1 + (h2 - h1) * t,
+            },
+            (
                 CrossSection::Rect {
-                    width:  w1 + (w2 - w1) * t,
-                    height: h1 + (h2 - h1) * t,
-                }
-            }
+                    width: w1,
+                    height: h1,
+                },
+                CrossSection::Rect {
+                    width: w2,
+                    height: h2,
+                },
+            ) => CrossSection::Rect {
+                width: w1 + (w2 - w1) * t,
+                height: h1 + (h2 - h1) * t,
+            },
             // Mixed variants: map everything to Ellipse half-extents for smooth blending
             _ => {
                 let (w1, h1) = match self {
@@ -50,7 +65,7 @@ impl CrossSection {
                     CrossSection::Rect { width, height } => (*width * 0.5, *height * 0.5),
                 };
                 CrossSection::Ellipse {
-                    width:  w1 + (w2 - w1) * t,
+                    width: w1 + (w2 - w1) * t,
                     height: h1 + (h2 - h1) * t,
                 }
             }
@@ -95,6 +110,14 @@ impl Section2D for CrossSection {
         }
     }
 
+    fn bounds_2d(&self) -> Option<SectionBounds2D> {
+        let (half_y, half_z) = self.half_extents();
+        Some(SectionBounds2D::new(
+            Vec2::new(-half_y.abs(), -half_z.abs()),
+            Vec2::new(half_y.abs(), half_z.abs()),
+        ))
+    }
+
     fn lerp_to(&self, other: &dyn Section2D, t: f32) -> Arc<dyn Section2D> {
         if let Some(other_cs) = other.as_any().downcast_ref::<CrossSection>() {
             Arc::new(self.lerp(other_cs, t))
@@ -103,15 +126,17 @@ impl Section2D for CrossSection {
         }
     }
 
-    fn as_any(&self) -> &dyn Any { self }
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 /// Fuselage section at a specific station
 #[derive(Clone)]
 pub struct FuselageSection {
     cross_section: Arc<dyn Section2D>,
-    position: f32,        // Normalized position along fuselage axis [0, 1]
-    center_offset: Vec2,  // Offset for asymmetric fuselages
+    position: f32,       // Normalized position along fuselage axis [0, 1]
+    center_offset: Vec2, // Offset for asymmetric fuselages
     /// Z of the Keel role-point in the reference profile (None if no Keel labelled).
     ref_keel_z: Option<f32>,
     /// Z of the Deck role-point in the reference profile.
@@ -132,7 +157,11 @@ pub struct LoftedFuselage {
 
 impl LoftedFuselage {
     pub fn new(sections: Vec<FuselageSection>, length: f32) -> Self {
-        Self { sections, length, splines: None }
+        Self {
+            sections,
+            length,
+            splines: None,
+        }
     }
 
     /// Build a fuselage from user-supplied (position, Section2D) pairs.
@@ -152,7 +181,11 @@ impl LoftedFuselage {
                 ref_chine_y: None,
             })
             .collect();
-        Self { sections, length, splines: None }
+        Self {
+            sections,
+            length,
+            splines: None,
+        }
     }
 
     /// Build a lofted fuselage, but relax section sizes toward a fairer profile.
@@ -170,13 +203,16 @@ impl LoftedFuselage {
 
         let smoothness = smoothness.clamp(0.0, 1.0);
         let positions: Vec<f32> = stations.iter().map(|(pos, _)| *pos).collect();
-        let templates: Vec<Option<CrossSection>> = stations.iter()
+        let templates: Vec<Option<CrossSection>> = stations
+            .iter()
             .map(|(_, section)| section.as_any().downcast_ref::<CrossSection>().cloned())
             .collect();
-        let widths: Vec<f32> = templates.iter()
+        let widths: Vec<f32> = templates
+            .iter()
             .map(|cs| cs.as_ref().map(|c| c.half_extents().0).unwrap_or(0.0))
             .collect();
-        let heights: Vec<f32> = templates.iter()
+        let heights: Vec<f32> = templates
+            .iter()
             .map(|cs| cs.as_ref().map(|c| c.half_extents().1).unwrap_or(0.0))
             .collect();
 
@@ -205,7 +241,8 @@ impl LoftedFuselage {
             // Preserve stronger intentional curvature slightly more than shallow noise.
             let curvature = (values[idx] - local).abs();
             let scale = values[idx].abs().max(1e-3);
-            let curvature_guard = (1.0 - (curvature / (scale * 0.6)).clamp(0.0, 0.65)).clamp(0.35, 1.0);
+            let curvature_guard =
+                (1.0 - (curvature / (scale * 0.6)).clamp(0.0, 0.65)).clamp(0.35, 1.0);
 
             values[idx] + (fair_target - values[idx]) * smoothness * curvature_guard
         };
@@ -219,7 +256,11 @@ impl LoftedFuselage {
             } else if let Some(curr) = templates[i].as_ref() {
                 let fair_w = fair_series(&widths, i);
                 let fair_h = fair_series(&heights, i);
-                Arc::new(CrossSection::from_half_extents_like(curr, fair_w.max(1e-4), fair_h.max(1e-4))) as Arc<dyn Section2D>
+                Arc::new(CrossSection::from_half_extents_like(
+                    curr,
+                    fair_w.max(1e-4),
+                    fair_h.max(1e-4),
+                )) as Arc<dyn Section2D>
             } else {
                 Arc::clone(section)
             };
@@ -234,13 +275,23 @@ impl LoftedFuselage {
             });
         }
 
-        Self { sections, length, splines: None }
+        Self {
+            sections,
+            length,
+            splines: None,
+        }
     }
 
     /// Build a fuselage from (position, Section2D, ref_keel_z, ref_deck_z,
     /// ref_chine_y) tuples and attach a `LongitudinalSplines` constraint.
     pub fn from_stations_with_splines(
-        mut stations: Vec<(f32, Arc<dyn Section2D>, Option<f32>, Option<f32>, Option<f32>)>,
+        mut stations: Vec<(
+            f32,
+            Arc<dyn Section2D>,
+            Option<f32>,
+            Option<f32>,
+            Option<f32>,
+        )>,
         length: f32,
         splines: Arc<LongitudinalSplines>,
     ) -> Self {
@@ -251,12 +302,16 @@ impl LoftedFuselage {
                 cross_section: cs,
                 position: pos,
                 center_offset: Vec2::ZERO,
-                ref_keel_z:  keel,
-                ref_deck_z:  deck,
+                ref_keel_z: keel,
+                ref_deck_z: deck,
                 ref_chine_y: chine,
             })
             .collect();
-        Self { sections, length, splines: Some(splines) }
+        Self {
+            sections,
+            length,
+            splines: Some(splines),
+        }
     }
 
     /// Find which section pair contains the given normalized position
@@ -285,6 +340,7 @@ impl LoftedFuselage {
 
 impl Sdf for LoftedFuselage {
     fn distance(&self, point: Vec3) -> f32 {
+        crate::sdf::sdf_profile_node_visit();
         if self.sections.is_empty() {
             return point.length();
         }
@@ -309,10 +365,13 @@ impl Sdf for LoftedFuselage {
 
         // Interpolate reference role positions for the spine constraint.
         let lerp_opt = |a: Option<f32>, b: Option<f32>| -> Option<f32> {
-            match (a, b) { (Some(va), Some(vb)) => Some(va + (vb - va) * t), _ => a.or(b) }
+            match (a, b) {
+                (Some(va), Some(vb)) => Some(va + (vb - va) * t),
+                _ => a.or(b),
+            }
         };
-        let ref_keel  = lerp_opt(section1.ref_keel_z,  section2.ref_keel_z);
-        let ref_deck  = lerp_opt(section1.ref_deck_z,  section2.ref_deck_z);
+        let ref_keel = lerp_opt(section1.ref_keel_z, section2.ref_keel_z);
+        let ref_deck = lerp_opt(section1.ref_deck_z, section2.ref_deck_z);
         let ref_chine = lerp_opt(section1.ref_chine_y, section2.ref_chine_y);
 
         let mut p_2d = Vec2::new(point.y, point.z) - interp_offset;
@@ -323,7 +382,7 @@ impl Sdf for LoftedFuselage {
             let tf = splines.section_transform(
                 xw,
                 ref_keel.unwrap_or(-1.0),
-                ref_deck.unwrap_or( 1.0),
+                ref_deck.unwrap_or(1.0),
                 ref_chine.unwrap_or(1.0),
             );
             if !tf.is_identity() {
@@ -337,6 +396,90 @@ impl Sdf for LoftedFuselage {
             (radial_dist.max(0.0).powi(2) + axial_dist.powi(2)).sqrt() + radial_dist.min(0.0)
         } else {
             radial_dist
+        }
+    }
+
+    fn metadata(&self) -> SdfNodeMetadata {
+        let mut points = Vec::new();
+        let mut feature_regions = Vec::new();
+        let mut max_axial_extension = 0.0f32;
+        let mut fingerprint_values = vec![self.length, self.sections.len() as f32];
+        for (section_index, section) in self.sections.iter().enumerate() {
+            let Some(bounds) = section.cross_section.bounds_2d() else {
+                return SdfNodeMetadata::new("lofted_fuselage").with_approximate_bounds();
+            };
+            let section_extent = bounds.max_extent().max(1.0e-3);
+            fingerprint_values.extend_from_slice(&[
+                section.position,
+                section.center_offset.x,
+                section.center_offset.y,
+                section.ref_keel_z.unwrap_or(-1.0e30),
+                section.ref_deck_z.unwrap_or(-1.0e30),
+                section.ref_chine_y.unwrap_or(-1.0e30),
+            ]);
+            fingerprint_values.extend(section.cross_section.metadata_fingerprint_parameters());
+            max_axial_extension = max_axial_extension.max(bounds.max_extent());
+            let x = section.position * self.length;
+            let transform = self.splines.as_ref().map(|splines| {
+                splines.section_transform(
+                    x,
+                    section.ref_keel_z.unwrap_or(-1.0),
+                    section.ref_deck_z.unwrap_or(1.0),
+                    section.ref_chine_y.unwrap_or(1.0),
+                )
+            });
+
+            let mut station_points = Vec::new();
+            for corner in bounds.corners() {
+                let mut local = corner + section.center_offset;
+                if let Some(transform) = transform {
+                    local = Vec2::new(
+                        local.x * transform.scale_y + transform.offset_y,
+                        local.y * transform.scale_z + transform.offset_z,
+                    );
+                }
+                let point = Vec3::new(x, local.x, local.y);
+                points.push(point);
+                station_points.push(point);
+            }
+
+            if let Some(mut station_bounds) = SdfBounds::from_points(&station_points) {
+                let previous_x = section_index
+                    .checked_sub(1)
+                    .map(|index| self.sections[index].position * self.length);
+                let next_x = self
+                    .sections
+                    .get(section_index + 1)
+                    .map(|section| section.position * self.length);
+                station_bounds.min.x =
+                    previous_x.map_or(x - section_extent, |prev| (prev + x) * 0.5);
+                station_bounds.max.x = next_x.map_or(x + section_extent, |next| (x + next) * 0.5);
+                station_bounds = station_bounds.expanded(section_extent * 0.1);
+                let feature_id = if section_index == 0 {
+                    "lofted_fuselage.nose".to_string()
+                } else if section_index + 1 == self.sections.len() {
+                    "lofted_fuselage.tail".to_string()
+                } else {
+                    format!("lofted_fuselage.station.{section_index}")
+                };
+                feature_regions.push((feature_id, station_bounds, section_extent));
+            }
+        }
+
+        match SdfBounds::from_points(&points) {
+            Some(mut bounds) => {
+                bounds.min.x -= max_axial_extension;
+                bounds.max.x += max_axial_extension;
+                let mut metadata = SdfNodeMetadata::new("lofted_fuselage")
+                    .with_support_bounds(bounds)
+                    .with_approximate_bounds()
+                    .with_f32_parameters(fingerprint_values);
+                for (feature_id, bounds, min_feature_size) in feature_regions {
+                    metadata = metadata.with_feature_region(feature_id, bounds, min_feature_size);
+                }
+                metadata
+            }
+            None => SdfNodeMetadata::new("lofted_fuselage").with_approximate_bounds(),
         }
     }
 }
@@ -360,9 +503,7 @@ pub fn fuselage_parametric(
     let tail_length = length * 0.15;
     let mid_length = length - nose_length - tail_length;
 
-    let cs = |radius: f32| -> Arc<dyn Section2D> {
-        Arc::new(CrossSection::Circle { radius })
-    };
+    let cs = |radius: f32| -> Arc<dyn Section2D> { Arc::new(CrossSection::Circle { radius }) };
 
     let mk = |cs: Arc<dyn Section2D>, pos: f32| FuselageSection {
         cross_section: cs,
@@ -375,11 +516,17 @@ pub fn fuselage_parametric(
 
     let sections = vec![
         mk(cs(max_radius * (0.05 + 0.2 * nose_shape)), 0.0),
-        mk(cs(max_radius * (0.6  + 0.4 * nose_shape)), nose_length / length * 0.5),
-        mk(cs(max_radius),                             nose_length / length),
-        mk(cs(max_radius),                             (nose_length + mid_length) / length),
-        mk(cs(max_radius * (0.7  + 0.2 * tail_shape)), (nose_length + mid_length + tail_length * 0.5) / length),
-        mk(cs(max_radius * (0.1  + 0.3 * tail_shape)), 1.0),
+        mk(
+            cs(max_radius * (0.6 + 0.4 * nose_shape)),
+            nose_length / length * 0.5,
+        ),
+        mk(cs(max_radius), nose_length / length),
+        mk(cs(max_radius), (nose_length + mid_length) / length),
+        mk(
+            cs(max_radius * (0.7 + 0.2 * tail_shape)),
+            (nose_length + mid_length + tail_length * 0.5) / length,
+        ),
+        mk(cs(max_radius * (0.1 + 0.3 * tail_shape)), 1.0),
     ];
 
     LoftedFuselage::new(sections, length)
@@ -444,7 +591,12 @@ pub fn fuselage_elliptical_parametric(
 
     for t in [0.12f32, 0.28, 0.46, 0.66, 0.82, 0.94, 1.0] {
         let f = tail_profile(t);
-        push_ellipse(&mut stations, tail_start + tail_length * t, half_w * f, half_h * f);
+        push_ellipse(
+            &mut stations,
+            tail_start + tail_length * t,
+            half_w * f,
+            half_h * f,
+        );
     }
 
     LoftedFuselage::from_stations_smoothed(stations, length, smoothness)
@@ -454,6 +606,7 @@ pub fn fuselage_elliptical_parametric(
 mod tests {
     use super::*;
     use crate::sdf::aerospace::section::Section2D;
+    use crate::sdf::conditioning::{BoundQuality, assert_conditionable_geometry};
 
     #[test]
     fn test_circle_cross_section() {
@@ -466,7 +619,10 @@ mod tests {
         assert!(dist_surface.abs() < 0.01, "Surface point should be ~0");
 
         let dist_outside = circle.distance_2d(Vec2::new(10.0, 0.0));
-        assert!((dist_outside - 5.0).abs() < 0.01, "Outside point should be positive");
+        assert!(
+            (dist_outside - 5.0).abs() < 0.01,
+            "Outside point should be positive"
+        );
     }
 
     #[test]
@@ -487,6 +643,42 @@ mod tests {
     }
 
     #[test]
+    fn lofted_fuselage_metadata_tracks_section_bounds_and_caps() {
+        let fuselage = fuselage_parametric(100.0, 10.0, 0.5, 0.5);
+        let metadata = fuselage.metadata();
+        let bounds = metadata
+            .support_bounds
+            .as_ref()
+            .expect("fuselage should expose live support bounds");
+
+        assert!(bounds.min.x <= -4.9);
+        assert!(bounds.max.x >= 104.9);
+        assert!(bounds.contains(Vec3::new(50.0, 5.0, 0.0)));
+        assert!(metadata.bounds_are_approximate);
+        assert_eq!(metadata.bound_quality, BoundQuality::Conservative);
+        assert!(metadata.feature_regions.len() >= fuselage.sections.len());
+        assert!(
+            metadata
+                .feature_ids
+                .iter()
+                .any(|id| id == "lofted_fuselage.nose")
+        );
+        assert!(
+            metadata
+                .feature_ids
+                .iter()
+                .any(|id| id == "lofted_fuselage.tail")
+        );
+        assert!(
+            metadata
+                .feature_regions
+                .iter()
+                .any(|region| region.bounds.contains(Vec3::new(50.0, 0.0, 0.0)))
+        );
+        assert!(assert_conditionable_geometry(&metadata).is_ok());
+    }
+
+    #[test]
     fn test_fuselage_sdf() {
         let fuselage = fuselage_parametric(100.0, 10.0, 0.5, 0.5);
 
@@ -497,15 +689,36 @@ mod tests {
         assert!(dist_outside > 0.0, "Point far outside should be positive");
 
         let dist_beyond = fuselage.distance(Vec3::new(150.0, 0.0, 0.0));
-        assert!(dist_beyond > 0.0, "Point beyond fuselage should be positive");
+        assert!(
+            dist_beyond > 0.0,
+            "Point beyond fuselage should be positive"
+        );
     }
 
     #[test]
     fn test_smoothed_stations_zero_is_rigid() {
         let stations = vec![
-            (0.0, Arc::new(CrossSection::Ellipse { width: 1.0, height: 1.0 }) as Arc<dyn Section2D>),
-            (0.5, Arc::new(CrossSection::Ellipse { width: 4.0, height: 2.0 }) as Arc<dyn Section2D>),
-            (1.0, Arc::new(CrossSection::Ellipse { width: 1.0, height: 1.0 }) as Arc<dyn Section2D>),
+            (
+                0.0,
+                Arc::new(CrossSection::Ellipse {
+                    width: 1.0,
+                    height: 1.0,
+                }) as Arc<dyn Section2D>,
+            ),
+            (
+                0.5,
+                Arc::new(CrossSection::Ellipse {
+                    width: 4.0,
+                    height: 2.0,
+                }) as Arc<dyn Section2D>,
+            ),
+            (
+                1.0,
+                Arc::new(CrossSection::Ellipse {
+                    width: 1.0,
+                    height: 1.0,
+                }) as Arc<dyn Section2D>,
+            ),
         ];
         let rigid = LoftedFuselage::from_stations_smoothed(stations.clone(), 100.0, 0.0);
         let plain = LoftedFuselage::from_stations(stations, 100.0);
@@ -516,14 +729,35 @@ mod tests {
     #[test]
     fn test_smoothed_stations_relaxes_middle_section() {
         let stations = vec![
-            (0.0, Arc::new(CrossSection::Ellipse { width: 1.0, height: 1.0 }) as Arc<dyn Section2D>),
-            (0.5, Arc::new(CrossSection::Ellipse { width: 6.0, height: 3.0 }) as Arc<dyn Section2D>),
-            (1.0, Arc::new(CrossSection::Ellipse { width: 1.0, height: 1.0 }) as Arc<dyn Section2D>),
+            (
+                0.0,
+                Arc::new(CrossSection::Ellipse {
+                    width: 1.0,
+                    height: 1.0,
+                }) as Arc<dyn Section2D>,
+            ),
+            (
+                0.5,
+                Arc::new(CrossSection::Ellipse {
+                    width: 6.0,
+                    height: 3.0,
+                }) as Arc<dyn Section2D>,
+            ),
+            (
+                1.0,
+                Arc::new(CrossSection::Ellipse {
+                    width: 1.0,
+                    height: 1.0,
+                }) as Arc<dyn Section2D>,
+            ),
         ];
         let rigid = LoftedFuselage::from_stations(stations.clone(), 100.0);
         let smoothed = LoftedFuselage::from_stations_smoothed(stations, 100.0, 1.0);
         let p = Vec3::new(50.0, 2.4, 0.0);
-        assert!(rigid.distance(p) < smoothed.distance(p), "smoothed center section should be less bulged");
+        assert!(
+            rigid.distance(p) < smoothed.distance(p),
+            "smoothed center section should be less bulged"
+        );
     }
 
     #[test]
@@ -531,6 +765,9 @@ mod tests {
         let blunt = fuselage_elliptical_parametric(100.0, 20.0, 10.0, 20.0, 20.0, 1.0, 0.5, 0.0);
         let sharp = fuselage_elliptical_parametric(100.0, 20.0, 10.0, 20.0, 20.0, 0.0, 0.5, 0.0);
         let sample = Vec3::new(10.0, 4.5, 0.0);
-        assert!(blunt.distance(sample) < sharp.distance(sample), "blunter nose should be fuller near the front");
+        assert!(
+            blunt.distance(sample) < sharp.distance(sample),
+            "blunter nose should be fuller near the front"
+        );
     }
 }

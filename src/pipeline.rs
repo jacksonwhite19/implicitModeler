@@ -1,6 +1,6 @@
+use crate::gpu::{compute_sdf_grid_gpu, lower_sdf_ir};
 use crate::render::SdfGrid;
 use crate::sdf::Sdf;
-use crate::gpu::{compute_sdf_grid_gpu, lower_sdf_ir};
 use glam::Vec3;
 use rayon::prelude::*;
 use std::collections::HashMap;
@@ -32,6 +32,10 @@ fn grid_cache() -> &'static Mutex<HashMap<GridCacheKey, Arc<SdfGrid>>> {
 }
 
 pub fn auto_bounds(sdf: &dyn Sdf) -> (Vec3, Vec3) {
+    if let Some((metadata_min, metadata_max)) = metadata_bounds_with_padding(sdf) {
+        return (metadata_min, metadata_max);
+    }
+
     fn scan_bounds(
         sdf: &dyn Sdf,
         min: Vec3,
@@ -66,7 +70,11 @@ pub fn auto_bounds(sdf: &dyn Sdf) -> (Vec3, Vec3) {
                 |(lo1, hi1), (lo2, hi2)| (lo1.min(lo2), hi1.max(hi2)),
             );
 
-        if lo.x == f32::MAX { None } else { Some((lo, hi)) }
+        if lo.x == f32::MAX {
+            None
+        } else {
+            Some((lo, hi))
+        }
     }
 
     fn phased_bounds(
@@ -86,7 +94,11 @@ pub fn auto_bounds(sdf: &dyn Sdf) -> (Vec3, Vec3) {
                 found = true;
             }
         }
-        if found { Some((overall_lo, overall_hi)) } else { None }
+        if found {
+            Some((overall_lo, overall_hi))
+        } else {
+            None
+        }
     }
 
     let phases = [
@@ -102,7 +114,9 @@ pub fn auto_bounds(sdf: &dyn Sdf) -> (Vec3, Vec3) {
     let coarse_max = Vec3::new(1200.0, 800.0, 300.0);
     let coarse_step = Vec3::new(20.0, 20.0, 10.0);
 
-    let Some((coarse_lo, coarse_hi)) = phased_bounds(sdf, coarse_min, coarse_max, coarse_step, &phases) else {
+    let Some((coarse_lo, coarse_hi)) =
+        phased_bounds(sdf, coarse_min, coarse_max, coarse_step, &phases)
+    else {
         return (Vec3::splat(-100.0), Vec3::splat(100.0));
     };
 
@@ -117,16 +131,25 @@ pub fn auto_bounds(sdf: &dyn Sdf) -> (Vec3, Vec3) {
     let span = (bb_max - bb_min).max(Vec3::splat(1.0));
     let pad = span * 0.08 + Vec3::splat(1.0);
     let lo = (bb_min - pad).max(Vec3::new(-1200.0, -1200.0, -500.0));
-    let hi = (bb_max + pad).min(Vec3::new( 1400.0,  1200.0,  500.0));
+    let hi = (bb_max + pad).min(Vec3::new(1400.0, 1200.0, 500.0));
     (lo, hi)
 }
 
-pub fn compute_sdf_grid(
-    sdf: &dyn Sdf,
-    bounds_min: Vec3,
-    bounds_max: Vec3,
-    res: u32,
-) -> SdfGrid {
+fn metadata_bounds_with_padding(sdf: &dyn Sdf) -> Option<(Vec3, Vec3)> {
+    let metadata = sdf.metadata();
+    let bounds = metadata.support_bounds?;
+    if !bounds.is_valid() {
+        return None;
+    }
+    let span = (bounds.max - bounds.min).max(Vec3::splat(1.0));
+    if !span.is_finite() || span.max_element() > 100_000.0 {
+        return None;
+    }
+    let pad = span * 0.08 + Vec3::splat(1.0);
+    Some((bounds.min - pad, bounds.max + pad))
+}
+
+pub fn compute_sdf_grid(sdf: &dyn Sdf, bounds_min: Vec3, bounds_max: Vec3, res: u32) -> SdfGrid {
     if let Some(ir) = lower_sdf_ir(sdf) {
         if let Ok(grid) = compute_sdf_grid_gpu(&ir, bounds_min, bounds_max, res) {
             return grid;
@@ -142,16 +165,22 @@ pub fn compute_sdf_grid(
             let x = (idx % res as usize) as u32;
             let y = ((idx / res as usize) % res as usize) as u32;
             let z = (idx / (res * res) as usize) as u32;
-            let p = bounds_min + Vec3::new(
-                (x as f32 + 0.5) * step.x,
-                (y as f32 + 0.5) * step.y,
-                (z as f32 + 0.5) * step.z,
-            );
+            let p = bounds_min
+                + Vec3::new(
+                    (x as f32 + 0.5) * step.x,
+                    (y as f32 + 0.5) * step.y,
+                    (z as f32 + 0.5) * step.z,
+                );
             sdf.distance(p)
         })
         .collect();
 
-    SdfGrid { data, resolution: res, bounds_min, bounds_max }
+    SdfGrid {
+        data,
+        resolution: res,
+        bounds_min,
+        bounds_max,
+    }
 }
 
 pub fn compute_sdf_grid_cached_arc(
@@ -191,11 +220,12 @@ pub fn tight_bounds_from_grid(grid: &SdfGrid) -> Option<(Vec3, Vec3)> {
         for iy in 0..res {
             for ix in 0..res {
                 if grid.data[ix + iy * res + iz * res * res] < 0.0 {
-                    let p = grid.bounds_min + Vec3::new(
-                        (ix as f32 + 0.5) * step.x,
-                        (iy as f32 + 0.5) * step.y,
-                        (iz as f32 + 0.5) * step.z,
-                    );
+                    let p = grid.bounds_min
+                        + Vec3::new(
+                            (ix as f32 + 0.5) * step.x,
+                            (iy as f32 + 0.5) * step.y,
+                            (iz as f32 + 0.5) * step.z,
+                        );
                     tight_min = tight_min.min(p);
                     tight_max = tight_max.max(p);
                 }
@@ -207,5 +237,20 @@ pub fn tight_bounds_from_grid(grid: &SdfGrid) -> Option<(Vec3, Vec3)> {
         Some((tight_min, tight_max))
     } else {
         None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::sdf::primitives::Sphere;
+
+    #[test]
+    fn auto_bounds_uses_live_metadata_before_sampling() {
+        let sphere = Sphere::new(10.0);
+        let (min, max) = auto_bounds(&sphere);
+
+        assert!((min - Vec3::splat(-12.6)).abs().max_element() < 1.0e-5);
+        assert!((max - Vec3::splat(12.6)).abs().max_element() < 1.0e-5);
     }
 }
