@@ -1,0 +1,12 @@
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/.pytest_cache/
+**/target/
+**/*.egg-info/
+**/build/
+**/dist/
+/research/sdf_cfd_mesher_v4/results/**
+!/research/sdf_cfd_mesher_v4/results/source_qualification_20261011/
+!/research/sdf_cfd_mesher_v4/results/source_qualification_20261011/BG_CONTRACT_REVIEW_V2.json
+!/research/sdf_cfd_mesher_v4/results/source_qualification_20261011/BG_ASSURANCE_REVIEW_V2.json

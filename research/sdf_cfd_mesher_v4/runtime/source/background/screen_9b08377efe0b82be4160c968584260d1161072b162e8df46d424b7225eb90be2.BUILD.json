@@ -1,0 +1,26 @@
+{
+  "binary_sha256": "929c6a050727851d542932473404f846b2dab4c2dab2c7a63f6d2932a64382d1",
+  "command": [
+    "rustc",
+    "--edition=2021",
+    "--crate-type=cdylib",
+    "-O",
+    "-C",
+    "debuginfo=0",
+    "-C",
+    "panic=unwind",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\runtime\\source\\background\\screen_candidate.rs",
+    "-o",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\runtime\\source\\background\\screen_9b08377efe0b82be4160c968584260d1161072b162e8df46d424b7225eb90be2.dll"
+  ],
+  "compiler": "rustc 1.94.0 (4a4ef493e 2026-03-02)\nbinary: rustc\ncommit-hash: 4a4ef493e3a1488c6e321570238084b38948f6db\ncommit-date: 2026-03-02\nhost: x86_64-pc-windows-msvc\nrelease: 1.94.0\nLLVM version: 21.1.8\n",
+  "exit_code": 0,
+  "seconds": 0.8957211000379175,
+  "source_digest": "9b08377efe0b82be4160c968584260d1161072b162e8df46d424b7225eb90be2",
+  "sources": {
+    "efficient_candidate.rs": "c59feab6dbff2d0ea35e9d2d9e0b6c3e237a66f165864f3fafab73e9b44726a2",
+    "screen_candidate.rs": "99739fb40559e4614a37530d7359654f5beefcbbbc5a1a7c7eb835efe23cae4d"
+  },
+  "stderr": "",
+  "stdout": ""
+}

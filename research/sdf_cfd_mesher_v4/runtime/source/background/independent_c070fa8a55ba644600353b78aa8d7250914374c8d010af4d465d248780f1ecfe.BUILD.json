@@ -1,0 +1,25 @@
+{
+  "binary_sha256": "08478e5991c59cb4c59638f77a8343c4d6ac9109981e0736f9a782e6b16cc825",
+  "command": [
+    "rustc",
+    "--edition=2021",
+    "--crate-type=cdylib",
+    "-O",
+    "-C",
+    "debuginfo=0",
+    "-C",
+    "panic=unwind",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\runtime\\source\\background\\independent_walk.rs",
+    "-o",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\runtime\\source\\background\\independent_c070fa8a55ba644600353b78aa8d7250914374c8d010af4d465d248780f1ecfe.dll"
+  ],
+  "compiler": "rustc 1.94.0 (4a4ef493e 2026-03-02)\nbinary: rustc\ncommit-hash: 4a4ef493e3a1488c6e321570238084b38948f6db\ncommit-date: 2026-03-02\nhost: x86_64-pc-windows-msvc\nrelease: 1.94.0\nLLVM version: 21.1.8\n",
+  "exit_code": 0,
+  "seconds": 0.5818260000087321,
+  "source_digest": "c070fa8a55ba644600353b78aa8d7250914374c8d010af4d465d248780f1ecfe",
+  "sources": {
+    "independent_walk.rs": "c070fa8a55ba644600353b78aa8d7250914374c8d010af4d465d248780f1ecfe"
+  },
+  "stderr": "warning: type `Walk` is more private than the item `walk_new`\n  --> C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\runtime\\source\\background\\independent_walk.rs:16:1\n   |\n16 | / pub unsafe extern \"C\" fn walk_new(lo: *const [f64;3], hi: *const [f64;3], count: usize,\n17 | |     low: *const [f64;3], high: *const [f64;3], descriptors: *const [i64;4], node_count: usize,\n18 | |     leaves: *const u64, leaf_count: usize, active: *const u8) -> *mut Walk {\n   | |__________________________________________________________________________^ function `walk_new` is reachable at visibility `pub`\n   |\nnote: but type `Walk` is only usable at visibility `pub(crate)`\n  --> C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\runtime\\source\\background\\independent_walk.rs:9:1\n   |\n 9 | struct Walk { lo: Vec<[f64;3]>, hi: Vec<[f64;3]>, nodes: Vec<Node>, active: Vec<u8>, face: usize, hits: Vec<usize>, cursor: usize, f...\n   | ^^^^^^^^^^^\n   = note: `#[warn(private_interfaces)]` on by default\n\nwarning: type `Walk` is more private than the item `walk_next`\n  --> C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\runtime\\source\\background\\independent_walk.rs:92:1\n   |\n92 | pub unsafe extern \"C\" fn walk_next(handle:*mut Walk,limit:usize)->Buffer{\n   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ function `walk_next` is reachable at visibility `pub`\n   |\nnote: but type `Walk` is only usable at visibility `pub(crate)`\n  --> C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\runtime\\source\\background\\independent_walk.rs:9:1\n   |\n 9 | struct Walk { lo: Vec<[f64;3]>, hi: Vec<[f64;3]>, nodes: Vec<Node>, active: Vec<u8>, face: usize, hits: Vec<usize>, cursor: usize, f...\n   | ^^^^^^^^^^^\n\nwarning: type `Walk` is more private than the item `walk_failed`\n   --> C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\runtime\\source\\background\\independent_walk.rs:104:1\n    |\n104 | pub unsafe extern \"C\" fn walk_failed(handle:*mut Walk)->u8{if handle.is_null(){1}else{(*handle).failed as u8}}\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ function `walk_failed` is reachable at visibility `pub`\n    |\nnote: but type `Walk` is only usable at visibility `pub(crate)`\n   --> C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\runtime\\source\\background\\independent_walk.rs:9:1\n    |\n  9 | struct Walk { lo: Vec<[f64;3]>, hi: Vec<[f64;3]>, nodes: Vec<Node>, active: Vec<u8>, face: usize, hits: Vec<usize>, cursor: usize, ...\n    | ^^^^^^^^^^^\n\nwarning: type `Walk` is more private than the item `walk_free`\n   --> C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\runtime\\source\\background\\independent_walk.rs:106:1\n    |\n106 | pub unsafe extern \"C\" fn walk_free(handle:*mut Walk){if !handle.is_null(){drop(Box::from_raw(handle));}}\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ function `walk_free` is reachable at visibility `pub`\n    |\nnote: but type `Walk` is only usable at visibility `pub(crate)`\n   --> C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\runtime\\source\\background\\independent_walk.rs:9:1\n    |\n  9 | struct Walk { lo: Vec<[f64;3]>, hi: Vec<[f64;3]>, nodes: Vec<Node>, active: Vec<u8>, face: usize, hits: Vec<usize>, cursor: usize, ...\n    | ^^^^^^^^^^^\n\nwarning: 4 warnings emitted\n\n",
+  "stdout": ""
+}

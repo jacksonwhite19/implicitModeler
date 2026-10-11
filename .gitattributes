@@ -1,0 +1,2 @@
+# Preserve authenticated bytes, including source line endings.
+* -text

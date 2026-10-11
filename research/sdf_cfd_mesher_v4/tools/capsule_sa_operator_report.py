@@ -1,0 +1,102 @@
+"""Direct, source-bound report. No scientific acceptance threshold is introduced."""
+import re
+from pathlib import Path
+import capsule_sa_operator_finish as f
+o=f.o;c=f.c;h=f.h
+
+
+def report():
+    root=o.ROOT;ad=h.read(root/'ADMISSION.json');b=h.read(root/'BASELINE.json');j=h.read(root/'JACOBIAN.json')
+    de=h.read(root/'DERIVED.json');ge=h.read(root/'GENERATORS.json');gq=h.read(root/'GENERATORS_QUADRATIC.json')
+    dr=h.read(root/'DIRECTIONS.json');v=h.read(root/'FINAL_VERIFICATION.json')
+    lines=[]
+    def p(text=''):lines.append(text)
+    def table(headers,rows):
+        block=['| '+' | '.join(headers)+' |','| '+' | '.join(['---']*len(headers))+' |']
+        for row in rows:block.append('| '+' | '.join(format(x,'.12g') if isinstance(x,float) else str(x) for x in row)+' |')
+        p('\n'.join(block))
+    p('**'+de['classification']+'**')
+    p('Outcome F. Exact retained-state momentum, continuity and SA assembly succeeded. The near-null interpretation is not qualified. The tested gradient rotation is stiff, but its reconstruction, conservative-face-flux tangent and physical nut-boundary tangent are not sufficiently established to identify the physical azimuthal mode. No neutral eigenmode is proved.')
+    p('Starting HEAD: `'+o.HEAD+'`. The ending HEAD is the task-owned commit containing this report; it is printed in the final response.')
+    p('New CFD iterations = 0; retained field mutations = 0; mesh changes = 0; prism changes = 0; L11 changes = 0. No convergence rule, stopping contract or CFD qualification was created.')
+    p('**Authority and state verification.**')
+    p('The prior result is `'+ad['prior']+'`. All prior evidence and implementation hashes bound by that result were checked. The seven prior analysis records were verified, as were the GW1 candidate and frozen-prism chains. All 444 retained rank files matched. Canonical U/p/nuTilda/nut checks matched at 800, 900 and 1000. Operators used 900 and 1000; 800 was an integrity check only. Retained phi and uniform metadata were verified through the file manifest, not reconstructed from U.')
+    for name in c.NAMES:
+        p(name+' candidate: `'+str(ad['cases'][name]['candidate'])+'`.')
+        table(['Iteration','Field','Canonical SHA-256'],[(step,field,rec['sha256']) for step in ('900','1000') for field,rec in ad['cases'][name]['checkpoints'][step].items()])
+    p('Frozen scientific identity `48f39ddfae1f782f724321e0d8882f9454928c5c0c2898652220dcfa6db3f1a1`; qualification `75d827a837748dfca5014b873a18f4076843752ef6789622565f6de6d2ba8e7b`; authority `356e5a357bbbdf923f7dd3a2df0642632ba3497518b0305c44f372d6fec7f9b3`.')
+    p('Prism coordinates `be699231457da75d92dab4c80dd1249f8b8509a30023a3f18e761dcf61c15574`; connectivity `c18002e7c7ece4167a852d8d0697b7620ec8064aa3d7d163bb69f76018702a6a`; L11 coordinates `e7a2493262644cc4bb29c76785aea1900e9eb8d2f09cec793853437287ce15c1`; topology `d14f00450f2f67f7b98ab3efa1a7946393b7b793ccd64d4bdcdbf516342de2db`. All zero-change requirements hold.')
+    p('**Exact operator definitions and limits.**')
+    p('Foundation 13 build 13-cde978a97c93; foamRun SHA-256 `'+ad['foamRun_sha256']+'`. foamRun was not launched. The task utility was compiled against the installed Foundation libraries.')
+    p('Momentum is (A_U U-b_U)/V from unrelaxed fvm::ddt(U)+fvm::div(phi,U)+model.divDevSigma(U)==fvModels.source(U)-fvc::grad(p). SA is (A_N nuTilda-b_N)/V from the exact installed SA equation and inherited chi/fv1/Stilda/fw/DnuTildaEff helpers. The steady ddt contribution is zero. Existing schemes and boundary classes are used. There are no active MRF or fvModels sources in these cases. Continuity is fvc::div(retained phi). Nut consistency is retained nut minus nuTilda*fv1(nuTilda/nu). No equation norms are combined.')
+    p('Explicit SA assembly: fvm::div(phi,N)-fvm::laplacian((N+nu)/sigmaNut,N)-(Cb2/sigmaNut)*magSqr(fvc::grad(N)) == Cb1*Stilda*N-fvm::Sp(Cw1*fw(Stilda)*N/y^2,N)+fvModels.source(N), with alpha=rho=1. The installed bounded convection, corrected diffusion, wall distance, helper clipping and coefficients are reused; this is not a generic textbook replacement.')
+    p('R_U units: m/s^2; R_SA: m^2/s^2; R_c: 1/s. RMS means sqrt(sum(V*|R|^2)/sum(V)); Linf is maximum cell vector magnitude. These are not normalized linear-solver initial residuals, pressure-correction residuals or SIMPLE fixed-point residuals. PressureCorrectionOperatorNotEvaluated.')
+    p('Momentum assembly: momentumPredictor.C:34-55. Stress: linearViscousStress.C:98-124 and incompressibleMomentumTransportModel.C:80-83. SA assembly: SpalartAllmaras.C:300-341. Matrix action: fvMatrix.C:2469-2510. Source snapshots are byte-exact.')
+    extra=h.read(root/'EXTRA_SOURCE_PROVENANCE.json')
+    table(['Installed source','SHA-256'],[(path,rec['sha256']) for path,rec in {**ad['source_files'],**{k:z for k,z in extra.items() if k.startswith('/opt/')}}.items()])
+    p('Native utility SHA-256: `'+v['native']['binary']+'`; native source SHA-256: `'+v['native']['source']+'`. The source has no solve(), time increment, SIMPLE loop, pressure correction, runTime.write() or field write-back. It selects existing directories with setTime, assembles, and writes only task-owned binary diagnostic arrays. Inherited model fields are never written. All '+str(v['scratch_files_unchanged'])+' scratch input files are byte-identical afterward.')
+    p('Command pattern: `mpirun -np 6 <task>/build/bin/saReadOnlyOperator -parallel -case <task>/scratch/SA-GW1-S{1|2} -snapshot {900|1000} -output <task>/outputs/...`. Directional calls add `-direction <task>/directions/... -fluxMode fixed|velocity`. Exact expanded commands are retained in the shell scripts and GNU time logs.')
+    p('**Extraction validation and repeatability.**')
+    p('The initial fvMatrix::residual() extraction failed a constant-scalar test on processor interfaces. It is retained as REJECTED_EXTRACTION.json and is not scientific residual evidence. The official matrix-action operator includes the interface source once and passed the same test. No installed source was changed.')
+    table(['Seed','Constant action RMS','Rejected extraction RMS'],[(n,de[n]['constant_matrix_action']['L2'],de[n]['rejected_constant_residual_API']['L2']) for n in c.NAMES])
+    p('All four baseline evaluations reproduced canonical momentum/SA/continuity arrays bit-for-bit. A fresh six-rank augmented-velocity evaluation reproduced all 108 rank J-array files exactly across all six epsilons. Canonical ordering uses retained cellProcAddressing. A synthetic test verifies rank-layout-independent canonical hashes; no scientific repartitioning was performed.')
+    table(['Seed','1000 operator array','Canonical SHA-256'],[(n,eq,b[n]['1000']['hashes'][eq]) for n in c.NAMES for eq in ('RU0','RN0','RC0')])
+    p('**Baseline residuals.**')
+    table(['Seed','Iteration','Equation','RMS','Linf','Linf cell'],[(n,t,eq,b[n][t]['operators'][eq]['all']['L2'],b[n][t]['operators'][eq]['all']['Linf'],b[n][t]['operators'][eq]['all']['Linf_cell']) for n in c.NAMES for t in ('900','1000') for eq in ('RU0','RN0','RC0')])
+    for n in c.NAMES:
+        p(n+' at 1000: momentum component RMS '+str(b[n]['1000']['operators']['RU0']['all']['component_RMS'])+'.')
+        p('Momentum Linf coordinate '+str(b[n]['1000']['operators']['RU0']['all']['Linf_coordinate'])+'; SA Linf coordinate '+str(b[n]['1000']['operators']['RN0']['all']['Linf_coordinate'])+'; continuity Linf coordinate '+str(b[n]['1000']['operators']['RC0']['all']['Linf_coordinate'])+'.')
+        p('Signed integrated continuity '+str(b[n]['1000']['operators']['RC0']['all']['signed_integral'][0])+' m^3/s. Constitutive nut RMS '+str(b[n]['1000']['operators']['constitutive']['all']['L2'])+' m^2/s; relative to retained nut RMS '+str(b[n]['1000']['constitutive_relative_RMS'])+'.')
+        p('Re-evaluating native correctNut, including its wall treatment, gives momentum RMS '+str(de[n]['equilibrium_nut_momentum']['L2'])+'; change from the retained-auxiliary operator RMS '+str(de[n]['equilibrium_change']['L2'])+'. SA correct() computes fv1 before its transport solve and calls correctNut(fv1) afterward. A small constitutive lag is therefore source-supported; it is not labeled corruption.')
+    p('Region priority: prisms first; near-body core r<0.16 m and |z|<0.16 m; remaining protected wake r<0.08 m, 0.08<=z<=0.72 m; near-farfield max(|x|,|y|)>0.71 m or |z|>1.21 m; remaining outer core. These are localization masks, not acceptance criteria. The early protected wake inside the near-body mask belongs to near-body core.')
+    table(['Seed','Region','R_U RMS','R_SA RMS','R_c RMS','U squared-norm share','SA squared-norm share'],[(n,region,*[b[n]['1000']['operators'][eq]['regions'][region]['L2'] for eq in ('RU0','RN0','RC0')],*[b[n]['1000']['operators'][eq]['regions'][region]['integrated_squared']/b[n]['1000']['operators'][eq]['all']['integrated_squared'] for eq in ('RU0','RN0')]) for n in c.NAMES for region in ('prism','near_body_core','protected_wake','outer_core','near_farfield')])
+    p('**Rotation and reconstruction.**')
+    p('Active convention: R_theta q(x)=q(R_-theta x); R_theta U(x)=Q_theta U(Q_-theta x). Thus g_scalar=y*dq/dx-x*dq/dy, and g_U=e_z cross U-((-y,x,0) dot grad)U. This is the negative coordinate-advection sign of the passive generator. Both coordinate and vector-basis rotation are tested. Native gradients use the retained FV schemes, including cellLimited grad(U).')
+    p('Independent finite-angle checks use epsilon=0.01, 0.003, 0.001 rad; deterministic cell samples by region; r<0.70 m and |z|<1.20 m exclude rotated-box extrapolation. The affine reconstruction uses 24 neighbors; the quadratic reconstruction uses 48. These are analysis stencils, not CFD changes.')
+    table(['Seed','Field','Affine cosine','Affine relative difference','Quadratic cosine','Quadratic relative difference'],[(n,field,ge[n]['epsilon']['0.001']['fields'][field]['cosine'],ge[n]['epsilon']['0.001']['fields'][field]['difference_RMS']/ge[n]['epsilon']['0.001']['fields'][field]['gradient_RMS'],gq[n]['epsilon']['0.001']['fields'][field]['cosine'],gq[n]['epsilon']['0.001']['fields'][field]['difference_RMS']/gq[n]['epsilon']['0.001']['fields'][field]['gradient_RMS']) for n in c.NAMES for field in ('U','p','nuTilda','nut')])
+    table(['Seed','Reconstruction','Axisymmetric r^2 generator error RMS','Axisymmetric vector error RMS','m=1 error RMS'],[(n,label,q[n]['epsilon']['0.001']['synthetic']['synthetic_axis_scalar']['error_RMS'],q[n]['epsilon']['0.001']['synthetic']['synthetic_axis_vector']['error_RMS'],q[n]['epsilon']['0.001']['synthetic']['synthetic_m1']['error_RMS']) for n in c.NAMES for label,q in [('affine',ge),('quadratic',gq)]])
+    p('The affine sampler creates a false quadratic zero-mode response. Quadratic reproduction removes that synthetic artifact, but does not make the retained-flow generators agree. The m=1 finite-angle error includes the known sin(epsilon)/epsilon truncation. No sampled generator was promoted as a qualified physical rotational tangent.')
+    p('**Declared Jacobian paths.**')
+    p('Fixed mode holds conservative phi and physical nut boundary values fixed. It refreshes coupled nut interfaces. Velocity mode uses the anchored path phi(e)=phi0+flux(U(e))-flux(U0); it is not the pressure-corrected flux tangent. U, p and nuTilda boundary conditions are re-evaluated in memory. Neither path rotates the box. These are exact directional actions of explicitly declared augmented-state paths, not the complete reduced RANS/SIMPLE Jacobian.')
+    p('Comparison U directions are normalized to volume-weighted RMS 1 m/s: rotation, streamwise (0,0,Uz), lateral strain (x,-y,0), and U1000-U900. SA directions are normalized to admitted nuTildaInf=1.1302005732789914e-5 m^2/s: rotation, nuTilda amplitude and nuTilda1000-nuTilda900. The unscaled coupled gradient rotation changes U,p,nuTilda,nut per radian. The actual late change is evaluated in separate U and SA blocks; a full coupled history/face-flux tangent is not qualified. No cross-equation weighted norm is used.')
+    p('Centered epsilon values: 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7. All perturbation nuTilda minima remain positive. No perturbed field is saved as a CFD state.')
+    table(['Seed','epsilon','Augmented fixed J_U RMS','J_SA RMS','Velocity-path J_U RMS','J_SA RMS','J_c RMS'],[(n,str(e),j[n]['rotation_augmented_fixed'][str(e)]['JU']['L2'],j[n]['rotation_augmented_fixed'][str(e)]['JN']['L2'],j[n]['rotation_augmented_velocity'][str(e)]['JU']['L2'],j[n]['rotation_augmented_velocity'][str(e)]['JN']['L2'],j[n]['rotation_augmented_velocity'][str(e)]['JC']['L2']) for n in c.NAMES for e in (.01,.001,.0001,.00001,.000001,.0000001)])
+    p('Fixed-phi continuity response is identically zero by construction. Velocity-path continuity response is about 92 1/s per radian. It is not a demonstrated mass-conservative rotational tangent. At 1e-7 the zero-direction momentum response is only 3.18e-7 / 4.25e-7 m/s^2 for S1/S2; the SA-to-momentum frozen-nut block matches this noise and is not interpreted.')
+    table(['Seed','Direction','J_U RMS at 1e-7','J_SA RMS at 1e-7'],[(n,tag,j[n][tag]['1e-07']['JU']['L2'],j[n][tag]['1e-07']['JN']['L2']) for n in c.NAMES for tag in ('U_rotation_fixed','U_streamwise_fixed','U_lateral_strain_fixed','U_late_change_fixed','SA_rotation_fixed','SA_amplitude_fixed','SA_late_change_fixed')])
+    table(['Seed','Equation/input','Rotational/comparison ratio at 1e-7','Comparison'],[(n,group,values['1e-07'],comparison) for n in c.NAMES for group,rec in j[n]['ratios'].items() for comparison,values in rec.items()])
+    p('The tested gradient directions are not small relative to these controls. This does not establish that the physical azimuthal direction is not near-null: the generator and auxiliary/boundary paths remain unqualified. The last-decade full-vector relative change is 0.003074/0.002194 for augmented momentum and 7.68e-5/2.25e-6 for SA on the velocity path. No precise derivative-convergence threshold is introduced.')
+    p('**Residual projections and stiffness.**')
+    table(['Seed','Path','Equation','beta','Projected RMS','Orthogonal RMS','Squared fraction'],[(n,tag,eq,*[j[n][tag]['1e-07'][eq]['residual_projection'][k] for k in ('beta','projected','remainder','squared_fraction')]) for n in c.NAMES for tag in ('rotation_augmented_fixed','rotation_augmented_velocity') for eq in ('JU','JN')])
+    table(['Seed','Direction/path','Equation','Directional stiffness 1/s','cos(g,Jg)'],[(n,tag,eq,z['directional_stiffness'],z['direction_response_cosine']) for n in c.NAMES for tag,rec in de[n]['stiffness'].items() for eq,z in rec.items()])
+    p('These scalars are directional stiffnesses, not eigenvalues. Almost all baseline residual is orthogonal to the tested response. Because that tangent is not qualified, the remainder is not promoted as a quantified physical non-rotational mode.')
+    table(['Seed','900-1000 field','Fitted angle coefficient','Change RMS','Orthogonal RMS','Squared rotational fraction'],[(n,field,*[z[k] for k in ('beta','total','remainder','squared_fraction')]) for n in c.NAMES for field,z in dr['cases'][n]['field_change_projection'].items()])
+    p('This uses full-cell native gradients and volume weighting, not the prior low-order sampled m=1 representation. A finite 100-iteration rotation is also not an infinitesimal change. These fractions must not replace the prior low-order rotation result or be used to infer eigenvalues.')
+    p('**Regional and box evidence.**')
+    table(['Seed','Region','J_U RMS','J_SA RMS','J_c RMS','U squared share','SA squared share'],[(n,reg,*[j[n]['rotation_augmented_velocity']['1e-07'][eq]['regions'][reg]['L2'] for eq in ('JU','JN','JC')],*[j[n]['rotation_augmented_velocity']['1e-07'][eq]['regions'][reg]['integrated_squared']/j[n]['rotation_augmented_velocity']['1e-07'][eq]['integrated_squared'] for eq in ('JU','JN')]) for n in c.NAMES for reg in ('prism','near_body_core','protected_wake','outer_core','near_farfield')])
+    table(['Seed','Box-adjacent owners','R_U RMS','R_SA RMS','R_c RMS','J_U RMS','J_SA RMS','J_c RMS'],[(n,patch,*[de[n]['patch_baseline'][eq][patch]['L2'] for eq in ('RU0','RN0','RC0')],*[j[n]['rotation_augmented_velocity']['1e-07'][eq]['box_patches'][patch]['L2'] for eq in ('JU','JN','JC')]) for n in c.NAMES for patch in ('xmin','xmax','ymin','ymax','zmin','zmax')])
+    p('Patch rows are cell-owner localizations and can overlap at box edges; they are not separate face-force or flux terms. In the tested tangent, near-body core dominates J_U and J_SA. Near-farfield contributions are small. This does not prove or exclude true outer-box pinning.')
+    p('The square-box radial distance is 0.75/max(|cos(theta)|,|sin(theta)|): minimum 0.75 m, maximum 1.0606601717798212 m, mean 0.8416500433251153 m. Its measured m=4 amplitude is 0.11733360493035891 m; m=2 is 9.85e-18 m. This is geometric fourfold symmetry breaking. An operator-energy azimuth scan was not run because unqualified remapping would confound interpolation error and pinning. No preferred discrete azimuth or mesh-pinning cause is established. The two seeds give similar conditional stiffness, which alone is not causal evidence.')
+    p('**Decision and unavailable components.**')
+    p('The states have nonzero discrete momentum and SA imbalance despite excellent conservative flux. From 900 to 1000, S1 momentum RMS decreases slightly; S2 increases; SA RMS increases on both. An exact steady fixed point is not established. The principal missing evidence is a reconstruction-qualified, conservative-face-flux and physical-boundary-consistent rotational tangent. The complete reduced/SIMPLE Jacobian, rotational eigenmode, operator azimuth scan and causal box/mesh pinning remain unevaluated. The full-vector state-change tangent including retained phi was not tested. No mathematically neutral eigenmode is proved.')
+    p('**Execution, tests, preservation and storage.**')
+    performance={}
+    for n in c.NAMES:
+        logs=list(root.glob(n+'_*fixed.log'))+[root/(n+'_rotation_augmented_velocity.log')]
+        perf=dict(calls=len(logs),ranks=6,wall_seconds=0.,CPU_seconds=0.,max_GNU_time_RSS_KiB=0,exit_statuses=[])
+        for path in logs:
+            text=path.read_text();tm=re.search(r'Elapsed.*: (\d+):(\d+\.\d+)',text)
+            perf['wall_seconds']+=60*int(tm[1])+float(tm[2]);perf['CPU_seconds']+=sum(float(re.search(k+r' time \(seconds\): ([\d.]+)',text)[1]) for k in ('User','System'))
+            perf['max_GNU_time_RSS_KiB']=max(perf['max_GNU_time_RSS_KiB'],int(re.search(r'Maximum resident set size \(kbytes\): (\d+)',text)[1]))
+            perf['exit_statuses'].append(int(re.search(r'Exit status: (\d+)',text)[1]))
+        performance[n]=perf;p(n+': '+str(perf)+'.')
+    p('RSS is the GNU time maximum, not sampled aggregate MPI RSS. Timings are not solver-speed comparisons. Four baseline evaluations and one fresh-process replay are additional to the timed primary tangent calls.')
+    p('Tests: 103 focused and prior rotation, SA, model, monitoring and complete-mesh-authority tests passed. CRLF-aware task-source/test/report whitespace check passed; installed source snapshots remain byte-exact. No V3 change. All 155 unrelated dirty entries and the prior tracked-diff hash remain unchanged. Commit scope is only this task.')
+    p('Starting free bytes: '+str(ad['free_bytes'])+'. Storage before final report: '+str(v['storage'])+'. No prior evidence or task evidence was deleted. All raw epsilon arrays, canonical residual/J arrays, source snapshots, minimal scratch inputs, logs and diagnostics are retained. No entire serial CFD case was duplicated.')
+    table(['Evidence','Scientific identity'],[(file,h.read(root/(file+'.json'))['identity']) for file in ('ADMISSION','BASELINE','DIRECTIONS','JACOBIAN','GENERATORS','GENERATORS_QUADRATIC','DERIVED','FINAL_VERIFICATION')])
+    p('New SA/SST iterations = 0; SST-LM/URANS/transient/SAS/DES/LES runs = 0; Run A = NO; Run A2 = NO; production authority replaced = NO.')
+    p('Exactly one recommended next task: '+de['next_task'])
+    (root/'REPORT.md').write_text('\n\n'.join(lines)+'\n',newline='\n')
+    h.durable_json(root/'PERFORMANCE.json',h.seal(performance))
+
+
+if __name__=='__main__':report()

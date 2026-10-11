@@ -1,0 +1,7 @@
+{
+  "version": "ExactRationalAffineRootRepresentation/2",
+  "sha256": "d04329efb921c7a62134355833dabd0425f9aea66404be381c3c86e45fcecb4d",
+  "mathematics_unchanged": true,
+  "vendor_sources_unchanged": true,
+  "operation": "Exact rational affine substitution and real-root index preservation; unchanged QQ isolation and sign predicates; deterministic pair-local initial isolation and comparison order, reused from qualified scaled-root adapter"
+}
