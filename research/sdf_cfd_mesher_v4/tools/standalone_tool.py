@@ -582,22 +582,53 @@ def supervise(args):
 
 
 def terminate_worker(output,case,observed,process):
-    """Cancel the scoped Linux backend, but always stop the Windows worker."""
+    """Retire the launch tree before scanning its exact Linux backend scope."""
     import psutil
-    cancellation=None
+    import os
+    import subprocess
+    errors=[];family=[];discovered=True;descendants_retired=False;creator_retired=False
     try:
-        if 'background' in case:
-            from standalone_background import stop_backend
-            stop_backend(output)
-    except BaseException as error:cancellation=error
+        family=observed.children(recursive=True)
+    except psutil.NoSuchProcess:discovered=False
+    except BaseException as error:errors.append(error);discovered=False
     try:
-        for child in observed.children(recursive=True):
-            try:child.terminate()
-            except psutil.Error:pass
-    except psutil.Error:pass
-    finally:
-        process.terminate();process.wait()
-    if cancellation is not None:raise cancellation
+        if process.poll() is None:
+            if os.name=='nt':
+                result=subprocess.run(['taskkill','/PID',str(process.pid),'/T','/F'],capture_output=True,text=True,timeout=15)
+                if result.returncode and process.poll() is None:
+                    errors.append(ValueError('WindowsWorkerTreeCancellationFailed',result.returncode,result.stdout,result.stderr))
+            else:process.terminate()
+    except BaseException as error:errors.append(error)
+    # Attempt direct creator retirement even if the tree command itself fails.
+    try:
+        if process.poll() is None:process.kill()
+        process.wait(timeout=5)
+    except BaseException as error:errors.append(error)
+    try:creator_retired=process.poll() is not None
+    except BaseException as error:errors.append(error)
+    # Confirm descendants observed before retiring the creator, including an
+    # already submitted Windows transport that could otherwise launch later.
+    try:
+        for child in family:
+            try:
+                if child.is_running():child.kill()
+            except psutil.NoSuchProcess:pass
+            except BaseException as error:errors.append(error)
+        _,alive=psutil.wait_procs(family,timeout=5)
+        descendants_retired=not alive
+        if alive:errors.append(ValueError('WindowsWorkerDescendantsStillRunning',[p.pid for p in alive]))
+    except BaseException as error:errors.append(error)
+    if not (creator_retired and descendants_retired and discovered):
+        errors.append(ValueError('WindowsWorkerRetirementUnconfirmed',dict(
+            creator_retired=creator_retired,known_descendants_retired=descendants_retired,descendant_discovery_complete=discovered)))
+    else:
+        try:
+            if 'background' in case:
+                from standalone_background import stop_backend
+                stop_backend(output)
+        except BaseException as error:errors.append(error)
+    if len(errors)==1:raise errors[0]
+    if errors:raise ValueError('WorkerAndBackendCancellationFailed',tuple(errors))
 
 
 def write_monitor(path,record):

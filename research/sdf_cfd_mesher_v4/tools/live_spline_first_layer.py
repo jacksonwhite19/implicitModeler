@@ -42,13 +42,25 @@ def branch_evidence(authority):
         no_offset_sdf_reprojection=True)
 
 
-def write_certificate_rows(path, rows):
-    """Preserve the legacy uncompressed UTF-8/LF stream and proof order.
+def write_certificate_rows(path, rows, *, compact=False):
+    """Preserve decoded UTF-8/LF bytes and proof order in both storage forms.
 
     The qualified native encoder avoids one Python dictionary/JSON conversion
-    per proof. Do not call PackedRows.write_jsonl: that writes gzip members.
+    per proof. Explicit FastProd storage uses the existing bounded gzip writer;
+    archived production/qualification callers retain the plain stream.
     """
     from optimized_mixed_certificate import PackedRows
+    if type(compact) is not bool:raise ValueError('InvalidCertificateStorageSelection')
+    if compact:
+        if Path(path).suffix!='.gz':raise ValueError('ExplicitCompressedCertificatePathRequired')
+        if isinstance(rows, PackedRows):
+            rows.write_jsonl(path,newline=b'\n')
+        else:
+            import gzip
+            with Path(path).open('wb') as output,gzip.GzipFile(fileobj=output,mode='wb',mtime=0) as stream:
+                for row in rows:
+                    stream.write((json.dumps(row,sort_keys=True,separators=(',',':'))+'\n').encode('utf-8'))
+        return
     if isinstance(rows, PackedRows):
         with Path(path).open('wb') as stream:
             for block in rows.encoded_chunks(b'\n'):
@@ -71,8 +83,11 @@ class SourceSheetFirstLayerProvider(ProductionFirstLayerProvider):
         cert=self.phase('continuous_faces',lambda:certify(p,faces,candidate,self.previous_certificate_state))
         checked['certificate']=cert
         save(self.folder/'CERTIFICATE_SUMMARY.json',{k:v for k,v in cert.items() if k!='proofs'})
+        from production_surface_authority import fastprod_surface_scope_active
+        compact=fastprod_surface_scope_active(getattr(self,'surface',None))
         self.phase('certificate_evidence_write', lambda:write_certificate_rows(
-            self.folder/'CERTIFICATE.jsonl', cert['proofs']))
+            self.folder/('CERTIFICATE.jsonl.gz' if compact else 'CERTIFICATE.jsonl'),
+            cert['proofs'],compact=compact))
         if not cert['passed']:
             checked['passed']=False
             save(self.folder/'FIRST_FAILURE.json',dict(stage='continuous_faces',certificate={k:v for k,v in cert.items() if k!='proofs'}))
@@ -83,7 +98,7 @@ class SourceSheetFirstLayerProvider(ProductionFirstLayerProvider):
         if not checked['passed']:save(self.folder/'FIRST_FAILURE.json',dict(stage='volume_degree',volume=volume))
         return checked
 
-    def __init__(self,folder,surface,request,binding):
+    def __init__(self,folder,surface,request,binding,*,_rolling_schedule=None,_rolling_completion=None,_rolling_completed=False,_rolling_transition=None):
         # Only replace the capsule-specific input binding. Inherited pack,
         # first-layer incidence, certificate, volume and commit remain intact.
         from canonical_spline_authority import LiveSplineAuthority
@@ -98,6 +113,28 @@ class SourceSheetFirstLayerProvider(ProductionFirstLayerProvider):
         req=read_request(request,self.wall_authority)
         if len(req['increments'])!=1 or req['declaration']['fluid_side']!='positive_sdf':raise ValueError('OneOutwardLayerRequired')
         self.h1=float(req['increments'][0]);self.schedule=SimpleNamespace(targets=req['targets'])
+        self._rolling_schedule=None;self._trajectory_plan=None
+        if type(_rolling_completed) is not bool:raise ValueError('InvalidCompletedFrontDeclaration')
+        self._rolling_completed=_rolling_completed
+        self._rolling_completion=copy.deepcopy(_rolling_completion)
+        self._rolling_transition_json=None
+        if _rolling_transition is not None:
+            from standalone_background import validate_policy
+            if (type(_rolling_transition) is not dict or _rolling_transition.get('schema')!='V4GradedBackground/6' or
+                    _rolling_schedule is None or not _rolling_completed or type(self.source) is not GeneralSdfAuthority):
+                raise ValueError('RollingGeneralSourceTetTransitionRequired')
+            self._rolling_transition_json=json.dumps(_rolling_transition,sort_keys=True,allow_nan=False)
+            validate_policy(json.loads(self._rolling_transition_json))
+        if _rolling_completion is not None:
+            from accepted_trajectory_contract import validate_direction_controls
+            validate_direction_controls(_rolling_completion)
+            if _rolling_schedule is None or not _rolling_completed:raise ValueError('RollingCompletedSourceScheduleRequired')
+        if _rolling_schedule is not None:
+            from sdf_cfd_mesher_v4.common.authority import frozen
+            values=np.asarray(_rolling_schedule,dtype='<f8')
+            if values.ndim!=1 or not len(values) or not np.isfinite(values).all() or np.any(values<=0) or values[0]!=self.h1:
+                raise ValueError('InvalidRollingPrismPlanSchedule')
+            self._rolling_schedule=frozen(values,'<f8')
         _,reference_hash=verify_surface_sidecars(self.surface,self.wall_authority,verify_implementation=False)
         if file_hash(self.surface/'REFERENCES.npz')!=reference_hash:raise ValueError('ReferenceIdentityMismatch')
         with np.load(self.surface/'REFERENCES.npz') as z:self.refs={k:z[k] for k in z.files}
@@ -154,6 +191,11 @@ class SourceSheetFirstLayerProvider(ProductionFirstLayerProvider):
                 direction_norm_min=float(np.linalg.norm(direction,axis=1).min()),direction_norm_max=float(np.linalg.norm(direction,axis=1).max()),
                 branch=self.branch,coverage=self.coverage,full_height_m=self.h1,full_height_hex=self.h1.hex()))
         if type(a) is GeneralSdfAuthority:
+            if self._rolling_schedule is not None:
+                from accepted_trajectory_contract import source_front_plan
+                self._trajectory_plan=source_front_plan(a,self.x,self.high,self.tri,self.refs['face_refs'],self._rolling_schedule,_completion=self._rolling_completion,_completed_front=self._rolling_completed,
+                    _transition=None if self._rolling_transition_json is None else json.loads(self._rolling_transition_json))
+                save(self.folder/'SCHEDULE_FEASIBILITY.json',self._trajectory_plan.summary())
             numerical_admitted=self.assigned['admitted']
             self.assigned['admitted']=False
             save(self.folder/'TRAJECTORY.json',dict(self.assigned,source_proof='pending',full_height_m=self.h1))

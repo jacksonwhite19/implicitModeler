@@ -29,11 +29,17 @@ class LocalCorrectionValidation:
             for vertex in set(cell['vertices']):
                 self.vertex_cells.setdefault(vertex,set()).add(cell['id'])
 
-    def evaluate(self, points):
+    def evaluate(self, points, *, local_only=False, _active_cells=None):
+        if type(local_only) is not bool:raise ValueError('InvalidLocalQualityScope')
         if points.shape != self.points.shape:
             raise ValueError('LocalCorrectionTopologyChanged')
         changed=np.flatnonzero(np.any(points != self.points,axis=1))
         active=set().union(*(self.vertex_cells.get(int(v),set()) for v in changed))
+        if _active_cells is not None:
+            declared=set(_active_cells)
+            if not local_only or not active<=declared or not declared<={c['id'] for c in self.cells}:
+                raise ValueError('InvalidDeclaredLocalQualityClosure')
+            active=declared
         local=g.t.quality(points,self.cells,self.owners,1,active_cells=active)
         final=incidence.check(points,self.cells,self.outer,active_cells=active)
         if 'first_prism_incidence' in self.checked:
@@ -44,6 +50,11 @@ class LocalCorrectionValidation:
                 if not (r['volume']>0 and r['determinant']>=.0011 and r['aspect']<=1000)]
             # The same determinant is already represented by cell_quality.
             final['failures']=[]
+        if local_only:
+            local=dict(local,failures=sorted(local['failures']+final['failures'],key=failure_order))
+            local['passed']=not local['failures']
+            return dict(quality=local,active_cells=tuple(sorted(active)),complete_incidence=final,
+                passed=False,scope='Affected numerical closure only; no global mesh acceptance.')
         old=self.checked['quality']
         def merge(kind,key):
             replacement={key(row):row for row in local[kind]}

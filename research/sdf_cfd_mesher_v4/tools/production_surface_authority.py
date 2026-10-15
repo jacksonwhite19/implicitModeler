@@ -25,6 +25,11 @@ def require_fastprod_surface_scope(directory):
     if _fastprod_wall.get()!=Path(directory).resolve():
         raise ValueError('FastProdSurfaceRequiresProcessLocalScope')
 
+
+def fastprod_surface_scope_active(directory):
+    """Storage selection only; the existing scope and acceptance own admission."""
+    return directory is not None and _fastprod_wall.get()==Path(directory).resolve()
+
 def scientific_identity(record):
     bound={k:record[k] for k in BOUND_FIELDS}
     if 'assurance' in record:bound['assurance']=record['assurance']

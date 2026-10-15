@@ -391,7 +391,8 @@ class GeneralSdfAuthority(Authority):
             seconds['construction_'+kind+'_batch']+=elapsed
         def invalidate():
             nonlocal payload
-            cache.clear();payload=0
+            from sdf_cfd_mesher_v4.sdf.regional import invalidate_filtered_cache
+            cache.clear();payload=0;invalidate_filtered_cache()
         def boundary_failure(kind):
             phase='construction' if _construction.get() is not None else 'acceptance'
             counts[kind+'_failures']+=1;counts[phase+'_'+kind+'_failures']+=1
@@ -829,8 +830,13 @@ class GeneralSdfAuthority(Authority):
         def compute():
             proposed=self._numerical_normal(value)
             if self.construction_active() or self.numerical_acceptance_active():return proposed
-            result=self.queries.normal(value,normal_limit_rad=self.manual_controls().normal_estimate_bound_rad,
-                                       proposed_direction=proposed)
+            arguments=dict(normal_limit_rad=self.manual_controls().normal_estimate_bound_rad,
+                           proposed_direction=proposed)
+            if _prism_queries.get() is self:
+                # Preserve the existing point jet until the first-height proof
+                # reads it. Source/arithmetic checks and every predicate remain.
+                arguments['retain_point_region']=True
+            result=self.queries.normal(value,**arguments)
             self.verify()
             return np.asarray(result['direction'],dtype=float)
         return self._query('normal',ref,value,compute)

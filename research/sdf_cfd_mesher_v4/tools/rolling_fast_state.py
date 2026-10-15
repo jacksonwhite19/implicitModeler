@@ -183,10 +183,10 @@ class LiveAcceptance:
     methods: tuple
     generation: int
 
-    def background_inputs(self, run, *, _preparation=None, _copy_verifier_caches=False):
+    def background_inputs(self, run, *, _preparation=None, _copy_verifier_caches=False,_capture_volume=False):
         """Verify a detached parent once; reuse only its call-scoped read views."""
         return _background_inputs(self, run, _preparation=_preparation,
-                                  _copy_verifier_caches=_copy_verifier_caches)
+                                  _copy_verifier_caches=_copy_verifier_caches,_capture_volume=_capture_volume)
 
     def check(self, run, *, _preparation=None):
         if (run.tx.generation != self.generation
@@ -346,6 +346,15 @@ class BackgroundInputs:
         return [(_capture_background(rows[i],{}) if _reference else _background_working_cell(rows[i]))
                 for i in selected]
 
+    def volume_inputs(self):
+        """Detached accepted-volume working copy, captured at the issued check."""
+        self.require(self.view);data=self._open()
+        if data.get('volume_data') is None:raise ValueError('ProtectedBackgroundVolumeRequired')
+        from incremental_layer_validation import ExactVolume
+        result=object.__new__(ExactVolume)
+        for name,value in data['volume_data'].items():setattr(result,name,_capture_background(value,{}))
+        return result
+
     def quality_inputs(self,points,byid,owners,needed,selected):
         """Private authenticated prism results; bind actual geometry and masks."""
         data=self._open();numeric=data['numeric'];quality=data.get('quality')
@@ -390,10 +399,10 @@ def _background_working_cell(row):
 
 
 @contextmanager
-def _background_inputs(token,run,*,_preparation=None,_copy_verifier_caches=False):
+def _background_inputs(token,run,*,_preparation=None,_copy_verifier_caches=False,_capture_volume=False):
     from production_fast_layer import FastLayer
     from rolling_fast_engine import RollingGeometry
-    if (type(_copy_verifier_caches) is not bool or type(token) is not LiveAcceptance or type(run) is not FastLayer or not run.rolling
+    if (type(_capture_volume) is not bool or type(_copy_verifier_caches) is not bool or type(token) is not LiveAcceptance or type(run) is not FastLayer or not run.rolling
         or type(run.provider) is not RollingGeometry or run.live_acceptance is not token
         or run in _background_active):raise ValueError('LiveAcceptedBackgroundInputsRequired')
     owner=object.__new__(BackgroundInputs);_background_active[run]=owner
@@ -406,10 +415,11 @@ def _background_inputs(token,run,*,_preparation=None,_copy_verifier_caches=False
             topology=fields(run.topology,('cells','owners','boundary_keys')),
             outer=_capture_background(run.outer,memo),wall=_capture_background(run.wall,memo))
         phases['numeric']=time.perf_counter()-mark;mark=time.perf_counter()
+        volume_data=({k:_capture_background(getattr(run.volume,k),memo) for k in ('total','boundary_total','boundary','coordinates','witness')} if _capture_volume else None)
         checked=SimpleNamespace(**numeric,tx=SimpleNamespace(current=native,generation=run.tx.generation),
             provider=SimpleNamespace(x=_capture_background(run.provider.x,memo),check=run.provider.check),
             quality=(fields(run.quality,('cells','exact','prospective','faces','masks')) if _copy_verifier_caches else run.quality),
-            volume=(fields(run.volume,('total','boundary_total','boundary','coordinates','witness')) if _copy_verifier_caches else run.volume),
+            volume=(SimpleNamespace(**volume_data) if _capture_volume else fields(run.volume,('total','boundary_total','boundary','coordinates','witness')) if _copy_verifier_caches else run.volume),
             degree_state=(fields(run.degree_state,('points','boundary','witness','root','implementation','rows')) if _copy_verifier_caches else run.degree_state))
         if _copy_verifier_caches and hasattr(run.quality,'geometry'):
             checked.quality.geometry=_capture_background(run.quality.geometry,memo)
@@ -428,7 +438,7 @@ def _background_inputs(token,run,*,_preparation=None,_copy_verifier_caches=False
         arrays={id(a):(a.tobytes(),a.dtype.str,a.shape) for a in (numeric['points'],provider.x)}
         _background_issued[owner]=dict(origin=run,tx=tx,state=state,provider=run.provider,
             layer=layer,token=token,native=native,numeric=numeric,view=view,reuses=0,
-            arrays=arrays,capture_seconds=captured,verification_seconds=verified,preparation=_preparation)
+            arrays=arrays,capture_seconds=captured,verification_seconds=verified,preparation=_preparation,volume_data=volume_data)
         _background_issued[owner].update(capture_phases=phases,verifier_cache_copies=_copy_verifier_caches)
         # Caches are authenticated once and not read by routine background
         # acceptance. Drop private capture scratch; scientific outputs remain.
@@ -439,21 +449,21 @@ def _background_inputs(token,run,*,_preparation=None,_copy_verifier_caches=False
 
 
 @contextmanager
-def _producer_background_inputs(run,*,_preparation=None):
+def _producer_background_inputs(run,*,_preparation=None,_capture_volume=False):
     """Arm the existing owner before the private final prism transaction."""
     from production_fast_layer import FastLayer
     from rolling_fast_engine import RollingGeometry
-    if type(run) is not FastLayer or not run.rolling or type(run.provider) is not RollingGeometry or run in _background_active:
+    if type(_capture_volume) is not bool or type(run) is not FastLayer or not run.rolling or type(run.provider) is not RollingGeometry or run in _background_active:
         raise ValueError('LivePrismProducerRequired')
     owner=object.__new__(BackgroundInputs);_background_active[run]=owner
     _background_pending[owner]=dict(origin=run,tx=run.tx,state=run.tx.current,
-        generation=run.tx.generation,preparation=_preparation)
+        generation=run.tx.generation,preparation=_preparation,capture_volume=_capture_volume)
     try:yield owner
     finally:
         _background_pending.pop(owner,None);_background_issued.pop(owner,None);_background_active.pop(run,None)
 
 
-def _capture_producer_background(run,candidate,points,topology,quality,outer):
+def _capture_producer_background(run,candidate,points,topology,quality,outer,volume):
     owner=_background_active.get(run);pending=_background_pending.get(owner) if owner is not None else None
     if pending is None:return None
     if run.tx is not pending['tx'] or run.tx.current is not pending['state'] or run.tx.generation!=pending['generation']:
@@ -467,7 +477,8 @@ def _capture_producer_background(run,candidate,points,topology,quality,outer):
     if hasattr(quality,'geometry'):cached.geometry=_capture_background(quality.geometry,memo)
     _check_numeric_mesh(numeric['points'],native,len(run.provider.x))
     phases['numeric_and_quality']=time.perf_counter()-mark
-    data=dict(native=native,numeric=numeric,quality=cached,provider_x=_capture_background(run.provider.x,memo),
+    volume_data=({k:_capture_background(getattr(volume,k),memo) for k in ('total','boundary_total','boundary','coordinates','witness')} if pending['capture_volume'] else None)
+    data=dict(native=native,numeric=numeric,quality=cached,volume_data=volume_data,provider_x=_capture_background(run.provider.x,memo),
         capture_seconds=time.perf_counter()-started,capture_phases=phases,verification_seconds=0.,
         original_candidate=candidate,original_points=points,original_topology=topology)
     pending['capture']=data
@@ -631,7 +642,10 @@ def current_quality(quality, topology, layer):
 
 
 def prepare(run, before, candidate, points, topology, quality, volume, degree, outer, additions, fresh, faces, active):
-    run.live_acceptance.check(run)
+    owner=_background_active.get(run)
+    pending=_background_pending.get(owner) if owner is not None else None
+    preparation=None if pending is None else pending['preparation']
+    run.live_acceptance.check(run,_preparation=preparation)
     inherit(before, candidate, additions)
     methods = verify_fresh_coverage(points, faces, active, fresh)
     layer = max(c['layer'] for c in additions)
@@ -641,12 +655,12 @@ def prepare(run, before, candidate, points, topology, quality, volume, degree, o
     candidate['atlas'] = {}; candidate['forecast'] = {}
     total = Counter(dict(run.live_acceptance.methods)); total.update(methods)
     producer_issue_started=time.perf_counter()
-    captured=_capture_producer_background(run,candidate,points,topology,reduced,outer)
+    captured=_capture_producer_background(run,candidate,points,topology,reduced,outer,volume)
     native=candidate if captured is None else captured['native']
     numeric=dict(points=points,topology=topology,outer=outer,wall=run.wall) if captured is None else captured['numeric']
     preparation=None if captured is None else _background_pending[_background_active[run]]['preparation']
     accepted = LiveAcceptance(mesh_identity(native,_preparation=preparation), numeric_identity(**numeric),
-        cache_identity(reduced if captured is None else captured['quality'],volume,degree), identity(native['authority']),
+        cache_identity(reduced if captured is None else captured['quality'],volume if captured is None or captured['volume_data'] is None else SimpleNamespace(**captured['volume_data']),degree), identity(native['authority']),
         run.live_acceptance.count + fresh['required_pairs'], tuple(sorted(total.items())),
         run.tx.generation + 1)
     if captured is not None:

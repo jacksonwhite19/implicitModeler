@@ -16,21 +16,37 @@ from sdf_cfd_mesher_v4.common.authority import identity, array_hash, file_hash
 from path_preserving_deduplication import durable_json
 from owned_runtime import V4
 
+def _stop_record(stage,error,seconds,layer):
+    """Failure telemetry only. It cannot authorize a retry or publish a mesh."""
+    import traceback
+    from background_interface_completion import CompletionWorkLimit
+    record=dict(stage=stage,error=str(error),traceback=traceback.format_exc(),
+        seconds=seconds,last_qualified_prism_layer=layer,no_retry=True)
+    if type(error) is CompletionWorkLimit:record['interface_completion_work_limit']=error.details()
+    return record
+
 
 def validate_policy(policy):
     fields={'schema','bounds_m','growth_per_m','maximum_size_m'}
-    if isinstance(policy,dict) and policy.get('schema') in ('V4GradedBackground/2','V4GradedBackground/3','V4GradedBackground/4'):
+    if isinstance(policy,dict) and policy.get('schema') in ('V4GradedBackground/2','V4GradedBackground/3','V4GradedBackground/4','V4GradedBackground/5','V4GradedBackground/6'):
         fields.add('interface_seed_policy')
         if policy.get('interface_seed_policy') not in ('equal_prism_volume/1','balanced_centroid_volume/1'):
             raise ValueError('UnsupportedInterfaceSeedPolicy')
-        if policy['schema'] in ('V4GradedBackground/3','V4GradedBackground/4'):
+        if policy['schema'] in ('V4GradedBackground/3','V4GradedBackground/4','V4GradedBackground/5','V4GradedBackground/6'):
             fields.add('assurance_mode')
             validate_assurance_mode(policy.get('assurance_mode'))
-        if policy['schema']=='V4GradedBackground/4':
+        if policy['schema'] in ('V4GradedBackground/4','V4GradedBackground/5','V4GradedBackground/6'):
             from background_backend_method import validate
             fields.add('backend_method');validate(policy.get('backend_method'))
+        if policy['schema'] in ('V4GradedBackground/5','V4GradedBackground/6'):
+            fields.add('interface_completion');validate_completion(policy.get('interface_completion'))
+            if policy.get('assurance_mode')!='backend_trusted':raise ValueError('ProtectedRoutineCompletionProfileRequired')
+        if policy['schema']=='V4GradedBackground/6':
+            from tet_layer_controls import validate as validate_transition
+            fields.add('tet_transition');validate_transition(policy.get('tet_transition'))
+            if policy['interface_completion']['schema']!='V4CoreMeshCompletion/1':raise ValueError('ProtectedGenericBulkRepairRequired')
     if (not isinstance(policy,dict) or set(policy)!=fields
-            or policy['schema'] not in ('V4GradedBackground/1','V4GradedBackground/2','V4GradedBackground/3','V4GradedBackground/4')):
+            or policy['schema'] not in ('V4GradedBackground/1','V4GradedBackground/2','V4GradedBackground/3','V4GradedBackground/4','V4GradedBackground/5','V4GradedBackground/6')):
         raise ValueError('ExplicitBackgroundPolicyRequired')
     bounds=np.asarray(policy['bounds_m'],dtype=float)
     if bounds.shape!=(3,2) or not np.isfinite(bounds).all() or np.any(bounds[:,0]>=bounds[:,1]):
@@ -40,6 +56,19 @@ def validate_policy(policy):
         if type(v) not in (float,int) or not math.isfinite(v) or v<=0:
             raise ValueError('InvalidBackgroundControl',name)
     return bounds
+
+def complete_mesh_payload(points,prisms,mapped,wall,far_faces,additions,completion):
+    payload=dict(points=points,prisms=np.asarray(prisms,dtype='<i8'),
+        tetrahedra=mapped,wall=np.asarray(wall,dtype='<i8'),farfield=np.asarray(far_faces,dtype='<i8'))
+    if completion is not None and completion.get('schema')=='V4CoreMeshCompletion/1':
+        if mapped.shape!=(len(additions),4) or not np.array_equal(mapped,np.asarray([c['vertices'] for c in additions],dtype='<i8')):
+            raise ValueError('ChangedRepairedCoreOutputRows')
+        payload['tetrahedron_ids']=np.asarray([c['id'] for c in additions],dtype='<i8')
+    return payload
+
+def validate_completion(controls):
+    from background_completion_controls import validate_completion as validate
+    return validate(controls)
 
 
 def validate_assurance_mode(mode):
@@ -52,7 +81,7 @@ def assurance_mode(policy):
     validate_policy(policy)
     # Historical cases retain all existing proofs. Mode selection is explicit
     # and case-hash bound; no environment variable or backend return can relax it.
-    return policy['assurance_mode'] if policy['schema'] in ('V4GradedBackground/3','V4GradedBackground/4') else 'qualification'
+    return policy['assurance_mode'] if policy['schema'] in ('V4GradedBackground/3','V4GradedBackground/4','V4GradedBackground/5','V4GradedBackground/6') else 'qualification'
 
 
 def backend_command(*arguments):
@@ -76,14 +105,17 @@ def probe_backend(method=None):
 
 def policy_backend(policy):
     validate_policy(policy)
-    return probe_backend(policy['backend_method']) if policy['schema']=='V4GradedBackground/4' else probe_backend()
+    return probe_backend(policy['backend_method']) if policy['schema'] in ('V4GradedBackground/4','V4GradedBackground/5','V4GradedBackground/6') else probe_backend()
 
 
 def stop_backend(output):
     """Existing WSL cancellation pattern, scoped to this worker's exact folder."""
     import re
     folder=Path(output)/'background'
-    if os.name!='nt' or not (folder/'INPUT.json').is_file():return
+    if os.name!='nt':return
+    from shape_transition_native import stop_native
+    stop_native(folder/'SHAPE_CONSTRUCTION')
+    if not (folder/'INPUT.json').is_file():return
     command=backend_command('--input',folder)
     pattern=re.escape(command[-3])+' '+re.escape(command[-2])+' '+re.escape(command[-1])+'$'
     for signal in ('TERM','KILL'):
@@ -293,7 +325,16 @@ def compare_boundary(core_points,tets,front,tri,outer,far,*,_return_call_data=Fa
 
 
 def qualify(run,core_points,tets,front,tri,front_ids,terminal,outer,far,folder,token,*,bounds=None,_preparation=None,
-            assurance_mode='qualification',_handoff=None):
+            assurance_mode='qualification',_handoff=None,interface_completion=None,_transition=None):
+    from contextlib import ExitStack
+    with ExitStack() as artifacts:
+        return _qualify(run,core_points,tets,front,tri,front_ids,terminal,outer,far,folder,token,
+            bounds=bounds,_preparation=_preparation,assurance_mode=assurance_mode,_handoff=_handoff,
+            interface_completion=interface_completion,_transition=_transition,_artifact_custody=artifacts)
+
+
+def _qualify(run,core_points,tets,front,tri,front_ids,terminal,outer,far,folder,token,*,bounds=None,_preparation=None,
+             assurance_mode='qualification',_handoff=None,interface_completion=None,_transition=None,_artifact_custody):
     """Compose live old-old acceptance with freshly checked core geometry.
 
     Retained geometry/quality routines stay authoritative. Explicit backend
@@ -301,6 +342,13 @@ def qualify(run,core_points,tets,front,tri,front_ids,terminal,outer,far,folder,t
     Nothing is projected, snapped, archived, or assigned a fake source sheet.
     """
     validate_assurance_mode(assurance_mode)
+    if _transition is not None:
+        from tet_layer_handoff import TransitionInputs
+        if type(_transition) is not TransitionInputs:raise ValueError('LiveTetTransitionInputsRequired')
+        _transition.require_merged(_handoff,core_points,tets)
+    if interface_completion is not None:
+        validate_completion(interface_completion)
+        if assurance_mode!='backend_trusted' or _handoff is None:raise ValueError('ProtectedRoutineCompletionProfileRequired')
     from incremental_layer_validation import key,t
     from rolling_fast_state import verify_fresh_coverage
     from native_mixed_face_certificate import certify
@@ -339,6 +387,8 @@ def qualify(run,core_points,tets,front,tri,front_ids,terminal,outer,far,folder,t
     owners,ownership=t._ownership_from_core_incidence(run.topology.owners,
         additions,incidence['inverse'],incidence['unique'],mapping,last,far_faces,run.wall)
     del incidence
+    if interface_completion is not None and interface_completion['schema']=='V4CoreMeshCompletion/1':
+        ownership.update(stage='initial_backend_join',scope='Initial joined incidence. Subsequent sparse replacements preserve actual face owners and signed cavity boundaries; final quality uses post-repair owners. These counts precede repair.')
     durable_json(folder/'OWNERSHIP.json',ownership)
     if not ownership['passed']:raise ValueError('CompleteCoreOwnershipFailure')
     measured('complete_ownership')
@@ -354,6 +404,33 @@ def qualify(run,core_points,tets,front,tri,front_ids,terminal,outer,far,folder,t
             raise ValueError('UnexpectedOldNeighbourChange')
     affected=set(terminal)|{c['id'] for c in additions}
     measured('unchanged_shell_incidence')
+    completion=None
+    if interface_completion is not None:
+        fixed=set(range(len(run.points)))|set(map(int,mapping[far_ids]))
+        protected=[]
+        if _transition is not None:
+            protected=additions[:_transition.cells_count]
+            fixed.update(v for c in protected for v in c['vertices'])
+        if interface_completion['schema']=='V4CoreMeshCompletion/1':
+            from background_core_repair import construct,evidence_sink
+            retain=evidence_sink(folder/'REPAIR_EVENTS',_artifact_custody)
+            bulk_ids={c['id'] for c in additions[len(protected):]}
+            points,cells,bulk,owners,completion=construct(_handoff,points,cells,owners,bulk_ids,fixed,far_faces,interface_completion,_evidence=retain)
+            additions=protected+bulk
+            mapped=np.asarray([c['vertices'] for c in additions],dtype='<i8')
+            affected=set(terminal)|{c['id'] for c in additions}
+        else:
+            from background_interface_completion import construct
+            points,completion=construct(_handoff,points,cells,owners,{c['id'] for c in additions},fixed,
+                [tuple(map(int,f)) for f in front_ids[tri]],interface_completion)
+        authored_completion=identity(completion)
+        durable_json(folder/'INTERFACE_COMPLETION.json',completion)
+        from immutable_state_access import guard
+        _artifact_custody.enter_context(guard(folder/'INTERFACE_COMPLETION.json'))
+        if identity(json.loads((folder/'INTERFACE_COMPLETION.json').read_text(encoding='utf-8')))!=authored_completion:
+            raise ValueError('ChangedInterfaceCompletionReport')
+        completion_sha256=file_hash(folder/'INTERFACE_COMPLETION.json')
+        measured('bounded_interface_construction')
     # Same qualified mixed-cell operations and actual-neighbour closure. Avoid
     # millions of one-face Foundation calls without an unbounded face array.
     from prism_hotpath_v2 import batch_quality
@@ -439,9 +516,17 @@ def qualify(run,core_points,tets,front,tri,front_ids,terminal,outer,far,folder,t
     result=dict(passed=True,interface=audit,quality=q_summary,certificate=certificate,
         volume=summary,physical_boundary=boundary,prism_cells=len(run.topology.cells),core_cells=len(tets),
         points=len(points),inherited_shell=token.mesh,restart_supported=False,archived_publication=False)
-    np.savez(folder/'COMPLETE_MESH.npz',points=points,
-        prisms=np.asarray([c['vertices'] for c in run.topology.cells.values()],dtype='<i8'),
-        tetrahedra=mapped,wall=np.asarray(run.wall,dtype='<i8'),farfield=np.asarray(far_faces,dtype='<i8'))
+    result['core_cells']=len(additions)
+    if completion is not None:
+        result['interface_completion']=dict(report='INTERFACE_COMPLETION.json',sha256=completion_sha256,
+            modified_vertices=completion['modified_vertices'],final_existing_acceptance_passed=True,
+            relative_embedding_premise=True,authored_report_identity=authored_completion)
+        if completion.get('schema')=='V4CoreMeshCompletion/1':
+            result['interface_completion'].update(topology_edits=completion['topology_edits'],
+                remaining_raw_records=completion['remaining_raw_records'],
+                original_core_cells=completion['original_core_cells'],final_core_cells=completion['final_core_cells'])
+    payload=complete_mesh_payload(points,[c['vertices'] for c in run.topology.cells.values()],mapped,run.wall,far_faces,additions,completion)
+    np.savez(folder/'COMPLETE_MESH.npz',**payload)
     result['mesh_sha256']=file_hash(folder/'COMPLETE_MESH.npz')
     result['assurance']=dict(mode=assurance_mode,mesh_sha256=result['mesh_sha256'],
         qualified_prism_shell=token.mesh,
@@ -451,7 +536,14 @@ def qualify(run,core_points,tets,front,tri,front_ids,terminal,outer,far,folder,t
         omitted_checks=([] if assurance_mode=='qualification' else
             ['new_core_continuous_collision','independent_required_pair_coverage','exact_total_volume_balance','full_global_degree']),
         backend_assumption=(None if assurance_mode=='qualification' else
-            'Pinned Gmsh/Netgen embeds and fills the supplied discrete cavity; no independent completed-mesh collision or filling proof'))
+            ('Pinned Gmsh/Netgen embeds and fills the initial supplied discrete cavity; exact closed-cavity replacement and interior-star edit records preserve that premise for accepted topology and coordinate edits; no independent completed-mesh collision or filling proof'
+             if completion is not None and (completion['modified_vertices'] or completion.get('topology_edits',0)) else
+             'Pinned Gmsh/Netgen embeds and fills the supplied discrete cavity; no independent completed-mesh collision or filling proof')))
+    if completion is not None and (completion['modified_vertices'] or completion.get('topology_edits',0)):
+        result['assurance']['relative_preservation']=dict(report_sha256=completion_sha256,
+            original_points_sha256=completion['relative_preservation']['original_points_sha256'],
+            final_points_sha256=completion['relative_preservation']['repaired_points_sha256'],
+            conditional_on_initial_backend_embedding=True)
     measured('complete_mesh_write_and_hash')
     result['phase_seconds']=timings
     durable_json(folder/'QUALIFICATION.json',result)
@@ -496,11 +588,18 @@ def execute(run,case_path,folder,expected_backend,*,_handoff=None,_preparation=N
         preparation=_preparation if shared else held.enter_context(preparation_owner())
         handoff=_handoff
         if mode=='backend_trusted':
-            if not shared:handoff=held.enter_context(run.live_acceptance.background_inputs(run,_preparation=preparation))
+            if not shared:handoff=held.enter_context(run.live_acceptance.background_inputs(run,_preparation=preparation,_capture_volume=policy['schema']=='V4GradedBackground/6'))
             run=handoff.view
             measured('protected_parent_handoff_reuse' if shared else 'protected_parent_capture_and_check')
         token,x,tri,ids,volumes,terminal,metadata,centres=_interface(run,_preparation=preparation,_handoff=handoff)
         if np.any(x<=bounds[:,0]) or np.any(x>=bounds[:,1]):raise ValueError('PrismFrontOutsideBackgroundDomain')
+        prism_front=x;prism_tri=tri;transition=None
+        if policy['schema']=='V4GradedBackground/6':
+            from tet_layer_handoff import produce
+            stage='tet_transition'
+            transition=held.enter_context(produce(handoff,ids,tri,terminal,volumes,centres,policy['tet_transition'],bounds,folder,case['resources']))
+            x=transition.front;tri=transition.triangles;volumes=transition.volumes;centres=transition.centres
+            measured('accepted_tet_transition')
         seeds=interface_seeds(policy,x,tri,volumes,centres)
         measured('live_interface_and_seeds')
         np.savez(folder/'INPUT.npz',points=x,triangles=tri,seeds=seeds)
@@ -508,11 +607,14 @@ def execute(run,case_path,folder,expected_backend,*,_handoff=None,_preparation=N
         if locks!=expected_backend:raise ValueError('CoreBackendChangedAfterPreflight')
         from standalone_tool import effective_resources
         request=dict(policy,locks=locks,files={'INPUT.npz':file_hash(folder/'INPUT.npz')},resources=effective_resources(case['resources']),
-            case_sha256=pin,inherited_shell=token.mesh,interface=_wire_interface(metadata),
+            case_sha256=pin,inherited_shell=token.mesh,interface=_wire_interface(transition.metadata if transition is not None else metadata),
             interface_seed_policy=policy.get('interface_seed_policy','equal_prism_volume/1'),
             interface_seed_array_sha256=array_hash(seeds),
             target_cap_not_realized_edge_guarantee=True)
-        if policy['schema']=='V4GradedBackground/4':request['backend_method_identity']=locks['backend_method']
+        if transition is not None:
+            request['files'].update({name:file_hash(folder/name) for name in ('TRANSITION.npz','TRANSITION.json')})
+            request['terminal_owner_kind']='tetrahedron'
+        if policy['schema'] in ('V4GradedBackground/4','V4GradedBackground/5','V4GradedBackground/6'):request['backend_method_identity']=locks['backend_method']
         durable_json(folder/'INPUT.json',request)
         stage='generation_and_optimization'
         import immutable_state_access as access
@@ -540,10 +642,15 @@ def execute(run,case_path,folder,expected_backend,*,_handoff=None,_preparation=N
             data=np.load(folder/'generated/NETGEN.npz');outer=np.load(folder/'generated/OUTER.npz')
             measured('authenticated_readback')
             stage='joined_qualification'
-            result=qualify(run,data['points'],data['tets'],x,tri,ids,terminal,
+            core_points,core_tets=data['points'],data['tets']
+            if transition is not None:
+                core_points,core_tets=transition.merge(handoff,core_points,core_tets,outer['points'],outer['triangles'])
+                x,tri=prism_front,prism_tri
+            result=qualify(run,core_points,core_tets,x,tri,ids,terminal,
                           outer['points'],outer['triangles'],folder,token,bounds=bounds,_preparation=preparation,
-                          assurance_mode=mode,_handoff=handoff)
+                          assurance_mode=mode,_handoff=handoff,interface_completion=policy.get('interface_completion'),_transition=transition)
         measured('joined_qualification')
+        if transition is not None:result['tet_transition']=dict(passed=True,tetrahedra=transition.cells_count,report='TRANSITION.json',sha256=transition.report['report_sha256'],protected_during_bulk_repair=True)
         result['seconds']=time.perf_counter()-start
         result['execution_phase_seconds']=timings
         if handoff is not None:
@@ -555,8 +662,6 @@ def execute(run,case_path,folder,expected_backend,*,_handoff=None,_preparation=N
         durable_json(folder/'RESULT.json',result)
         return result
     except BaseException as error:
-        import traceback
-        durable_json(folder/'STOP.json',dict(stage=stage,error=str(error),traceback=traceback.format_exc(),
-            seconds=time.perf_counter()-start,last_qualified_prism_layer=run.provider.layer,no_retry=True))
+        durable_json(folder/'STOP.json',_stop_record(stage,error,time.perf_counter()-start,run.provider.layer))
         raise
     finally:held.close()

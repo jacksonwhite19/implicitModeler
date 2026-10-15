@@ -195,7 +195,8 @@ class FastLayer:
         terminal_owner=_background_active.get(self) if self.rolling else None
         terminal_pending=terminal_owner is not None and terminal_owner in _background_pending
         quality,counts=self.quality.update(points,topology,{c['id'] for c in additions},touched,outer,
-            retain_geometry=terminal_pending)
+            retain_geometry=terminal_pending,
+            completed_front=self.provider.completed_front if self.rolling else False)
         mark('hard_quality',tick);tick=time.perf_counter()
         if hasattr(self.provider,'validate_fast_target'):
             sdf=self.provider.validate_fast_target(before,fronts[-1],layer)
@@ -246,7 +247,8 @@ class FastLayer:
         path=self.folder/'CORE_INGEST_INPUT.json'
         path.write_text(json.dumps(dict(coordinates=points[ids].tolist(),triangles=[[lookup[v] for v in f] for f in outer],outer_hash=identity(outer))))
         def wsl(p):p=p.resolve();return '/mnt/'+p.drive[0].lower()+str(p)[2:].replace('\\','/')
-        subprocess.run(['wsl','--','python3',wsl(Path(__file__).with_name('cavity_core_ingestion_smoke.py')),wsl(path)],check=True,capture_output=True)
+        from owned_runtime import V4
+        subprocess.run(['wsl','--','python3',wsl(V4/'tools/cavity_core_ingestion_smoke.py'),wsl(path)],check=True,capture_output=True)
         if not json.loads((self.folder/'CORE_INGESTION.json').read_text())['passed']:raise ValueError('CoreIngestionFailure')
         mark('core_ingestion',tick);tick=time.perf_counter()
         inputs,vertex_incidence=archive_dependencies(self,before,state,topology,touched,additions,n)

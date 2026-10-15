@@ -138,7 +138,52 @@ class CompactQuality:
             minimum_symmetric_volume_ratio=self.ratio,
             exact_nonpositive_cells=self.nonpositive)
 
-def batch_quality(points,cells,owners,base_layer,*,active_cells=None,_geometry_out=None,face_batch_size=None,mixed_cells=False,compact=False,_dense_face_values=True,_handoff=None):
+
+def _fresh_call_custody(points,cells,owners,outer):
+    """Private same-call witness for the numeric geometry inputs actually read.
+
+    Native containers only. It is not a proof credential and never leaves the
+    fused call. Point comparisons touch this complete closure, not unrelated
+    points in the global mesh. Concurrent mutation rejects the call's output.
+    """
+    from collections import defaultdict
+    if (type(points) is not np.ndarray or points.dtype!=np.dtype('float64') or
+            points.ndim!=2 or points.shape[1]!=3 or type(cells) is not list or
+            type(owners) not in (dict,defaultdict) or
+            type(outer) not in (list,tuple,np.ndarray)):
+        raise ValueError('NativeFreshGeometryInputsRequired')
+    def record(c):
+        if type(c) is not dict or any(type(c[k]) is not int for k in ('id','column','layer')) or type(c['kind']) is not str:
+            raise ValueError('NativeFreshGeometryInputsRequired')
+        if (type(c['vertices']) not in (list,tuple) or type(c['faces']) not in (list,tuple) or
+                any(type(f) not in (list,tuple) for f in c['faces'])):
+            raise ValueError('NativeFreshGeometryInputsRequired')
+        if any(type(v) is not int for v in c['vertices']) or any(type(v) is not int for f in c['faces'] for v in f):
+            raise ValueError('NativeFreshGeometryInputsRequired')
+        return (c['id'],c['column'],c['layer'],c['kind'],tuple(c['vertices']),tuple(tuple(f) for f in c['faces']))
+    def metadata():
+        if any(type(k) is not tuple or any(type(v) is not int for v in k) or
+               type(rows) not in (list,tuple) or any(type(row) not in (list,tuple) or len(row)!=2 or
+               type(row[0]) is not int or type(row[1]) not in (list,tuple) or
+               any(type(v) is not int for v in row[1]) for row in rows) for k,rows in owners.items()):
+            raise ValueError('NativeFreshGeometryInputsRequired')
+        if type(outer) is np.ndarray:
+            if outer.dtype!=np.dtype('int64') or outer.ndim!=2:raise ValueError('NativeFreshGeometryInputsRequired')
+        elif any(type(f) not in (list,tuple) or any(type(v) is not int for v in f) for f in outer):
+            raise ValueError('NativeFreshGeometryInputsRequired')
+        return (tuple(record(c) for c in cells),
+                tuple((k,tuple((i,tuple(f)) for i,f in rows)) for k,rows in owners.items()),
+                tuple(tuple(map(int,f)) for f in outer),points.shape,points.dtype.str,points.strides)
+    before=metadata();ids=sorted({v for c in cells for v in c['vertices']}|
+                               {v for c in cells for f in c['faces'] for v in f})
+    if ids and (ids[0]<0 or ids[-1]>=len(points)):raise ValueError('InvalidFreshGeometryVertex')
+    raw=points[ids].tobytes()
+    def check():
+        if metadata()!=before or points[ids].tobytes()!=raw:
+            raise ValueError('ChangedSameCallFreshGeometryInputs')
+    return check
+
+def batch_quality(points,cells,owners,base_layer,*,active_cells=None,_geometry_out=None,face_batch_size=None,mixed_cells=False,compact=False,_dense_face_values=True,_handoff=None,prospective_outer=None):
     # Default retains the qualified capsule's original whole-arity call. The
     # joined core can bound only independent Foundation face evaluations; cell
     # geometry, exact predicates, neighbour closure and record order stay below.
@@ -147,6 +192,9 @@ def batch_quality(points,cells,owners,base_layer,*,active_cells=None,_geometry_o
     if type(mixed_cells) is not bool:raise ValueError('InvalidMixedQualityExecution')
     if type(compact) is not bool or (compact and not mixed_cells):raise ValueError('InvalidCompactMixedQualityOutput')
     if type(_dense_face_values) is not bool:raise ValueError('InvalidDenseFaceValues')
+    if prospective_outer is not None and (not mixed_cells or _geometry_out is not None):
+        raise ValueError('PrivateFreshMixedGeometryRequired')
+    custody=_fresh_call_custody(points,cells,owners,prospective_outer) if prospective_outer is not None else None
     import local_termination_topology as t
     cq=t.q.legacy_modules()['component_quality'];byid={c['id']:c for c in cells}
     selected={c['id'] for c in cells if c['layer']>=base_layer and (active_cells is None or c['id'] in active_cells)}
@@ -257,8 +305,16 @@ def batch_quality(points,cells,owners,base_layer,*,active_cells=None,_geometry_o
                 rec=dict(vertices=f,owners=[a,b],weight=wt,skewness=sk,symmetric_volume_ratio=vr)
                 bad.append(dict(kind='face_quality',**rec))
             summary.face(key,wt,sk,vr)
-    if compact:return dict(passed=not bad,failures=bad,compact_output=True,summary=summary.result())
-    return dict(passed=not bad,failures=bad,cells=records,faces=faces,exact=exact)
+    if compact:result=dict(passed=not bad,failures=bad,compact_output=True,summary=summary.result())
+    else:result=dict(passed=not bad,failures=bad,cells=records,faces=faces,exact=exact)
+    if prospective_outer is not None:
+        # Fuse two consumers of the geometry made inside this call. The caller
+        # supplies topology, never geometry or an earlier determinant receipt.
+        # This map is local and is discarded on return; the output is metrics.
+        result['prospective_incidence']=_completed_incidence_geometry(
+            cells,prospective_outer,owners,geom,active_cells=selected)
+        custody()
+    return result
 
 
 def parallel_geometry(points,cells,workers=4):
@@ -276,10 +332,28 @@ def completed_incidence(points,cells,outer,owners,*,active_cells=None):
     for c in cells:
         if active_cells is not None and c['id'] not in active_cells:continue
         geometry=t.geometry(points,c)
-        mask=np.array([len(owners[tuple(sorted(f))])==2 or tuple(sorted(f)) in interface for f in c['faces']])
-        S=geometry['areas'][mask]
-        avg=np.linalg.norm(S,axis=1).mean();tensor=(S/avg).T@(S/avg)
-        determinant=float(np.linalg.det(tensor))
+        determinant=_incidence_determinant(c,interface,owners,geometry['areas'])
+        row=dict(id=c['id'],column=c['column'],cell_type=c['kind'],determinant=determinant)
+        rows.append(row)
+        if not determinant>=.0011:failures.append(dict(kind='final_incidence_determinant',**row))
+    return dict(passed=not failures,cells=rows,failures=failures,
+        scope='Cell determinant only, with every declared shell/core interface face internal; actual core neighbour metrics still required')
+
+
+def _incidence_determinant(cell,interface,owners,areas):
+    mask=np.array([len(owners[tuple(sorted(f))])==2 or tuple(sorted(f)) in interface for f in cell['faces']])
+    S=areas[mask]
+    avg=np.linalg.norm(S,axis=1).mean();tensor=(S/avg).T@(S/avg)
+    return float(np.linalg.det(tensor))
+
+
+def _completed_incidence_geometry(cells,outer,owners,geometry,*,active_cells=None):
+    """Internal same-call consumer; never accepts a saved geometry credential."""
+    interface={tuple(sorted(f)) for f in outer};rows=[];failures=[]
+    for c in cells:
+        if active_cells is not None and c['id'] not in active_cells:continue
+        g=geometry[c['id']]
+        determinant=_incidence_determinant(c,interface,owners,g['areas'])
         row=dict(id=c['id'],column=c['column'],cell_type=c['kind'],determinant=determinant)
         rows.append(row)
         if not determinant>=.0011:failures.append(dict(kind='final_incidence_determinant',**row))

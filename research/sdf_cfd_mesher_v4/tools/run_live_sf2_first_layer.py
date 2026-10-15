@@ -99,9 +99,10 @@ def diagnostics(p):
         normal_height=p.assigned,quality_passed=q['passed'],ownership=p.check['ownership'],vertex_links=p.check['vertex_links'],
         sigma_G='Not measured; no gate',region_face_scope='Pair metrics use actual lateral neighbours; each region includes pairs incident to that region. Counts may overlap.')
 
-def worker(label,commit=False,*,commit_action=None,geometry_session=None):
+def worker(label,commit=False,*,commit_action=None,geometry_session=None,_rolling_schedule=None,_rolling_completion=None,_rolling_completed=False,_rolling_transition=None):
     if STANDALONE_INPUTS is not None:
-        return standalone_worker(label,commit,commit_action=commit_action,geometry_session=geometry_session)
+        return standalone_worker(label,commit,commit_action=commit_action,geometry_session=geometry_session,_rolling_schedule=_rolling_schedule,_rolling_completion=_rolling_completion,_rolling_completed=_rolling_completed,_rolling_transition=_rolling_transition)
+    if _rolling_transition is not None:raise ValueError('StandaloneProspectiveTransitionRequired')
     if geometry_session is not None:raise ValueError('StandaloneGeometrySessionRequired')
     start=time.perf_counter();pre=preflight();save(OUT/'PREFLIGHT.json',pre)
     if shutil.disk_usage(OUT).free<pre['resources']['minimum_free_bytes']:raise ValueError('OperationalFreeReserve')
@@ -142,7 +143,7 @@ def worker(label,commit=False,*,commit_action=None,geometry_session=None):
             save(p.folder/'RESULT.json',result)
         return result
 
-def standalone_worker(label,commit=False,*,commit_action=None,geometry_session=None):
+def standalone_worker(label,commit=False,*,commit_action=None,geometry_session=None,_rolling_schedule=None,_rolling_completion=None,_rolling_completed=False,_rolling_transition=None):
     """Same stage owners; geometry capabilities select only their input provider."""
     from standalone_tool import geometry
     from standalone_geometry import is_scalar
@@ -151,8 +152,9 @@ def standalone_worker(label,commit=False,*,commit_action=None,geometry_session=N
     if shutil.disk_usage(OUT).free<pre['resources']['minimum_free_bytes']:raise ValueError('OperationalFreeReserve')
     host,b=geometry(STANDALONE_INPUTS) if geometry_session is None else geometry_session
     try:
+        if _rolling_transition is not None and is_scalar(b):raise ValueError('RollingGeneralSourceTetTransitionRequired')
         p=(ProductionFirstLayerProvider(OUT/label,surface=SURFACE,request=REQUEST,binding=b)
-           if is_scalar(b) else SourceSheetFirstLayerProvider(OUT/label,SURFACE,REQUEST,b))
+           if is_scalar(b) else SourceSheetFirstLayerProvider(OUT/label,SURFACE,REQUEST,b,_rolling_schedule=_rolling_schedule,_rolling_completion=_rolling_completion,_rolling_completed=_rolling_completed,_rolling_transition=_rolling_transition))
         save(p.folder/'INPUT.json',dict(surface=pre['surface']['surface_identity'],geometry=b.geometry_identity,
             request=pre['request_identity'],height=p.h1,source=pre['source']))
         passed=p.generate_candidate();save(p.folder/'DIAGNOSTICS.json',diagnostics(p));p.verify_wall()

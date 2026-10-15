@@ -83,8 +83,9 @@ class Quality:
             raise ValueError('MissingCommittedQualityAuthority')
         return cls(cells,faces,exact,prospective)
 
-    def update(self, points, topology, changed_cells, touched_faces, outer, *, retain_geometry=False):
+    def update(self, points, topology, changed_cells, touched_faces, outer, *, retain_geometry=False, completed_front=False):
         """Changed cells are selected by the transaction, not by layer number."""
+        if type(completed_front) is not bool:raise ValueError('InvalidCompletedFaceRoleScope')
         tick=time.perf_counter(); changed=set(changed_cells)
         # Same validator, restricted owners. No historical face metric loop.
         local={k:topology.owners[k] for i in changed for f in topology.cells[i]['faces']
@@ -95,6 +96,23 @@ class Quality:
         q=batch_quality(points,selected + [topology.cells[i] for i in sorted(
             {i for rows in local.values() for i,_ in rows}-changed)], local,1,
             active_cells=changed,_geometry_out=geom)
+        if completed_front:
+            # Declared eventual prism/core closure: the exposed upper cap is
+            # internal in the completed mesh. Replace only its interim tensor,
+            # as the existing first-layer owner does. Actual neighbour metrics,
+            # exact positives and every other failure remain mandatory.
+            interface={key(f) for f in outer}
+            for row in q['cells']:
+                c=topology.cells[row['id']];g=geom[row['id']]
+                mask=np.array([len(topology.owners[key(f)])==2 or key(f) in interface for f in c['faces']])
+                S=g['areas'][mask];avg=np.linalg.norm(S,axis=1).mean()
+                row['determinant']=float(np.linalg.det((S/avg).T@(S/avg)))
+            q['failures']=[r for r in q['failures'] if r['kind']!='cell_quality']
+            q['failures'] += [dict(kind='cell_quality',**r) for r in q['cells']
+                if not (r['volume']>0 and r['determinant']>=.0011 and r['aspect']<=1000)]
+            from local_correction_validation import failure_order
+            q['failures'].sort(key=failure_order)
+            q['passed']=not q['failures']
         if not q['passed']: raise ValueError('IncrementalHardQualityFailure:'+str(q['failures'][:3]))
         cells=self.cells.copy(); faces=self.faces.copy(); exact=self.exact.copy(); prospective=self.prospective.copy()
         for i in self.cells.keys()-topology.cells.keys():
@@ -124,8 +142,11 @@ class Quality:
             if i not in changed and oldmask==mask: continue
             g=geom.get(i)
             if g is None:g=t.geometry(points,c)
-            S=g['areas'][np.array(mask)]; avg=np.linalg.norm(S,axis=1).mean()
-            det=float(np.linalg.det((S/avg).T@(S/avg)))
+            if completed_front and i in changed:
+                det=cells[i]['determinant']  # Same fresh geometry and face mask.
+            else:
+                S=g['areas'][np.array(mask)]; avg=np.linalg.norm(S,axis=1).mean()
+                det=float(np.linalg.det((S/avg).T@(S/avg)))
             if not det>=.0011:raise ValueError('ProspectiveDeterminantFailure')
             prospective[i]=dict(id=i,column=c['column'],cell_type=c['kind'],determinant=det)
             prospective_recomputed+=1
@@ -137,7 +158,7 @@ class Quality:
             result.masks[i]=tuple(len(topology.owners[key(f)])==2 or key(f) in interface for f in topology.cells[i]['faces'])
         counts=dict(new_changed_cells=len(changed),historical_role_determinants=len(role_cells),
             exact_jacobians=len(q['exact']),face_metrics=len(q['faces']),prospective_determinants=prospective_recomputed,
-            historical_exact_jacobians=0,seconds=time.perf_counter()-tick)
+            historical_exact_jacobians=0,completed_front=completed_front,seconds=time.perf_counter()-tick)
         return result,counts
 
     def bind_masks(self, topology, outer):

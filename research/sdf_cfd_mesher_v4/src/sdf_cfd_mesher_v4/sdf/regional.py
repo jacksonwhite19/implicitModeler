@@ -244,7 +244,8 @@ def filtered_regions(verify):
     """Call-scoped arithmetic/cache only; caller retains source acceptance custody."""
     if _filtered.get() is not None:raise ValueError('NestedRegionalFilterScope')
     verify();arithmetic=_filter_arithmetic();thread=threading.get_ident()
-    state=dict(active=True,exact=False,counts=Counter(),seconds=Counter(),cache=OrderedDict())
+    state=dict(active=True,exact=False,counts=Counter(),seconds=Counter(),cache=OrderedDict(),
+               retained_points={},retained_point_peak=0)
     def check():
         if not state['active'] or threading.get_ident()!=thread:raise ValueError('ExpiredOrCrossThreadFilter')
         verify();arithmetic()
@@ -256,18 +257,19 @@ def filtered_regions(verify):
         if not state['active'] or threading.get_ident()!=thread:raise ValueError('ExpiredOrCrossThreadFilter')
         return dict(schema='V4RegionalArithmeticFilter/1',counts=dict(state['counts']),
             computation_seconds=dict(state['seconds']),cache_entries=len(state['cache']),
+            retained_point_entries=len(state['retained_points']),retained_point_peak=state['retained_point_peak'],
             role='Same continuous-real expression; conservative arithmetic; rational fallback')
     try:
         yield snapshot
         check()
     finally:
-        state['active']=False;state['cache'].clear();_filtered.reset(token)
+        state['active']=False;state['cache'].clear();state['retained_points'].clear();_filtered.reset(token)
 
 
 def invalidate_filtered_cache():
     """Drop rejected call-scoped values; keep descriptive counters."""
     state=_filtered.get()
-    if state is not None:state['cache'].clear()
+    if state is not None:state['cache'].clear();state['retained_points'].clear()
 
 
 def exact_fallback(compute):
@@ -314,6 +316,26 @@ class RealValue:
     def square(self):return RealValue(self.value.square())
     def sqrt(self,bits):return RealValue(self.value.sqrt(bits))
 
+
+@dataclass(frozen=True)
+class FilteredRealValue(RealValue):
+    """Value-only arithmetic using the existing certified FloatInterval owner."""
+    @classmethod
+    def constant(cls,value):
+        if isinstance(value,RealValue):value=value.value
+        return cls(FloatInterval.point(value))
+    @classmethod
+    def coerce(cls,value):return value if isinstance(value,cls) else cls.constant(value)
+    def __neg__(self):return FilteredRealValue(-self.value)
+    def __add__(self,other):return FilteredRealValue(self.value+self.coerce(other).value)
+    __radd__=__add__
+    def __sub__(self,other):return self+-self.coerce(other)
+    def __rsub__(self,other):return self.coerce(other)+-self
+    def __mul__(self,other):return FilteredRealValue(self.value*self.coerce(other).value)
+    __rmul__=__mul__
+    def __truediv__(self,other):return FilteredRealValue(self.value/self.coerce(other).value)
+    def square(self):return FilteredRealValue(self.value.square())
+    def sqrt(self,bits):return FilteredRealValue(self.value.sqrt(bits))
 
 def real_value(value):return value if isinstance(value,RealValue) else RealValue.constant(value)
 
@@ -474,6 +496,9 @@ def minimum(a,b):
         if b.value.hi<a.value.lo:return b
         return FilteredJet(FloatInterval(min(a.value.lo,b.value.lo),min(a.value.hi,b.value.hi)),
                            tuple(x.hull(y) for x,y in zip(a.gradient,b.gradient)))
+    if isinstance(a,FilteredRealValue) or isinstance(b,FilteredRealValue):
+        a,b=FilteredRealValue.coerce(a),FilteredRealValue.coerce(b)
+        return FilteredRealValue(FloatInterval(min(a.value.lo,b.value.lo),min(a.value.hi,b.value.hi)))
     if isinstance(a,RealValue) or isinstance(b,RealValue):
         a,b=real_value(a),real_value(b)
         return RealValue(Interval(min(a.value.lo,b.value.lo),min(a.value.hi,b.value.hi)))
@@ -504,6 +529,8 @@ def norm(vector,bits):
         return sum((NumericalJet.coerce(v).square() for v in vector),NumericalJet.coerce(0)).sqrt(bits)
     if any(isinstance(v,FilteredJet) for v in vector):
         return sum((FilteredJet.coerce(v).square() for v in vector),FilteredJet.constant(0)).sqrt(bits)
+    if any(isinstance(v,FilteredRealValue) for v in vector):
+        return sum((FilteredRealValue.coerce(v).square() for v in vector),FilteredRealValue.constant(0)).sqrt(bits)
     if any(isinstance(v,RealValue) for v in vector):
         return sum((real_value(v).square() for v in vector),RealValue.constant(0)).sqrt(bits)
     if any(isinstance(v,Float32Value) for v in vector):
@@ -658,7 +685,8 @@ class Expression:
         return b*(1-h)+a*h+width*h*(1-h)
 
 
-def region(expression,bounds_m,metres_per_model_unit,*,precision_bits):
+def region(expression,bounds_m,metres_per_model_unit,*,precision_bits,retain_point=False):
+    if type(retain_point) is not bool:raise ValueError('ExplicitPointRegionRetentionRequired')
     if type(precision_bits) is not int or not 1<=precision_bits<=256:raise ValueError('ExplicitProofPrecisionRequired')
     scale=exact(metres_per_model_unit)
     if scale<=0:raise ValueError('PositiveUnitScaleRequired')
@@ -667,9 +695,29 @@ def region(expression,bounds_m,metres_per_model_unit,*,precision_bits):
     if state is not None and not state['exact']:
         state['check']();state['counts']['region_requests']+=1
         key=(expression,tuple(interval(v) for v in bounds_m),scale,precision_bits)
+        if retain_point and any(v.lo!=v.hi for v in key[1]):raise ValueError('PointRegionRetentionRequired')
+        # Keep only explicitly requested point jets, in the existing filtered
+        # owner. A later ordinary read consumes the pin and restores normal LRU
+        # policy. No acceptance result, input alias or cross-call cache is kept.
+        def store(result):
+            if retain_point:
+                state['retained_points'][key]=result
+                state['retained_point_peak']=max(state['retained_point_peak'],len(state['retained_points']))
+            else:
+                state['cache'][key]=result
+                if len(state['cache'])>8192:state['cache'].popitem(last=False)
+        if key in state['retained_points']:
+            state['counts']['region_hits']+=1;state['counts']['retained_point_hits']+=1
+            result=state['retained_points'][key]
+            if not retain_point:
+                del state['retained_points'][key];store(result)
+            return result
         if key in state['cache']:
             state['counts']['region_hits']+=1;result=state['cache'][key]
-            state['cache'].move_to_end(key);return result
+            if retain_point:
+                del state['cache'][key];store(result)
+            else:state['cache'].move_to_end(key)
+            return result
         start=time.perf_counter()
         try:
             p=tuple(FilteredJet.variable(v,i)/scale for i,v in enumerate(key[1]))
@@ -678,8 +726,7 @@ def region(expression,bounds_m,metres_per_model_unit,*,precision_bits):
             state['counts']['exact_region_fallbacks']+=1
         else:
             state['check']();state['counts']['filtered_regions']+=1
-            state['cache'][key]=result
-            if len(state['cache'])>8192:state['cache'].popitem(last=False)
+            store(result)
             return result
         finally:state['seconds']['filter_regions']+=time.perf_counter()-start
     p=tuple(Jet.variable(interval(v),i)/scale for i,v in enumerate(bounds_m))

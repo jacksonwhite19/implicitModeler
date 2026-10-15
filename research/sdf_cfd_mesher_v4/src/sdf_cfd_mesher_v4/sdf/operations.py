@@ -80,6 +80,38 @@ def real_value_region(expression, bounds_m, scale, *, precision_bits):
     return expression._evaluate(points,precision_bits).value*scale
 
 
+def positive_real_value_region(expression,bounds_m,scale,*,precision_bits):
+    """Strict sign enclosure; protected value filter, original rational fallback.
+
+    Only this opt-in sign consumer uses the fast path. The exact operation and
+    derivative/native arithmetic owners keep their existing roles. Bounds may
+    differ; both arithmetic strategies enclose the same continuous-real field.
+    """
+    from sdf_cfd_mesher_v4.sdf.regional import _filtered, FilteredRealValue, ArithmeticFilterUnresolved, exact_fallback
+    if type(expression) is not Expression:raise ValueError('ImmutableExpressionRequired')
+    scale=exact(scale);budgets(0,1,precision_bits)
+    if scale<=0 or len(bounds_m)!=3:raise ValueError('PositiveScaleAndThreeIntervalsRequired')
+    state=_filtered.get()
+    if state is None or state['exact']:
+        return real_value_region(expression,bounds_m,scale,precision_bits=precision_bits)
+    state['check']();state['counts']['real_sign_requests']+=1
+    result=None
+    try:
+        # Convert exact coordinates and scale separately through certified
+        # coefficient brackets; never replace the exact source unit ratio.
+        points=tuple(FilteredRealValue.constant(v)/scale for v in bounds_m)
+        result=(expression._evaluate(points,precision_bits)*scale).value
+    except (ArithmeticFilterUnresolved,OverflowError,ZeroDivisionError):
+        state['counts']['real_sign_arithmetic_fallbacks']+=1
+    state['check']()
+    if result is not None and (result.lo>0 or result.hi<=0):
+        result=result.rational();state['check']()
+        state['counts']['real_sign_filtered']+=1
+        return result
+    state['counts']['real_sign_exact_fallbacks']+=1
+    result=exact_fallback(lambda:real_value_region(expression,bounds_m,scale,precision_bits=precision_bits))
+    state['check']();return result
+
 def source_box(expression, scale, *, precision_bits):
     a, b = coercivity(expression, precision_bits=precision_bits)
     scale = exact(scale)
@@ -242,10 +274,10 @@ def source_coverage(expression, triangles_m, *, metres_per_model_unit,
         does_not_prove='Mesh topology, source features, native error equivalence, cell quality or prism continuation.')
 
 
-def normal(expression, location_m, *, metres_per_model_unit, normal_limit_rad, precision_bits, proposed_direction=None):
+def normal(expression, location_m, *, metres_per_model_unit, normal_limit_rad, precision_bits, proposed_direction=None, retain_point_region=False):
     """A finite normal estimate with an outward proof of its branch-angle error."""
     p = point(location_m)
-    result = region(expression,tuple(Interval.point(v) for v in p),metres_per_model_unit,precision_bits=precision_bits)
+    result = region(expression,tuple(Interval.point(v) for v in p),metres_per_model_unit,precision_bits=precision_bits,retain_point=retain_point_region)
     centre = np.array([float((g.lo+g.hi)/2) for g in result.gradient])
     length = np.linalg.norm(centre)
     if not math.isfinite(length) or length <= 0: raise UnresolvedRegion('SourceNormalSingular')
@@ -429,8 +461,8 @@ class ProtectedQueries:
         return self._run(project,point_m,projection_tolerance_m=projection_tolerance_m,
                          maximum_displacement_m=maximum_displacement_m,maximum_iterations=maximum_iterations)
 
-    def normal(self,point_m,*,normal_limit_rad,proposed_direction=None):
-        return self._run(normal,point_m,normal_limit_rad=normal_limit_rad,proposed_direction=proposed_direction)
+    def normal(self,point_m,*,normal_limit_rad,proposed_direction=None,retain_point_region=False):
+        return self._run(normal,point_m,normal_limit_rad=normal_limit_rad,proposed_direction=proposed_direction,retain_point_region=retain_point_region)
 
     def outward_segment(self,start_m,end_m):
         return self._run(outward_segment,start_m,end_m)

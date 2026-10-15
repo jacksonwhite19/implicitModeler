@@ -6,6 +6,7 @@ to the process. Qualification/publication/restart retain their separate owners.
 """
 from types import SimpleNamespace
 from pathlib import Path
+import json
 import numpy as np
 from sdf_cfd_mesher_v4.common.authority import identity, frozen, array_hash
 from sdf_cfd_mesher_v4.advancing_front.execution_profile import MemoryTransaction, ExecutionProfile
@@ -14,7 +15,9 @@ from rolling_fast_state import LiveAcceptance, mesh_identity, numeric_identity, 
 
 
 class RollingGeometry:
-    def __init__(self, initial, increments, state):
+    def __init__(self, initial, increments, state, *, _preparation=None, completed_front=False):
+        if type(completed_front) is not bool:raise ValueError('InvalidRollingFaceRoleScope')
+        self.completed_front=completed_front
         from standalone_geometry import is_scalar
         self.x = frozen(initial.x, '<f8'); self.tri = frozen(initial.tri, '<i8')
         self.authority = dict(state['authority']); self.binding = initial.binding
@@ -24,6 +27,23 @@ class RollingGeometry:
             raise ValueError('InvalidRollingSchedule')
         self.increments = frozen(h, '<f8')
         self.scalar = is_scalar(self.binding)
+        self._transition_policy_json=getattr(initial,'_rolling_transition_json',None)
+        self._transition_plan=None
+        if self._transition_policy_json is not None:
+            from standalone_background import validate_policy
+            policy=json.loads(self._transition_policy_json)
+            if self.scalar or policy.get('schema')!='V4GradedBackground/6' or not completed_front:
+                raise ValueError('RollingProspectiveTransitionScopeMismatch')
+            validate_policy(policy)
+            plan=getattr(initial,'_trajectory_plan',None)
+            from accepted_trajectory_contract import _SourcePrismPlan
+            if type(plan) is not _SourcePrismPlan or plan.summary()['inputs'].get('transition_policy_identity')!=identity(policy):
+                raise ValueError('RollingProspectiveTransitionPolicyMismatch')
+            plan.check(initial.source,self.x,initial.high,self.tri,initial.refs['face_refs'],
+                np.broadcast_to(self.increments[:,None],(len(h),len(self.x))))
+            self._transition_plan=plan
+            self._transition_first=frozen(initial.high,initial.high.dtype.str)
+            self._transition_refs=frozen(initial.refs['face_refs'],initial.refs['face_refs'].dtype.str)
         self.spec = dict(initial.spec) if self.scalar else dict(owner=self.binding.geometry_identity, units='m', quantity='path_length_m')
         self.schedule = SimpleNamespace(targets=frozen(np.cumsum(h, dtype=np.float64), '<f8'))
         self.source = initial.source
@@ -34,27 +54,55 @@ class RollingGeometry:
             self.owner = None
         elif len(h) > 1:
             from accepted_trajectory_contract import AcceptedTrajectoryOwner
+            plan=getattr(initial,'_trajectory_plan',None)
+            if plan is not None:
+                from accepted_trajectory_contract import _SourcePrismPlan
+                if type(plan) is not _SourcePrismPlan:raise ValueError('LiveSourcePrismPlanRequired')
+                if plan.summary()['completed_front'] is not self.completed_front:raise ValueError('WrongSourcePrismPlanScope')
+                expected_policy=None if self._transition_policy_json is None else identity(json.loads(self._transition_policy_json))
+                if plan.summary()['inputs'].get('transition_policy_identity')!=expected_policy:
+                    raise ValueError('RollingProspectiveTransitionPolicyMismatch')
             self.owner = AcceptedTrajectoryOwner.from_inputs(self.source, self.x, initial.high,
                 self.tri, initial.refs['face_refs'], self.increments,
-                parent=mesh_identity(state), surface=initial.wall_authority['surface_identity'],
+                parent=mesh_identity(state,_preparation=_preparation), surface=initial.wall_authority['surface_identity'],
                 request=__import__('production_prism_sizing').read_request(initial.request, initial.wall_authority),
-                case_identity=identity(dict(geometry=self.binding.geometry_identity, increments=array_hash(self.increments))))
+                case_identity=identity(dict(geometry=self.binding.geometry_identity, increments=array_hash(self.increments))),
+                _plan=getattr(initial,'_trajectory_plan',None))
         else:
             self.owner = None  # Exactly L1: no continuation premise is requested.
         self._inputs = self.input_identity()
         self.layer = 1; self.session = None
 
     def input_identity(self):
-        return identity(dict(authority=self.authority, geometry=self.binding.geometry_identity,
+        inputs=dict(authority=self.authority, geometry=self.binding.geometry_identity,
             surface_assurance=getattr(self.binding.qualification,'assurance','qualification'),
+            completed_front=self.completed_front,
             wall=array_hash(self.x), faces=array_hash(self.tri), increments=array_hash(self.increments),
             targets=array_hash(self.schedule.targets), scalar=self.scalar, spec=self.spec,
-            source_spec=self.source.spec if self.scalar else self.source.spline_packet if hasattr(self.source,'spline_packet') else self.binding.qualification.target))
+            source_spec=self.source.spec if self.scalar else self.source.spline_packet if hasattr(self.source,'spline_packet') else self.binding.qualification.target)
+        transition_json=getattr(self,'_transition_policy_json',None)
+        if transition_json is not None:
+            inputs['transition_policy_identity']=identity(json.loads(transition_json))
+            plan=getattr(self,'_transition_plan',None)
+            inputs['transition_plan']=None if plan is None else dict(instance=id(plan),identity=plan.plan_identity)
+        return identity(inputs)
 
     def check(self):
         if self.input_identity() != self._inputs: raise ValueError('ChangedRollingCaseInputs')
         self.binding.qualification.verify(self.binding.authority)
         if self.owner is not None: self.owner.check()
+        if self._transition_plan is not None:
+            self._transition_plan.check(self.source,self.x,self._transition_first,self.tri,self._transition_refs,
+                np.broadcast_to(self.increments[:,None],(len(self.increments),len(self.x))))
+
+    def transition_proposal(self,actual_cap,triangles,controls):
+        """Live numerical proposal only; current transition admission remains."""
+        self.check()
+        if self._transition_policy_json is None:return None
+        policy=json.loads(self._transition_policy_json)
+        if identity(controls)!=identity(policy['tet_transition']):raise ValueError('RollingTransitionControlsMismatch')
+        if self._transition_plan is None:raise ValueError('LiveSourcePrismPlanRequired')
+        return self._transition_plan.transition_proposal(actual_cap,triangles,controls)
 
     def geometry(self, state, extra=0):
         self.check()
@@ -122,7 +170,7 @@ class RollingGeometry:
         return self.increments  # Rolling mode has no archived forecast table.
 
 
-def from_initial(initial, increments, folder):
+def from_initial(initial, increments, folder, *, _preparation=None, completed_front=False):
     """Initialize rolling caches after actual first-layer checks, before archive.
 
     Initial provider must stay live until this detached numeric/cache owner is
@@ -162,7 +210,8 @@ def from_initial(initial, increments, folder):
     from production_fast_layer import FastLayer
     run = object.__new__(FastLayer); run.rolling = True; run.profile = ExecutionProfile.ProductionFast
     run.folder = Path(folder); run.folder.mkdir(parents=True, exist_ok=True)
-    run.tx = MemoryTransaction(state); run.provider = RollingGeometry(initial, increments, state)
+    run.tx = MemoryTransaction(state); run.provider = RollingGeometry(initial, increments, state,
+        _preparation=_preparation,completed_front=completed_front)
     run.provider.session = run.tx; run.spec = run.provider.spec
     run.points = np.array(initial.points, copy=True); run.outer = list(initial.outer)
     run.wall = [tuple(reversed(f)) for f in initial.tri]; run.topology = topology
@@ -173,10 +222,10 @@ def from_initial(initial, increments, folder):
     run.degree_state = DegreeState(run.points, run.wall+run.outer, run.volume.witness,
         checked['volume']['interior_degree'])
     run.proofs = None; run.face_keys = None; run.inputs = {}; run.vertex_incidence = {}
-    run.live_acceptance = LiveAcceptance(mesh_identity(state), numeric_identity(run.points,topology,run.outer,run.wall),
+    run.live_acceptance = LiveAcceptance(mesh_identity(state,_preparation=_preparation), numeric_identity(run.points,topology,run.outer,run.wall),
         cache_identity(run.quality,run.volume,run.degree_state), identity(state['authority']),
         checked['certificate']['required_pairs'], tuple(sorted(methods.items())), 0)
-    run.live_acceptance.check(run)
+    run.live_acceptance.check(run,_preparation=_preparation)
     return run
 
 
@@ -213,7 +262,7 @@ def _terminal_background_handoff(run,case_path,through_layer,expected,scope):
     if assurance_mode(policy)!='backend_trusted':return None,None
     from background_preparation import held
     preparation=scope.enter_context(held())
-    handoff=scope.enter_context(run.live_acceptance.background_inputs(run,_preparation=preparation))
+    handoff=scope.enter_context(run.live_acceptance.background_inputs(run,_preparation=preparation,_capture_volume=policy['schema']=='V4GradedBackground/6'))
     return handoff,preparation
 
 
@@ -263,7 +312,12 @@ def execute(case_path, output, through_layer, *, intermediate_meshes=False):
         initial.STANDALONE_INPUTS = output/'CASE.json'
         def accept(provider, result, evidence):
             nonlocal run
-            run = from_initial(provider, increments[:through_layer], output/'work')
+            # Reuse the existing qualified native row selector. Every hash and
+            # predicate still reads its actual inputs; no acceptance is cached.
+            from background_preparation import held
+            with held() as preparation:
+                run = from_initial(provider, increments[:through_layer], output/'work',
+                    _preparation=preparation,completed_front=pre.get('background') is not None)
             # All initial rows were independently replayed from actual AABBs
             # by from_initial, before dropping their archival representation.
             return run.live_acceptance.mesh
@@ -289,15 +343,17 @@ def execute(case_path, output, through_layer, *, intermediate_meshes=False):
             owned.callback(host.close)
             def first_worker():
                 from general_sdf_authority import GeneralSdfAuthority
+                background=load(output/'CASE.json')[0].get('background')
+                transition=(background if background is not None and background['schema']=='V4GradedBackground/6' else None)
                 if type(binding.authority) is GeneralSdfAuthority and binding.authority.stock_prism_queries():
                     # First normals and continuation normals have the same live
                     # source, wall bits and refs. Keep only this call's existing
                     # qualified cache until the acceptance callback completes.
                     with binding.authority.prism_query_scope() as statistics:
-                        initial.worker('candidate',True,commit_action=accept,geometry_session=(host,binding))
+                        initial.worker('candidate',True,commit_action=accept,geometry_session=(host,binding),_rolling_schedule=increments[:through_layer],_rolling_completion=load(output/'CASE.json')[0]['prisms'].get('trajectory_completion'),_rolling_completed=pre.get('background') is not None,_rolling_transition=transition)
                         durable_json(output/'INITIAL_SOURCE_QUERY_ARITHMETIC.json',statistics())
                 else:
-                    initial.worker('candidate',True,commit_action=accept,geometry_session=(host,binding))
+                    initial.worker('candidate',True,commit_action=accept,geometry_session=(host,binding),_rolling_schedule=increments[:through_layer],_rolling_completion=load(output/'CASE.json')[0]['prisms'].get('trajectory_completion'),_rolling_completed=pre.get('background') is not None,_rolling_transition=transition)
             measured('initial_worker',first_worker)
             from canonical_spline_authority import LiveSplineAuthority,verified_export_scope
             if type(run.provider.binding.authority) is LiveSplineAuthority:
@@ -334,7 +390,7 @@ def execute(case_path, output, through_layer, *, intermediate_meshes=False):
                             terminal_scope=ExitStack()
                             owned.callback(lambda:measured('terminal_handoff_cleanup',terminal_scope.close))
                             terminal_preparation=terminal_scope.enter_context(held())
-                            terminal_handoff=terminal_scope.enter_context(_producer_background_inputs(run,_preparation=terminal_preparation))
+                            terminal_handoff=terminal_scope.enter_context(_producer_background_inputs(run,_preparation=terminal_preparation,_capture_volume=load(output/'CASE.json')[0]['background']['schema']=='V4GradedBackground/6'))
                         measured('terminal_handoff_setup',arm_terminal)
                 result = measured(f'L{layer}_transition',run.step)
                 prepare_terminal_handoff()

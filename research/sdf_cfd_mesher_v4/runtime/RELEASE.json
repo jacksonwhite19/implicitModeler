@@ -1,23 +1,18 @@
 {
   "independent_reviews": [
     {
-      "path": "results/source_qualification_20261011/BG_CONTRACT_REVIEW_V2.json",
-      "sha256": "8655bd0734ff88f25ef49c3ec01cf107b22877ea12104b43a0453eb6e3b0e03f"
-    },
-    {
-      "path": "results/source_qualification_20261011/BG_ASSURANCE_REVIEW_V2.json",
-      "sha256": "35067efad5c748880385b8bfae05b98df5795861032f5c605fe1c88dbdd97a50"
+      "path": "results/custom_transition_20261015/selection/SOURCE_REVIEW.json",
+      "sha256": "c9e726a5ef509517431eb19a8fe192345bcee3f15705870d7b710e2c08f98126"
     }
   ],
-  "prior_release_sha256": "93846f580eb6132009ae641ee4e8940b29139c598ef3af984478a0f147f6146d",
+  "prior_release_sha256": "c5ff9ff0ee76b295687770a958aee4fb68cb030de738dc6ab1b4c1b126264886",
   "review_passed": true,
   "reviewers": [
-    "contract_review",
-    "background_assurance_review"
+    "/root/transition_geometry_reuse"
   ],
   "schema": "V4StandaloneRelease/1",
-  "scope": "Keep exact-equivalent reviewed rounding optimization: unchanged wing-body0->2 worker723.1236995->694.2859437s; all7arrays/archive/scientific gates equal. Connect numerical general-source background design enclosure to existing exact source_box coercivity under existing protected captured-source prism input scope. Formal/capsule/spline paths unchanged. No topology/coverage/native equivalence granted by enclosure. Existing HXT preset copied verbatim as explicit integration-test background inputs; numerical surface and previously selected backend_trusted background assurance preserved. Actual installed243 controls and public --check required before exactly one fresh common CLI0->2 with background; scientific/custody/resource failure stops, no retuning/retry. No native/V3/kernel/quality/height/surface sizing changes.",
-  "source_inventory_identity": "9d3e12ec19acad8e9e74a652f3ff1f64a8e2748d16af8c1114e605db93fb5052",
+  "scope": "Explicit opt-in V4TetLayerAdapter/3: owned shared-row construction and constrained metric placement with current-defects then actual-outer-front scheduling. Separate shape/size controls; exact endpoint geometric-neighbour screening before coordinate adoption. Existing topology, all quality/source/collision/coverage/filling/custody owners retained. Existing schema1/2 dispatch unchanged. Retained tests enable fresh CLI qualification, not accepted complete mesh or universal handoff/performance claims.",
+  "source_inventory_identity": "3b40fea59858e4c5a86315faa9cfa79d422fa6e4ffd4bd6cb0867df244f3b37c",
   "sources": [
     {
       "path": "mesh.py",
@@ -58,6 +53,10 @@
     {
       "path": "runtime/bin/sector_cdt",
       "sha256": "5d63302fa152f7dfeb5db31154eacc03745b9b83fa0266345e11126840c7c4f0"
+    },
+    {
+      "path": "runtime/bin/shape_transition_mmg",
+      "sha256": "9dcc1472ea0e5de878743ae34f9671b4e0ebd426bebc8d508a3569b40d488bc5"
     },
     {
       "path": "runtime/bin/spline_bridge.dll",
@@ -104,8 +103,12 @@
       "sha256": "9caa116fe60df20db0d0a10870dc28489c71b32cda864cd7895ce2fe2587a1e7"
     },
     {
+      "path": "runtime/lib/shape_transition_mmg_sources.zip",
+      "sha256": "2b43f34eea2a7c233e4aaace1c7c66ad0c52abff756b4ff1fa8a15b672cd364e"
+    },
+    {
       "path": "runtime/MANIFEST.json",
-      "sha256": "080505d8dd9fff4334c2b9614b4d87c85eb4da0971bcb7d0eab70c6ee62d6162"
+      "sha256": "69f1bca062d9d49105a54a95a27d0d8fa7905c36651d4c896209052abd1f6b63"
     },
     {
       "path": "runtime/MMGS_DEPENDENCY_QUALIFICATION.json",
@@ -202,6 +205,10 @@
     {
       "path": "runtime/source/spline_bridge_optimized.rs",
       "sha256": "37a4a93e557adaf329faef5687462b599251d95fc9eecb7bfc0eea524a831682"
+    },
+    {
+      "path": "runtime/source/transition/SHAPE_TRANSITION_BUILD.json",
+      "sha256": "b143f98759cb6b0c6c26119b20b7bc06c1095180fd13c27b98457bc7c7983020"
     },
     {
       "path": "runtime/source/verify_first_branch.py",
@@ -853,11 +860,11 @@
     },
     {
       "path": "src/sdf_cfd_mesher_v4/sdf/operations.py",
-      "sha256": "586097efec82bd46bdffc82c25e3da42b2287d6bad4296a8cd3081f73666c1ed"
+      "sha256": "034465e9d15f016d832d0faac2fdb1fd2b7a22c407322807ed33ff2ffa73d7c2"
     },
     {
       "path": "src/sdf_cfd_mesher_v4/sdf/regional.py",
-      "sha256": "fb415054e2632b026553d94cdb3fde4fccf752d8243793db8d8e337311253c7c"
+      "sha256": "6ca66de7d5e906195019d6def2f0f11354f2b9b7c6422729d434c9084860bec2"
     },
     {
       "path": "src/sdf_cfd_mesher_v4/sdf/regional_owner.py",
@@ -877,7 +884,7 @@
     },
     {
       "path": "tools/accepted_trajectory_contract.py",
-      "sha256": "90696df20b5ffdae7c412cae9d18fa74c6afcb09666a13e51c3b81ef67c2e46c"
+      "sha256": "1b1c207b584ac1576cd4694c378f72f88f834382c1c2b4871972e752e434b5f5"
     },
     {
       "path": "tools/adaptive_surface_evidence.py",
@@ -1097,7 +1104,11 @@
     },
     {
       "path": "tools/background_backend_method.py",
-      "sha256": "7ac252875a14c9a91fe68cb6d390481654ede9c35637ccb02f9f0b6404d7db4d"
+      "sha256": "3e1f3ac193cba304753e35223e02b11c7913fb14d7c2f5a1e383f26bda153131"
+    },
+    {
+      "path": "tools/background_case_scaling.py",
+      "sha256": "d01baa7f2df45f9a5783e308da6d8648d9012d3ad65d584c28253e4495c1247f"
     },
     {
       "path": "tools/background_cell_tensor.py",
@@ -1108,16 +1119,36 @@
       "sha256": "e93cd2c3fc0d62b742b4d75af1523a13768f440e83ec78fc0ab83971200ef219"
     },
     {
+      "path": "tools/background_completion_controls.py",
+      "sha256": "cc2e2d560d71cdd9d9193bf6e55ec05fbb67f307ba195b7cba8e39ecf3a746da"
+    },
+    {
+      "path": "tools/background_core_repair.py",
+      "sha256": "be64af88672d9f40da69458fd48f37b23abdacec1bf2f6991d47f6379c8a1d0f"
+    },
+    {
       "path": "tools/background_direct_callback.py",
       "sha256": "8bc7dfc6edfc0d585a8b4a49f96d3c969add4933c5face6e97757044fed24eda"
+    },
+    {
+      "path": "tools/background_geometric_starts.py",
+      "sha256": "c0e7a9fd61efc23a150caf2fedf5fb5ae7d4d0a3e7eb5e8c9a68627196afdc72"
     },
     {
       "path": "tools/background_independent.py",
       "sha256": "9da57e5dff9f18056ebeeae739327fd8f0359b8fb91f3abd588417357a52d3ab"
     },
     {
+      "path": "tools/background_interface_completion.py",
+      "sha256": "8319d2667e2b72ea06af7d3aa76e0112592c37418b0cb7ec6f67f9653a1da7cb"
+    },
+    {
       "path": "tools/background_interface_geometry.py",
       "sha256": "898dbb9657243d2072d1d3723b6bd7cc64f6a83869115e9f5a9d07b51fa4fbe9"
+    },
+    {
+      "path": "tools/background_local_repair.py",
+      "sha256": "1874fbfd326b3e8999b6abc30b76f6c0b401cc38aba88e27711209844b90948b"
     },
     {
       "path": "tools/background_materialization.py",
@@ -1154,6 +1185,10 @@
     {
       "path": "tools/background_summary.py",
       "sha256": "8ea9f76cdb6534080a00ff0cf0ee07593760c41152ea61e81287265ade83cd98"
+    },
+    {
+      "path": "tools/background_topology_repair.py",
+      "sha256": "0e4270206a6d18ee00042f1b00241e26f0bc2d1f3b42794c36e273132fdebdd6"
     },
     {
       "path": "tools/background_volume.py",
@@ -2028,6 +2063,14 @@
       "sha256": "08fc5cf7cc758607bf49f89f276182c38806ccd2c8ba79eb741f0054194f0bdc"
     },
     {
+      "path": "tools/coordinated_local_repair.py",
+      "sha256": "aa9d9d55bd2463dbad6e821da60ea63ba7aab143d5eb94ac6c241e53fcefc1d9"
+    },
+    {
+      "path": "tools/coordinated_preservation.py",
+      "sha256": "97d4ebb4ce2e2e86041d69a2d58195b6e23f92a42610ec2a0f95219e3235ff11"
+    },
+    {
       "path": "tools/core_backend.py",
       "sha256": "d462172cb99a4904747a549811b876b8f07d1cb9eefd6db67860ad7b96136474"
     },
@@ -2050,6 +2093,10 @@
     {
       "path": "tools/coupled_determinant_forensics.py",
       "sha256": "7195b7194fe778de8964ac015b2545bf5a6e72b2158f29522d01e033895776aa"
+    },
+    {
+      "path": "tools/coupled_model.py",
+      "sha256": "e6150324f75ee4fa4dd3de5e4d7ec09cab487311879c7083b9826b3d86f2bc37"
     },
     {
       "path": "tools/coupled_shell_validation.py",
@@ -2110,6 +2157,18 @@
     {
       "path": "tools/current_front_dependencies.py",
       "sha256": "387b90d0964a4f7884ab3af244b67056a68679a3cd07defe89202afd6ab6894a"
+    },
+    {
+      "path": "tools/custom_transition_builder.py",
+      "sha256": "f6b91a5a3a6a8dfae079f075ff6a328bbbaf452e20363c568ae735749aa166a7"
+    },
+    {
+      "path": "tools/custom_transition_diagnostics.py",
+      "sha256": "55ed7cff9b720d7dc10df29908e03650f53b72d975f879d9479755e2626bdf36"
+    },
+    {
+      "path": "tools/custom_transition_placement.py",
+      "sha256": "6ee1970ee219843a64ff7e7a3aca5be43c7c090d72d07fdf78006e58269fd9a6"
     },
     {
       "path": "tools/deduplicate_storage_study.py",
@@ -2361,7 +2420,7 @@
     },
     {
       "path": "tools/general_sdf_authority.py",
-      "sha256": "d3e8504a4caca7cb5778e0634dc6ae48a7170838d09cf4d23bcb91bf58984ed9"
+      "sha256": "405d4c56133e9cfdef6218e9420b8cf9fd480e367776ae7d6d5496cd284f2164"
     },
     {
       "path": "tools/general_sdf_binding.py",
@@ -2437,7 +2496,7 @@
     },
     {
       "path": "tools/incremental_layer_validation.py",
-      "sha256": "11667b5074dd72843ce7133c18d6d1f6b3978c6370a3c677b9fab4302e43d84b"
+      "sha256": "d25e3f3d5c04b565b6c07c0e845ae17f97590c2a1b6aeaacb6f8930ff1cb3177"
     },
     {
       "path": "tools/incremental_pair_storage.py",
@@ -2450,6 +2509,10 @@
     {
       "path": "tools/initial_boundary_layer_policy.py",
       "sha256": "d94140aa509a7092fa2739ae003132d9f734b9154ddfe528a628dc80a89421ad"
+    },
+    {
+      "path": "tools/interior_contraction.py",
+      "sha256": "942e7757e1d5fe354f1157f8591b540e0e2add51871501fc15e90f9e24b5bfe7"
     },
     {
       "path": "tools/inventory_block_checkpoint.py",
@@ -2465,15 +2528,19 @@
     },
     {
       "path": "tools/live_spline_first_layer.py",
-      "sha256": "86e5cf4d376e4fd6d8cfe1986ba2e5c67ee6811c6705f3d573a9f792ff37df82"
+      "sha256": "7936878a7c8ab8086fcce0b7b9bf9cfea0e9fd4eb9b669032493b98768cecce4"
     },
     {
       "path": "tools/local_cavity_remesh.py",
       "sha256": "7582c7c6949bff4a0713a2b305ba7307ff155b2dc1af1d06bc942045419848a5"
     },
     {
+      "path": "tools/local_constraint_plan.py",
+      "sha256": "f124834e3f04f270c5d3f48495a0414ce6a36d29e8cc082d0f362e4ebb9a89d5"
+    },
+    {
       "path": "tools/local_correction_validation.py",
-      "sha256": "4894d038c6be166f139181ca89b283e0f45c9a9c205a43b3b73cca14277a853b"
+      "sha256": "8007ec8c9c9b4216f23af4e5b7dfaa5384a48e4185a1acb2d793297c6960cbe7"
     },
     {
       "path": "tools/local_termination_topology.py",
@@ -2569,7 +2636,7 @@
     },
     {
       "path": "tools/optimized_mixed_certificate.py",
-      "sha256": "5fe9c6ce5fb4be29bd3cae3f706c9b58413e11b79c6e4e2073dd49eae8162b7d"
+      "sha256": "c8e7ea03c763ffc25d7989ff11e2b003ebac00c81373f903c1e5d70fd34ee9bc"
     },
     {
       "path": "tools/optimized_projected_index.py",
@@ -2629,7 +2696,7 @@
     },
     {
       "path": "tools/prism_hotpath_v2.py",
-      "sha256": "8d0416355078c4e0e2460be80cd689ce2870e6210022f2e895f53bc6de598166"
+      "sha256": "0201fe8e73651b79b0e2ef7b58ce4268e1252b8362efbc69cc1d24bea5e6ecb0"
     },
     {
       "path": "tools/prism_persistent_hotpath.py",
@@ -2741,7 +2808,7 @@
     },
     {
       "path": "tools/production_fast_layer.py",
-      "sha256": "73be1ec692c433d64626b1099250de3b303dd533e7333e3aa284091ec99cfebe"
+      "sha256": "929a7883a11b2f8be6f4f6b314d0ea56ebf2ac35ecef9c79305bdde92c83a44c"
     },
     {
       "path": "tools/production_first_layer_coverage.py",
@@ -2813,7 +2880,7 @@
     },
     {
       "path": "tools/production_surface_authority.py",
-      "sha256": "1b1c2434392c4be40dca1a39320e4c65d6b27014560f9d333eca64defd38aa21"
+      "sha256": "ebc70c456416d2d76f5d66ff813f22cc6e1cdc89562e11f14b8b3d68840951b4"
     },
     {
       "path": "tools/production_surface_intersections.cpp",
@@ -3140,6 +3207,10 @@
       "sha256": "a7d1729944665a2318435b42da0896825bbd780c5626e3e5e73018852cddaf13"
     },
     {
+      "path": "tools/refined_local_repair.py",
+      "sha256": "5a891e9c97a7ca3e2522e1c3cec663821058e45d2b0489d6ac3524247b28b8b5"
+    },
+    {
       "path": "tools/regress_direct_core.py",
       "sha256": "3bf827e54815b6d91f048ee1580139e04f79476c83f3eb4bbe0c6de12cffa1c7"
     },
@@ -3182,6 +3253,10 @@
     {
       "path": "tools/repair_native_sf2_runtime_receipts.py",
       "sha256": "bf8b7de5837695572811b5a145f5a4db40e7694618a1fbee830812cc75eea1d5"
+    },
+    {
+      "path": "tools/repair_timing.py",
+      "sha256": "baa7d775c8bcd0846e5d47df0562bd0522a1fead6fb9bc86339361b3102d9f57"
     },
     {
       "path": "tools/replay_fallback_stage.py",
@@ -3357,11 +3432,11 @@
     },
     {
       "path": "tools/rolling_fast_engine.py",
-      "sha256": "bba36c5942f036ea33b715cf96baa2a270c194d793e55286d52ba157e44b01d3"
+      "sha256": "75e3331daf53859c0ae7c3f82befc9f18d3898df305d325b1ba05d5619226e66"
     },
     {
       "path": "tools/rolling_fast_state.py",
-      "sha256": "1f50a6f99999f98ff0d02766f63b5e39bfaaf2367f295ab50564f5e127dde6d4"
+      "sha256": "4fc20f61279c1a06ef55dd5775e2d4de0244acdb2eaf345767963b126ccc44c6"
     },
     {
       "path": "tools/rolling_layer_retention.py",
@@ -3449,7 +3524,7 @@
     },
     {
       "path": "tools/run_live_sf2_first_layer.py",
-      "sha256": "6c38b7602b1ecff77bc4921bfc8006e168a3007deb2761261292f8bdb5025964"
+      "sha256": "541acfcb19725ce55c790a0775e2ac8c3e009b4eaf411052b4a9d42594e60671"
     },
     {
       "path": "tools/run_live_sf2_surface.py",
@@ -3764,6 +3839,38 @@
       "sha256": "73f7e6bf93491dcb4c8ed8a47491d30f8d16c4d4ed6e9cebf1f84ea91971a4bc"
     },
     {
+      "path": "tools/shape_transition_builder.py",
+      "sha256": "4191ac6f06d92fc4306b51e6575af62332d6113570a078973716d94843995b93"
+    },
+    {
+      "path": "tools/shape_transition_cavity_geometry.py",
+      "sha256": "99168ee4edca627270bc2101872b814a9161b49b50d23aa5bf5237da70ed6967"
+    },
+    {
+      "path": "tools/shape_transition_contraction.py",
+      "sha256": "ebc426d36f24a337aa9ba3cbf974035707d70c7f85d845f03bb3dcb77c28f5c3"
+    },
+    {
+      "path": "tools/shape_transition_domain.py",
+      "sha256": "eeb27d4d20f72bd237155a28965db046dae3877f15ff19e8341492c3e3c8240f"
+    },
+    {
+      "path": "tools/shape_transition_metric.py",
+      "sha256": "09dd915bc56bd3521eff659a69388901c4cb600073fffcbd1211f4a3d5f65974"
+    },
+    {
+      "path": "tools/shape_transition_native.py",
+      "sha256": "7f27868e08a4fd822920153a53fa1f73bddc445c671928df2ff5e560335e61fe"
+    },
+    {
+      "path": "tools/shape_transition_repair.py",
+      "sha256": "20e2c8a54f97bf411bcc4cdbb8fa780b055e81666f0552d48b48de7d9a224385"
+    },
+    {
+      "path": "tools/shape_transition_topology.py",
+      "sha256": "3533532e285fde02dd865e0f83df5b8c4771330a227f64dba51830d13d71175e"
+    },
+    {
       "path": "tools/shared_schedule_hotpath.py",
       "sha256": "9f78433c4ec120cd9b5759f4415f550a8c8c6e02c72b556abb268533eae39845"
     },
@@ -3781,11 +3888,11 @@
     },
     {
       "path": "tools/standalone_background.py",
-      "sha256": "6c61141f8b5cf8c85d9be38a47755a58c3b44c41e2fb4b08eec97056c319c52f"
+      "sha256": "70e54f84ad80913b02f0be77777669e89c30fad582d4daee176449a3de7e558b"
     },
     {
       "path": "tools/standalone_case.py",
-      "sha256": "5d117bfdb087b015b4ed440e7a68b20f3c956278b3cc9828be87c6c5d849bca8"
+      "sha256": "ccef4e411170b4c4f0d4fbe5abb6bd5e1c062fc10a4007ed42f4e88a0c791d12"
     },
     {
       "path": "tools/standalone_geometry.py",
@@ -3793,7 +3900,7 @@
     },
     {
       "path": "tools/standalone_tool.py",
-      "sha256": "d48258d81d0d66dd49637b6ed46c643dd61a16ef7b3e86185312a6ad66428ce5"
+      "sha256": "5de6b778322d7c3a3d3b2b7723d5f8202ef57330a36a7474a954a1774c9fe618"
     },
     {
       "path": "tools/study_block_dispersion.py",
@@ -4738,6 +4845,42 @@
     {
       "path": "tools/test_surface_dispatch.py",
       "sha256": "b3179630dc7cefb5d7bdb53ca559c1300af7e9347792c2ce525ecdaf740084c3"
+    },
+    {
+      "path": "tools/tet_layer_adapter.py",
+      "sha256": "8414300d57ed01adb639e97749ec829934a9f0c6caf972cee2c62798568189e5"
+    },
+    {
+      "path": "tools/tet_layer_controls.py",
+      "sha256": "a0e1229149f4468fa36fbd15105f433821d5018ab92fad91d43958482d5bdb4d"
+    },
+    {
+      "path": "tools/tet_layer_handoff.py",
+      "sha256": "71a10b3d1d007c349c3fa2b5e88347fe0d1202a87570689ad90a6b9ff263d483"
+    },
+    {
+      "path": "tools/tet_layer_planning.py",
+      "sha256": "0fbc026eed3d8797e68e79f5fb6bc39767bc3d8cc13693f418c0a5ea49e3bdda"
+    },
+    {
+      "path": "tools/tet_layer_radial_depth.py",
+      "sha256": "7e6567fc814e3780f6d1f53b88a77772cc39c093fae5be6143f94123babbd271"
+    },
+    {
+      "path": "tools/tet_layer_row.py",
+      "sha256": "9cfb06c501b57dd88dd9c515f21f80299d3945b8c4e4d5fa245c96b224f0abd3"
+    },
+    {
+      "path": "tools/transaction.py",
+      "sha256": "43a03169b666866bbb98a7d9310e9840cfe5a558c7369f7802fa1996f42dec8f"
+    },
+    {
+      "path": "tools/transition_motion_guard.py",
+      "sha256": "c824ffbe31ea8a2fc422c436cd9e0b5c12bc954694661490aa14c75e533740cc"
+    },
+    {
+      "path": "tools/transition_repair_plan.py",
+      "sha256": "3bb0bcdae1c1428b19938fa637d8b681eef542a7ce013dbf0d8bdb5691fe6221"
     },
     {
       "path": "tools/upper_shell_handoff_patch.py",

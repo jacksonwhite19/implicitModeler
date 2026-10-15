@@ -188,6 +188,12 @@ def load(path):
     scalar='later_normal_increments_m_hex' in p
     if scalar:
         expected.remove('later_path_lengths_m_hex');expected.update(('later_normal_increments_m_hex','growth_hex'))
+    if 'trajectory_completion' in p:
+        if scalar or 'general_sdf' not in case or 'background' not in case:
+            raise ValueError('PrismDirectionCompletionRequiresGeneralSourceBackground')
+        from accepted_trajectory_contract import validate_direction_controls
+        validate_direction_controls(p['trajectory_completion'])
+        expected.add('trajectory_completion')
     if set(p)!=expected:
         raise ValueError('ExplicitPrismRequirementsRequired')
     from production_prism_sizing import _hex64

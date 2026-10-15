@@ -187,7 +187,7 @@ class PackedRows(CompactProofRows):
             h.update(block);first=False
         h.update(b']');return h.hexdigest()
 
-    def write_jsonl(self,path,workers=8):
+    def write_jsonl(self,path,workers=8,*,newline=None):
         import gzip
         from collections import deque
         from concurrent.futures import ThreadPoolExecutor
@@ -195,7 +195,9 @@ class PackedRows(CompactProofRows):
         # Concatenated gzip members are standard gzip. Independent fixed chunks
         # retain every byte of the legacy decompressed stream, in the same order.
         # At most 2*workers chunks are live. No shared writer or completion order.
-        newline=os.linesep.encode()
+        newline=os.linesep.encode() if newline is None else newline
+        if type(newline) is not bytes or newline not in (b'\n',b'\r\n'):
+            raise ValueError('UnsupportedProofStreamNewline')
         def compress(block):return gzip.compress(block,compresslevel=9,mtime=0)
         with open(path,'wb') as stream,ThreadPoolExecutor(max_workers=workers) as pool:
             pending=deque()

@@ -252,6 +252,27 @@
       "path": "runtime/bin/canonical_cgal_seed",
       "scope": "Generic native SDF surface-only proposal plus retained explicit historical volume/probe modes. Final real-source and mesh acceptance required.",
       "sha256": "a214073401a5e2aeea687a3bf6466c6ea1018e9ff49629880d3b5ac2a7e1dfdb"
+    },
+    {
+      "binary_origin": "results\\transition_cli_integration_20261014\\native2\\shape_transition_mmg",
+      "bytes": 1095144,
+      "path": "runtime/bin/shape_transition_mmg",
+      "scope": "Owned opt-in generic shape-transition dependency; existing exact executable/source archive, no result fallback.",
+      "sha256": "9dcc1472ea0e5de878743ae34f9671b4e0ebd426bebc8d508a3569b40d488bc5"
+    },
+    {
+      "binary_origin": "results\\transition_cli_integration_20261014\\native2\\shape_transition_mmg_sources.zip",
+      "bytes": 1759228,
+      "path": "runtime/lib/shape_transition_mmg_sources.zip",
+      "scope": "Owned opt-in generic shape-transition dependency; existing exact executable/source archive, no result fallback.",
+      "sha256": "2b43f34eea2a7c233e4aaace1c7c66ad0c52abff756b4ff1fa8a15b672cd364e"
+    },
+    {
+      "binary_origin": "results\\transition_cli_integration_20261014\\native2\\SHAPE_TRANSITION_BUILD.json",
+      "bytes": 45080,
+      "path": "runtime/source/transition/SHAPE_TRANSITION_BUILD.json",
+      "scope": "Owned opt-in generic shape-transition dependency; existing exact executable/source archive, no result fallback.",
+      "sha256": "b143f98759cb6b0c6c26119b20b7bc06c1095180fd13c27b98457bc7c7983020"
     }
   ],
   "native_host_installation": {

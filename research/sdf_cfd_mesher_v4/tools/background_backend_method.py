@@ -21,14 +21,21 @@ def definition(name):
             '3D target = 0.95 * pinned callback target after Gmsh clamping; 2D target unchanged. Effective 3D cap and growth scale change.')
 
 def request_method(request):
-    if request.get('schema')=='V4GradedBackground/4':return validate(request.get('backend_method'))
+    if request.get('schema') in ('V4GradedBackground/4','V4GradedBackground/5','V4GradedBackground/6'):
+        if request['schema'] in ('V4GradedBackground/5','V4GradedBackground/6'):
+            from background_completion_controls import validate_completion
+            validate_completion(request.get('interface_completion'))
+            if request['schema']=='V4GradedBackground/6':
+                from tet_layer_controls import validate as validate_transition
+                validate_transition(request.get('tet_transition'))
+        return validate(request.get('backend_method'))
     if 'backend_method' in request or 'backend_method_identity' in request:
         raise ValueError('BackgroundMethodRequiresExplicitPolicyVersion')
     return None
 
 def selection_record(name):
     chosen=definition(name)
-    names=('background_backend_method.py','core_backend.py','gmsh_core_setup.py')
+    names=('background_backend_method.py','core_backend.py','gmsh_core_setup.py','background_completion_controls.py','background_interface_completion.py')
     if name==HXT:names+=('background_query_build.py','background_native_query.py','background_direct_callback.py',
         'background_sizing.py','optimized_core_sizing.py','generic_core_sizing.py')
     chosen['source_pins']={str((V4/'tools'/n).relative_to(V4).as_posix()):digest(V4/'tools'/n) for n in names}
