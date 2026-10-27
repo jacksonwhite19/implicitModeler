@@ -1,6 +1,6 @@
 # Mesher V3.5 — frozen working candidate
 
-Frozen candidate; blend regression pending. Scientific/runtime identity: **5e38fe034bb6f90fd23f5fee854293960e3ead35c289450ebe8d4f5a935f6666**, 1,866 protected files. This is the same build that passed the complete NODAL5 passage run. No runtime source, numerical gate or verification mode was changed for consolidation.
+Closed three-case consolidation. Scientific/runtime identity: **5e38fe034bb6f90fd23f5fee854293960e3ead35c289450ebe8d4f5a935f6666**, 1,866 protected files. This is the same build that passed the complete NODAL5 passage run. No runtime source, numerical gate or verification mode was changed for consolidation.
 
 The path is **Rhai/SDF surface -> V3 complete-stack prisms -> existing V4 direct outer workflow -> joined acceptance/export/readback**. There is no separate transition band in this workflow.
 
@@ -10,7 +10,7 @@ The path is **Rhai/SDF surface -> V3 complete-stack prisms -> existing V4 direct
 |---|---|---|---:|
 | Passage | nodal | Complete engineering pass, NODAL5 | 546,464 / 207,705 |
 | Sphere | adaptive | Complete pass; baseline-identical arrays | 53,228 / 14,798 |
-| Original thick blend | adaptive | Running; current-build result not yet closed | Pending; earlier-build baseline 119,441 / 38,868 |
+| Original thick blend | adaptive | Complete pass; baseline-identical arrays | 119,441 / 38,868 |
 
 Modes are public generic CLI choices, declared in the commands. This matrix does not claim one shared default was tested for all three. There is no fixture-name dispatch or silent fallback.
 
@@ -26,7 +26,7 @@ Read [INSTALL_FROZEN.md](INSTALL_FROZEN.md) for the configured environment and [
 
 Surface size is a nominal target, not a hard maximum edge or final metric-ratio guarantee. Surface geometry is sampled numerical acceptance, with no whole-source completeness, continuous face accuracy, exact root/normal, native/real-target equivalence or determinism proof. Continuous SDF fluid clearance, CFD/solver/y-plus/flow accuracy and general-shape qualification are unclaimed. The parser supports settings beyond the tested rows, but those settings are not qualified by this matrix. Historical or closed FastProd authority is not reusable as fresh live authority.
 
-Passage has all five nominal rows, total 180.862 um, no compression or growth reversals. Sphere likewise has no compression. The original thick-blend baseline uses local compression, with total thickness 58.5731–180.862 um and 2,429 scalar / 2,559 physical-path growth reversals; nominal growth 1.3 is not achieved everywhere. Until its current regression closes, these blend values describe the earlier build only.
+Passage has all five nominal rows, total 180.862 um, no compression or growth reversals. Sphere likewise has no compression. The original thick-blend baseline uses local compression, with total thickness 58.5731–180.862 um and 2,429 scalar / 2,559 physical-path growth reversals; nominal growth 1.3 is not achieved everywhere. The current blend regression confirms those achieved values on the frozen build.
 
 DirectFillEngineering/1 requires bulk/interface tetrahedron minima 0.25 and cap triangle minimum 0.30, plus actual-neighbour QA and all other current gates. Cap/interface population percentage targets can remain nonblocking TARGET_NOT_MET. A complete engineering pass is not a claim that every quality distribution target is met. checkMesh -meshQuality was not run because no applicable approved dictionary exists. Clean-machine portability is not tested.
 

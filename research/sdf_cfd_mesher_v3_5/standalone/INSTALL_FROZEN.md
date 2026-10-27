@@ -6,7 +6,7 @@ Windows PowerShell; Windows Python 3.12 with NumPy, SciPy, SymPy, CasADi and psu
 
 ## Use the frozen files
 
-1. Clone the freeze branch, or extract the delivery archive and enter `Mesher_V3_5_Standalone`.
+1. Extract the delivery archive and enter `Mesher_V3_5_Standalone`, keeping its sibling `qualification` folder. Alternatively clone `https://github.com/jacksonwhite19/implicitModeler.git`, branch `freeze/mesher-v3-5-candidate-2026-10-27`, and enter `research/sdf_cfd_mesher_v3_5/standalone`. The archive's root GIT_FREEZE.json records its exact published commit.
 2. Preserve the included runtime, fixture and source bytes. The Git attributes prevent newline conversion of the validated standalone files. The archive manifest and frozen inventory bind their bytes.
 3. In the configured environment, run `python -B mesh.py --help` to inspect the CLI. This command does not qualify a mesh.
 4. Use one of the exact commands in QUALIFICATION.md with a fresh output directory. The source package excludes results, so the recorded output names are fresh in a new extraction. Change the output name for any later repeat.

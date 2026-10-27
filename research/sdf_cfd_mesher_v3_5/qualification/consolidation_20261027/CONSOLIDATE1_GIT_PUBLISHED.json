@@ -1,0 +1,39 @@
+{
+  "schema": "V35RemoteBasedScopedFreezeStage/1",
+  "worktree": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\git-freeze-publish",
+  "branch": "freeze/mesher-v3-5-candidate-2026-10-27",
+  "remote": "origin",
+  "remote_url": "https://github.com/jacksonwhite19/implicitModeler.git",
+  "remote_base": "766c61c579f020f692db73c334152005ed09103d",
+  "original_local_candidate": "673d9208331990c395dad11cd18048e0f565482a",
+  "reviewed_candidate_subtree": "8bf16112a1f254ae9cee809314efba18abd11725",
+  "publication_subtree": "8bf16112a1f254ae9cee809314efba18abd11725",
+  "staged_tree": "36811bc9ecf64ed14c5e3dbdb6899d222a4dbdae",
+  "staged_files": 1891,
+  "runtime_files": 1866,
+  "runtime_identity": "5e38fe034bb6f90fd23f5fee854293960e3ead35c289450ebe8d4f5a935f6666",
+  "runtime_bytes_equal": true,
+  "subtree_identical_to_reviewed_candidate": true,
+  "scope": "Only the exact reviewed V3.5 candidate subtree added to existing remote main. Original local development history and dirty working tree untouched.",
+  "prior_push": {
+    "exit_code": 1,
+    "error": "RPC failed HTTP 500 / remote disconnected",
+    "remote_branch_exists": false,
+    "outgoing_local_commits": 266,
+    "cause": "Remote cause unconfirmed; isolated remote-base snapshot avoids unrelated local development ancestry."
+  },
+  "qualification_status": {
+    "passage": "accepted nodal",
+    "sphere": "accepted same-build adaptive",
+    "blend": "active adaptive; pending"
+  },
+  "ordinary_commit": true,
+  "force_push": false,
+  "history_rewritten": false,
+  "publication_review_required": true,
+  "commit": "8eb9e912f09c5394b7ec8d930064af905a0e7ecd",
+  "push_confirmed": true,
+  "remote_branch_sha": "8eb9e912f09c5394b7ec8d930064af905a0e7ecd",
+  "remote_verification": "git ls-remote --heads origin refs/heads/freeze/mesher-v3-5-candidate-2026-10-27",
+  "github_large_file_warning": "Owned Gmsh library 88.35 MiB exceeds recommendation but below hard limit; push succeeded"
+}

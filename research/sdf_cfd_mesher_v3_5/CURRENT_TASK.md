@@ -1,11 +1,9 @@
-# Frozen V3.5 candidate — consolidation in progress
+# Mesher V3.5 frozen consolidation
 
-Human authorization: freeze, ordinary scoped commit and normal push now; finish the authorized same-build comparisons without changing runtime. Advisor updates1–3/5. Scientific/runtime identity5e38fe034bb6f90fd23f5fee854293960e3ead35c289450ebe8d4f5a935f6666, 1,866 files.
+Rhai/SDF surface -> V3 complete-stack prisms -> existing V4 direct outer workflow -> joined acceptance/export/readback. There is no separate transition band.
 
-- Passage: accepted NODAL5 complete engineering result, explicit nodal.
-- Sphere: fresh complete same-build regression and independent reviews passed; baseline-identical arrays, explicit adaptive.
-- Original thick blend: active fresh same-build regression, explicit adaptive; current result pending.
+The exact 1,866-file runtime passed complete passage (explicit nodal), sphere and original thick blend (explicit adaptive). Sphere and blend final arrays match their earlier baselines byte-for-byte. See standalone/CONSOLIDATE1_REPORT.md and standalone/QUALIFICATION.md for counts, exact commands, timings, compression and limits.
 
-No numerical/runtime edits, retuning, retries, fallback, new verification controls or performance work. Any scientific refusal stops the comparison. Preserve all prior artifacts and unrelated dirty work. Only runtime closure, relevant docs/fixtures/tests and compact qualification evidence enter the freeze commit. Generated runs/logs/caches and delivery archives are excluded. Scoped Git attributes preserve exact runtime bytes despite host autocrlf.
+Runtime identity: 5e38fe034bb6f90fd23f5fee854293960e3ead35c289450ebe8d4f5a935f6666. No runtime, gate or verification-policy change was made during consolidation. The small four-case robustness proposal is PREPARED, NOT RUN; no additional campaign is authorized. Performance and production/audit policy work are deferred.
 
-After actual comparison closure, record the result and package the unchanged runnable build if successful. The fixed robustness proposal is preparatory only; do not run it. Performance/verification-policy implementation is deferred. See standalone/README.md, QUALIFICATION.md and CONSOLIDATE1_REPORT.md. Callback advisor before final, then stop at the frozen/pushed milestone. No scheduled automation.
+Git excludes generated mesh outputs, caches and delivery archives. Compact qualification evidence is under qualification/consolidation_20261027. The source archive is delivered separately. Configured-host engineering qualification does not establish clean-machine portability, general-shape, continuous geometry or CFD accuracy.

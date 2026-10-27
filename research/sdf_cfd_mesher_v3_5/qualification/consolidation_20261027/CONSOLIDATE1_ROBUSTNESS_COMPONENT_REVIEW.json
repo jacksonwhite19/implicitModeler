@@ -1,0 +1,123 @@
+{
+  "schema": "V35IndependentRobustnessPreparationReview/1",
+  "classification": "PASS_PREPARATION_ONLY",
+  "execution_authorized": false,
+  "checks": {
+    "three_existing_rhai_inputs_byte_exact": true,
+    "four_fixed_cases_three_geometries": true,
+    "prepared_not_run_no_execution_authority": true,
+    "valid_flags_fixed_controls_and_existing_paths": true,
+    "source_runtime_frozen": true,
+    "first_refusal_stop_and_finite_bounds": true,
+    "preparation_script_input_only": true,
+    "historical_success_claim_supported": true,
+    "four_case_preview_pins_and_exact_configuration": true,
+    "separate_historical_provenance_now_declared": true
+  },
+  "inputs": [
+    {
+      "name": "ellipsoid",
+      "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\complete_cli210\\phaseB\\convex_ellipsoid\\shape.rhai",
+      "proposal": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3_5\\qualification\\consolidation_20261027\\robustness_proposal\\inputs\\ellipsoid.rhai",
+      "sha256": "8a6b3a5be1f79c8dc3095b151d52743d1c00b1dc729be872bed2a97c95ca62dd",
+      "bytes": 35,
+      "exact": true
+    },
+    {
+      "name": "concave",
+      "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\complete_cli210\\phaseB\\curved_concave\\shape.rhai",
+      "proposal": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3_5\\qualification\\consolidation_20261027\\robustness_proposal\\inputs\\concave.rhai",
+      "sha256": "3551013ced31f718e7d7cd11f137392bc199d283fcf7685b891cd960a4eb3ac5",
+      "bytes": 333,
+      "exact": true
+    },
+    {
+      "name": "passage",
+      "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3_5\\standalone\\fixtures\\passage.rhai",
+      "proposal": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3_5\\qualification\\consolidation_20261027\\robustness_proposal\\inputs\\passage.rhai",
+      "sha256": "b11de8355f1561e0905bcaed8a8f459a71a964ab5176ba8b610d04ce13ede31b",
+      "bytes": 738,
+      "exact": true
+    }
+  ],
+  "commands": [
+    {
+      "id": "R1",
+      "flags_valid": true,
+      "fixed_controls": true,
+      "geometry_resolves": true,
+      "fresh_output_absent": true
+    },
+    {
+      "id": "R2",
+      "flags_valid": true,
+      "fixed_controls": true,
+      "geometry_resolves": true,
+      "fresh_output_absent": true
+    },
+    {
+      "id": "R3",
+      "flags_valid": true,
+      "fixed_controls": true,
+      "geometry_resolves": true,
+      "fresh_output_absent": true
+    },
+    {
+      "id": "R4",
+      "flags_valid": true,
+      "fixed_controls": true,
+      "geometry_resolves": true,
+      "fresh_output_absent": true
+    }
+  ],
+  "historical_evidence": {
+    "prepared_input_plan": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\complete_cli210\\PHASE_B_PLAN.json",
+    "prepared_input_plan_sha256": "3e4990fc5ae93275b7abf410d0a910dc011e2148dc4c9476abd246d775b08ca2",
+    "prepared_phase": "B_PREPARED_NOT_EXECUTED",
+    "actual_separate_pass_report": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\phaseB233\\FINAL_REPORT.md",
+    "actual_report_sha256": "60e18e5783911ce2fa0f04259a312cc53fc2e7bee3fed8f717fa5444634e2002",
+    "actual_input_binding": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\phaseB233\\curved_concave\\INPUTS_FROZEN.json",
+    "actual_binding_sha256": "131a135974ee87a7a90021d15e7dd1f0173f0b1e5982330b8be937f4c7558aaf",
+    "actual_geometry_sha256": "3551013ced31f718e7d7cd11f137392bc199d283fcf7685b891cd960a4eb3ac5",
+    "finding": "Separate Task233 pass has exact same Rhai bytes. The copied Task210 prepared-input directory itself was not executed; this distinction resolves the initial provenance concern."
+  },
+  "blockers": [],
+  "limits": [
+    "No geometry/source/native calls, tests, proposals, campaigns or runtime edits performed. AST inspection does not import or execute CLI.",
+    "Four cases are fixed hypotheses, not accepted recommendations or general-shape qualification. R3 is physical geometry shrinkage at fixed physical controls, not unit invariance.",
+    "R4 changes nominal surface size; all achieved settings, sampled geometry, compression and warnings require future fresh complete acceptance.",
+    "Frozen current sources unchanged; input preparation is outside protected standalone. Later execution still needs separate authorization and clean consolidation closure.",
+    "Historical V4 pass is a separate Task233 engineering result with exact matching geometry; it does not qualify current V3.5 settings or the new smaller-scale case."
+  ],
+  "resolved_case_previews": [
+    {
+      "id": "R1",
+      "sha256": "dd93ff7b2ac6f89fde22c4af61c93ab8c44b7ab25b5a83fa6791373a41debcc9",
+      "metadata_pin_matches": true,
+      "full_case_matches_static_source_mapping": true,
+      "nonacceptance_role_explicit": true
+    },
+    {
+      "id": "R2",
+      "sha256": "05b1f63b010aae82541cc6931686a3bcb409d2e7ececdb24535f137573444030",
+      "metadata_pin_matches": true,
+      "full_case_matches_static_source_mapping": true,
+      "nonacceptance_role_explicit": true
+    },
+    {
+      "id": "R3",
+      "sha256": "2f8fb786c772b7ed40dacb3639ec6212c9753703615f735e627ce77b8c5e8819",
+      "metadata_pin_matches": true,
+      "full_case_matches_static_source_mapping": true,
+      "nonacceptance_role_explicit": true
+    },
+    {
+      "id": "R4",
+      "sha256": "e5e24e0ff2d423f3a180238ab4591fb1400b76d224fc7860e22db67a1f9100ce",
+      "metadata_pin_matches": true,
+      "full_case_matches_static_source_mapping": true,
+      "nonacceptance_role_explicit": true
+    }
+  ],
+  "preview_review_method": "Independent JSON reconstruction from inspected writer/control assignments and original template, with ordinary scalar arithmetic only; no import/execution of runtime modules or geometry."
+}

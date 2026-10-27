@@ -1,3 +1,4 @@
 # Preserve the exact validated standalone bytes, including mixed line endings.
 # This is Git storage policy; it does not change mesher execution.
 standalone/** -text
+qualification/** -text

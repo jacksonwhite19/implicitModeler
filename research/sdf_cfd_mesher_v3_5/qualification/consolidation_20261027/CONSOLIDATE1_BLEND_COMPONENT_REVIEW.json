@@ -1,0 +1,199 @@
+{
+  "schema": "V35IndependentBlendComponentClosedReview/1",
+  "classification": "PASS",
+  "decision": "ACCEPT_CLOSED_SAME_BUILD_BLEND_COMPONENT_REGRESSION",
+  "scope": "Read-only saved arrays, hash binding, recorded numerical receipts; no geometry/native predicates, meshing, tests or source edits.",
+  "checks": {
+    "closed_source_inventory_matches_freeze_and_passage": true,
+    "source_custody_clean": true,
+    "all_1866_current_source_bytes_match": true,
+    "case_only_output_ceiling_changes": true,
+    "case_exact_preflight_bytes": true,
+    "explicit_adaptive_provenance": true,
+    "both_carriers_enabled": true,
+    "all_five_final_arrays_byte_equal": true,
+    "final_preserves_native_points_and_prisms": true,
+    "sealed_native_plan_exact": true,
+    "native_ancestry_complete_unique": true,
+    "native_positions_and_delta_exact": true,
+    "first_front_preserved": true,
+    "five_rows_compression_and_reversals_match_baseline": true,
+    "complete_and_cold_success": true,
+    "supervisor_clean": true,
+    "manifest_all_files_hash": true,
+    "direct_critical_hashes": true,
+    "audit_all_twelve_receipts_bound": true,
+    "readback_audit_all_twelve_receipts_bound": true,
+    "export_fidelity_and_checkmesh": true,
+    "conditioning_committed_repair_receipts_bound": true,
+    "conditioning_original_points_fixed_four_inserted": true,
+    "apex_no_moves": true,
+    "shape_minima_equal_baseline": true,
+    "actual_interface_qa_pass": true,
+    "live_shell_admission_recorded": true
+  },
+  "details": {
+    "complete_arrays": {
+      "points": {
+        "byte_equal": true,
+        "shape": [
+          38868,
+          3
+        ]
+      },
+      "prisms": {
+        "byte_equal": true,
+        "shape": [
+          46570,
+          6
+        ]
+      },
+      "tetrahedra": {
+        "byte_equal": true,
+        "shape": [
+          72871,
+          4
+        ]
+      },
+      "wall": {
+        "byte_equal": true,
+        "shape": [
+          9314,
+          3
+        ]
+      },
+      "farfield": {
+        "byte_equal": true,
+        "shape": [
+          3672,
+          3
+        ]
+      }
+    },
+    "layers": {
+      "rows": 5,
+      "wall_vertices": 4659,
+      "first_normal_min": 1.999999999999979e-05,
+      "first_normal_max": 2.0000000000000212e-05,
+      "first_normal_max_abs_error": 2.1006417091906648e-19,
+      "scalar_row_min": [
+        2e-05,
+        2e-05,
+        1.3520000000000001e-05,
+        2.1970000000000003e-06,
+        2.856100000000001e-06
+      ],
+      "scalar_row_max": [
+        2e-05,
+        2.6000000000000002e-05,
+        3.380000000000001e-05,
+        4.394e-05,
+        5.712200000000001e-05
+      ],
+      "path_growth_min": 0.09285714285714183,
+      "path_growth_max": 1.6230216627648306,
+      "growth_reversals": 2559,
+      "compressed_vertices": 1663,
+      "scalar_growth_reversals": 2429,
+      "scalar_total_min": 5.85731e-05,
+      "scalar_total_max": 0.000180862,
+      "path_total_min": 5.857309999999995e-05,
+      "path_total_max": 0.00018086200000000082
+    },
+    "manifest_files": 278,
+    "checkmesh": {
+      "returncode": 0,
+      "literal_mesh_ok": true,
+      "failed_lines": [],
+      "warnings": [
+        "*Number of severely non-orthogonal (> 70 degrees) faces: 41."
+      ],
+      "mesh_quality": "NOT_RUN_NO_APPLICABLE_APPROVED_DICTIONARY",
+      "passed": true
+    },
+    "conditioning": {
+      "outcome": "AllBulkCellsAboveFloor",
+      "native_calls": 8,
+      "initial_core_cells": 72849,
+      "final_core_cells": 72871,
+      "initial_minimum": 0.24875232100417974,
+      "final_minimum": 0.26732849523888347,
+      "steps": [
+        {
+          "commits": 1,
+          "kind": "existing_vertices",
+          "outcome": "FiniteConnectivityFamilyRefusal",
+          "report_sha256": "46aada71823abb0d532dcc0b6f8d003138be9875777ea39071384d44ab835de2"
+        },
+        {
+          "commits": 1,
+          "kind": "constrained",
+          "outcome": "AllBulkCellsAboveFloor",
+          "report_sha256": "3d7e969a2cf52872c0d611fa762e94f7c30ea32c3be48924813002c57bbd9742"
+        }
+      ]
+    },
+    "shape": {
+      "all_bulk_tetrahedra": {
+        "minimum": 0.26732849523888347,
+        "mandatory_passed": true,
+        "percentage_status": "TARGETS_MET"
+      },
+      "interface_tetrahedra": {
+        "minimum": 0.2969626531058274,
+        "mandatory_passed": true,
+        "percentage_status": "TARGET_NOT_MET"
+      },
+      "preserved_cap_triangles": {
+        "minimum": 0.3034890879831677,
+        "mandatory_passed": true,
+        "percentage_status": "TARGET_NOT_MET"
+      }
+    },
+    "interface": {
+      "faces": 9314,
+      "passed": true,
+      "minimum_weight": 0.08720488502254807,
+      "maximum_skewness": 1.153217839510456
+    },
+    "counts": {
+      "points": 38868,
+      "prisms": 46570,
+      "tetrahedra": 72871,
+      "cells": 119441
+    },
+    "source_identity": "5e38fe034bb6f90fd23f5fee854293960e3ead35c289450ebe8d4f5a935f6666",
+    "case_sha256": "acd0fce20494d0b06afe260df13b0fbc501c36e30d6c6dfe38411db510e4f8c6",
+    "mode": {
+      "schema": "V35SurfaceConstructionSelection/1",
+      "requested": "adaptive",
+      "effective": "adaptive",
+      "origin": "explicit_cli",
+      "assurance": "numerical",
+      "profile": "fastprod",
+      "final_acceptance": "unchanged"
+    },
+    "mesh_sha256": "04c36e1e45d2ae53cf71df3923b6108206fe49d3d698b79eee84ed9a32287b36",
+    "supervisor": {
+      "exit_code": 0,
+      "seconds": 2774.362879899796,
+      "peak_sampled_windows_tree_rss_bytes": 2224730112,
+      "last_sampled_output_bytes": 914419861,
+      "stop_reason": null,
+      "monitor_error": null
+    }
+  },
+  "blockers": [],
+  "limits": [
+    "Blend numerical engineering regression on this frozen build only; no general-shape or CFD qualification.",
+    "All five final arrays are byte-identical to the accepted live3 blend baseline; this does not establish deterministic behavior for other inputs or a controlled speedup.",
+    "Achieved blend compression and growth reversals are retained; nominal growth 1.3 is not achieved at every vertex.",
+    "Bulk conditioning performed one 3-to-2 edit then one constrained cavity commit, eight native calls, four inserted interior sites; original coordinates/prisms remain fixed. Separate shared-apex controller invoked with zero moves.",
+    "Repair classification remains UNQUALIFIED; no global exact-Q population claim.",
+    "Continuous SDF fluid proof not performed; optional meshQuality dictionary check not run.",
+    "Closed receipts are evidence of completed live authority, not reusable live authority.",
+    "checkMesh reports Mesh OK with the retained baseline warning: 41 severely non-orthogonal faces >70 degrees; no zero-warning claim."
+  ],
+  "consolidation": "Component evidence now supports same 1866-file build: accepted passage explicit nodal, sphere explicit adaptive, original thick blend explicit adaptive. This is three declared fixture/mode results, not one universal mode or general-shape qualification.",
+  "next_action": "Final documentation/staged-tree/package review remains separate. No additional campaign authorized."
+}
