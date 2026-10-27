@@ -1,3 +1,5 @@
+> Phase 1A candidate status (2026-10-27): this branch adds audit-only artifact finalization and supervisor closure. Focused tests passed. The three-case qualification below belongs to frozen commit `eff955ed3670e67b7d134b83e69c37f52b387906`, not this changed candidate. No full mesh campaign has run on this candidate. See [Phase 1A contract](../PHASE1A_CONTRACT.md).
+
 # Mesher V3.5 — frozen working candidate
 
 Closed three-case consolidation. Scientific/runtime identity: **5e38fe034bb6f90fd23f5fee854293960e3ead35c289450ebe8d4f5a935f6666**, 1,866 protected files. This is the same build that passed the complete NODAL5 passage run. No runtime source, numerical gate or verification mode was changed for consolidation.

@@ -1,3 +1,5 @@
+> Phase 1A candidate status (2026-10-27): this branch adds audit-only artifact finalization and supervisor closure. Focused tests passed. The three-case qualification below belongs to frozen commit `eff955ed3670e67b7d134b83e69c37f52b387906`, not this changed candidate. No full mesh campaign has run on this candidate. See [Phase 1A contract](../PHASE1A_CONTRACT.md).
+
 # Frozen-build qualification and exact commands
 
 Closed three-case consolidation. Build **5e38fe034bb6f90fd23f5fee854293960e3ead35c289450ebe8d4f5a935f6666**. The mode and achieved-layer distinctions are part of the supported scope.

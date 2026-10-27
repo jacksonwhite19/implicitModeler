@@ -97,7 +97,7 @@ def _worker(folder,mode,cap,outer,selected,check,trace_files,budget):
         return result
 
 
-def execute(run,case_path,folder,*,trace_files=False):
+def execute(run,case_path,folder,*,trace_files=False,_finalization_scope=None):
     from path_preserving_deduplication import durable_json as save
     from immutable_state_access import guard
     from standalone_case import load
@@ -111,6 +111,8 @@ def execute(run,case_path,folder,*,trace_files=False):
     from background_materialization import build
     from sdf_cfd_mesher_v4.common.authority import identity,array_hash,file_hash
     import local_termination_topology as topology
+    from artifact_finalization import AuditedBundle,hold_manifest,run_independent_audit
+    if _finalization_scope is None:raise ValueError('AuditFinalizationLifetimeRequired')
     case,_,case_pin=load(case_path);selected=validate_policy(case['background'])
     folder=Path(folder);folder.mkdir(exist_ok=False)
     save(folder/'POLICY.json',selected)
@@ -201,17 +203,20 @@ def execute(run,case_path,folder,*,trace_files=False):
             audit=folder/'audit';audit.mkdir()
             proof=joined_audit.audit(joined,preservation,helpers,construction,require,audit)
             if not proof['whole_joined_geometry_passed']:raise ValueError('DirectWholeGeometryProofFailed',proof.get('failed_stage'))
+            bundle=AuditedBundle(folder,joined,proof,_finalization_scope,require)
             from finite_research.direct_evidence_modules.collision import verify_retained
             for name in ('boundary_collision','collision'):verify_retained(driver.read(audit/(name.upper()+'.json')),audit)
             validate_filling(driver.read(audit/'FILLING.json'),all_cells)
             joined_audit.readback(audit,proof['proof_receipts'],proof['geometry_identity'])
             phase('export')
-            np.savez(folder/'COMPLETE_MESH.npz',points=points,prisms=saved['prisms'],tetrahedra=mapped,wall=state['wall'],farfield=joined['farfield'])
+            archive_pin=bundle.write_complete(joined)
             from export_mesh import export
             native_started=budget.clock()
-            try:exported=export(folder/'COMPLETE_MESH.npz',folder/'export',trace_files=trace_files,_deadline=time.monotonic()+min(budget.remaining(),require.remaining_seconds()))
+            try:exported=export(folder/'COMPLETE_MESH.npz',folder/'export',trace_files=trace_files,_deadline=time.monotonic()+min(budget.remaining(),require.remaining_seconds()),
+                _custody=_finalization_scope,_expected_archive_sha256=archive_pin)
             finally:budget.charge(native_started)
             if not exported['passed']:raise ValueError('DirectNativeExportRefusal')
+            bundle.accept_export(exported)
             direct_repair_custody.verify(folder,dict(prefix_points=len(state['points'])),saved,joined,selected,require)
             require();parent.require_origin(run)
             if load(case_path)[2]!=case_pin:raise ValueError('ChangedDirectCase')
@@ -225,18 +230,14 @@ def execute(run,case_path,folder,*,trace_files=False):
                 proof=proof,shape=populations,shape_applicability=acceptance(populations,selected),acceptance_contract=contract_binding(selected)))
             result['native_budget']=dict(limit_seconds=budget.limit,used_seconds=budget.used)
             save(folder/'PROVISIONAL.json',result)
+            finalized=bundle.seal(joined,proof)
         # Only after the original live terminal lease closes do independent
         # readback and final successful-only publication take place.
         phase('independent_readback')
-        files={p.relative_to(folder).as_posix():file_hash(p) for p in folder.rglob('*') if p.is_file() and p.name!='PROGRESS.json'}
-        save(folder/'MANIFEST.json',dict(schema='V35DirectArtifactManifest/1',files=files,geometry_identity=result['geometry_identity']))
-        with (folder/'READBACK.stdout').open('w') as out,(folder/'READBACK.stderr').open('w') as err:
-            completed=subprocess.run([sys.executable,'-B',str(ROOT/'direct_readback.py'),str(folder),file_hash(folder/'MANIFEST.json'),str(check.remaining_seconds())],stdout=out,stderr=err,timeout=max(1,check.remaining_seconds()))
-        if completed.returncode:raise ValueError('IndependentDirectReadbackRefusal',completed.returncode)
-        receipt=json.loads((folder/'READBACK.json').read_text())
-        if not receipt.get('passed'):raise ValueError('IndependentDirectReadbackRefusal')
+        hold_manifest(folder,finalized,_finalization_scope)
+        receipt=run_independent_audit(folder,finalized,check.remaining_seconds)
         timings[stage]=time.perf_counter()-phase_started
-        result.update(full_mesh_complete=True,provisional=False,seconds=time.perf_counter()-start,stage_seconds=timings,mesh_sha256=file_hash(folder/'COMPLETE_MESH.npz'),readback_sha256=file_hash(folder/'READBACK.json'),manifest_sha256=file_hash(folder/'MANIFEST.json'))
+        result.update(full_mesh_complete=True,provisional=False,seconds=time.perf_counter()-start,stage_seconds=timings,mesh_sha256=file_hash(folder/'COMPLETE_MESH.npz'),readback_sha256=file_hash(folder/'READBACK.json'),manifest_sha256=file_hash(folder/'MANIFEST.json'),audit_finalization=finalized)
         save(folder/'RESULT.json',result)
         return result
     except BaseException as error:

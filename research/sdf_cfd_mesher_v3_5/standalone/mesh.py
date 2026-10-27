@@ -43,6 +43,8 @@ def output_bytes(folder):
 
 def supervise(args):
     import psutil
+    from audit_completion import SupervisorHandoff,REQUEST,requires_handoff
+    handoff=None
     output_limit=getattr(args,'output_limit_bytes',None)
     if output_limit is None:output_limit=4_000_000_000
     if args.output.exists():raise ValueError('FreshOutputRequired')
@@ -63,6 +65,8 @@ def supervise(args):
             if process.poll() is None:process.kill()
         try:
             while process.poll() is None:
+                if handoff is None and (args.output/REQUEST).exists():
+                    handoff=SupervisorHandoff(args.output,process)
                 elapsed=time.perf_counter()-start
                 if elapsed>args.timeout_seconds:
                     reason='TimeLimit';kill_owned();break
@@ -84,8 +88,22 @@ def supervise(args):
             kill_owned()
         code=process.wait()
     if sources['passed'] is not True:reason='SourceClosureChanged';code=1
+    if code!=0 and reason is None:reason='AuditFinalizedWorkerFailed' if handoff is not None else 'WorkerFailed'
+    if reason is None and code==0 and requires_handoff(args.output) and handoff is None:
+        reason='AuditFinalizationHandoffMissing';code=1
     record=dict(command=command,exit_code=code,stop_reason=reason,monitor_error=monitor_error,source_identity=sources['identity'],source_custody_passed=sources['passed'],seconds=time.perf_counter()-start,peak_sampled_windows_tree_rss_bytes=peak,last_sampled_output_bytes=largest,output_limit_bytes=output_limit,timeout_seconds=args.timeout_seconds,memory_limit_gib=args.memory_limit_gib,linux_memory='RLIMIT_AS per Linux process, inherited by children; not aggregate RSS')
+    # Persist closure evidence before the final atomic acceptance publication.
     save(logs/(key+'.json'),record)
+    publication_failed=False
+    if handoff is not None and reason is None and code==0:
+        try:handoff.publish(sources,record,logs/(key+'.SOURCES.json'),logs/(key+'.json'))
+        except Exception as error:
+            reason='AuditFinalizationPublicationFailed';code=1
+            record.update(exit_code=code,stop_reason=reason,monitor_error=dict(type=type(error).__name__,details=str(error)))
+            publication_failed=True
+    # Release artifact handles before the existing failure/revocation writer.
+    if handoff is not None:handoff.close()
+    if publication_failed:save(logs/(key+'.json'),record)
     print(json.dumps(record),flush=True)
     if code and args.output.exists() and not (args.output/'RESULT.json').exists():
         save(args.output/'RESULT.json',dict(passed=False,full_mesh_complete=False,failed_stage='configuration_or_startup',supervisor=record,stderr=str(logs/(key+'.stderr'))))
@@ -225,10 +243,12 @@ def execute(args):
             if direct:
                 stage='v4_direct_fill'
                 from direct_connection import execute as connect
-                result=connect(run,case,out/'background',trace_files=args.trace_native_files)
+                result=connect(run,case,out/'background',trace_files=args.trace_native_files,_finalization_scope=lifetime)
                 mark('v4_direct_fill',t)
                 if result.get('full_mesh_complete') is not True:raise ValueError('V4DirectCompleteRefusal')
                 save(out/'RESULT.json',dict(passed=True,completed_stage='complete',full_mesh_complete=True,requested=plan['requested'],achieved=plan['achieved'],native=native_report,background=result,export=result['export'],times=times,seconds=time.perf_counter()-started,CFD_qualified=False))
+                from audit_completion import worker_handoff
+                worker_handoff(out,result['audit_finalization'],time.monotonic()+max(0,args.timeout_seconds-(time.perf_counter()-started)),lifetime)
                 return 0
             import standalone_background as background
             expected=background.policy_backend(settings['background'])
