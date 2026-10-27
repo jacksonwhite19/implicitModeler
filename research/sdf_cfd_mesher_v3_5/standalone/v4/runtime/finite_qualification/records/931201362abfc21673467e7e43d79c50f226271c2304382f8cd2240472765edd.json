@@ -1,0 +1,687 @@
+{
+  "argv": [
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\control_run.py",
+    "coordinator",
+    "2175288.793225169"
+  ],
+  "canonical_writer_unchanged": true,
+  "classification": "PRIVATE_VISIBILITY_MATRIX_PASSED",
+  "crash_durability_equivalence": false,
+  "event_count": 371,
+  "failures": [],
+  "historical_denier_known": false,
+  "live_credentials": 0,
+  "mesh_invocations": 0,
+  "ntstatus_known": false,
+  "owned_handles_remaining": {},
+  "parent_pid": 9036,
+  "passed": true,
+  "pid": 43780,
+  "raw_syscall_return_known": false,
+  "rows": [
+    {
+      "before": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 4503599629418850,
+        "generation": 0,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\baseline_closed.json",
+        "sha256": "30b48c00a6bd3b74928f38a9ddd8fd180e176aae2362de890027cc82165cdfb9",
+        "size": 682
+      },
+      "error": null,
+      "pending": {
+        "exists": false,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\baseline_closed.json.pending"
+      },
+      "scenario": "closed",
+      "success": true,
+      "target": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 5348024559550843,
+        "generation": 1,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\baseline_closed.json",
+        "sha256": "bbd1311d54e0bded7acf4835c833f03c4031397edd0e0e29656ddf85d2a2949a",
+        "size": 682
+      },
+      "variant": "baseline"
+    },
+    {
+      "before": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 4785074606129506,
+        "generation": 0,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\candidate_closed.json",
+        "sha256": "30b48c00a6bd3b74928f38a9ddd8fd180e176aae2362de890027cc82165cdfb9",
+        "size": 682
+      },
+      "error": null,
+      "pending": {
+        "exists": false,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\candidate_closed.json.pending"
+      },
+      "scenario": "closed",
+      "success": true,
+      "target": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 4503599629418891,
+        "generation": 1,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\candidate_closed.json",
+        "sha256": "bbd1311d54e0bded7acf4835c833f03c4031397edd0e0e29656ddf85d2a2949a",
+        "size": 682
+      },
+      "variant": "candidate"
+    },
+    {
+      "before": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 5066549582840162,
+        "generation": 0,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\baseline_target_share3.json",
+        "sha256": "30b48c00a6bd3b74928f38a9ddd8fd180e176aae2362de890027cc82165cdfb9",
+        "size": 682
+      },
+      "error": {
+        "errno": 13,
+        "repr": "PermissionError(13, 'Access is denied.', None, 5)",
+        "type": "PermissionError",
+        "winerror": 5
+      },
+      "pending": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 30117822510088764,
+        "generation": 1,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\baseline_target_share3.json.pending",
+        "sha256": "bbd1311d54e0bded7acf4835c833f03c4031397edd0e0e29656ddf85d2a2949a",
+        "size": 682
+      },
+      "scenario": "target_handle",
+      "share": 3,
+      "success": false,
+      "target": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 5066549582840162,
+        "generation": 0,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\baseline_target_share3.json",
+        "sha256": "30b48c00a6bd3b74928f38a9ddd8fd180e176aae2362de890027cc82165cdfb9",
+        "size": 682
+      },
+      "variant": "baseline"
+    },
+    {
+      "before": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 5629499536261699,
+        "generation": 0,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\candidate_target_share3.json",
+        "sha256": "30b48c00a6bd3b74928f38a9ddd8fd180e176aae2362de890027cc82165cdfb9",
+        "size": 682
+      },
+      "error": {
+        "errno": 13,
+        "repr": "PermissionError(13, 'The process cannot access the file because it is being used by another process.', None, 32)",
+        "type": "PermissionError",
+        "winerror": 32
+      },
+      "pending": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 19421773395084382,
+        "generation": 1,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\candidate_target_share3.json.pending",
+        "sha256": "bbd1311d54e0bded7acf4835c833f03c4031397edd0e0e29656ddf85d2a2949a",
+        "size": 682
+      },
+      "scenario": "target_handle",
+      "share": 3,
+      "success": false,
+      "target": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 5629499536261699,
+        "generation": 0,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\candidate_target_share3.json",
+        "sha256": "30b48c00a6bd3b74928f38a9ddd8fd180e176aae2362de890027cc82165cdfb9",
+        "size": 682
+      },
+      "variant": "candidate"
+    },
+    {
+      "before": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 7318349396529674,
+        "generation": 0,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\baseline_target_share7.json",
+        "sha256": "30b48c00a6bd3b74928f38a9ddd8fd180e176aae2362de890027cc82165cdfb9",
+        "size": 682
+      },
+      "error": {
+        "errno": 13,
+        "repr": "PermissionError(13, 'Access is denied.', None, 5)",
+        "type": "PermissionError",
+        "winerror": 5
+      },
+      "pending": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 25614222882722508,
+        "generation": 1,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\baseline_target_share7.json.pending",
+        "sha256": "bbd1311d54e0bded7acf4835c833f03c4031397edd0e0e29656ddf85d2a2949a",
+        "size": 682
+      },
+      "scenario": "target_handle",
+      "share": 7,
+      "success": false,
+      "target": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 7318349396529674,
+        "generation": 0,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\baseline_target_share7.json",
+        "sha256": "30b48c00a6bd3b74928f38a9ddd8fd180e176aae2362de890027cc82165cdfb9",
+        "size": 682
+      },
+      "variant": "baseline"
+    },
+    {
+      "before": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 12947848930749795,
+        "generation": 0,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\candidate_target_share7.json",
+        "sha256": "30b48c00a6bd3b74928f38a9ddd8fd180e176aae2362de890027cc82165cdfb9",
+        "size": 682
+      },
+      "error": null,
+      "pending": {
+        "exists": false,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\candidate_target_share7.json.pending"
+      },
+      "scenario": "target_handle",
+      "share": 7,
+      "success": true,
+      "target": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 10977524093777570,
+        "generation": 1,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\candidate_target_share7.json",
+        "sha256": "bbd1311d54e0bded7acf4835c833f03c4031397edd0e0e29656ddf85d2a2949a",
+        "size": 682
+      },
+      "variant": "candidate"
+    },
+    {
+      "pending": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 6755399443188499,
+        "generation": 1,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\baseline_reader_hook.json.pending",
+        "sha256": "bbd1311d54e0bded7acf4835c833f03c4031397edd0e0e29656ddf85d2a2949a",
+        "size": 682
+      },
+      "reader": {
+        "authenticated": false,
+        "bytes_read": 0,
+        "error": {
+          "errno": 13,
+          "message": "[WinError 5] Access is denied.",
+          "stage": "read",
+          "type": "PermissionError",
+          "winerror": 5
+        },
+        "ok": false,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\baseline_reader_hook.json",
+        "schema": "PrivateLiveDiagnosticSnapshot/1",
+        "scientific_acceptance": false,
+        "status": "read_error"
+      },
+      "reader_events": [
+        {
+          "event": "opened",
+          "handle": 836,
+          "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\baseline_reader_hook.json"
+        },
+        {
+          "event": "closed",
+          "handle": 836,
+          "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\baseline_reader_hook.json"
+        }
+      ],
+      "scenario": "reader_hook",
+      "target": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 13229323907460451,
+        "generation": 0,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\baseline_reader_hook.json",
+        "sha256": "30b48c00a6bd3b74928f38a9ddd8fd180e176aae2362de890027cc82165cdfb9",
+        "size": 682
+      },
+      "variant": "baseline",
+      "writer": {
+        "error": {
+          "errno": 13,
+          "repr": "PermissionError(13, 'Access is denied.', None, 5)",
+          "type": "PermissionError",
+          "winerror": 5
+        },
+        "success": false
+      }
+    },
+    {
+      "pending": {
+        "exists": false,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\candidate_reader_hook.json.pending"
+      },
+      "reader": {
+        "authenticated": false,
+        "bytes_read": 682,
+        "may_be_previous_generation": true,
+        "ok": true,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\candidate_reader_hook.json",
+        "schema": "PrivateLiveDiagnosticSnapshot/1",
+        "scientific_acceptance": false,
+        "status": "complete_snapshot",
+        "value": {
+          "body": "0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:",
+          "generation": 0,
+          "marker": "generation-0",
+          "sequence": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      },
+      "reader_events": [
+        {
+          "event": "opened",
+          "handle": 836,
+          "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\candidate_reader_hook.json"
+        },
+        {
+          "event": "closed",
+          "handle": 836,
+          "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\candidate_reader_hook.json"
+        }
+      ],
+      "scenario": "reader_hook",
+      "target": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 7881299350053670,
+        "generation": 1,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\candidate_reader_hook.json",
+        "sha256": "bbd1311d54e0bded7acf4835c833f03c4031397edd0e0e29656ddf85d2a2949a",
+        "size": 682
+      },
+      "variant": "candidate",
+      "writer": {
+        "error": null,
+        "success": true
+      }
+    },
+    {
+      "before": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 5066549582924588,
+        "generation": 0,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\baseline_immutable_guard.json",
+        "sha256": "30b48c00a6bd3b74928f38a9ddd8fd180e176aae2362de890027cc82165cdfb9",
+        "size": 682
+      },
+      "direct_content_write_refused": true,
+      "error": {
+        "errno": 13,
+        "repr": "PermissionError(13, 'Access is denied.', None, 5)",
+        "type": "PermissionError",
+        "winerror": 5
+      },
+      "passed": true,
+      "pending": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 9007199256896310,
+        "generation": 1,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\baseline_immutable_guard.json.pending",
+        "sha256": "bbd1311d54e0bded7acf4835c833f03c4031397edd0e0e29656ddf85d2a2949a",
+        "size": 682
+      },
+      "scenario": "immutable_guard",
+      "success": false,
+      "target": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 5066549582924588,
+        "generation": 0,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\baseline_immutable_guard.json",
+        "sha256": "30b48c00a6bd3b74928f38a9ddd8fd180e176aae2362de890027cc82165cdfb9",
+        "size": 682
+      },
+      "variant": "baseline"
+    },
+    {
+      "before": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 8162774326765431,
+        "generation": 0,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\candidate_immutable_guard.json",
+        "sha256": "30b48c00a6bd3b74928f38a9ddd8fd180e176aae2362de890027cc82165cdfb9",
+        "size": 682
+      },
+      "direct_content_write_refused": true,
+      "error": {
+        "errno": 13,
+        "repr": "PermissionError(13, 'The process cannot access the file because it is being used by another process.', None, 32)",
+        "type": "PermissionError",
+        "winerror": 32
+      },
+      "passed": true,
+      "pending": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 11540474047293310,
+        "generation": 1,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\candidate_immutable_guard.json.pending",
+        "sha256": "bbd1311d54e0bded7acf4835c833f03c4031397edd0e0e29656ddf85d2a2949a",
+        "size": 682
+      },
+      "scenario": "immutable_guard",
+      "success": false,
+      "target": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 8162774326765431,
+        "generation": 0,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\candidate_immutable_guard.json",
+        "sha256": "30b48c00a6bd3b74928f38a9ddd8fd180e176aae2362de890027cc82165cdfb9",
+        "size": 682
+      },
+      "variant": "candidate"
+    },
+    {
+      "error": {
+        "errno": 13,
+        "repr": "PermissionError(13, 'The process cannot access the file because it is being used by another process.', None, 32)",
+        "type": "PermissionError",
+        "winerror": 32
+      },
+      "pending": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 13510798884267970,
+        "generation": 1,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\baseline_source_deny_delete.json.pending",
+        "sha256": "bbd1311d54e0bded7acf4835c833f03c4031397edd0e0e29656ddf85d2a2949a",
+        "size": 682
+      },
+      "scenario": "source_deny_delete",
+      "success": false,
+      "target": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 9007199256897468,
+        "generation": 0,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\baseline_source_deny_delete.json",
+        "sha256": "30b48c00a6bd3b74928f38a9ddd8fd180e176aae2362de890027cc82165cdfb9",
+        "size": 682
+      },
+      "variant": "baseline"
+    },
+    {
+      "error": {
+        "errno": 13,
+        "repr": "PermissionError(13, 'Access is denied.', None, 5)",
+        "type": "PermissionError",
+        "winerror": 5
+      },
+      "pending": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 12666373954138551,
+        "generation": 1,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\baseline_readonly_target.json.pending",
+        "sha256": "bbd1311d54e0bded7acf4835c833f03c4031397edd0e0e29656ddf85d2a2949a",
+        "size": 682
+      },
+      "scenario": "readonly_target",
+      "success": false,
+      "target": {
+        "attributes": 33,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 8162774326765574,
+        "generation": 0,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\baseline_readonly_target.json",
+        "sha256": "30b48c00a6bd3b74928f38a9ddd8fd180e176aae2362de890027cc82165cdfb9",
+        "size": 682
+      },
+      "variant": "baseline"
+    },
+    {
+      "error": {
+        "errno": 13,
+        "repr": "PermissionError(13, 'The process cannot access the file because it is being used by another process.', None, 32)",
+        "type": "PermissionError",
+        "winerror": 32
+      },
+      "pending": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 14073748837701042,
+        "generation": 1,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\candidate_source_deny_delete.json.pending",
+        "sha256": "bbd1311d54e0bded7acf4835c833f03c4031397edd0e0e29656ddf85d2a2949a",
+        "size": 682
+      },
+      "scenario": "source_deny_delete",
+      "success": false,
+      "target": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 90634942502991712,
+        "generation": 0,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\candidate_source_deny_delete.json",
+        "sha256": "30b48c00a6bd3b74928f38a9ddd8fd180e176aae2362de890027cc82165cdfb9",
+        "size": 682
+      },
+      "variant": "candidate"
+    },
+    {
+      "error": {
+        "errno": 13,
+        "repr": "PermissionError(13, 'Access is denied.', None, 5)",
+        "type": "PermissionError",
+        "winerror": 5
+      },
+      "pending": {
+        "attributes": 32,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 8444249303488700,
+        "generation": 1,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\candidate_readonly_target.json.pending",
+        "sha256": "bbd1311d54e0bded7acf4835c833f03c4031397edd0e0e29656ddf85d2a2949a",
+        "size": 682
+      },
+      "scenario": "readonly_target",
+      "success": false,
+      "target": {
+        "attributes": 33,
+        "device": 9562447785075378926,
+        "exists": true,
+        "file_id": 27866022696523296,
+        "generation": 0,
+        "links": 1,
+        "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\candidate_readonly_target.json",
+        "sha256": "30b48c00a6bd3b74928f38a9ddd8fd180e176aae2362de890027cc82165cdfb9",
+        "size": 682
+      },
+      "variant": "candidate"
+    }
+  ],
+  "scientific_acceptance": false,
+  "scope": "Observed in-process fixture visibility/refusal only; no installation or production qualification",
+  "sdf_queries": 0,
+  "seconds": 2.050063599832356,
+  "sequence": {
+    "committed": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32
+    ],
+    "observations": [
+      0,
+      0,
+      1,
+      1,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31
+    ],
+    "reached": true,
+    "thread_retired": true,
+    "write_errors": []
+  },
+  "shared_deadline": 2175288.793225169
+}

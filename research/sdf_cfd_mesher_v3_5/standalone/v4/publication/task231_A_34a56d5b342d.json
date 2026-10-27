@@ -1,0 +1,9 @@
+{
+  "schema": "V4IndependentReview/1",
+  "passed": true,
+  "reviewer": "launch_review",
+  "source_inventory_identity": "34a56d5b342d911a74682c143d3b77578745f2c037d2846db9fb5077c5ff76d6",
+  "review_receipt_sha256": "ba2cbd8a1ce6a86585772e0e3498707048341fd4466eb094b39044394ad6c0fa",
+  "scope": "Source publication only. No metadata, owner, scientific candidate or campaign execution approval.",
+  "reviewed_utc": "2026-10-25T22:23:34Z"
+}

@@ -1,0 +1,31 @@
+{
+  "reviewer": "/root/completed_roles_review",
+  "scope": "AcceptedResearchPreparationControlReportingOnly",
+  "reporting_approved": true,
+  "blockers": [],
+  "control_passed": true,
+  "actual_guard_count": 2696,
+  "execution_pin_count": 2403,
+  "actual_review_pin_map_digest": "303579b3508760ed8c9bcdaeff760cf86be16a2f3657934e0a07b51cf9234259",
+  "before_after_hash_and_metadata_equal": true,
+  "all_review_handles_closed": true,
+  "guards_closed_utc": "2026-10-19T03:34:03.7009241Z",
+  "files": {
+    "REPORT.md": "05a151e43899afc5bb486c05ea85f55417a51a7f600eb700a4d12f35d1772d53",
+    "EVIDENCE.json": "6a3333ed5b501b8606ae68e3471515da869a6d7f175d2bfd73a1a19a3c46eec0",
+    "PRESERVATION.json": "226426245f6970a79130f2221688d3674d152651440849911559510a028eb896",
+    "DOCUMENT_UPDATE.json": "2b345026f82ab558c67e4d47141aebf46e606d3c5f225708a6c0e69fd1a12a4c",
+    "prepare.py": "776bfe3454be05ef5753e4e7f4d5a37e27521d0e11371f530b70daac35c3ab5b",
+    "controls.py": "884d7fc657586e6fa74d1d3c0549a35abe4f5916f51ffc18446b9890086c0214",
+    "control_run.py": "1a052d301912d2eea55a7dbcc92f5f78793181804ff75fbc29e82b13e43718dc",
+    "USAGE.md": "caed20ae5301ea04eff151f501e33a4a25b10f2d6963de821a0229c8b4d493b8",
+    "NEXT_STEP.md": "f18c94744a09fe53518e7ce8e12b3260c5a889f6e0d48547f77c7425f8def312"
+  },
+  "prior49_preserved_files": 45,
+  "prior48_preserved_files": 185,
+  "no_reviewer_imports_tests_edits_or_array_decoding": true,
+  "source_promoted": false,
+  "geometry_qualification": false,
+  "scientific_acceptance": false,
+  "further_execution_approved": false
+}

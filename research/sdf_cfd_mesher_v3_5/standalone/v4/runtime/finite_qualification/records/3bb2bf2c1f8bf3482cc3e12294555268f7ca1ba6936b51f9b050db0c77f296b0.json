@@ -1,0 +1,39 @@
+{
+  "actual_command_sha256": "cedddaee01f1f8040e0427512a9e7848f23e58211b4dd35d9336565388c7f520",
+  "all_handles_physically_closed": true,
+  "approved": true,
+  "authorization_sha256": "e35bec05a1e3b50e0248ea0e8c6c52772ebf4863252dc7f46489bbb12769345b",
+  "before_after_sha_and_token_checks_equal": true,
+  "control_owner_seconds": 110,
+  "control_payload_seconds": 50,
+  "declared_pins": 10270,
+  "digest_format": "Ordinal absolute-Windows-path lowercase-SHA map, PowerShell compressed JSON UTF8 no BOM",
+  "findings": [
+    "Guard manifest before using helper/owner pins",
+    "Preserve primary on cleanup evidence failure",
+    "Exact fixed owner before fixture; profile after fixture; selected110 short owner only",
+    "Historical104 receipts and70 binding corrections retained",
+    "Producer/helpers/scientific gates unchanged; no numerical acceptance"
+  ],
+  "guarded_files": 10289,
+  "guards_closed_utc": "2026-10-19T22:39:44.3993750Z",
+  "guards_opened_utc": "2026-10-19T22:39:39.1770018Z",
+  "long_linux_lifetime_qualified": false,
+  "manifest_sha256": "309a956aad9a95a55ef6441740c79f57ca1043c00a5d8622c659d7884c9a4e4a",
+  "maximum_invocations": 1,
+  "mode": "nonmeshing_only",
+  "numerical_execution": false,
+  "physical_snapshot_digest": "bdda3cc53c9f985b0b6aba9df04f6dfec678b04e75da5ef1150407870094701f",
+  "reviewed_files": {
+    "activate.py": "b334b30b60ab8cc583bfe30a19226e4945c9ea9d95b38210678b9662cb2cd8e4",
+    "candidate/tet_layer_handoff.py": "9451e3063248632e5ae4b0ee0c6efbde6cb47c3847f90a608816dd8650d58eec",
+    "control_run.py": "3cee08e284c72e2ba88db82d72512f2d39dc85e53f74693848761e4a4e2bdef9",
+    "controls.py": "2029bcc460a9c42bdd691ac71599aee951c69ad2b1c62091250aa9f8eb0b5ea9",
+    "owner_selection.py": "dca091501226cd33f08eca9aab35101c1f773267b7904b326edaae756b92ffde",
+    "prepare.py": "b386b4c1456eca7d4da731c7d573a53efef4482fbfbb1bfad9748129e2ef57fe",
+    "template/run.py": "3aedb93267d91e6367e0130dc7feff601660c07418959566663e3d2b13cac68f"
+  },
+  "reviewer": "/root/completed_roles_review",
+  "schema": "Task85FocusedControlLaunchReview/1",
+  "task_sha256": "3c095670ba441028d8c48ee7abb29c24e8b26960f55188cb163898a628105f6c"
+}

@@ -1,0 +1,9 @@
+{
+  "schema": "V4IndependentReview/1",
+  "passed": true,
+  "reviewer": "/root/launch_review",
+  "source_inventory_identity": "7eef2eb5f66f231a4069e34d08f5a20cd1a9d0a417e17722d4196b1f2c838247",
+  "review_receipt_sha256": "3924ebf0340d1b7d4e3f802e3be1e79ea319f8a97805e087765f4fcff78b7c57",
+  "scope": "Source publication approval for repair194 surface-only research use. Metadata and sole candidate require exact launch review. Default166 and sealed174 unchanged.",
+  "reviewed_utc": "2026-10-24T05:04:24Z"
+}

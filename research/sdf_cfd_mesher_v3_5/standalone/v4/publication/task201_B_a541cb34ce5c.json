@@ -1,0 +1,9 @@
+{
+  "schema": "V4IndependentReview/1",
+  "passed": true,
+  "reviewer": "/root/sphere_review",
+  "source_inventory_identity": "a541cb34ce5c783f5e1d4d3e17a20261dd9a58944444101aa5b57aa88480a485",
+  "review_receipt_sha256": "a74f43e0c4cb8fc3810958ec0b4f8b73ac70cc2288627eaaae00b890c4bafe3a",
+  "scope": "Source publication approval only. No real query, owner, candidate or whole-Prism qualification is approved.",
+  "reviewed_utc": "2026-10-24T19:26:57.7594704Z"
+}

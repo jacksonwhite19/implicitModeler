@@ -1,0 +1,9 @@
+{
+  "schema": "ExplicitFiniteTimeProfile/1",
+  "payload_seconds": 14400,
+  "owner_seconds": 14700,
+  "transition_seconds": 10800,
+  "native_seconds": 7200,
+  "native_stage_seconds": 3600,
+  "source_task": 170
+}

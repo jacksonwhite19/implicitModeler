@@ -1,0 +1,30 @@
+{
+  "schema": "FiniteCollarFailedIntegrationReview/1",
+  "reviewer": "/root/completed_roles_review",
+  "verdict": "PASS",
+  "scope": "FailedFreshIntegrationReportingOnly",
+  "blockers": [],
+  "scientific_acceptance": false,
+  "production_promotion": false,
+  "further_execution_authorized": false,
+  "guards_closed_utc": "2026-10-19T00:59:22.807+00:00",
+  "actual_guard_count": 2501,
+  "all_review_handles_closed": true,
+  "actual_review_pin_map_digest": "6310eac9f30a2e6b9db4f852c2c93e53c30519c298592bd4b70c0243fe6b2d44",
+  "control_execution_held_pins": 2344,
+  "live_execution_held_pins": 2352,
+  "all_execution_pins_match": true,
+  "all_completion_source_release_links_verified": true,
+  "windows_jobs_empty": true,
+  "linux_and_monitor_retired": true,
+  "no_reviewer_imports_tests_edits_or_array_decodes": true,
+  "reporting_source_limits": "Source establishes live SDF reader lifetime conflict; actual thread inventory is absent. Six prism layers accepted; transition not constructed. Resource observation passed, overall command failed.",
+  "files": {
+    "REPORT.md": "6cf67553ad4a8df83ee27048eaad1a8d23377526600c06378a97a690a24989fa",
+    "EVIDENCE.json": "2f19b3e8db9725322a54e745e54b1be1cfc557984548fffb8d4c025afc1d05a9",
+    "PRESERVATION.json": "b0ca930420fb60d31be24ea54bb9665bf5ee75236051f7146952cd4241439f17",
+    "DOCUMENT_UPDATE.json": "2ecc19d696ce4fae46bfa3a412028fef06c33f4121d0342baac0f96b6f94d47f",
+    "CURRENT_TASK.md": "49c64e3492c7f808c1b34c5e2cebb04ed220fbc88593ba9c4bcea40666c24fa8",
+    "README.md": "cc2513a3d497459f40fc0b683c027c1a5cbe3f2d3efbdd1f81c85a2e7909be5a"
+  }
+}

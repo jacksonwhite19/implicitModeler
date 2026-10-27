@@ -1,0 +1,9 @@
+{
+  "schema": "V4IndependentReview/1",
+  "passed": true,
+  "reviewer": "/root/sphere_review",
+  "source_inventory_identity": "e74b347f3f66c4ca2c7c65bd8683f97507bc5e26b423cc7bf2c816a6854cfdad",
+  "review_receipt_sha256": "d72d40d594bb78f3d4e334b5a906a5f7627dc333b477a437879220dae840167b",
+  "scope": "Source publication, public dispatch and prepared PhaseB plan only. Exact metadata and launch reviews remain required; no owner/geometry/PhaseB execution.",
+  "reviewed_utc": "2026-10-25T03:30:59.1517037Z"
+}

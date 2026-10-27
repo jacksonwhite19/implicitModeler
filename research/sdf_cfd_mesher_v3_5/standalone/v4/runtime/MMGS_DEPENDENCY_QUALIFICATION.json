@@ -1,0 +1,73 @@
+{
+  "pass_gate": true,
+  "classification": "MMGSDependencyAndClosedSurfaceControlsQualified",
+  "scope": "Existing native closed anisotropic box and existing thin closed prism-host box using the SB adapter; continuous wing certification remains required.",
+  "revision": "4d8232c8aebfed877935d75d4d4a67e850962422",
+  "library": "/mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v3/fresh_supported_refinement_family_qualification_2026-09-09/dependency/install/lib/libmmgs.so.5.8.0",
+  "library_sha256": "f77899f67895d1053d958bae7bbab4e8562397144a379f3835e16f10454c9834",
+  "adapter": "/mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v3/adaptive_surface_architecture/bin/mmgs_metric_contract_runner",
+  "adapter_sha256": "0771ae4562c74dc7c0edf7ab4e713ad01c886900546407232f8c04d9b08cd55f",
+  "explicit_child_environment": {
+    "LD_LIBRARY_PATH": "/mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v3/fresh_supported_refinement_family_qualification_2026-09-09/dependency/install/lib",
+    "V3_MMGS_NOMOVE": "unset"
+  },
+  "source_comparison_sha256": "639d37fa44a7968d765b58dba72b8a0dd63b10d82baf6db0fbe4c4208422d15e",
+  "build_result_sha256": "8368ef01cbf9a567670406c4f1dc77fe7786b4e8f1bc1f1d3853131f12dce6d4",
+  "build_resource_completion_sha256": "771ce0aaf180d82113b4cd9f08967f8d6abe7b898dff7e06e50aabbf715d8cb3",
+  "native_closed_AA2": {
+    "pass_gate": true,
+    "scientific_byte_equality": {
+      "fixture_result.json": true,
+      "adapted.mesh": true
+    },
+    "timing_excluded_only_from_replay_record": true
+  },
+  "adapter_closed_AA2": {
+    "scientific_results_exact": true,
+    "pass_gate": true,
+    "control_source": "/mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v3/prism_aware_surface_co_design/run_metric_fixtures.py",
+    "unchanged_acceptance": true
+  },
+  "adapter_native_topology": {
+    "A": {
+      "schema": "V3CandidateSurfaceTopologyAudit/v1",
+      "pass": true,
+      "vertices": 379,
+      "faces": 754,
+      "inserted_vertices": 379,
+      "inserted_faces": 754,
+      "rejected_faces": 0,
+      "valid_polygon_mesh": true,
+      "closed": true,
+      "outward_oriented": true,
+      "self_intersects": false,
+      "runtime_seconds": 0.003322104
+    },
+    "A2": {
+      "schema": "V3CandidateSurfaceTopologyAudit/v1",
+      "pass": true,
+      "vertices": 379,
+      "faces": 754,
+      "inserted_vertices": 379,
+      "inserted_faces": 754,
+      "rejected_faces": 0,
+      "valid_polygon_mesh": true,
+      "closed": true,
+      "outward_oriented": true,
+      "self_intersects": false,
+      "runtime_seconds": 0.003529455
+    }
+  },
+  "unchanged_runner_options": {
+    "verbose": 1,
+    "angle": 0,
+    "hausd": 5.148055963833207e-05,
+    "hmax": 0.04,
+    "mmgslib_calls": 1
+  },
+  "installed_libraries_changed": false,
+  "recorded_not_suppressed_warnings": [
+    "Normal build recorded file timestamp ordering warnings; a complete clean rebuild produced the same library hash.",
+    "Existing control imports report SciPy/NumPy version-range warning; unchanged fixture arithmetic and native MMGS/topology gates pass. This does not establish future PDE warning-free qualification."
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "schema": "V4IndependentReview/1",
+  "passed": true,
+  "reviewer": "/root/sphere_review",
+  "source_inventory_identity": "9d8f11a30efa7a6e6ecf9d9631f7459d5c51134d55e1d8033becffa187202fea",
+  "review_receipt_sha256": "3bda1c7b04efe542d292bc5a916e46b284d884a186a9cf086e4d1dbd99864ddd",
+  "scope": "Diagnostic-only source publication. Reuses exact conservative math with C1-gated strictnegative point witness, no acceptance/trajectory/budget change.69syntheticcontrols. Exact fixedschedule/harness/input/output/owner review required before any retainedquery. No broader qualification.",
+  "reviewed_utc": "2026-10-24T20:29:00.2746757Z"
+}

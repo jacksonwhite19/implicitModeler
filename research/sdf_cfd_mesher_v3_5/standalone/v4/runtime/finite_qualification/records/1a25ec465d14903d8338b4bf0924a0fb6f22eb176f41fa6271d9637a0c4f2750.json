@@ -1,0 +1,10 @@
+{
+  "closed": true,
+  "pid": 2404,
+  "protected_handles": 0,
+  "readers_alive": [
+    false,
+    false
+  ],
+  "returncode": 1
+}

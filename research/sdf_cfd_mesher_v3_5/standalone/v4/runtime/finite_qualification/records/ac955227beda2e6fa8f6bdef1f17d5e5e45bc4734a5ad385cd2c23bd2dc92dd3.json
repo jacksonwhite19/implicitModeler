@@ -1,0 +1,441 @@
+"""Build a distinct live research derivative; never issue a grant or launch it."""
+from pathlib import Path
+import argparse
+import hashlib
+import json
+
+HERE = Path(__file__).resolve().parent
+R = Path('C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement')
+READINESS_ROOT = Path('C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01')
+GENERATOR_ROOT = Path('C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01')
+V4 = R.parent.parents[1]
+PREPARER = HERE
+TEMPLATE = R/'finite_collar_live_B05'
+FILES = ('run.py', 'connection.py', 'stage.py', 'routing_body.py', 'PYTHON_IDENTITY.json',
+         'candidate/tet_layer_controls.py', 'candidate/tet_layer_adapter.py',
+         'candidate/standalone_background.py', 'candidate/finite_collar_command.py',
+         'candidate/tet_layer_handoff.py')
+
+
+def read(path):
+    return json.loads(Path(path).read_text(encoding='utf-8'))
+
+
+def sha(path):
+    with Path(path).open('rb') as stream:
+        return hashlib.file_digest(stream, 'sha256').hexdigest()
+
+
+def write(path, value):
+    data = value if isinstance(value, bytes) else (json.dumps(value, sort_keys=True, indent=2)+'\n').encode()
+    with Path(path).open('xb') as stream:
+        stream.write(data)
+
+
+def replace(text, old, new):
+    if text.count(old) != 1:
+        raise ValueError('ChangedActivationTemplate', old)
+    return text.replace(old, new, 1)
+
+
+def receipt_paths():
+    names = [('helper_lifecycle01', name) for name in (
+        'CLOSED.json', 'REVIEW.json', 'CONTROL_LAUNCH_REVIEW.json',
+        'controls01/RESULT.json', 'controls01/WORKER_COMPLETION.json',
+        'controls01/HOST_CONTROL_EVIDENCE.json', 'controls01/LOADED_SOURCE_CLOSURE.json',
+        'controls01/CONTROL_STARTUP_IDENTITY.json', 'controls01_RESOURCE_RESULT.json',
+        'controls01_SCOPE_RESULT.json', 'controls01_EXECUTION.json',
+        'controls01_EXECUTION_CLOSURE.json', 'controls01_SCOPE_CLOSURE.json')]
+    names += [('finite_collar_live_B04', name) for name in
+              ('CLOSED.json', 'REVIEW.json', 'CONTROL_RESULT_REVIEW.json', 'LAUNCH_REVIEW.json')]
+    names += [(packet, name) for packet in ('finite_collar_live_B05', 'reusable_finite_command02')
+              for name in ('CLOSED.json', 'REVIEW.json')]
+    names += [('reusable_finite_inputs02', name) for name in
+              ('CLOSED.json', 'REVIEW.json', 'CONTROL_RESULT_REVIEW.json')]
+    names += [(packet,name) for packet in ('reusable_finite_blend_live01','reusable_finite_capacity01')
+              for name in ('CLOSED.json','REVIEW.json')]
+    return [str((R/packet/name).resolve()) for packet, name in names]
+
+
+def current_control_receipts():
+    return [str(READINESS_ROOT/name) for name in ('CLOSED.json','REVIEW.json',
+        'prepare.py','activate.py','controls.py','PINNED_SOURCES.json','CONTROL_RESULT_REVIEW.json',
+        'CONTROL_AUTHORIZATION.json', 'CONTROL_LAUNCH_REVIEW.json',
+        'controls01/RESULT.json', 'controls01/WORKER_COMPLETION.json',
+        'controls01/LOADED_SOURCE_CLOSURE.json', 'controls01/CONTROL_STARTUP_IDENTITY.json',
+        'controls01_RESOURCE_RESULT.json', 'controls01_SCOPE_RESULT.json',
+        'controls01_EXECUTION.json', 'controls01_EXECUTION_CLOSURE.json', 'controls01_SCOPE_CLOSURE.json')]
+
+
+def observer_control_receipts():
+    return [str(GENERATOR_ROOT/name) for name in ('CLOSED.json','REVIEW.json','EVIDENCE.json',
+        'CONTROL_LAUNCH_REVIEW.json','CONTROL_AUTHORIZATION.json','PINNED_SOURCES.json',
+        'prepare.py','activate.py','candidate/tet_layer_handoff.py','controls.py',
+        'controls01/RESULT.json','controls01/WORKER_COMPLETION.json','controls01/LOADED_SOURCE_CLOSURE.json',
+        'controls01/CONTROL_STARTUP_IDENTITY.json','controls01/NATIVE_HOST_RETIREMENT.json','controls01_EXECUTION.json',
+        'controls01_RESOURCE_RESULT.json','controls01_SCOPE_RESULT.json',
+        'controls01_EXECUTION_CLOSURE.json','controls01_SCOPE_CLOSURE.json')]
+
+
+def gate_source():
+    text = (TEMPLATE/'run.py').read_text()
+    text = text[text.index('def gate(role):'):text.index('\ndef read(path):')]
+    text = replace(text, 'Separate Task48 allocation under current human direction and exact review.',
+                   'Fresh prepared derivative under current task, exact source and independent review.')
+    text = replace(text, "task=read(HERE/'TASK.json');grant=read(HERE/'AUTHORIZATION.json');review=read(HERE/'LAUNCH_REVIEW.json')",
+                   "task=read(HERE/'TASK.json')\n    if task.get('live_execution_authorized') is not True:\n        raise ValueError('NumericalExecutionDeniedByAssignment', role)")
+    text = replace(text, "'FiniteCollarFreshLiveTask/2'", "'PreparedFiniteLiveTask/1'")
+    text = replace(text, "    if (grant.get('approved')", "    verify_activation()\n    grant=read(HERE/'AUTHORIZATION.json');review=read(HERE/'LAUNCH_REVIEW.json')\n    if (grant.get('approved')")
+    text = replace(text, "grant.get('human_message')!='01a151ae-eca9-7582-af8b-4f66ccbd8f0b'", "grant.get('human_message')!=task['human_message']")
+    text = replace(text, "grant.get('human_turn')!='01a151ae-ec50-7011-a287-3c2710744058'", "grant.get('assignment')!=task['assignment']")
+    text = replace(text, "grant.get('assignment')!='Task48'", "grant.get('activation_sha256')!=sha(HERE/'ACTIVATION.json')")
+    text = replace(text, "'AdvisorTask48SeparatelyBoundedReviewedContinuation'", "'PreparedResearchSeparatelyBoundedReviewedContinuation'")
+    a, b = text.index("    prior = '../helper_lifecycle01/'"), text.index('    receipts = review.get')
+    text = text[:a]+'    prior = '+repr(str(R/'helper_lifecycle01'))+'\n    required = set('+repr(receipt_paths()+current_control_receipts()+observer_control_receipts())+')\n'+text[b:]
+    text = replace(text, 'sha(HERE/name) != digest', 'sha(Path(name)) != digest')
+    text = text.replace('read(HERE/prior/', 'read(Path(prior)/')
+    extra = '''    control = Path(CONTROL_ROOT)
+    if (read(control/'CONTROL_RESULT_REVIEW.json').get('approved') is not True
+            or any(read(control/name).get('passed') is not True for name in
+                   ('controls01/RESULT.json','controls01/WORKER_COMPLETION.json',
+                    'controls01_RESOURCE_RESULT.json','controls01_SCOPE_RESULT.json'))
+            or any(read(control/name).get('all_guards_released') is not True for name in
+                   ('controls01_EXECUTION_CLOSURE.json','controls01_SCOPE_CLOSURE.json'))):
+        raise ValueError('CurrentClosedPreparationControlRequired')
+'''.replace('CONTROL_ROOT',repr(str(READINESS_ROOT)))
+    extra += """    closed=read(control/'CLOSED.json')
+    final_review=read(control/'REVIEW.json')
+    if (closed.get('classification')!='CAPACITY_TO_LIVE_READINESS_NONMESHING_PASS'
+            or closed.get('review_sha256')!=sha(control/'REVIEW.json')
+            or final_review.get('reporting_approved') is not True
+            or any(closed['files'].get(name,{}).get('sha256')!=sha(control/name)
+                   for name in ('prepare.py','activate.py','controls.py','PINNED_SOURCES.json',
+                                'CONTROL_RESULT_REVIEW.json'))):
+        raise ValueError('ImmutableReadinessSourceAndClosureRequired')
+"""
+    extra += '''    diagnostic=Path(__GENERATOR_ROOT__)
+    closed=read(diagnostic/'CLOSED.json'); checked=read(diagnostic/'REVIEW.json')
+    if (closed.get('classification')!='PRIVATE_PRODUCER_FLUID_CONNECTION_NONMESHING_PASS'
+            or closed.get('review_sha256')!=sha(diagnostic/'REVIEW.json')
+            or checked.get('status')!='PASS'
+            or any(closed.get('files',{}).get(name,{}).get('sha256')!=sha(diagnostic/name) for name in
+                   ('prepare.py','activate.py','candidate/tet_layer_handoff.py','controls.py','PINNED_SOURCES.json','EVIDENCE.json'))
+            or any(read(diagnostic/name).get('passed') is not True for name in
+                   ('controls01/RESULT.json','controls01/WORKER_COMPLETION.json','controls01_RESOURCE_RESULT.json','controls01_SCOPE_RESULT.json'))
+            or any(read(diagnostic/name).get('all_guards_released') is not True for name in
+                   ('controls01_EXECUTION_CLOSURE.json','controls01_SCOPE_CLOSURE.json'))):
+        raise ValueError('ClosedReviewedObserverConnectionRequired')
+'''.replace('__GENERATOR_ROOT__',repr(str(GENERATOR_ROOT)))
+    text = replace(text,'    return task',extra+'    return task')
+    start=text.index('    prior = ')
+    end=text.index('    return task',start)
+    checks=text[start:end]
+    checks=replace(checks,"    receipts = review.get('control_receipts', {})\n",'')
+    text=text[:start]+"    verify_required_receipts(review.get('control_receipts', {}))\n"+text[end:]
+    text=replace(text,"    task=read(HERE/'TASK.json')", "    if not (HERE/'AUTHORIZATION.json').is_file():\n        raise ValueError('MissingSeparateLiveGrant',role)\n    task=read(HERE/'TASK.json')")
+    return text+"\n\ndef verify_required_receipts(receipts):\n"+checks
+
+
+
+ACTIVATION_CHECK = '''def verify_activation():
+    binding=read(HERE/'ACTIVATION.json'); selected=read(HERE/'PINNED_SOURCES.json')
+    prepared=Path(binding['prepared_request'])
+    if (binding['schema']!='PreparedLiveDerivative/1'
+            or sha(prepared/'PINNED_SOURCES.json')!=binding['prepared_manifest_sha256']
+            or sha(prepared/'LIVE_REQUEST.json')!=binding['prepared_request_sha256']
+            or sha(HERE/'TASK.json')!=binding['task_sha256']
+            or sha(HERE/'LIVE_REQUEST.json')!=binding['live_request_sha256']
+            or sha(HERE/'STAGE_REQUEST.json')!=binding['selector']
+            or sha(binding['assignment_task'])!=binding['assignment_task_sha256']
+            or sha(binding['activation_source'])!=binding['activation_source_sha256']):
+        raise ValueError('ChangedPreparedActivationBinding')
+    if any((prepared/name).exists() for name in ('AUTHORIZATION.json','LAUNCH_REVIEW.json','TASK.json','CLOCK.json','live01_INPUT_PINS.json','CONTROL_AUTHORIZATION.json')):
+        raise ValueError('OriginalPreparationAuthorityChanged')
+    for name in binding['generated_files']+['ACTIVATION.json','TASK.json','LIVE_REQUEST.json','STAGE_REQUEST.json']:
+        if selected.get(str(HERE/name))!=sha(HERE/name):
+            raise ValueError('ChangedActivatedSource',name)
+    planned=read(HERE/'LIVE_REQUEST.json')
+    if (planned['selector']!=binding['selector'] or planned['stage_request_sha256']!=binding['selector']
+            or planned['entry']!=str(HERE/'run.py') or planned['stage_request']!=str(HERE/'STAGE_REQUEST.json')
+            or planned['arguments'][:2]!=['--finite-collar-selection',binding['selector']]
+            or planned['execution_authorized'] is not False):
+        raise ValueError('ChangedActivationSelection')
+    if selected.get(binding['assignment_task'])!=binding['assignment_task_sha256']:
+        raise ValueError('UnpinnedCapacityAssignment')
+    assignment=read(binding['assignment_task'])
+    capacity=assignment_capacity(assignment)
+    assignment_intent(assignment)
+    if (binding['generator_root']!=__GENERATOR_ROOT__
+            or binding['producer_source']!=str(Path(__GENERATOR_ROOT__)/'candidate/tet_layer_handoff.py')
+            or selected.get(binding['producer_source'])!=binding['producer_sha256']
+            or sha(binding['producer_source'])!=binding['producer_sha256']
+            or sha(HERE/'candidate/tet_layer_handoff.py')!=binding['producer_sha256']):
+        raise ValueError('ChangedObserverProducerBinding')
+    if binding['readiness_root']!=__READINESS_ROOT__:
+        raise ValueError('ChangedFixedReadinessRoot')
+    contract=select_input_contract(assignment,binding['input_contract_id'])
+    if contract!=binding['input_contract']:
+        raise ValueError('ChangedSelectedInputContract')
+    validate_bound_inputs(contract,planned,read(HERE/'STAGE_REQUEST.json'),binding['canonical_inputs'],capacity)
+    original=read(prepared/'LIVE_REQUEST.json')
+    validate_bound_inputs(contract,original,read(prepared/'STAGE_REQUEST.json'),binding['canonical_inputs'],capacity)
+    for request in (original,planned):
+        if (request['assignment_task']!=binding['assignment_task']
+                or request['assignment_task_sha256']!=binding['assignment_task_sha256']
+                or request['input_contract_id']!=binding['input_contract_id']):
+            raise ValueError('ChangedRequestCapacityAssignment')
+    import ast
+    tree=ast.parse((HERE/'connection.py').read_text())
+    selectors=[ast.literal_eval(node.value) for node in tree.body if isinstance(node,ast.Assign)
+        and any(isinstance(t,ast.Name) and t.id=='SELECTOR' for t in node.targets)]
+    if selectors!=[binding['selector']]:
+        raise ValueError('ChangedConnectionSelector')
+    task=read(HERE/'TASK.json')
+    if (task!=live_task_from_assignment(assignment)
+            or read(HERE/'STAGE_REQUEST.json')['live_execution_authorized'] is not task['live_execution_authorized']
+            or original.get('live_payload_seconds')!=0 or original.get('live_owner_seconds')!=0
+            or planned.get('live_payload_seconds')!=task['payload_seconds']
+            or planned.get('live_owner_seconds')!=task['owner_seconds']):
+        raise ValueError('ChangedAssignmentExecutionIntent')
+    return binding
+
+
+'''
+
+
+# BEGIN SHARED INPUT CHECKS
+def assignment_intent(task):
+    from datetime import datetime, timedelta
+    count=task.get('maximum_live_invocations')
+    if (task.get('schema')!='ReusableFiniteInputAssignment/1'
+            or type(count) is not int or count not in (0,1)):
+        raise ValueError('ExactPendingOrOneLiveAssignmentRequired')
+    permitted=count==1
+    if (task.get('execution_authorized') is not permitted
+            or task.get('live_payload_seconds')!=(1740 if permitted else 0)
+            or task.get('live_owner_seconds')!=(1800 if permitted else 0)
+            or task.get('live_transition_seconds')!=(720 if permitted else 0)
+            or task.get('proposed_live_payload_seconds')!=1740
+            or task.get('proposed_live_owner_seconds')!=1800
+            or task.get('proposed_transition_seconds')!=720
+            or task.get('proposed_live_window_seconds')!=3600
+            or task.get('proposed_live_launch_cutoff_seconds')!=1200):
+        raise ValueError('ExactAssignmentAllowancesRequired')
+    dates=[task.get(k) for k in ('start_utc','deadline_utc','live_cutoff_utc')]
+    if not permitted:
+        if any(value is not None for value in dates):
+            raise ValueError('PendingAssignmentDatesMustBeNull')
+    else:
+        if not all(isinstance(value,str) for value in dates):
+            raise ValueError('ExactFreshLiveWindowRequired')
+        start,end,cutoff=map(datetime.fromisoformat,dates)
+        if (any(value.utcoffset() is None for value in (start,end,cutoff))
+                or end-start!=timedelta(seconds=3600)
+                or cutoff-start!=timedelta(seconds=1200)):
+            raise ValueError('ExactFreshLiveWindowRequired')
+    return permitted
+
+
+def live_task_from_assignment(task):
+    permitted=assignment_intent(task)
+    return dict(schema='PreparedFiniteLiveTask/1' if permitted else 'ProposedFiniteLiveTask/1',
+        assignment=task['assignment'],human_message=task['human_message'],
+        start_utc=task['start_utc'],launch_cutoff_utc=task['live_cutoff_utc'],deadline_utc=task['deadline_utc'],
+        authorization_scope='PreparedResearchSeparatelyBoundedReviewedContinuation',
+        maximum_invocations=task['maximum_live_invocations'],
+        payload_seconds=task['live_payload_seconds'],owner_seconds=task['live_owner_seconds'],
+        transition_seconds=task['live_transition_seconds'],proposed_payload_seconds=1740,
+        proposed_owner_seconds=1800,proposed_transition_seconds=720,proposed_window_seconds=3600,
+        proposed_launch_cutoff_seconds=1200,live_execution_authorized=permitted)
+
+
+def assignment_capacity(task):
+    value=task.get('maximum_faces')
+    if type(value) is not int or value<=0:
+        raise ValueError('ExplicitPositiveIntegerAssignmentCapacityRequired')
+    return value
+
+
+def select_input_contract(task, contract_id):
+    rows=task.get('input_contracts',{})
+    if not isinstance(rows,dict) or contract_id not in rows:
+        raise ValueError('UnlistedInputContract')
+    keys={'case_path','case_sha256','imported_source_path','imported_source_sha256','policy_path','policy_sha256'}
+    signatures=[]
+    for row in rows.values():
+        if not isinstance(row,dict) or set(row)!=keys:
+            raise ValueError('ExactRawInputContractRequired')
+        if (row['imported_source_path'] is None)!=(row['imported_source_sha256'] is None):
+            raise ValueError('ExplicitImportedSourceOrNullRequired')
+        for name in ('case_path','policy_path','imported_source_path'):
+            if row[name] is not None and str(Path(row[name]).resolve())!=row[name]:
+                raise ValueError('AbsoluteOriginalInputPathRequired',name)
+        signatures.append(json.dumps(row,sort_keys=True))
+    if len(signatures)!=len(set(signatures)):
+        raise ValueError('AmbiguousInputContracts')
+    return dict(rows[contract_id])
+
+
+def validate_bound_inputs(contract, planned, stage, canonical, maximum_faces):
+    # Only assignment data selects the raw tuple. Canonical facts were derived
+    # under the existing input owner, and the external review binds this record.
+    for path_key,hash_key in (('case_path','case_sha256'),('policy_path','policy_sha256'),
+                              ('imported_source_path','imported_source_sha256')):
+        if contract[path_key] is not None and sha(contract[path_key])!=contract[hash_key]:
+            raise ValueError('ChangedAllowedRawInput',path_key)
+    if (planned['case']!=contract['case_path'] or planned['case_sha256']!=contract['case_sha256']
+            or planned['imported_source_sha256']!=contract['imported_source_sha256']
+            or planned['original_policy_path']!=contract['policy_path']
+            or planned['original_policy_sha256']!=contract['policy_sha256']):
+        raise ValueError('UnlistedPreparedInputTuple')
+    if (canonical['case_sha256']!=contract['case_sha256']
+            or canonical['imported_source_path']!=contract['imported_source_path']
+            or canonical['imported_source_sha256']!=contract['imported_source_sha256']
+            or canonical['policy_sha256']!=contract['policy_sha256']
+            or stage['upstream_case_sha256']!=canonical['case_sha256']
+            or stage['upstream_effective_identity']!=canonical['effective_case_identity']
+            or stage['upstream_geometry_identity']!=canonical['geometry_identity']
+            or stage['downstream_policy_identity']!=canonical['policy_identity']
+            or stage['downstream_policy']!=read(contract['policy_path'])):
+        raise ValueError('ChangedCanonicalInputBinding')
+    expected=['--finite-collar-selection',planned['selector'],'--case',contract['case_path'],
+        '--from-layer','0','--through-layer','6','--mode','fastprod','--stop-after-transition',
+        '--output',planned['output'],'--minimum-free-bytes','1000000000',
+        '--surface-carrier','nodal','--surface-assurance','numerical']
+    if (type(stage['maximum_faces']) is not int or stage['maximum_faces']!=maximum_faces):
+        raise ValueError('CapacityAssignmentMismatch')
+    if (planned['arguments']!=expected
+            or stage['upstream_flags']!=dict(surface_assurance='numerical',surface_carrier='nodal',through_layer=6,transition_only=True)
+            or planned['proposed_payload_seconds']!=1740 or planned['proposed_owner_seconds']!=1800
+            or planned['transition_stage_seconds']!=720):
+        raise ValueError('ChangedPreparedArgumentsOrBounds')
+    return True
+# END SHARED INPUT CHECKS
+
+
+def activate(preparer, prepared, expected_manifest, destination, task_path, task_sha256, contract_id):
+    prepared, destination, task_path = (Path(p).resolve() for p in (prepared, destination, task_path))
+    if destination.exists() or not destination.parent.is_dir() or V4 not in destination.parents:
+        raise ValueError('FreshV4ResearchDerivativeRequired')
+    original = preparer.verify_prepared(prepared, expected_manifest)
+    if sha(task_path)!=task_sha256:
+        raise ValueError('ChangedReviewedAssignment')
+    task = read(task_path)
+    capacity=assignment_capacity(task)
+    if (original['assignment_task']!=str(task_path)
+            or original['assignment_task_sha256']!=task_sha256
+            or original['input_contract_id']!=contract_id):
+        raise ValueError('PreparedAssignmentMismatch')
+    contract=select_input_contract(task,contract_id)
+    permitted=assignment_intent(task)
+    if original['case']!=contract['case_path'] or original['original_policy_path']!=contract['policy_path']:
+        raise ValueError('UnlistedPreparedInputTuple')
+    # main holds task, policy, imported source and original case through this
+    # complete consumer. load does not query the SDF or start its host.
+    import standalone_case as case_owner
+    from sdf_cfd_mesher_v4.common.authority import identity
+    case,increments,raw_case_hash=case_owner.load(contract['case_path'])
+    if case['schema']!='V4MeshCase/4' or len(increments)!=6:
+        raise ValueError('CurrentSchema4SixLayerScopeRequired')
+    policy=read(contract['policy_path'])
+    if (policy['backend_method']!='HXT4DirectSizing095/1'
+            or policy['tet_transition']['schema']!='V4TetLayerAdapter/5'
+            or policy['tet_transition']['seconds']!=720
+            or {k:v for k,v in policy.items() if k!='tet_transition'}
+               !={k:v for k,v in case['background'].items() if k!='tet_transition'}):
+        raise ValueError('ChangedNonTransitionBackgroundPolicyOrCapability')
+    imported=case_owner.imported_geometry(contract['case_path'],case_owner.read(contract['case_path']))
+    canonical=dict(case_sha256=raw_case_hash,effective_case_identity=identity(case),
+        geometry_identity=identity(case['geometry']),metres_per_model_unit=case['geometry']['metres_per_model_unit'],
+        imported_source_path=str(imported[0]) if imported else None,
+        imported_source_sha256=case_owner.held_import_sha256(contract['case_path']),
+        policy_sha256=sha(contract['policy_path']),policy_identity=identity(read(contract['policy_path'])))
+    validate_bound_inputs(contract,original,read(prepared/'STAGE_REQUEST.json'),canonical,capacity)
+    live_task = live_task_from_assignment(task)
+    destination.mkdir()
+    stage = read(prepared/'STAGE_REQUEST.json')
+    stage['live_execution_authorized'] = permitted  # Intent only; no grant is created.
+    write(destination/'STAGE_REQUEST.json', stage)
+    selector = sha(destination/'STAGE_REQUEST.json')
+    for name in FILES:
+        raw = (prepared/name).read_bytes()
+        if name == 'run.py':
+            text = raw.decode()
+            a, b = text.index('def gate(role):'), text.index('\ndef read(path):')
+            shared=(HERE/'activate.py').read_text().split('# BEGIN SHARED INPUT CHECKS\n')[1].split('# END SHARED INPUT CHECKS')[0]
+            text = text[:a]+gate_source()+'\n'+ACTIVATION_CHECK.replace('__READINESS_ROOT__',repr(str(READINESS_ROOT))).replace('__GENERATOR_ROOT__',repr(str(GENERATOR_ROOT)))+shared+'\n'+text[b:]
+            text = replace(text, original['selector'], selector)
+            text = replace(text, 'str((HERE/name).resolve()):digest', 'str(Path(name).resolve()):digest')
+            raw = text.encode()
+        elif name == 'connection.py':
+            raw = replace(raw.decode(), original['selector'], selector).encode()
+        target = destination/name
+        target.parent.mkdir(exist_ok=True)
+        write(target, raw)
+    planned = dict(original)
+    planned.update(schema='PreparedLiveRequest/1', entry=str(destination/'run.py'),
+        output=str(destination/'live01'/'mesh'), stage_request=str(destination/'STAGE_REQUEST.json'),
+        selector=selector, stage_request_sha256=selector,
+        live_payload_seconds=live_task['payload_seconds'],live_owner_seconds=live_task['owner_seconds'],
+        scope='Fresh derivative requires separate actual grant and exact launch review')
+    arguments = original['arguments'][:]
+    arguments[1] = selector
+    arguments[arguments.index('--output')+1] = planned['output']
+    planned['arguments'] = arguments
+    write(destination/'LIVE_REQUEST.json', planned)
+    write(destination/'TASK.json', live_task)
+    binding = dict(schema='PreparedLiveDerivative/1', prepared_request=str(prepared),
+        readiness_root=str(READINESS_ROOT), generator_root=str(GENERATOR_ROOT),
+        producer_source=str(GENERATOR_ROOT/'candidate/tet_layer_handoff.py'),
+        producer_sha256=sha(GENERATOR_ROOT/'candidate/tet_layer_handoff.py'),
+        prepared_manifest_sha256=expected_manifest, prepared_request_sha256=sha(prepared/'LIVE_REQUEST.json'),
+        task_sha256=sha(destination/'TASK.json'), live_request_sha256=sha(destination/'LIVE_REQUEST.json'),
+        selector=selector, generated_files=list(FILES), assignment_task=str(task_path),
+        assignment_task_sha256=sha(task_path), activation_source=str(HERE/'activate.py'),
+        activation_source_sha256=sha(HERE/'activate.py'),input_contract_id=contract_id,
+        input_contract=contract,canonical_inputs=canonical,receipts={p:sha(p) for p in receipt_paths()})
+    write(destination/'ACTIVATION.json', binding)
+    selected = read(prepared/'PINNED_SOURCES.json')
+    selected[str(prepared/'PINNED_SOURCES.json')] = expected_manifest
+    selected[str(task_path)] = sha(task_path)
+    selected[str(HERE/'activate.py')] = sha(HERE/'activate.py')
+    selected.update(binding['receipts'])
+    for name in (*FILES, 'TASK.json', 'STAGE_REQUEST.json', 'LIVE_REQUEST.json', 'ACTIVATION.json'):
+        selected[str(destination/name)] = sha(destination/name)
+    write(destination/'PINNED_SOURCES.json', selected)
+    return dict(path=str(destination), prepared_manifest_sha256=expected_manifest,
+        manifest_sha256=sha(destination/'PINNED_SOURCES.json'), selector=selector,
+        activation_sha256=sha(destination/'ACTIVATION.json'), execution_authorized=False)
+
+
+def main(argv=None):
+    p=argparse.ArgumentParser(description=__doc__)
+    for name in ('prepared','prepared-manifest-sha256','destination','task','task-sha256','input-contract'):
+        p.add_argument('--'+name, required=True)
+    args=p.parse_args(argv)
+    # The existing source owner protects the unchanged preparer and all inputs.
+    import importlib.util
+    spec=importlib.util.spec_from_file_location('finite_request_preparation', PREPARER/'prepare.py')
+    preparer=importlib.util.module_from_spec(spec); spec.loader.exec_module(preparer)
+    with preparer.source_scope(sha(PREPARER/'PINNED_SOURCES.json')) as (d, pins):
+        from contextlib import ExitStack
+        with ExitStack() as held:
+            held.enter_context(d.guard(Path(args.prepared)/'PINNED_SOURCES.json'))
+            held.enter_context(d.guard(Path(args.task)))
+            if (pins.get(str(Path(args.task).resolve()))!=args.task_sha256
+                    or sha(args.task)!=args.task_sha256):
+                raise ValueError('ChangedReviewedAssignment')
+            contract=select_input_contract(read(args.task),args.input_contract)
+            import standalone_case as case_owner
+            held.enter_context(d.guard(Path(contract['policy_path'])))
+            held.enter_context(case_owner.hold_inputs(Path(contract['case_path'])))
+            for path,digest in read(Path(args.prepared)/'PINNED_SOURCES.json').items():
+                held.enter_context(d.guard(Path(path)))
+                if sha(path)!=digest: raise ValueError('ChangedPreparedSource',path)
+            result=activate(preparer,args.prepared,args.prepared_manifest_sha256,args.destination,args.task,args.task_sha256,args.input_contract)
+    print(json.dumps(result, sort_keys=True))
+    return result
+
+
+if __name__=='__main__':
+    main()

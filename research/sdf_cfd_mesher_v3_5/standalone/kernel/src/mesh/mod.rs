@@ -1,0 +1,53 @@
+// Mesh data structures
+
+use bytemuck::{Pod, Zeroable};
+use glam::Vec3;
+
+/// Vertex with position and normal
+#[repr(C)]
+#[derive(Copy, Clone, Debug, Pod, Zeroable)]
+pub struct Vertex {
+    pub position: [f32; 3],
+    pub normal: [f32; 3],
+}
+
+/// Triangle mesh
+#[derive(Clone, Debug)]
+pub struct Mesh {
+    pub vertices: Vec<Vertex>,
+    pub indices: Vec<u32>,
+}
+
+pub mod adaptive_marching_tets;
+pub mod adaptive_mc;
+pub mod adaptive_sampling;
+pub mod adaptive_te_tip_refinement;
+pub mod collision_aware_projection;
+pub mod fold_classification;
+pub mod from_scratch_surface;
+pub mod marching_cubes;
+pub mod sdf_surface;
+pub mod surface_artifacts;
+pub mod surface_feature_resolution;
+pub mod surface_features;
+pub mod surface_remesh;
+pub mod transvoxel;
+pub use adaptive_mc::MeshQuality;
+pub mod quality;
+pub use quality::{MeshQualityReport, analyze_mesh_quality, analyze_triangle_mesh_quality};
+pub mod import;
+pub use import::{TriangleMesh, parse_obj, parse_stl};
+
+/// Compute signed mesh volume using the divergence theorem (signed tetrahedral volumes).
+/// Units match the scene units cubed (mm³ if scene is in mm).
+#[allow(dead_code)] // Used in analysis module; export kept for tests
+pub fn compute_volume(mesh: &Mesh) -> f32 {
+    let mut volume = 0.0f32;
+    for tri in mesh.indices.chunks(3) {
+        let v0 = Vec3::from_array(mesh.vertices[tri[0] as usize].position);
+        let v1 = Vec3::from_array(mesh.vertices[tri[1] as usize].position);
+        let v2 = Vec3::from_array(mesh.vertices[tri[2] as usize].position);
+        volume += v0.dot(v1.cross(v2));
+    }
+    (volume / 6.0).abs()
+}

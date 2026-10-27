@@ -1,0 +1,180 @@
+"""One pending-generator and actual-source observer control; no mesh or live parent."""
+from pathlib import Path
+from types import SimpleNamespace
+from contextlib import ExitStack
+from unittest.mock import patch
+import ast,hashlib,json,sys,time
+HERE=Path(__file__).resolve().parent
+V4=HERE.parents[3]
+
+def sha(path):
+    with Path(path).open('rb') as stream:return hashlib.file_digest(stream,'sha256').hexdigest()
+def read(path):return json.loads(Path(path).read_text(encoding='utf-8'))
+
+def _parent(selected,observed,deadline,folder,event):
+    import fixture_study as d
+    import standalone_case as case_owner
+    from sdf_cfd_mesher_v4.runtime import frozen_imports
+    checks=[];calls={};events=[];native_status={};refusals={}
+    path_before=sys.path[:];input_scopes_before=case_owner._import_scopes.get()
+    task=read(HERE/'TASK.json');record=task['pending_assignment'];assignment=read(record['path'])
+    row=assignment['input_contracts']['inline_base']
+    def tick():
+        if time.perf_counter()>=deadline:raise TimeoutError('SharedObserverControlDeadline')
+    def require(ok,label):
+        tick()
+        event('check',name=label,passed=bool(ok))
+        if not ok:raise AssertionError(label)
+        checks.append(label)
+    def rejected(label,action,message):
+        try:action()
+        except BaseException as error:
+            event('refusal',name=label,error=repr(error),winerror=getattr(error,'winerror',None))
+            require(message in str(error),(label,repr(error)))
+            refusals[label]=dict(type=type(error).__name__,message=str(error));return error
+        raise AssertionError('ExpectedRejection',label)
+    def forbidden(*args,**kwargs):raise AssertionError('ForbiddenNumericalOwner')
+    preparer=d.module('observer_connection_prepare',HERE/'prepare.py')
+    activator=d.module('observer_connection_activate',HERE/'activate.py')
+    observed.update(explicit_preparer=str(HERE/'prepare.py'),explicit_activator=str(HERE/'activate.py'))
+    require(preparer.GENERATOR_ROOT==activator.GENERATOR_ROOT==HERE,'fixed_current_generator_root')
+    prepared=folder/'prepared_request';derived=folder/'live_request'
+    args=['--case',row['case_path'],'--policy',row['policy_path'],'--request-dir',str(prepared),
+        '--output',str(prepared/'mesh'),'--source-manifest-sha256',sha(HERE/'PINNED_SOURCES.json'),
+        '--assignment',record['path'],'--assignment-sha256',record['sha256'],'--input-contract','inline_base',
+        '--maximum-faces','42000','--payload-seconds','1740','--owner-seconds','1800']
+    prep=preparer.main(args)
+    require(sys.path==path_before and case_owner._import_scopes.get() is input_scopes_before,'preparation_scopes_restored')
+    with ExitStack() as held:
+        prepared_files={str(f):sha(f) for f in prepared.rglob('*') if f.is_file()}
+        for f,digest in prepared_files.items():held.enter_context(d.guard(Path(f)));require(sha(f)==digest,'held_prepared_'+Path(f).name)
+        require(preparer.verify_prepared(prepared,prep['manifest_sha256'])['execution_authorized'] is False,'pending_prepared_verified')
+        live=activator.main(['--prepared',str(prepared),'--prepared-manifest-sha256',prep['manifest_sha256'],
+            '--destination',str(derived),'--task',record['path'],'--task-sha256',record['sha256'],'--input-contract','inline_base'])
+        generated={str(f):sha(f) for f in derived.rglob('*') if f.is_file()}
+        selected.update(prepared_files);selected.update(generated)
+        for f,digest in generated.items():held.enter_context(d.guard(Path(f)));require(sha(f)==digest,'held_derived_'+Path(f).name)
+        require(sha(derived/'PINNED_SOURCES.json')==live['manifest_sha256'],'held_generated_manifest_matches_activation')
+        generated_pins=read(derived/'PINNED_SOURCES.json')
+        require(all(generated_pins.get(path)==digest for path,digest in generated.items() if Path(path)!=derived/'PINNED_SOURCES.json'),'generated_files_match_held_manifest_before_import')
+        run=d.module('observer_derived_entry',derived/'run.py');pending=d.module('observer_prepared_entry',prepared/'run.py')
+        observed.update(generated_entry=str(derived/'run.py'),prepared_entry=str(prepared/'run.py'))
+        binding=run.verify_activation();planned=run.request();live_task=read(derived/'TASK.json')
+        require(binding['generator_root']==str(HERE) and binding['input_contract']==row,'actual_generator_input_binding')
+        require(binding['producer_sha256']==sha(HERE/'candidate/tet_layer_handoff.py')==sha(prepared/'candidate/tet_layer_handoff.py')==sha(derived/'candidate/tet_layer_handoff.py'),'actual_observer_copied_both_bundles')
+        require(all(live_task[k]==0 for k in ('maximum_invocations','payload_seconds','owner_seconds','transition_seconds')) and all(live_task[k] is None for k in ('start_utc','launch_cutoff_utc','deadline_utc')),'zero_live_null_dates')
+        require(read(prepared/'STAGE_REQUEST.json')['maximum_faces']==read(derived/'STAGE_REQUEST.json')['maximum_faces']==42000,'unchanged_pending42000_capacity')
+        require(planned['output']==str(derived/'live01/mesh') and planned['arguments']==read(derived/'LIVE_REQUEST.json')['arguments'],'actual_future_path_and_argv')
+        for entry,label,message in ((pending,'prepared','NumericalExecutionDisabledResearchPreparation'),(run,'derived','MissingSeparateLiveGrant')):
+            with patch.object(entry,'resource_scope',forbidden),patch.object(entry,'selected_main',forbidden):
+                for role,argv in [('launch',[]),('coordinator',['parent','0','1']),('worker',['--worker'])]:
+                    rejected(label+'_'+role,lambda argv=argv,entry=entry:entry.main(argv),message)
+        original_read=run.read
+        def wrong_binding(path):
+            value=original_read(path)
+            return dict(value,producer_sha256='0'*64) if Path(path)==derived/'ACTIVATION.json' else value
+        with patch.object(run,'read',wrong_binding):rejected('simulated_wrong_producer_binding',run.verify_activation,'ChangedObserverProducerBinding')
+        rejected('missing_required_closed_receipts',lambda:run.verify_required_receipts({}),'ReviewedControlReceiptsRequired')
+        tree=ast.parse((derived/'run.py').read_text());verify=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='verify_required_receipts')
+        required_node=next(n.value for n in verify.body if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id=='required' for t in n.targets))
+        require(set(ast.literal_eval(required_node.args[0]))==set(activator.receipt_paths()+activator.current_control_receipts()+activator.observer_control_receipts()+activator.comparison_control_receipts()+activator.integration_control_receipts()),'future_positive_gate_keeps_old_and_new_review_roots')
+        for name in activator.FILES[5:-1]:
+            original=(preparer.TEMPLATE/name).read_bytes()
+            if name=='candidate/finite_collar_command.py':
+                text=original.decode().replace('\r\n','\n')
+                original=preparer.replace_once(text,'RETIREMENT=HERE.parents[1]','RETIREMENT=Path('+repr(str(preparer.R))+')').encode()
+            require((derived/name).read_bytes()==original,'unchanged_helper_except_existing_path_binding_'+name)
+        stage=frozen_imports._load('finite_collar_stage_adapter',derived/'stage.py');observed['generated_stage']=str(derived/'stage.py')
+        primary=RuntimeError('TestOnlyConsumerException');canonical_before=None
+        try:
+            pins=read(derived/'PINNED_SOURCES.json');bad=dict(pins);bad[str(derived/'candidate/tet_layer_controls.py')]='0'*64
+            def wrong_source():
+                with stage.selected_helpers(bad):raise AssertionError('ChangedSourceAdmitted')
+            rejected('actual_wrong_helper_hash',wrong_source,'ChangedPrivateStageHelper')
+            with stage.selected_helpers(pins,observed) as (helpers,require_active):
+                producer=helpers['finite_stage_handoff'];import tet_layer_handoff as owner
+                require(producer.fluid_owner is owner.fluid_owner and producer._issued is owner._issued and producer.TransitionInputs is owner.TransitionInputs and producer._capture is owner._capture,'generated_original_canonical_aliases')
+                require(Path(owner.__file__).resolve()==V4/'tools/tet_layer_handoff.py','original_canonical_path')
+                require(Path(producer.observe_fluid_call.__code__.co_filename).resolve()==derived/'candidate/tet_layer_handoff.py','actual_generated_observer_function')
+                require(len(owner._issued)==0,'no_issued_transition_before')
+                controls=read(row['policy_path'])['tet_transition']
+                outer=lambda:tick();outer.remaining_seconds=lambda:max(0.,deadline-time.perf_counter())
+                def nonlive():
+                    with producer.produce(None,None,None,None,None,None,controls,None,folder/'forbidden',{},_finite_policy=read(row['policy_path']),_outer_check=outer):pass
+                rejected('actual_produce_nonlive_parent',nonlive,'LiveAcceptedTetPrismInputsRequired')
+                import standalone_tool, optimized_durable_json, path_preserving_deduplication
+                canonical_before=(owner.TransitionInputs,owner._issued,owner._capture,owner.fluid_owner)
+                canonical_writer=producer.durable_json
+                require(canonical_writer is standalone_tool.durable_json,'canonical_non_timing_writer')
+                require(producer.encoded is optimized_durable_json.encoded and producer.replace_open_destination is path_preserving_deduplication.replace_open_destination,'actual_encoder_and_replacement_aliases')
+                require(Path(producer.timing_trace.__code__.co_filename).resolve()==derived/'candidate/tet_layer_handoff.py','actual_generated_timing_factory')
+                target_dir=folder/'timing';target_dir.mkdir();other_dir=folder/'isolated';other_dir.mkdir()
+                start=time.perf_counter();trace=producer.timing_trace(target_dir,start);isolated=producer.timing_trace(other_dir,start)
+                target=target_dir/'TRANSITION_TIMING.json'
+                before=time.perf_counter();trace('placement','enter');entered=read(target);after=time.perf_counter()
+                event('timing_enter',record=entered)
+                require(entered['schema']=='V4TransitionTiming/1' and entered['event']=='enter' and entered['phase']=='placement' and entered['completed_seconds']=={} and entered['phase_progress']=={} and entered['progress'] is None,'timing_enter_schema_state')
+                require(before-start<=entered['elapsed_seconds']<=after-start and entered['diagnostic_only'] is True and entered['scientific_acceptance'] is False and entered['restart_supported'] is False,'real_clock_and_flags')
+                reader=d.module('task69_unchanged_snapshot',HERE/'live_snapshot.py');observed['timing_control_reader']=str(HERE/'live_snapshot.py')
+                handle_events=[]
+                def publish_held(handle):
+                    event('held_read_share7',handle=handle,path=str(target))
+                    trace('placement','progress',{'cells':2})
+                    event('held_publication_succeeded',record=read(target))
+                snapshot=reader.read_snapshot(target,_test_after_open=publish_held,_test_events=handle_events)
+                event('held_snapshot',result=snapshot,handles=handle_events)
+                require(snapshot['ok'] and snapshot['value']==entered and read(target)['progress']=={'cells':2},'old_handle_A_new_path_B')
+                require([x['event'] for x in handle_events]==['opened','closed'],'actual_reader_handle_closed')
+                isolated('other','enter');isolated('other','exit');separate=read(other_dir/'TRANSITION_TIMING.json')
+                require(set(separate['completed_seconds'])=={'other'} and separate['phase_progress']=={},'factory_state_isolation')
+                trace('placement','exit');exited=read(target)
+                event('timing_exit',record=exited)
+                require(exited['completed_seconds']['placement']>=0 and exited['phase_progress']=={'placement':{'cells':2}} and exited['progress'] is None,'timing_exit_keeps_progress')
+                committed=target.read_bytes();stat=target.stat();token=(stat.st_dev,stat.st_ino)
+                rejected('actual_invalid_exit',lambda:trace('unknown','exit'),'unknown')
+                require(target.read_bytes()==committed,'invalid_exit_does_not_publish')
+                def denied_publication():trace('placement','progress',{'cells':3})
+                with d.guard(target):
+                    denied=rejected('actual_immutable_target_publication',denied_publication,'')
+                    pending_path=target.with_name(target.name+'.pending')
+                    pending_value=read(pending_path);current=target.stat()
+                    event('guarded_outcome',error=repr(denied),winerror=getattr(denied,'winerror',None),committed_sha256=sha(target),pending_sha256=sha(pending_path),file_identity=[current.st_dev,current.st_ino],pending=pending_value)
+                    require(isinstance(denied,OSError) and getattr(denied,'winerror',None) in (5,32),'real_guard_error_propagated')
+                    require(target.read_bytes()==committed and (current.st_dev,current.st_ino)==token and pending_value['progress']=={'cells':3},'guard_preserves_identity_bytes_complete_pending')
+                require_active()
+                require(producer.durable_json is canonical_writer and (owner.TransitionInputs,owner._issued,owner._capture,owner.fluid_owner)==canonical_before and len(owner._issued)==0,'canonical_aliases_unchanged_after_error')
+                # No retry of a failed candidate: the refusal above is the planned
+                # negative. Exit through a separate test-only consumer exception.
+                event('consumer_exception_begin',error=repr(primary))
+                raise primary
+        except RuntimeError as error:
+            event('consumer_exception_return',same_primary=error is primary,error=repr(error))
+            require(error is primary,'primary_consumer_exception_preserved')
+        finally:
+            for alias in ('finite_collar_stage_adapter','sdf_cfd_mesher_v4._frozen_finite_collar_stage_adapter'):sys.modules.pop(alias,None)
+        require(canonical_before is not None and (owner.TransitionInputs,owner._issued,owner._capture,owner.fluid_owner)==canonical_before and not owner._issued,'canonical_issuers_restored_no_lease')
+        require(all(alias not in sys.modules for name,_ in stage.NAMES for alias in (name,'sdf_cfd_mesher_v4._frozen_'+name)),'private_loader_aliases_restored')
+        require(all(sha(f)==digest for f,digest in {**prepared_files,**generated}.items()),'generated_files_preserved')
+        require(not any((derived/name).exists() for name in ('AUTHORIZATION.json','LAUNCH_REVIEW.json','CLOCK.json','live01_INPUT_PINS.json','live01','live01_SCOPE')),'future_live_artifacts_absent')
+    require(sys.path==path_before and case_owner._import_scopes.get() is input_scopes_before,'final_input_path_scope_restoration')
+    return dict(passed=True,checks=checks,refusals=refusals,prepared=prep,derived=live,binding=binding,prepared_files=prepared_files,generated_files=generated,actual_preparations=1,actual_derivations=1,actual_native_sdf_hosts=0,mesh_runs=0,live_credentials=0,genuine_accepted_parent_producer_executed=False,positive_live_gate_executed=False,scientific_acceptance=False,crash_durability_equivalence=False,scope='Actual generated timing factory only; invalid-parent produce and denied roles. No accepted-parent scientific flow.')
+
+
+def parent(selected,observed,deadline,folder):
+    import os
+    sequence=0
+    with (folder/'EVENTS.jsonl').open('x',encoding='utf-8',newline='\n') as sink:
+        def event(kind,**data):
+            nonlocal sequence
+            sequence+=1
+            sink.write(json.dumps(dict(sequence=sequence,event=kind,pid=os.getpid(),perf_counter=time.perf_counter(),**data),sort_keys=True,allow_nan=False)+'\n');sink.flush()
+        event('control_begin',deadline=deadline)
+        try:
+            result=_parent(selected,observed,deadline,folder,event)
+            event('control_complete',passed=result['passed'])
+            result['event_count']=sequence
+            return result
+        except BaseException as error:
+            try:event('control_failure',error=repr(error),winerror=getattr(error,'winerror',None))
+            except BaseException as evidence_error:error.add_note('Evidence sink failed: '+repr(evidence_error))
+            raise

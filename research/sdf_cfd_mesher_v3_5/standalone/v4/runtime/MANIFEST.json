@@ -1,0 +1,363 @@
+{
+  "files": [
+    {
+      "binary_origin": "research/sdf_cfd_mesher_v4/results/production_adaptive_capsule_surface_foundation/runtime/seed",
+      "binary_origin_sha256": "6f02e0f7f5b8b7f26bf5275f4f1934dede58404cd63844ac891e2749db5b55fa",
+      "bytes": 1705672,
+      "path": "runtime/bin/capsule_seed",
+      "sha256": "6f02e0f7f5b8b7f26bf5275f4f1934dede58404cd63844ac891e2749db5b55fa"
+    },
+    {
+      "binary_origin": "canonical_kernel/target/release/canonical_kernel_host.exe",
+      "bytes": 31796736,
+      "path": "runtime/bin/canonical_kernel_host.exe",
+      "scope": "V3.5 local canonical source build; infrastructure only",
+      "sha256": "d2ea8e803a49904fffdb79ac6b7672bdf6593748f446aab328d4d4b5a65b6d78"
+    },
+    {
+      "bytes": 226304,
+      "path": "runtime/bin/ec46eea50074da19dfffb9a92a93f85cda1aec33b4bd2d9a9047021aafa4f80d.dll",
+      "sha256": "e1ccdf1945a499c37933dc9525b6728ad8d977676bc82b86465e412d873dc375"
+    },
+    {
+      "bytes": 296736,
+      "path": "runtime/bin/intersections",
+      "sha256": "6c374aa27be342c51e2fc53d874f894c1611cc5e5466fc7e03e32b7c7af03830"
+    },
+    {
+      "bytes": 34040,
+      "path": "runtime/bin/mmgs_metric_contract_runner",
+      "sha256": "0771ae4562c74dc7c0edf7ab4e713ad01c886900546407232f8c04d9b08cd55f"
+    },
+    {
+      "bytes": 161792,
+      "path": "runtime/bin/proof_de34df5af84f2764550afacb67de0fffd8d152c36dccb3f61e3934734f5c951f.dll",
+      "sha256": "ca80283665237ed784b978d1dc9053caa02ad71976079fba5d70499cd443599d"
+    },
+    {
+      "bytes": 257528,
+      "path": "runtime/bin/sector_cdt",
+      "sha256": "5d63302fa152f7dfeb5db31154eacc03745b9b83fa0266345e11126840c7c4f0"
+    },
+    {
+      "bytes": 319488,
+      "path": "runtime/bin/spline_bridge.dll",
+      "sha256": "a794c164c14eda3b3aac7e4feb4fa578f39cd175c0c7a52e2d81437d0f6d8d08"
+    },
+    {
+      "build_record": "results/surface_certificate_speed/BUILD.json",
+      "path": "runtime/bin/spline_bridge_optimized.dll",
+      "scope": "Same frozen spline owner compiled opt-level=3, unchanged FFI arithmetic compiled opt-level=0; full retained scientific certificate equivalence",
+      "sha256": "35078384ed103c442299a7f52fc47435f7f1012cf89da7af177785ff4a24d02b"
+    },
+    {
+      "bytes": 658728,
+      "path": "runtime/lib/libmmgs.so.5",
+      "sha256": "f77899f67895d1053d958bae7bbab4e8562397144a379f3835e16f10454c9834"
+    },
+    {
+      "bytes": 658728,
+      "path": "runtime/lib/libmmgs.so.5.8.0",
+      "sha256": "f77899f67895d1053d958bae7bbab4e8562397144a379f3835e16f10454c9834"
+    },
+    {
+      "bytes": 3289,
+      "path": "runtime/MMGS_DEPENDENCY_QUALIFICATION.json",
+      "sha256": "c557ffdab7672db4201ff5957b04f27128509b38da04a760c9447187aa561876"
+    },
+    {
+      "bytes": 2973,
+      "origin": "research/sdf_cfd_mesher_v3/fresh_supported_refinement_family_qualification_2026-09-09/bind_planner.py",
+      "origin_sha256": "901755ba0c43838bb496d1b10d845e8c00cf694a535e0e7f50f7f53af9e56c7b",
+      "path": "runtime/source/bind_planner.py",
+      "sha256": "3484a1981edc9be4b463c5f6000643bfcb56dddbdbb2105562774401634babbc",
+      "transformation": "Line-ending normalization only; AST preserved"
+    },
+    {
+      "bytes": 4100,
+      "origin": "research/sdf_cfd_mesher_v3/fresh_supported_refinement_family_qualification_2026-09-09/check_complete_geometry.py",
+      "origin_sha256": "e6834f1d73d286f9c147b0ed09a8ea9896bd94ad7a1553b5e0c35be00d3e5a66",
+      "path": "runtime/source/check_complete_geometry.py",
+      "sha256": "b0488e82f24037532587f573a720ef47dfd3028c85edc1a62bbb948b60e6ceda",
+      "transformation": "Line-ending normalization only; AST preserved"
+    },
+    {
+      "bytes": 5922,
+      "origin": "research/sdf_cfd_mesher_v3/finite_wing_trailing_tip_qualification_2026-09-06/corner_authority.py",
+      "origin_sha256": "4925f98ba660448681d6cbf982aa0ee6a7b9ec9f021afc5dbfea535ee877e680",
+      "path": "runtime/source/corner_authority.py",
+      "sha256": "4925f98ba660448681d6cbf982aa0ee6a7b9ec9f021afc5dbfea535ee877e680",
+      "transformation": "Line-ending normalization only; AST preserved"
+    },
+    {
+      "bytes": 2435,
+      "origin": "research/sdf_cfd_mesher_v3/fresh_supported_refinement_family_qualification_2026-09-09/verify_first_branch.py",
+      "origin_sha256": "72a6ca708aafbd7baaee0b96d103ac2578b9efcffd63a4ae06dc31a4c10c0c35",
+      "path": "runtime/source/verify_first_branch.py",
+      "sha256": "e54d6fc551828f0bb6f72483fcc0958f764ea9be4e27511f939a7157c9de9042",
+      "transformation": "Line-ending normalization only; AST preserved"
+    },
+    {
+      "bytes": 3196,
+      "path": "runtime/source/verify_written_metric.py",
+      "sha256": "92f691bb59e170fd599e3990ceecde063ad34887fd0def52cea67f0b8ba3450b"
+    },
+    {
+      "bytes": 20877,
+      "origin": "research/sdf_cfd_mesher_v3/adaptive_surface_generic_qualification/adaptive_sdf_carrier.py",
+      "origin_sha256": "c9614e1eb4fa06a76c30eb3510e8634445d58cd75bd915a3470d238ffd578a33",
+      "path": "runtime/surface/adaptive_sdf_carrier.py",
+      "sha256": "e531822e286c57df60e84208e1f5a53c08436ad1e97b7e5fd1503d213deb3fb8",
+      "transformation": "Task195 explicit numerical surface requirements passed as immutable parameters; legacy defaults retained, existing formulas/predicates unchanged."
+    },
+    {
+      "bytes": 25502,
+      "origin": "research/sdf_cfd_mesher_v3/adaptive_surface_generic_qualification/continuous_geometry_certifier.py",
+      "origin_sha256": "e0bc156f9c9ba56af13f6050b50a6a2c882aa134cff59f5720170c5a8d6e8533",
+      "path": "runtime/surface/continuous_geometry_certifier.py",
+      "sha256": "e0bc156f9c9ba56af13f6050b50a6a2c882aa134cff59f5720170c5a8d6e8533",
+      "transformation": "Line-ending normalization only; AST preserved"
+    },
+    {
+      "bytes": 30192,
+      "origin": "research/sdf_cfd_mesher_v3/adaptive_surface_generic_qualification/generic_v3mmg1_provider.py",
+      "origin_sha256": "3d48f1ce87bfc4c956a2133dc68cf96a9d93642930f0af0e20d1176f8c8af075",
+      "path": "runtime/surface/generic_v3mmg1_provider.py",
+      "sha256": "e93dca0e563dc715f5c69d4142766ad7c9b98666ceb5837b1b740c686e8e8cd8",
+      "transformation": "Existing feature classification/scalar path retained; optional protected construction sheet batches with unchanged Newton arithmetic and final acceptance."
+    },
+    {
+      "bytes": 5808,
+      "origin": "research/sdf_cfd_mesher_v3/adaptive_surface_generic_qualification/principal_direction_cone_support.py",
+      "origin_sha256": "1361487d76778b0e611125f27f0675141e9222f39019964a639e68e64bac17e3",
+      "path": "runtime/surface/principal_direction_cone_support.py",
+      "sha256": "1361487d76778b0e611125f27f0675141e9222f39019964a639e68e64bac17e3",
+      "transformation": "Line-ending normalization only; AST preserved"
+    },
+    {
+      "bytes": 5220,
+      "origin": "research/sdf_cfd_mesher_v3/adaptive_surface_generic_qualification/principal_direction_cone.py",
+      "origin_sha256": "b9db5ed2b3d87b2ac427da657c57f151f63bf4069a64dae7641d24fefc9dc942",
+      "path": "runtime/surface/principal_direction_cone.py",
+      "sha256": "b9db5ed2b3d87b2ac427da657c57f151f63bf4069a64dae7641d24fefc9dc942",
+      "transformation": "Line-ending normalization only; AST preserved"
+    },
+    {
+      "bytes": 11938,
+      "origin": "research/sdf_cfd_mesher_v3/adaptive_surface_generic_qualification/prism_host_metric.py",
+      "origin_sha256": "761595c72cfb3e887ce22f37d25db47175c8bf7ffa5423575b917abb38c6b77d",
+      "path": "runtime/surface/prism_host_metric.py",
+      "sha256": "30f063e079832eb2a53bc2c9912a6f3feb56cf91789999803ac82f905847ebff",
+      "transformation": "Task194 CandidateA: at most four finite nextafter diagonal trials certified with unchanged exact PSD predicates against original required/result; unchanged original-operand Gershgorin fallback. Optional reference diagnostics retained."
+    },
+    {
+      "bytes": 11154,
+      "origin": "research/sdf_cfd_mesher_v3/adaptive_surface_generic_qualification/seed_support_metric.py",
+      "origin_sha256": "b24ff4f6d87b16a7f78341e845a0c266a72d6c66644d660832f8759ba3e1ee75",
+      "path": "runtime/surface/seed_support_metric.py",
+      "sha256": "b24ff4f6d87b16a7f78341e845a0c266a72d6c66644d660832f8759ba3e1ee75",
+      "transformation": "Line-ending normalization only; AST preserved"
+    },
+    {
+      "bytes": 6535,
+      "origin": "research/sdf_cfd_mesher_v3/adaptive_surface_generic_qualification/shape_aware_metric.py",
+      "origin_sha256": "b605421d8cff10fa581968ea4869d3d8552fbe75eed73ab4116f15dc0b36a815",
+      "path": "runtime/surface/shape_aware_metric.py",
+      "sha256": "9a46f187404cd321befb393ab8890fc4adb6a99ef346395978278517d1013c06",
+      "transformation": "Task195 explicit numerical surface requirements passed as immutable parameters; legacy defaults retained, existing formulas/predicates unchanged."
+    },
+    {
+      "bytes": 6409,
+      "origin": "research/sdf_cfd_mesher_v3/adaptive_surface_generic_qualification/shape_operator_metric.py",
+      "origin_sha256": "b247293e5b9de1d366817bf7681e6d769d946b55d8a0f9fc6191c27130533caa",
+      "path": "runtime/surface/shape_operator_metric.py",
+      "sha256": "b247293e5b9de1d366817bf7681e6d769d946b55d8a0f9fc6191c27130533caa",
+      "transformation": "Line-ending normalization only; AST preserved"
+    },
+    {
+      "bytes": 13490,
+      "origin": "research/sdf_cfd_mesher_v3/adaptive_surface_generic_qualification/shape_operator_support_envelope.py",
+      "origin_sha256": "d770ce4562896455fa34c67969c96f7833f64803fff53dd1fe9e09e3c767c4a6",
+      "path": "runtime/surface/shape_operator_support_envelope.py",
+      "sha256": "d770ce4562896455fa34c67969c96f7833f64803fff53dd1fe9e09e3c767c4a6",
+      "transformation": "Line-ending normalization only; AST preserved"
+    },
+    {
+      "bytes": 9253,
+      "origin": "research/sdf_cfd_mesher_v3/adaptive_surface_generic_qualification/two_sided_metric.py",
+      "origin_sha256": "3dac63401aa4a6c28440d8fcace3b95a018d14799fad82cd1788fb20d68d4eca",
+      "path": "runtime/surface/two_sided_metric.py",
+      "sha256": "3dac63401aa4a6c28440d8fcace3b95a018d14799fad82cd1788fb20d68d4eca",
+      "transformation": "Line-ending normalization only; AST preserved"
+    },
+    {
+      "bytes": 10196,
+      "path": "src/sdf_cfd_mesher_v4/certificate/efficient_native.rs",
+      "sha256": "de34df5af84f2764550afacb67de0fffd8d152c36dccb3f61e3934734f5c951f"
+    },
+    {
+      "bytes": 10773,
+      "path": "src/sdf_cfd_mesher_v4/legacy_full_stack_planner/_support/prism_feasibility_contract/prospective_commit_adapter.py",
+      "sha256": "e291d893fd6b837b7362508e36f3428c7b29eade32ecbd40f30ac2fbc7474f87"
+    },
+    {
+      "bytes": 7084,
+      "path": "src/sdf_cfd_mesher_v4/legacy_full_stack_planner/_support/sdf_guided_advancing_front_qualification/accepted_front_state.py",
+      "sha256": "1dbd9a660837312ffa807df87fd5e12efd3982de2eb72913f3ec4a5358716b2d"
+    },
+    {
+      "bytes": 9041,
+      "path": "src/sdf_cfd_mesher_v4/sdf/_frozen/current_smooth_authority.py",
+      "sha256": "2278094b5eb483f9b49d90754725a0df12cd96c7716cfa9320aa6d9318208dfb"
+    },
+    {
+      "bytes": 42992,
+      "path": "src/sdf_cfd_mesher_v4/sdf/_frozen/procedural_authorities.py",
+      "sha256": "b47df219cc560781a3e1cff51c9230346240cb1d5137d060d9080afae1924b7c",
+      "transformation": "Task195 explicit numerical surface requirements passed as immutable parameters; legacy defaults retained, existing formulas/predicates unchanged."
+    },
+    {
+      "bytes": 6856,
+      "path": "tools/optimized_certificate_native.rs",
+      "sha256": "1c4d1070a616f13fe97d22f5c0684e0f18fd79187b4631e4d180e44555f0180d"
+    },
+    {
+      "bytes": 4060,
+      "path": "tools/owned_runtime.py",
+      "sha256": "022eb5d2225578137bcdf5717af1bfe044e2520a0a57d6795c4827f8d1612dd4"
+    },
+    {
+      "binary_origin": "Z:\\home\\jwhite\\.local\\lib\\python3.10\\site-packages\\gmsh.py",
+      "binary_origin_sha256": "f4b0935cebde899750293d87a643090e5ea33c9b18d249267f507db68a0e01c3",
+      "bytes": 427222,
+      "path": "runtime/lib/gmsh/gmsh.py",
+      "sha256": "f4b0935cebde899750293d87a643090e5ea33c9b18d249267f507db68a0e01c3"
+    },
+    {
+      "binary_origin": "Z:\\home\\jwhite\\.local\\lib\\libgmsh.so.4.15",
+      "binary_origin_sha256": "9db3090d3b720c57b76bcbfa01d13854823ae2698c91343c20bdd4c2b81f6317",
+      "bytes": 92641960,
+      "path": "runtime/lib/gmsh/libgmsh.so.4.15",
+      "sha256": "9db3090d3b720c57b76bcbfa01d13854823ae2698c91343c20bdd4c2b81f6317"
+    },
+    {
+      "binary_origin": "Z:\\home\\jwhite\\.local\\share\\doc\\gmsh\\LICENSE.txt",
+      "binary_origin_sha256": "32085d8c954e2e22dc667c089f360049e8f1af955f946fb0a18f29d70390276a",
+      "bytes": 19098,
+      "path": "runtime/lib/gmsh/LICENSE.txt",
+      "sha256": "32085d8c954e2e22dc667c089f360049e8f1af955f946fb0a18f29d70390276a"
+    },
+    {
+      "binary_origin": "results/general_sdf_pipeline_20261008/surface_seed/canonical_cgal_seed_candidate",
+      "bytes": 2015368,
+      "path": "runtime/bin/canonical_cgal_seed",
+      "scope": "Generic native SDF surface-only proposal plus retained explicit historical volume/probe modes. Final real-source and mesh acceptance required.",
+      "sha256": "a214073401a5e2aeea687a3bf6466c6ea1018e9ff49629880d3b5ac2a7e1dfdb"
+    },
+    {
+      "binary_origin": "results\\transition_cli_integration_20261014\\native2\\shape_transition_mmg",
+      "bytes": 1095144,
+      "path": "runtime/bin/shape_transition_mmg",
+      "scope": "Owned opt-in generic shape-transition dependency; existing exact executable/source archive, no result fallback.",
+      "sha256": "9dcc1472ea0e5de878743ae34f9671b4e0ebd426bebc8d508a3569b40d488bc5"
+    },
+    {
+      "binary_origin": "results\\transition_cli_integration_20261014\\native2\\shape_transition_mmg_sources.zip",
+      "bytes": 1759228,
+      "path": "runtime/lib/shape_transition_mmg_sources.zip",
+      "scope": "Owned opt-in generic shape-transition dependency; existing exact executable/source archive, no result fallback.",
+      "sha256": "2b43f34eea2a7c233e4aaace1c7c66ad0c52abff756b4ff1fa8a15b672cd364e"
+    },
+    {
+      "binary_origin": "results\\transition_cli_integration_20261014\\native2\\SHAPE_TRANSITION_BUILD.json",
+      "bytes": 45080,
+      "path": "runtime/source/transition/SHAPE_TRANSITION_BUILD.json",
+      "scope": "Owned opt-in generic shape-transition dependency; existing exact executable/source archive, no result fallback.",
+      "sha256": "b143f98759cb6b0c6c26119b20b7bc06c1095180fd13c27b98457bc7c7983020"
+    },
+    {
+      "path": "runtime/surface/carrier_split_checks.py",
+      "sha256": "749d3f3ba71b6f40e1c11505c6465df8f3b65f8b36c723c8d1fcb75672ad39a6",
+      "origin": "V3.5 isolated generic short-edge subdivision checks"
+    }
+  ],
+  "native_host_installation": {
+    "kernel_source_sha256": "c88ffb160eb2fa8491d72f0b26838c76b83f08f6e4db6c562c9046e2c0c496e3",
+    "scope": "V3.5 local copied kernel; no upstream scientific promotion",
+    "binary_sha256": "d2ea8e803a49904fffdb79ac6b7672bdf6593748f446aab328d4d4b5a65b6d78"
+  },
+  "previous_native_host_installation": {
+    "build_receipt": {
+      "path": "results/scalar_surface_seed_20261009/BUILD_VALIDATION_V2.json",
+      "sha256": "affbe2dbf88878325c071bdc09a92ac0173dffd91e541513c25b1349046382bd"
+    },
+    "candidate": {
+      "path": "results/scalar_surface_seed_20261009/canonical_kernel_host_scalar_seed_v2.exe",
+      "sha256": "261b247ee97601b0179d4072cf4d5dd9299e7ac359d77f6bfabcaeb9118b38e7"
+    },
+    "generic_mesh_admission": false,
+    "kernel_source_sha256": "5c0ed2c1d4abb919a67f84318cae4cf90229c75ae005350e876b13443faaffe9",
+    "scope": "Native source identity changes because stock mesh APIs changed; SDF geometry source unchanged. Admission/acceptance remain owned by existing consumers."
+  },
+  "previous_stock_surface_seed_installation": {
+    "build_receipt": {
+      "path": "results/scalar_surface_seed_20261009/BUILD_VALIDATION_V2.json",
+      "sha256": "affbe2dbf88878325c071bdc09a92ac0173dffd91e541513c25b1349046382bd"
+    },
+    "candidate_sha256": "261b247ee97601b0179d4072cf4d5dd9299e7ac359d77f6bfabcaeb9118b38e7",
+    "kernel_source_sha256": "5c0ed2c1d4abb919a67f84318cae4cf90229c75ae005350e876b13443faaffe9",
+    "prior_manifest_sha256": "78fc0575ddabf686e2a2988dc67b3ee400cd200194a87c721e30bab55432ea1b",
+    "producer": "V4StockScalarConstructionSeed/1",
+    "route": "CanonicalMarchingCubesSeed/1"
+  },
+  "prior_manifest": "22e79fea8ce1d7c4dee82a515744be06302ea587c3ce195b4bbdd180c6efe6a4",
+  "schema": "V4OwnedRuntime/1",
+  "scope": "Owned V4 dependencies; optional descriptive reference determinant calculation. Existing tensor and final acceptance semantics retained.",
+  "stock_surface_seed_installation": {
+    "build_receipt": {
+      "path": "results/seed_topology_fix_20261010/BUILD_VALIDATION_REVIEWED.json",
+      "sha256": "25d8566d88eb3bbd02b78967ca80be7e5c908fddabd41bcc6e80383d619d1ad2"
+    },
+    "candidate_sha256": "0b793568a41027791f865f635f2e15d40d57a76dced890724c4d0d1aef7ea2b4",
+    "connectivity": "CanonicalGridEdgeIndicesPreserved/1",
+    "kernel_source_sha256": "57266a804ad81f42e94813336dcdaeedcc9fec58ae0bedac756f52342406713b",
+    "prior_manifest_sha256": "a6979e88e41f456d4a7975ada4da30042249138213f5edd17d95ca78a5c60694",
+    "producer": "V4StockScalarConstructionSeed/1",
+    "route": "CanonicalMarchingCubesSeed/1"
+  },
+  "surface_construction_batch_installation": {
+    "candidate_provider_sha256": "e93dca0e563dc715f5c69d4142766ad7c9b98666ceb5837b1b740c686e8e8cd8",
+    "prior_manifest_sha256": "5b21f1bc96313daea3e757d17d0d02ce2698b549521ea268604f324bee530450",
+    "prior_provider": {
+      "bytes": 29180,
+      "origin": "research/sdf_cfd_mesher_v3/adaptive_surface_generic_qualification/generic_v3mmg1_provider.py",
+      "origin_sha256": "3d48f1ce87bfc4c956a2133dc68cf96a9d93642930f0af0e20d1176f8c8af075",
+      "path": "runtime/surface/generic_v3mmg1_provider.py",
+      "sha256": "3d48f1ce87bfc4c956a2133dc68cf96a9d93642930f0af0e20d1176f8c8af075",
+      "transformation": "Line-ending normalization only; AST preserved"
+    },
+    "scope": "Generic source-capability batching only; no V3 edit, source shape dispatch, gate or assurance change."
+  },
+  "surface_seed_installation": {
+    "build_receipt": {
+      "path": "results/general_sdf_pipeline_20261008/surface_seed/BUILD_VALIDATION_V1.json",
+      "sha256": "de0dba6e96161f28eae4393693c3b5e9a7e3f2adfe2f9012e21794d60047f1d8"
+    },
+    "candidate_sha256": "a214073401a5e2aeea687a3bf6466c6ea1018e9ff49629880d3b5ac2a7e1dfdb",
+    "prior_manifest_sha256": "5cb4929f19b96b80649f9e87326d1a673b43b106068291e8d5e9d0e2acbf72aa",
+    "route": "CGALImplicitSurfaceExtraction/1"
+  },
+  "prior_task174_native_host_installation": {
+    "build_receipt": {
+      "path": "results/seed_topology_fix_20261010/BUILD_VALIDATION_REVIEWED.json",
+      "sha256": "25d8566d88eb3bbd02b78967ca80be7e5c908fddabd41bcc6e80383d619d1ad2"
+    },
+    "candidate": {
+      "path": "results/seed_topology_fix_20261010/canonical_kernel_host_seed_topology_v2.exe",
+      "sha256": "0b793568a41027791f865f635f2e15d40d57a76dced890724c4d0d1aef7ea2b4"
+    },
+    "generic_mesh_admission": false,
+    "kernel_source_sha256": "57266a804ad81f42e94813336dcdaeedcc9fec58ae0bedac756f52342406713b",
+    "scope": "Source identity changes for a stock mesh API extension. SDF geometry math/parser, legacy extraction and final acceptance unchanged."
+  }
+}

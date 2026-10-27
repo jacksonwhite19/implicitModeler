@@ -1,0 +1,386 @@
+{
+  "schema": "Task61PrivateProducerFluidConnectionEvidence/1",
+  "classification": "PRIVATE_PRODUCER_FLUID_CONNECTION_NONMESHING_PASS",
+  "decision": "KEEP private reusable generator/observer connection; no positive producer or production promotion",
+  "links": {
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\CONTROL_INVOCATION.json": "c61d49bbd493553fe8ac121ec6be382e85ece3f162cf3da64f71e0234bae805b",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\CONTROL_LAUNCH_REVIEW.json": "e10748d4c0dc87554ad264ca7f80fa9e0e900a2fff8f017ff28d68e703dec4d4",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01_EXECUTION.json": "f13ff972399896479f086ea6e855a5cca9403747df690162c508fad44ac55976",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01_EXECUTION_CLOSURE.json": "27aed7f9bcee1a6f48d072e9f176becb7e23fd63b26605c96d372c5293cef9da",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01_RESOURCE_RESULT.json": "bad786991b00448c2133d47d8b5e5c645e809014b6259c07b2ffb9bd2ac76e2b",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01_SCOPE_RESULT.json": "20b81cf8768a4b800309f885badb08736db51c69acfb10ee7ff562cefcc8f4e7",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01_SCOPE_CLOSURE.json": "9ebe5678f7a08f94bc250c7c918a99688def9a8c3528595088769a065a367b54",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01_SCOPE\\RETIREMENT.json": "b9ad03b869fbde3fa18e454ef6827886e961adecc3b0734dbcb32f3b1e102453",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\CONTROL_STARTUP_IDENTITY.json": "c4becc21e0d62eb8f99a6070b368ac8ffed9b4f0251e8e45efafdcd231f1c650",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\RESULT.json": "74e2a1eedffa3f7e43dd04b0767a1986814bf3172b3631d93b59f22fd7521c76",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\WORKER_COMPLETION.json": "610e9060d95641f9d48aa862177d2deff464580a8b79a4b14448ccd734dab134",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\LOADED_SOURCE_CLOSURE.json": "0aec54fb6ce97dea0dde74cb77e3abd2faec9f4e21dd1029be808960d61c6d32",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\CONTROL_STARTUP_IDENTITY.json": "e0dc65da58299b14950bdaa1f04cfef6196f4f66fba3d0b9783432c5e1fc3a38",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\NATIVE_HOST_RETIREMENT.json": "1a25ec465d14903d8338b4bf0924a0fb6f22eb176f41fa6271d9637a0c4f2750"
+  },
+  "invocations": {
+    "aggregate_controls": 1,
+    "preparations": 1,
+    "derivations": 1,
+    "native_hosts": 1,
+    "mesh_runs": 0,
+    "retries": 0
+  },
+  "generated": {
+    "prepared": {
+      "execution_authorized": false,
+      "manifest_sha256": "82b66f806709fc1c7eb2ca039f28651971846aa2a0861019c43b042b39ef052a",
+      "request_dir": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\prepared_request",
+      "selector": "cc599d9ccc65ff97fbc3ef65526863690d5fdda9a594580403ebdab9bb41dc77"
+    },
+    "derived": {
+      "activation_sha256": "920c547bed7d05e4ab7d21fabbea4608705689acdc1e4ae7dd2f5b7ee4db4793",
+      "execution_authorized": false,
+      "manifest_sha256": "3c523a04c21716f821bd9cda2859c98c5055d8450b607185f144163bffaab963",
+      "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\live_request",
+      "prepared_manifest_sha256": "82b66f806709fc1c7eb2ca039f28651971846aa2a0861019c43b042b39ef052a",
+      "selector": "cc599d9ccc65ff97fbc3ef65526863690d5fdda9a594580403ebdab9bb41dc77"
+    },
+    "producer_sha256": "b3c4970da6508cd27603244f5bc98333c5a5505a4fb5b718963966ae6c0c6261",
+    "canonical_fluid_sha256": "71a10b3d1d007c349c3fa2b5e88347fe0d1202a87570689ad90a6b9ff263d483",
+    "files_authenticated_before_import": true,
+    "zero_live_intent": true,
+    "prepared_role_denials": 3,
+    "derived_role_denials": 3,
+    "positive_live_gate_executed": false,
+    "genuine_accepted_parent_producer_executed": false
+  },
+  "calls": {
+    "clear": {
+      "baseline": {
+        "check_count": 1,
+        "diagnostics": null,
+        "science": {
+          "cells": 1,
+          "fluid_boxes_scope": "Per tetrahedron; whole-stage seconds remain a separate bound",
+          "geometry": "48cd50a8e2393401b9750727eb23a00ce420b4a471c8e1f28e864a8767a2a000",
+          "method": "SameRealSource/ConservativeValueFilterWithExactFallback/StrictPositive/ExactLongestEdgeCover",
+          "minimum_real_field_lower_m": "2251799813685245/2251799813685248",
+          "passed": true,
+          "region_queries": 1,
+          "scope": "Continuous real-source field sign for transition cells; no claim of native floating-point arithmetic equivalence or inherited surface completeness."
+        }
+      },
+      "observed": {
+        "check_count": 1,
+        "diagnostics": {
+          "cells": 1,
+          "cells_without_subdivision": null,
+          "exclusive_component_seconds": null,
+          "maximum_observed_depth": null,
+          "maximum_region_queries_per_cell": null,
+          "query_scope_counts": {
+            "full_checks": 0,
+            "nested_checks_reused": 3
+          },
+          "region_queries": 1,
+          "regional_filter_counts": {
+            "exact_query_fallbacks": 0,
+            "real_sign_arithmetic_fallbacks": 0,
+            "real_sign_exact_fallbacks": 0,
+            "real_sign_filtered": 1,
+            "real_sign_requests": 1
+          },
+          "schema": "V4TetFluidCallWorkload/1",
+          "scientific_acceptance": false,
+          "scope": "Single canonical fluid call including initial/final verification, result assembly and callbacks; excludes construction, other admission work and later scope exits.",
+          "scope_exit_verified": false,
+          "status": "completed_canonical_fluid_call",
+          "subdivisions_from_completed_cover": 0
+        },
+        "science": {
+          "cells": 1,
+          "fluid_boxes_scope": "Per tetrahedron; whole-stage seconds remain a separate bound",
+          "geometry": "48cd50a8e2393401b9750727eb23a00ce420b4a471c8e1f28e864a8767a2a000",
+          "method": "SameRealSource/ConservativeValueFilterWithExactFallback/StrictPositive/ExactLongestEdgeCover",
+          "minimum_real_field_lower_m": "2251799813685245/2251799813685248",
+          "passed": true,
+          "region_queries": 1,
+          "scope": "Continuous real-source field sign for transition cells; no claim of native floating-point arithmetic equivalence or inherited surface completeness."
+        }
+      }
+    },
+    "empty": {
+      "baseline": {
+        "check_count": 0,
+        "diagnostics": null,
+        "science": {
+          "cells": 0,
+          "fluid_boxes_scope": "Per tetrahedron; whole-stage seconds remain a separate bound",
+          "geometry": "48cd50a8e2393401b9750727eb23a00ce420b4a471c8e1f28e864a8767a2a000",
+          "method": "SameRealSource/ConservativeValueFilterWithExactFallback/StrictPositive/ExactLongestEdgeCover",
+          "minimum_real_field_lower_m": "None",
+          "passed": true,
+          "region_queries": 0,
+          "scope": "Continuous real-source field sign for transition cells; no claim of native floating-point arithmetic equivalence or inherited surface completeness."
+        }
+      },
+      "observed": {
+        "check_count": 0,
+        "diagnostics": {
+          "cells": 0,
+          "cells_without_subdivision": null,
+          "exclusive_component_seconds": null,
+          "maximum_observed_depth": null,
+          "maximum_region_queries_per_cell": null,
+          "query_scope_counts": {
+            "full_checks": 0,
+            "nested_checks_reused": 0
+          },
+          "region_queries": 0,
+          "regional_filter_counts": {
+            "exact_query_fallbacks": 0,
+            "real_sign_arithmetic_fallbacks": 0,
+            "real_sign_exact_fallbacks": 0,
+            "real_sign_filtered": 0,
+            "real_sign_requests": 0
+          },
+          "schema": "V4TetFluidCallWorkload/1",
+          "scientific_acceptance": false,
+          "scope": "Single canonical fluid call including initial/final verification, result assembly and callbacks; excludes construction, other admission work and later scope exits.",
+          "scope_exit_verified": false,
+          "status": "completed_canonical_fluid_call",
+          "subdivisions_from_completed_cover": 0
+        },
+        "science": {
+          "cells": 0,
+          "fluid_boxes_scope": "Per tetrahedron; whole-stage seconds remain a separate bound",
+          "geometry": "48cd50a8e2393401b9750727eb23a00ce420b4a471c8e1f28e864a8767a2a000",
+          "method": "SameRealSource/ConservativeValueFilterWithExactFallback/StrictPositive/ExactLongestEdgeCover",
+          "minimum_real_field_lower_m": "None",
+          "passed": true,
+          "region_queries": 0,
+          "scope": "Continuous real-source field sign for transition cells; no claim of native floating-point arithmetic equivalence or inherited surface completeness."
+        }
+      }
+    },
+    "isolated_again": {
+      "baseline": {
+        "check_count": 1,
+        "diagnostics": null,
+        "science": {
+          "cells": 1,
+          "fluid_boxes_scope": "Per tetrahedron; whole-stage seconds remain a separate bound",
+          "geometry": "48cd50a8e2393401b9750727eb23a00ce420b4a471c8e1f28e864a8767a2a000",
+          "method": "SameRealSource/ConservativeValueFilterWithExactFallback/StrictPositive/ExactLongestEdgeCover",
+          "minimum_real_field_lower_m": "2251799813685245/2251799813685248",
+          "passed": true,
+          "region_queries": 1,
+          "scope": "Continuous real-source field sign for transition cells; no claim of native floating-point arithmetic equivalence or inherited surface completeness."
+        }
+      },
+      "observed": {
+        "check_count": 1,
+        "diagnostics": {
+          "cells": 1,
+          "cells_without_subdivision": null,
+          "exclusive_component_seconds": null,
+          "maximum_observed_depth": null,
+          "maximum_region_queries_per_cell": null,
+          "query_scope_counts": {
+            "full_checks": 0,
+            "nested_checks_reused": 3
+          },
+          "region_queries": 1,
+          "regional_filter_counts": {
+            "exact_query_fallbacks": 0,
+            "real_sign_arithmetic_fallbacks": 0,
+            "real_sign_exact_fallbacks": 0,
+            "real_sign_filtered": 1,
+            "real_sign_requests": 1
+          },
+          "schema": "V4TetFluidCallWorkload/1",
+          "scientific_acceptance": false,
+          "scope": "Single canonical fluid call including initial/final verification, result assembly and callbacks; excludes construction, other admission work and later scope exits.",
+          "scope_exit_verified": false,
+          "status": "completed_canonical_fluid_call",
+          "subdivisions_from_completed_cover": 0
+        },
+        "science": {
+          "cells": 1,
+          "fluid_boxes_scope": "Per tetrahedron; whole-stage seconds remain a separate bound",
+          "geometry": "48cd50a8e2393401b9750727eb23a00ce420b4a471c8e1f28e864a8767a2a000",
+          "method": "SameRealSource/ConservativeValueFilterWithExactFallback/StrictPositive/ExactLongestEdgeCover",
+          "minimum_real_field_lower_m": "2251799813685245/2251799813685248",
+          "passed": true,
+          "region_queries": 1,
+          "scope": "Continuous real-source field sign for transition cells; no claim of native floating-point arithmetic equivalence or inherited surface completeness."
+        }
+      }
+    },
+    "subdivide": {
+      "baseline": {
+        "check_count": 187,
+        "diagnostics": null,
+        "science": {
+          "cells": 1,
+          "fluid_boxes_scope": "Per tetrahedron; whole-stage seconds remain a separate bound",
+          "geometry": "48cd50a8e2393401b9750727eb23a00ce420b4a471c8e1f28e864a8767a2a000",
+          "method": "SameRealSource/ConservativeValueFilterWithExactFallback/StrictPositive/ExactLongestEdgeCover",
+          "minimum_real_field_lower_m": "1/18014398509481984",
+          "passed": true,
+          "region_queries": 187,
+          "scope": "Continuous real-source field sign for transition cells; no claim of native floating-point arithmetic equivalence or inherited surface completeness."
+        }
+      },
+      "observed": {
+        "check_count": 187,
+        "diagnostics": {
+          "cells": 1,
+          "cells_without_subdivision": null,
+          "exclusive_component_seconds": null,
+          "maximum_observed_depth": null,
+          "maximum_region_queries_per_cell": null,
+          "query_scope_counts": {
+            "full_checks": 0,
+            "nested_checks_reused": 759
+          },
+          "region_queries": 187,
+          "regional_filter_counts": {
+            "exact_query_fallbacks": 99,
+            "real_sign_arithmetic_fallbacks": 2,
+            "real_sign_exact_fallbacks": 99,
+            "real_sign_filtered": 88,
+            "real_sign_requests": 187
+          },
+          "schema": "V4TetFluidCallWorkload/1",
+          "scientific_acceptance": false,
+          "scope": "Single canonical fluid call including initial/final verification, result assembly and callbacks; excludes construction, other admission work and later scope exits.",
+          "scope_exit_verified": false,
+          "status": "completed_canonical_fluid_call",
+          "subdivisions_from_completed_cover": 93
+        },
+        "science": {
+          "cells": 1,
+          "fluid_boxes_scope": "Per tetrahedron; whole-stage seconds remain a separate bound",
+          "geometry": "48cd50a8e2393401b9750727eb23a00ce420b4a471c8e1f28e864a8767a2a000",
+          "method": "SameRealSource/ConservativeValueFilterWithExactFallback/StrictPositive/ExactLongestEdgeCover",
+          "minimum_real_field_lower_m": "1/18014398509481984",
+          "passed": true,
+          "region_queries": 187,
+          "scope": "Continuous real-source field sign for transition cells; no claim of native floating-point arithmetic equivalence or inherited surface completeness."
+        }
+      }
+    }
+  },
+  "refusals": {
+    "actual_produce_nonlive_parent": {
+      "message": "LiveAcceptedTetPrismInputsRequired",
+      "type": "ValueError"
+    },
+    "actual_wrong_helper_hash": {
+      "message": "('ChangedPrivateStageHelper', 'finite_stage_controls')",
+      "type": "ValueError"
+    },
+    "derived_coordinator": {
+      "message": "('MissingSeparateLiveGrant', 'coordinator')",
+      "type": "ValueError"
+    },
+    "derived_launch": {
+      "message": "('MissingSeparateLiveGrant', 'launch')",
+      "type": "ValueError"
+    },
+    "derived_worker": {
+      "message": "('MissingSeparateLiveGrant', 'worker')",
+      "type": "ValueError"
+    },
+    "missing_required_closed_receipts": {
+      "message": "ReviewedControlReceiptsRequired",
+      "type": "ValueError"
+    },
+    "observer_expired_scope": {
+      "message": "ExpiredGeneralQueryScope",
+      "type": "ValueError"
+    },
+    "prepared_coordinator": {
+      "message": "('NumericalExecutionDisabledResearchPreparation', 'coordinator')",
+      "type": "ValueError"
+    },
+    "prepared_launch": {
+      "message": "('NumericalExecutionDisabledResearchPreparation', 'launch')",
+      "type": "ValueError"
+    },
+    "prepared_worker": {
+      "message": "('NumericalExecutionDisabledResearchPreparation', 'worker')",
+      "type": "ValueError"
+    },
+    "simulated_primary_check_failure": {
+      "message": "SimulatedPrimaryFluidCheckFailure",
+      "type": "TimeoutError"
+    },
+    "simulated_wrong_producer_binding": {
+      "message": "ChangedObserverProducerBinding",
+      "type": "ValueError"
+    }
+  },
+  "assertion_count": 97,
+  "assertions_are_not_independent_cases": true,
+  "science_fields_and_region_callback_counts_equal": true,
+  "simulation_labels": [
+    "Parent origin lookup only, not a credential",
+    "In-memory wrong producer binding",
+    "Injected primary check failure and snapshot counter"
+  ],
+  "source_closure": {
+    "modules": 171,
+    "files": 152,
+    "unpinned": []
+  },
+  "timing_seconds": {
+    "whole_owner": 10.985717999748886,
+    "supervised_coordinator": 7.0032718000002205,
+    "coordinator_body": 5.836856099776924,
+    "nested_not_additive": true,
+    "observer_overhead": null,
+    "speedup_claim": false
+  },
+  "resource_observations": {
+    "reported_resource_pass": true,
+    "reported_scope_pass": true,
+    "peak_windows_job_commit_bytes": 1805406208,
+    "both_jobs_empty": true,
+    "native_linux_retired": true,
+    "monitor_retired": true,
+    "native_source_host": {
+      "closed": true,
+      "pid": 2404,
+      "protected_handles": 0,
+      "readers_alive": [
+        false,
+        false
+      ],
+      "returncode": 1
+    },
+    "linux_retirement_sha256": "b9ad03b869fbde3fa18e454ef6827886e961adecc3b0734dbcb32f3b1e102453",
+    "transport_returncode": 125,
+    "individual_native_host_job_membership_observed": false,
+    "note": "Native host explicitly terminated by CanonicalKernel.close, return1; readers dead and protected handles0. Not a natural-success-exit claim. Aggregate job counts do not prove per-host cap attribution."
+  },
+  "output_observation": {
+    "files": 50,
+    "logical_bytes": 3084147,
+    "physical_allocation": null,
+    "atomic_quota": false
+  },
+  "scope_limits": [
+    "No genuine accepted-parent/admit/publication numerical execution",
+    "Source review only for positive live gate and report/lease ordering",
+    "Per-cell max/non-split/depth/exclusive time unavailable and null",
+    "No measured overhead or Task58 workload tier distribution",
+    "No per-host Windows job membership/peak attribution witness",
+    "No snapshot/OOM robustness or arbitrary geometry qualification"
+  ],
+  "cumulative_costs": {
+    "allocated_payload_seconds": 14143.312744399856,
+    "supervised_children_seconds": 7198.028103499996,
+    "completed_owners_excluding_Task52_seconds": 7333.87961379881,
+    "Task52_partial_scope_seconds": 2.4345236998051405,
+    "Task52_full_owner_seconds": null,
+    "nested_not_additive": true
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "all_linux_retired": true,
+  "cleanup_reserve_seconds": 60,
+  "linux_retirement_sha256": "b9ad03b869fbde3fa18e454ef6827886e961adecc3b0734dbcb32f3b1e102453",
+  "passed": true,
+  "whole_limit_seconds": 110,
+  "whole_seconds": 10.985717999748886,
+  "windows_receipt": "controls01_EXECUTION.json",
+  "worker_returncode": 0
+}

@@ -1,0 +1,203 @@
+{
+  "build_provenance_sha256": "90da70fd0abe6625f9fa9419f3a06738ae1880ed7908bcbb7c0451fe9ee1a636",
+  "build_relocation_sha256": "3bf3a04e923e35fcc381e0ffbda6de481cdd89cfc1f12af000b07d5cdcb32b65",
+  "changes": [
+    {
+      "keys": [
+        "sizing",
+        "wrapper_sha256"
+      ],
+      "owned_source": "tools/background_sizing.py",
+      "original_sha256": "62b33d9f18f12067ae22ef0b6ab91b1e8547e020eeb452962a0ba5a64af36b19",
+      "current_sha256": "01e98f9414b32f43733351a07fde08c89b0e1df17ba1f0753b63ec181c3fdcdf"
+    },
+    {
+      "keys": [
+        "backend_method",
+        "source_pins",
+        "tools/background_sizing.py"
+      ],
+      "owned_source": "tools/background_sizing.py",
+      "original_sha256": "62b33d9f18f12067ae22ef0b6ab91b1e8547e020eeb452962a0ba5a64af36b19",
+      "current_sha256": "01e98f9414b32f43733351a07fde08c89b0e1df17ba1f0753b63ec181c3fdcdf"
+    },
+    {
+      "keys": [
+        "backend_method",
+        "source_pins",
+        "tools/background_query_build.py"
+      ],
+      "owned_source": "tools/background_query_build.py",
+      "original_sha256": "0e1c01d71a9c28e75b3711cb78a43f559531ad81f10abe0dc91546e5d53fe5ae",
+      "current_sha256": "79c0a54bf9b18dcbaa4d8fd5639b67f4f7fe0f22754653a731953807de398103"
+    },
+    {
+      "keys": [
+        "files",
+        "backend"
+      ],
+      "owned_source": "tools/core_backend.py",
+      "original_sha256": "d462172cb99a4904747a549811b876b8f07d1cb9eefd6db67860ad7b96136474",
+      "current_sha256": "7b34edb739e94a91d43263198aff47f82803b47b35b2f0288cd7d1f6c6edf522"
+    },
+    {
+      "keys": [
+        "files",
+        "capsule_helpers"
+      ],
+      "owned_source": "tools/capsule_sizing_control.py",
+      "original_sha256": "aef12c865aaf13317b44dbcfa43cdc3359fb39d7de48a1295245bc56fdf859bb",
+      "current_sha256": "b6c41c15f1e9093b02f38bf8852de2b4c2e8f81114d2844eddb7071340a2aa2a"
+    },
+    {
+      "keys": [
+        "backend_method",
+        "source_pins",
+        "tools/core_backend.py"
+      ],
+      "owned_source": "tools/core_backend.py",
+      "original_sha256": "d462172cb99a4904747a549811b876b8f07d1cb9eefd6db67860ad7b96136474",
+      "current_sha256": "7b34edb739e94a91d43263198aff47f82803b47b35b2f0288cd7d1f6c6edf522"
+    },
+    {
+      "keys": [
+        "backend_method",
+        "source_pins",
+        "tools/background_backend_method.py"
+      ],
+      "owned_source": "tools/background_backend_method.py",
+      "original_sha256": "3e1f3ac193cba304753e35223e02b11c7913fb14d7c2f5a1e383f26bda153131",
+      "current_sha256": "8954a14c70cf431812082033eee7c72b020f959b15337db28a075d700b69c41d"
+    }
+  ],
+  "expected_current_lock": {
+    "backend_method": {
+      "algorithm3d": 10,
+      "callback": "owned_direct_c_query",
+      "effective_sizing": "3D target = 0.95 * pinned callback target after Gmsh clamping; 2D target unchanged. Effective 3D cap and growth scale change.",
+      "generation_dimensions": [
+        3
+      ],
+      "generation_factor_hex": "0x1.e666666666666p-1",
+      "name": "HXT4DirectSizing095/1",
+      "native_builds": {
+        "direct": {
+          "binary_sha256": "5c270a7c7fcb9ee08b570b29e2df78e0a765f9bffc0d5266281ebed026c2f956",
+          "library": "runtime/source/background/direct/direct_f1862ca1b8db042dc11b5bbcf8dad557cb037e9b310e9d738848507cd8e32386.so",
+          "record": "runtime/source/background/direct/DIRECT_BUILD.json",
+          "record_sha256": "9c744bb2f8f3e73ce1d9e3561af6785df5a14936b537675e29972eb565ecd124"
+        },
+        "query": {
+          "binary_sha256": "5153928e8a1e6b64e40fec0a99c4ba7f6526327f7dff0fbaae658d492f1907c1",
+          "library": "runtime/source/background/direct/query_6f7676a1dd54fe1569a63f8e5602c5417037a525dd9185c8568d61df14a72e11.so",
+          "record": "runtime/source/background/direct/QUERY_BUILD.json",
+          "record_sha256": "f384820803a199a6418d10d394ff75c03887f8947ae5e1b947610b6e14e81953"
+        }
+      },
+      "schema": "V4BackgroundBackendMethod/1",
+      "source_pins": {
+        "tools/background_backend_method.py": "8954a14c70cf431812082033eee7c72b020f959b15337db28a075d700b69c41d",
+        "tools/background_completion_controls.py": "cc2e2d560d71cdd9d9193bf6e55ec05fbb67f307ba195b7cba8e39ecf3a746da",
+        "tools/background_direct_callback.py": "8bc7dfc6edfc0d585a8b4a49f96d3c969add4933c5face6e97757044fed24eda",
+        "tools/background_interface_completion.py": "8319d2667e2b72ea06af7d3aa76e0112592c37418b0cb7ec6f67f9653a1da7cb",
+        "tools/background_native_query.py": "296410506947364bd90d276630162f7c6ffb84bd1dc7efea288f3836ad4ec6a4",
+        "tools/background_query_build.py": "79c0a54bf9b18dcbaa4d8fd5639b67f4f7fe0f22754653a731953807de398103",
+        "tools/background_sizing.py": "01e98f9414b32f43733351a07fde08c89b0e1df17ba1f0753b63ec181c3fdcdf",
+        "tools/core_backend.py": "7b34edb739e94a91d43263198aff47f82803b47b35b2f0288cd7d1f6c6edf522",
+        "tools/generic_core_sizing.py": "eb10b993743aa454fff054f1c78e283764a670d80a2490cd7f57807f2bbcc861",
+        "tools/gmsh_core_setup.py": "e23d1df38dd82117f8e0a2425d1ebf656e90c40f5772b05a94a534108ebb6749",
+        "tools/optimized_core_sizing.py": "fef78249784a0608d62e03562324cf053abf94e4af0a19a2e46f0861f3affa4b"
+      },
+      "threads3d": 4
+    },
+    "files": {
+      "backend": "7b34edb739e94a91d43263198aff47f82803b47b35b2f0288cd7d1f6c6edf522",
+      "capsule_helpers": "b6c41c15f1e9093b02f38bf8852de2b4c2e8f81114d2844eddb7071340a2aa2a",
+      "core_field": "eb10b993743aa454fff054f1c78e283764a670d80a2490cd7f57807f2bbcc861",
+      "gmsh_library": "9db3090d3b720c57b76bcbfa01d13854823ae2698c91343c20bdd4c2b81f6317",
+      "gmsh_python": "f4b0935cebde899750293d87a643090e5ea33c9b18d249267f507db68a0e01c3",
+      "optimized_field": "fef78249784a0608d62e03562324cf053abf94e4af0a19a2e46f0861f3affa4b",
+      "setup": "e23d1df38dd82117f8e0a2425d1ebf656e90c40f5772b05a94a534108ebb6749"
+    },
+    "sizing": {
+      "binary_sha256": "f7f56cd3c3649e31735cd970e7c78cfb862e21ef33fad26bbd6a94bfa86590f8",
+      "build_sha256": "a06d98dd2f0c4243ae637e87d9193e1882394cef6abe5f8c0b24fceb66680669",
+      "implementation": "ExistingNumPy1264SSE2LeafCompiled/1",
+      "machine": "x86_64",
+      "numpy": "1.26.4",
+      "numpy_arithmetic_sha256": "fe5efe31c55326b072c8fb239a225819211826cb45cd3c74ed0af0030e70f3a1",
+      "owner_sha256": "fef78249784a0608d62e03562324cf053abf94e4af0a19a2e46f0861f3affa4b",
+      "source_sha256": "d75dbcb8b56e933e52c6b0a0ce941112c29361f13557fda3b9320dcd669fbbd6",
+      "wrapper_sha256": "01e98f9414b32f43733351a07fde08c89b0e1df17ba1f0753b63ec181c3fdcdf"
+    },
+    "version": "4.15.2"
+  },
+  "original_lock": {
+    "backend_method": {
+      "algorithm3d": 10,
+      "callback": "owned_direct_c_query",
+      "effective_sizing": "3D target = 0.95 * pinned callback target after Gmsh clamping; 2D target unchanged. Effective 3D cap and growth scale change.",
+      "generation_dimensions": [
+        3
+      ],
+      "generation_factor_hex": "0x1.e666666666666p-1",
+      "name": "HXT4DirectSizing095/1",
+      "native_builds": {
+        "direct": {
+          "binary_sha256": "5c270a7c7fcb9ee08b570b29e2df78e0a765f9bffc0d5266281ebed026c2f956",
+          "library": "runtime/source/background/direct/direct_f1862ca1b8db042dc11b5bbcf8dad557cb037e9b310e9d738848507cd8e32386.so",
+          "record": "runtime/source/background/direct/DIRECT_BUILD.json",
+          "record_sha256": "9c744bb2f8f3e73ce1d9e3561af6785df5a14936b537675e29972eb565ecd124"
+        },
+        "query": {
+          "binary_sha256": "5153928e8a1e6b64e40fec0a99c4ba7f6526327f7dff0fbaae658d492f1907c1",
+          "library": "runtime/source/background/direct/query_6f7676a1dd54fe1569a63f8e5602c5417037a525dd9185c8568d61df14a72e11.so",
+          "record": "runtime/source/background/direct/QUERY_BUILD.json",
+          "record_sha256": "f384820803a199a6418d10d394ff75c03887f8947ae5e1b947610b6e14e81953"
+        }
+      },
+      "schema": "V4BackgroundBackendMethod/1",
+      "source_pins": {
+        "tools/background_backend_method.py": "3e1f3ac193cba304753e35223e02b11c7913fb14d7c2f5a1e383f26bda153131",
+        "tools/background_completion_controls.py": "cc2e2d560d71cdd9d9193bf6e55ec05fbb67f307ba195b7cba8e39ecf3a746da",
+        "tools/background_direct_callback.py": "8bc7dfc6edfc0d585a8b4a49f96d3c969add4933c5face6e97757044fed24eda",
+        "tools/background_interface_completion.py": "8319d2667e2b72ea06af7d3aa76e0112592c37418b0cb7ec6f67f9653a1da7cb",
+        "tools/background_native_query.py": "296410506947364bd90d276630162f7c6ffb84bd1dc7efea288f3836ad4ec6a4",
+        "tools/background_query_build.py": "0e1c01d71a9c28e75b3711cb78a43f559531ad81f10abe0dc91546e5d53fe5ae",
+        "tools/background_sizing.py": "62b33d9f18f12067ae22ef0b6ab91b1e8547e020eeb452962a0ba5a64af36b19",
+        "tools/core_backend.py": "d462172cb99a4904747a549811b876b8f07d1cb9eefd6db67860ad7b96136474",
+        "tools/generic_core_sizing.py": "eb10b993743aa454fff054f1c78e283764a670d80a2490cd7f57807f2bbcc861",
+        "tools/gmsh_core_setup.py": "e23d1df38dd82117f8e0a2425d1ebf656e90c40f5772b05a94a534108ebb6749",
+        "tools/optimized_core_sizing.py": "fef78249784a0608d62e03562324cf053abf94e4af0a19a2e46f0861f3affa4b"
+      },
+      "threads3d": 4
+    },
+    "files": {
+      "backend": "d462172cb99a4904747a549811b876b8f07d1cb9eefd6db67860ad7b96136474",
+      "capsule_helpers": "aef12c865aaf13317b44dbcfa43cdc3359fb39d7de48a1295245bc56fdf859bb",
+      "core_field": "eb10b993743aa454fff054f1c78e283764a670d80a2490cd7f57807f2bbcc861",
+      "gmsh_library": "9db3090d3b720c57b76bcbfa01d13854823ae2698c91343c20bdd4c2b81f6317",
+      "gmsh_python": "f4b0935cebde899750293d87a643090e5ea33c9b18d249267f507db68a0e01c3",
+      "optimized_field": "fef78249784a0608d62e03562324cf053abf94e4af0a19a2e46f0861f3affa4b",
+      "setup": "e23d1df38dd82117f8e0a2425d1ebf656e90c40f5772b05a94a534108ebb6749"
+    },
+    "sizing": {
+      "binary_sha256": "f7f56cd3c3649e31735cd970e7c78cfb862e21ef33fad26bbd6a94bfa86590f8",
+      "build_sha256": "a06d98dd2f0c4243ae637e87d9193e1882394cef6abe5f8c0b24fceb66680669",
+      "implementation": "ExistingNumPy1264SSE2LeafCompiled/1",
+      "machine": "x86_64",
+      "numpy": "1.26.4",
+      "numpy_arithmetic_sha256": "fe5efe31c55326b072c8fb239a225819211826cb45cd3c74ed0af0030e70f3a1",
+      "owner_sha256": "fef78249784a0608d62e03562324cf053abf94e4af0a19a2e46f0861f3affa4b",
+      "source_sha256": "d75dbcb8b56e933e52c6b0a0ce941112c29361f13557fda3b9320dcd669fbbd6",
+      "wrapper_sha256": "62b33d9f18f12067ae22ef0b6ab91b1e8547e020eeb452962a0ba5a64af36b19"
+    },
+    "version": "4.15.2"
+  },
+  "original_record": {
+    "package_relative": "runtime/finite_qualification/records/97579c9aae90bf23cebc4bdc8cbe00e4296989e79b278a482102b550af723499.json",
+    "sha256": "97579c9aae90bf23cebc4bdc8cbe00e4296989e79b278a482102b550af723499"
+  },
+  "schema": "OwnedNativeLockTransition/1",
+  "scope": "Exact reviewed current admission-wrapper identity, unchanged historical numerical binaries and original build receipts."
+}

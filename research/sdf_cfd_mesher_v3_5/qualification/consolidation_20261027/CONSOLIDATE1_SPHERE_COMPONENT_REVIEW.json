@@ -1,0 +1,156 @@
+{
+  "schema": "V35IndependentSphereComponentClosedReview/1",
+  "classification": "PASS",
+  "decision": "APPROVE_BLEND_GATE_ON_SAME_FROZEN_BUILD",
+  "scope": "Read-only saved arrays, hash binding, recorded numerical receipts; no geometry/native predicates, meshing, tests or source edits.",
+  "checks": {
+    "closed_source_inventory_matches_freeze_and_passage": true,
+    "source_custody_clean": true,
+    "all_1866_current_source_bytes_match": true,
+    "case_only_output_ceiling_changes": true,
+    "case_exact_preflight_bytes": true,
+    "explicit_adaptive_provenance": true,
+    "both_carriers_enabled": true,
+    "all_five_final_arrays_byte_equal": true,
+    "final_preserves_native_points_and_prisms": true,
+    "sealed_native_plan_exact": true,
+    "native_ancestry_complete_unique": true,
+    "native_positions_and_delta_exact": true,
+    "first_front_preserved": true,
+    "five_nominal_rows_no_compression": true,
+    "complete_and_cold_success": true,
+    "supervisor_clean": true,
+    "manifest_all_files_hash": true,
+    "direct_critical_hashes": true,
+    "audit_all_twelve_receipts_bound": true,
+    "readback_audit_all_twelve_receipts_bound": true,
+    "export_fidelity_and_checkmesh": true,
+    "conditioning_noop": true,
+    "apex_no_moves": true,
+    "shape_minima_equal_baseline": true,
+    "actual_interface_qa_pass": true
+  },
+  "details": {
+    "complete_arrays": {
+      "points": {
+        "byte_equal": true,
+        "shape": [
+          14798,
+          3
+        ]
+      },
+      "prisms": {
+        "byte_equal": true,
+        "shape": [
+          12780,
+          6
+        ]
+      },
+      "tetrahedra": {
+        "byte_equal": true,
+        "shape": [
+          40448,
+          4
+        ]
+      },
+      "wall": {
+        "byte_equal": true,
+        "shape": [
+          2556,
+          3
+        ]
+      },
+      "farfield": {
+        "byte_equal": true,
+        "shape": [
+          3672,
+          3
+        ]
+      }
+    },
+    "layers": {
+      "rows": 5,
+      "wall_vertices": 1280,
+      "first_normal_min": 1.9999999999999893e-05,
+      "first_normal_max": 2.0000000000000107e-05,
+      "first_normal_max_abs_error": 1.0842021724855044e-19,
+      "scalar_row_min": [
+        2e-05,
+        2.6000000000000002e-05,
+        3.380000000000001e-05,
+        4.394e-05,
+        5.712200000000001e-05
+      ],
+      "scalar_row_max": [
+        2e-05,
+        2.6000000000000002e-05,
+        3.380000000000001e-05,
+        4.394e-05,
+        5.712200000000001e-05
+      ],
+      "path_growth_min": 1.2999999999999892,
+      "path_growth_max": 1.3000000000000116,
+      "growth_reversals": 0
+    },
+    "manifest_files": 125,
+    "shape": {
+      "all_bulk_tetrahedra": {
+        "minimum": 0.4836897980570004,
+        "mandatory_passed": true,
+        "percentage_status": "TARGETS_MET"
+      },
+      "interface_tetrahedra": {
+        "minimum": 0.6060645893270594,
+        "mandatory_passed": true,
+        "percentage_status": "TARGETS_MET"
+      },
+      "preserved_cap_triangles": {
+        "minimum": 0.7505408777371186,
+        "mandatory_passed": true,
+        "percentage_status": "TARGETS_MET"
+      }
+    },
+    "interface": {
+      "faces": 2556,
+      "passed": true,
+      "minimum_weight": 0.3322823641615688,
+      "maximum_skewness": 0.3444295061222739
+    },
+    "counts": {
+      "points": 14798,
+      "prisms": 12780,
+      "tetrahedra": 40448,
+      "cells": 53228
+    },
+    "source_identity": "5e38fe034bb6f90fd23f5fee854293960e3ead35c289450ebe8d4f5a935f6666",
+    "case_sha256": "dcd39e8aca6e46806b266da7ab328dcd705dc88476df589654d2fbd5b827780f",
+    "mode": {
+      "schema": "V35SurfaceConstructionSelection/1",
+      "requested": "adaptive",
+      "effective": "adaptive",
+      "origin": "explicit_cli",
+      "assurance": "numerical",
+      "profile": "fastprod",
+      "final_acceptance": "unchanged"
+    },
+    "mesh_sha256": "3748989798b5eeb7df0920503aa9c847b1337be3a7aece100e29014e7b8f554b",
+    "supervisor": {
+      "exit_code": 0,
+      "seconds": 497.174707100261,
+      "peak_sampled_windows_tree_rss_bytes": 954343424,
+      "last_sampled_output_bytes": 312655190,
+      "stop_reason": null,
+      "monitor_error": null
+    }
+  },
+  "blockers": [],
+  "limits": [
+    "Sphere numerical engineering regression on this frozen build only; no general-shape or CFD qualification.",
+    "All five final arrays are byte-identical to the accepted sphere baseline; this does not establish deterministic behavior for other inputs.",
+    "Shared-apex controller invoked once with zero moves; conditioning no-op, zero cavity native calls.",
+    "Repair classification remains UNQUALIFIED; no global exact-Q population claim.",
+    "Continuous SDF fluid proof not performed; optional meshQuality dictionary check not run.",
+    "Closed receipts are evidence of completed live authority, not reusable live authority."
+  ],
+  "next_run": "ONE previously approved original thick-blend complete CLI, explicit adaptive, same 1866-file frozen inventory and approved CASE/quota. Stop at first outcome; no retry/tuning. Packaging/staging review remains separate."
+}

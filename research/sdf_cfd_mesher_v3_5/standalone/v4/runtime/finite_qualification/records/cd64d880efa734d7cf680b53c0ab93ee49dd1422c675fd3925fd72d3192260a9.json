@@ -1,0 +1,31 @@
+{
+  "actual_command_sha256": "af8146e4106dc48063a561e23bcb716dd08cb62b9cc70b59811545bc77c85b43",
+  "all_handles_physically_closed": true,
+  "approved": true,
+  "authorization_sha256": "62d03e1f463d0f5f9d0e4482060484bbb7832545d8e46d45a355668def370f65",
+  "before_after_sha_and_token_checks_equal": true,
+  "blockers": [],
+  "guarded_files": 5090,
+  "guards_closed_utc": "2026-10-19T15:05:03.4870433Z",
+  "guards_opened_utc": "2026-10-19T15:04:58.5158017Z",
+  "manifest_sha256": "17ced240ca2f4f54ef210dd8ad72d6b364da3f0282ba54a559a1e64d5109b9db",
+  "mode": "filesystem_only",
+  "normal_git_rows": 1115,
+  "notes": [
+    "Wrapper schema-only textual change after CRLF-to-LF normalization",
+    "Reader and identity byte-identical Task64",
+    "Candidate body only final rename call changed; canonical encoder and helper unchanged",
+    "Owned sacrificial matrix; immutable bypass means UNFIT; no durability equivalence or historical denier attribution",
+    "No live/mesh/default production approval"
+  ],
+  "physical_snapshot_digest": "35c4bbca72f0435e4e8e26930ff51c793ceac18085b4c07009c3189042403843",
+  "prior_sealed_files": 2695,
+  "reviewer": "/root/completed_roles_review",
+  "reviewer_imports_tests_native_arrays_edits": false,
+  "runtime_reviews": 1,
+  "runtime_sources": 1244,
+  "schema": "Task68ExactPrelaunchReview/1",
+  "snapshot_digest_format": "Ordinal absolute-path SHA map / UTF8 PowerShell compressedJSON",
+  "source_pins": 2649,
+  "task_sha256": "680e3b982a7d9b1ed84f2ca4851530a2eefcf572b2c0591d6e26fc2879d79d14"
+}

@@ -1,0 +1,14 @@
+{
+  "approved": true,
+  "mode": "nonmeshing_only",
+  "assignment": "Task57",
+  "human_message": "01a15205-b727-7a00-bde6-abe5727700d0",
+  "authority_scope": "Bounded readiness engineering under standing human direction; no42k numerical capacity permission",
+  "task_sha256": "93278a82f88aeb9334447b4ce77ec2faba5802a9f25ee5904057f416dbb475dc",
+  "manifest_sha256": "e4a3da32084a44f71f9aaa129c2a90d1c1024d25e5d45a6e75986357c782cb40",
+  "actual_command_sha256": "b0f844d5f2d38185c6d7c3b59638a9b158a1d7a42e40e4330841a10c4f576d68",
+  "maximum_invocations": 1,
+  "payload_seconds": 50,
+  "owner_seconds": 110,
+  "live_execution_approved": false
+}

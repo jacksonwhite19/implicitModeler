@@ -1,0 +1,118 @@
+{
+  "schema": "Consolidate1IndependentSphereRouteReview/1",
+  "passed": true,
+  "blockers": [],
+  "classification": "PASS_SAME_BUILD_UNCHANGED_SPHERE_REGRESSION",
+  "blend_gate_satisfied": true,
+  "blend_launch_approval": "Approve ONEexactBLENDcommandfromreviewedCONSOLIDATE1_PREFLIGHT.json now; remainsconditionalonfrozen1866inventory/no interrunedits andfreshblendoutput. No parallel/additionalrun/retry/tuning.",
+  "scope": "Read-only rawreceipts/sourcehashes/NPZentrybytes/proofcanonicalhashes/processinventory; no scientificpredicate/query/nativecheckerrun.",
+  "outcome": {
+    "full_mesh_complete": true,
+    "passed": true,
+    "worker_seconds": 495.1104752002284,
+    "supervisor_seconds": 497.174707100261,
+    "points": 14798,
+    "prisms": 12780,
+    "tetrahedra": 40448,
+    "cells": 53228,
+    "compressed_vertices": 0,
+    "mode": {
+      "schema": "V35SurfaceConstructionSelection/1",
+      "requested": "adaptive",
+      "effective": "adaptive",
+      "origin": "explicit_cli",
+      "assurance": "numerical",
+      "profile": "fastprod",
+      "final_acceptance": "unchanged"
+    },
+    "conditioning": "AlreadyAboveFloor",
+    "conditioning_native_calls": 0,
+    "apex_changed_count": 0
+  },
+  "baseline_comparison": {
+    "baseline": "sphere_live4_01",
+    "complete_mesh_entry_names_equal": true,
+    "all5NPYheader_payload_bytes_equal": {
+      "points": true,
+      "prisms": true,
+      "tetrahedra": true,
+      "wall": true,
+      "farfield": true
+    },
+    "all3shape_minima_identical": true,
+    "counts_identical": true,
+    "meaning": "Scientificmesharraysandmandatoryshapevaluespreserved. CASEquotaandcurrentimplementation/sourcebindingmetadata maydifferlegitimately; no historicalauthoritysubstitution."
+  },
+  "fresh_admission": {
+    "surface8filepins_match": true,
+    "surface_assurance": "FastProdNumericalSurface/1",
+    "shell_passed": true,
+    "shell_native_parent_source_binding_matches": true,
+    "background_provisional": false,
+    "producer_all12pass": true,
+    "live_parent": true,
+    "cold": {
+      "CFD_qualified": false,
+      "actual_shape_populations_recomputed": true,
+      "all_twelve_semantically_replayed": true,
+      "conditioning_replayed": true,
+      "geometry_identity": "d375a197d576c4e5e38f5c2f56a5121a1b492713420e1fa5f26695b816069a26",
+      "manifest_sha256": "4e32b2d7cc2a56df9dcadddd9e3f2c1194e0bae40edd7e62694c915672b63873",
+      "passed": true,
+      "points": 14798,
+      "prisms": 12780,
+      "proofs": 12,
+      "repair_replayed": true,
+      "schema": "V35DirectIndependentReadback/1",
+      "tetrahedra": 40448
+    },
+    "all12producer_file_andcanonical_identitypins_match": true,
+    "all12coldproof_files_byte_equal_to_producer": true,
+    "manifest125filepins_match": true,
+    "finalmesh_readback_manifest_hashes_match": true,
+    "basis": "Samepinnednormalfreshsurface/provider/nativeLiveAcceptance/directterminallease/actualjoinedproof/export/postleasecoldreadbacksourceflowasreviewed; closedbaseline pathsnotexecutioninputs."
+  },
+  "export": {
+    "failed_lines": [],
+    "literal_mesh_ok": true,
+    "mesh_quality": "NOT_RUN_NO_APPLICABLE_APPROVED_DICTIONARY",
+    "passed": true,
+    "returncode": 0,
+    "warnings": []
+  },
+  "source_closure": {
+    "identity": "5e38fe034bb6f90fd23f5fee854293960e3ead35c289450ebe8d4f5a935f6666",
+    "files": 1866,
+    "inventory_and_identity_exactly_equal_freeze": true,
+    "state": "closed",
+    "passed": true,
+    "changed": [],
+    "added": [],
+    "independent_current1866pin_mismatches": []
+  },
+  "resource_and_retirement": {
+    "exit_code": 0,
+    "stop_reason": null,
+    "monitor_error": null,
+    "peak_sampled_Windows_tree_rss_bytes": 954343424,
+    "last_sampled_output_bytes": 312655190,
+    "matchingWindowsPythonprocesses": 0,
+    "recordedLinuxgroups": [
+      1434231,
+      1434996,
+      1439186,
+      1437657,
+      1435829,
+      1436770,
+      1438422
+    ],
+    "remaining_group_members": [],
+    "method": "WindowsCIMread-onlymatch plus WSLstandardlibrary/procscan; no scientific/nativepredicateexecution. Allrecordedgroupsabsent."
+  },
+  "next_gate": "AfterBLENDfirstoutcome closeandreviewbeforepackaging/publication. Scopedcommit/pushand -textattribute preservationreview is separatelaterboundary; noGitmutationperformedorauthorizedbythisreview.",
+  "limits": [
+    "Thisclosedcontrolpreservesonespherefixture/currentfrozenbuild. Passageexplicitnodalevidenceunchanged; no generalizedshapequalification.",
+    "MeshOKhasnowarnings butmeshQualitydictionaryNOT_RUN; numericalsurface/engineering-only,no continuousfluid/CFD/globalexactQclaim."
+  ],
+  "root_callback_only": true
+}

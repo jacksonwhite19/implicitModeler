@@ -1,0 +1,989 @@
+// NACA airfoil generation and 2D->3D SDF conversion
+
+use super::section::{Section2D, SectionBounds2D};
+use super::naca_spline::{NacaSpline, SectionClosestPoint, SectionQueryError};
+use crate::sdf::Sdf;
+use crate::sdf::conditioning::{SdfBounds, SdfNodeMetadata};
+use glam::{Vec2, Vec3};
+use lazy_static::lazy_static;
+use std::any::Any;
+use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct AirfoilFeatureMetadata {
+    pub trailing_edge_thickness_mm: f32,
+    pub leading_edge_radius_mm: f32,
+    pub min_feature_size_mm: f32,
+    pub export_safe: bool,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct AirfoilExportOptions {
+    pub min_trailing_edge_thickness_mm: f32,
+    pub min_leading_edge_radius_mm: f32,
+    pub clip_trailing_edge: bool,
+}
+
+impl Default for AirfoilExportOptions {
+    fn default() -> Self {
+        Self {
+            min_trailing_edge_thickness_mm: 1.0,
+            min_leading_edge_radius_mm: 1.0,
+            clip_trailing_edge: true,
+        }
+    }
+}
+
+#[derive(Clone)]
+pub enum AirfoilRepresentation {
+    Polygon,
+    SmoothSpline(Arc<NacaSpline>),
+    UnresolvedSpline,
+}
+
+/// Explicit section authority. Points are previews for spline sections.
+#[derive(Clone)]
+pub struct Airfoil {
+    /// Normalized coordinates (x, y) where x ∈ [0,1], y ∈ [-0.5, 0.5]
+    pub points: Vec<(f32, f32)>,
+    pub chord: f32,
+    pub feature_metadata: Option<AirfoilFeatureMetadata>,
+    pub representation: AirfoilRepresentation,
+}
+
+impl Airfoil {
+    pub fn new(points: Vec<(f32, f32)>, chord: f32) -> Self {
+        Self {
+            points,
+            chord,
+            feature_metadata: None,
+            representation: AirfoilRepresentation::Polygon,
+        }
+    }
+
+    pub fn with_feature_metadata(
+        points: Vec<(f32, f32)>,
+        chord: f32,
+        feature_metadata: AirfoilFeatureMetadata,
+    ) -> Self {
+        Self {
+            points,
+            chord,
+            feature_metadata: Some(feature_metadata),
+            representation: AirfoilRepresentation::Polygon,
+        }
+    }
+
+    /// Compute the distance to the lerped polyline inline — no allocation, no intermediate struct.
+    /// This is the inner hot-path called by `Section2D::distance_lerped_2d`.
+    pub(super) fn lerped_distance_inline(&self, other: &Airfoil, t: f32, point: Vec2) -> f32 {
+        if let (Some(a), Some(b)) = (self.spline(), other.spline()) {
+            let setup_timer=super::naca_spline::profile::start();
+            let chord = self.chord + t * (other.chord - self.chord);
+            if chord <= 0.0 { return f32::NAN; }
+            let query = point.as_dvec2() / chord as f64;
+            super::naca_spline::profile::end("airfoil_setup",setup_timer);
+            let equality_timer=super::naca_spline::profile::start();
+            let same_arc=Arc::ptr_eq(a,b);
+            let equal=if super::naca_spline::cpu::mode()>=1 {super::naca_spline::cpu::profiles_equal(a,b)} else {same_arc || a==b};
+            if super::naca_spline::profile::enabled(){super::naca_spline::profile::record("profile_value_comparisons",u64::from(!same_arc),0);}
+            super::naca_spline::profile::end("profile_equality",equality_timer);
+            let value = if equal { if super::naca_spline::cpu::mode()>=2 {super::naca_spline::cpu::closest_shared(a,query)} else {a.closest_point(query)} }
+            else { a.blended(b, t as f64).ok_or(SectionQueryError::InvalidInput).and_then(|s| s.closest_point(query)) };
+            return value.map_or(f32::NAN, |v| (v.signed_distance * chord as f64) as f32);
+        }
+        if !matches!(self.representation, AirfoilRepresentation::Polygon)
+            || !matches!(other.representation, AirfoilRepresentation::Polygon) { return f32::NAN; }
+        let n = self.points.len().min(other.points.len());
+        if n < 2 {
+            return point.length();
+        }
+
+        let lerp_chord = self.chord + (other.chord - self.chord) * t;
+        let p = Vec2::new(point.x / lerp_chord, point.y / lerp_chord);
+        let s = 1.0 - t;
+
+        // Closest-point pass
+        let mut min_dist_sq = f32::MAX;
+        for i in 0..n - 1 {
+            let (ax0, ay0) = self.points[i];
+            let (bx0, by0) = other.points[i];
+            let (ax1, ay1) = self.points[i + 1];
+            let (bx1, by1) = other.points[i + 1];
+            let p1 = Vec2::new(ax0 * s + bx0 * t, ay0 * s + by0 * t);
+            let p2 = Vec2::new(ax1 * s + bx1 * t, ay1 * s + by1 * t);
+            let edge = p2 - p1;
+            let elen_sq = edge.length_squared();
+            if elen_sq < 1e-10 {
+                min_dist_sq = min_dist_sq.min((p - p1).length_squared());
+                continue;
+            }
+            let tp = ((p - p1).dot(edge) / elen_sq).clamp(0.0, 1.0);
+            min_dist_sq = min_dist_sq.min((p - (p1 + edge * tp)).length_squared());
+        }
+
+        let dist = min_dist_sq.sqrt() * lerp_chord;
+
+        // Winding-number pass
+        let mut crossings = 0u32;
+        for i in 0..n - 1 {
+            let (_ax0, ay0) = self.points[i];
+            let (_bx0, by0) = other.points[i];
+            let (_ax1, ay1) = self.points[i + 1];
+            let by1 = other.points[i + 1].1;
+            let y0 = ay0 * s + by0 * t;
+            let y1 = ay1 * s + by1 * t;
+            if (y0 <= p.y && y1 > p.y) || (y1 <= p.y && y0 > p.y) {
+                let tc = (p.y - y0) / (y1 - y0);
+                let x0 = (self.points[i].0) * s + other.points[i].0 * t;
+                let x1 = (self.points[i + 1].0) * s + other.points[i + 1].0 * t;
+                if p.x < x0 + tc * (x1 - x0) {
+                    crossings += 1;
+                }
+            }
+        }
+
+        if crossings % 2 == 1 { -dist } else { dist }
+    }
+
+    /// Blend linearly with `other` by `t`, resampling both polylines to the same point count.
+    pub fn lerp(&self, other: &Airfoil, t: f32) -> Airfoil {
+        let n = self.points.len().min(other.points.len());
+        let a = resample_polyline(&self.points, n);
+        let b = resample_polyline(&other.points, n);
+        let points = a
+            .iter()
+            .zip(b.iter())
+            .map(|(&(ax, ay), &(bx, by))| (ax + (bx - ax) * t, ay + (by - ay) * t))
+            .collect();
+        let chord = self.chord + (other.chord - self.chord) * t;
+        let feature_metadata = match (self.feature_metadata, other.feature_metadata) {
+            (Some(a), Some(b)) => Some(AirfoilFeatureMetadata {
+                trailing_edge_thickness_mm: a.trailing_edge_thickness_mm
+                    + (b.trailing_edge_thickness_mm - a.trailing_edge_thickness_mm) * t,
+                leading_edge_radius_mm: a.leading_edge_radius_mm
+                    + (b.leading_edge_radius_mm - a.leading_edge_radius_mm) * t,
+                min_feature_size_mm: a.min_feature_size_mm
+                    + (b.min_feature_size_mm - a.min_feature_size_mm) * t,
+                export_safe: a.export_safe || b.export_safe,
+            }),
+            _ => None,
+        };
+        Airfoil {
+            points,
+            chord,
+            feature_metadata,
+            representation: match (self.spline(), other.spline()) {
+                (Some(a), Some(b)) => a.blended(b, t as f64).map(|s| AirfoilRepresentation::SmoothSpline(Arc::new(s))).unwrap_or(AirfoilRepresentation::UnresolvedSpline),
+                _ if matches!(self.representation, AirfoilRepresentation::Polygon) && matches!(other.representation, AirfoilRepresentation::Polygon) => AirfoilRepresentation::Polygon,
+                _ => AirfoilRepresentation::UnresolvedSpline,
+            },
+        }
+    }
+
+    pub fn spline(&self) -> Option<&Arc<NacaSpline>> {
+        match &self.representation { AirfoilRepresentation::SmoothSpline(s) => Some(s), _ => None }
+    }
+
+    pub fn closest_spline_point(&self, point: glam::DVec2) -> Result<SectionClosestPoint, SectionQueryError> {
+        if !self.chord.is_finite() || self.chord <= 0.0 { return Err(SectionQueryError::InvalidInput); }
+        let mut q = self.spline().ok_or(SectionQueryError::InvalidInput)?.closest_point(point / self.chord as f64)?;
+        q.signed_distance *= self.chord as f64;
+        q.point = q.point.map(|v| v * self.chord as f64);
+        q.distance_error_bound *= self.chord as f64;
+        Ok(q)
+    }
+}
+
+impl Section2D for Airfoil {
+    fn distance_2d(&self, point: Vec2) -> f32 {
+        if self.spline().is_some() { return self.closest_spline_point(point.as_dvec2()).map_or(f32::NAN, |q| q.signed_distance as f32); }
+        if matches!(self.representation, AirfoilRepresentation::UnresolvedSpline) { return f32::NAN; }
+        if self.points.is_empty() {
+            return point.length();
+        }
+
+        // Normalize point to [0,1] coordinate system
+        let p = Vec2::new(point.x / self.chord, point.y / self.chord);
+
+        // Find closest point on polyline
+        let mut min_dist_sq = f32::MAX;
+        for i in 0..self.points.len() - 1 {
+            let p1 = Vec2::new(self.points[i].0, self.points[i].1);
+            let p2 = Vec2::new(self.points[i + 1].0, self.points[i + 1].1);
+
+            let edge = p2 - p1;
+            let edge_len_sq = edge.length_squared();
+            if edge_len_sq < 1e-10 {
+                min_dist_sq = min_dist_sq.min((p - p1).length_squared());
+                continue;
+            }
+
+            let t_proj = ((p - p1).dot(edge) / edge_len_sq).clamp(0.0, 1.0);
+            let dist_sq = (p - (p1 + edge * t_proj)).length_squared();
+            min_dist_sq = min_dist_sq.min(dist_sq);
+        }
+
+        let dist = min_dist_sq.sqrt() * self.chord;
+
+        // Determine sign via ray-casting (winding number)
+        let mut crossings = 0;
+        for i in 0..self.points.len() - 1 {
+            let p1 = Vec2::new(self.points[i].0, self.points[i].1);
+            let p2 = Vec2::new(self.points[i + 1].0, self.points[i + 1].1);
+            if (p1.y <= p.y && p2.y > p.y) || (p1.y > p.y && p2.y <= p.y) {
+                let t_cross = (p.y - p1.y) / (p2.y - p1.y);
+                if p.x < p1.x + t_cross * (p2.x - p1.x) {
+                    crossings += 1;
+                }
+            }
+        }
+
+        if crossings % 2 == 1 { -dist } else { dist }
+    }
+
+    fn bounds_2d(&self) -> Option<SectionBounds2D> {
+        if let Some(s) = self.spline() {
+            let (lo,hi)=s.bounds(); let pad=8.0*f32::EPSILON*self.chord.abs();
+            return Some(SectionBounds2D::new((lo*self.chord as f64).as_vec2()-Vec2::splat(pad),(hi*self.chord as f64).as_vec2()+Vec2::splat(pad)));
+        }
+        let points: Vec<_> = self
+            .points
+            .iter()
+            .map(|&(x, y)| Vec2::new(x * self.chord, y * self.chord))
+            .collect();
+        SectionBounds2D::from_points(&points)
+    }
+
+    fn metadata_fingerprint_parameters(&self) -> Vec<f32> {
+        let mut values = Vec::with_capacity(self.points.len() * 2 + 6);
+        values.push(self.chord);
+        values.push(self.points.len() as f32);
+        if let Some(s) = self.spline() {
+            values.push(2.0);
+            for span in &s.spans { for p in span.control { values.extend(p.map(|v| v as f32)); } }
+        }
+        for &(x, y) in &self.points {
+            values.push(x);
+            values.push(y);
+        }
+        if let Some(feature_metadata) = self.feature_metadata {
+            values.push(feature_metadata.trailing_edge_thickness_mm);
+            values.push(feature_metadata.leading_edge_radius_mm);
+            values.push(feature_metadata.min_feature_size_mm);
+            values.push(if feature_metadata.export_safe {
+                1.0
+            } else {
+                0.0
+            });
+        }
+        values
+    }
+
+    /// Allocation-free hot-path version: lerps both polylines inline without creating
+    /// an intermediate `Airfoil`. Called millions of times during ray-march / MC.
+    fn distance_lerped_2d(&self, other: &dyn Section2D, t: f32, point: Vec2) -> f32 {
+        if let Some(other_af) = other.as_any().downcast_ref::<Airfoil>() {
+            self.lerped_distance_inline(other_af, t, point)
+        } else {
+            // Heterogeneous fallback: blend distances
+            self.distance_2d(point) * (1.0 - t) + other.distance_2d(point) * t
+        }
+    }
+
+    fn lerp_to(&self, other: &dyn Section2D, t: f32) -> Arc<dyn Section2D> {
+        if let Some(other_airfoil) = other.as_any().downcast_ref::<Airfoil>() {
+            Arc::new(self.lerp(other_airfoil, t))
+        } else {
+            Arc::new(self.clone())
+        }
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+/// Resample a polyline to exactly `n` points by arc-length parameterisation.
+/// When `pts.len() == n` the original slice is returned as-is (no allocation beyond copy).
+fn resample_polyline(pts: &[(f32, f32)], n: usize) -> Vec<(f32, f32)> {
+    if pts.len() == n {
+        return pts.to_vec();
+    }
+    if n == 0 || pts.is_empty() {
+        return Vec::new();
+    }
+
+    // Build cumulative arc-length table
+    let mut arc = Vec::with_capacity(pts.len());
+    arc.push(0.0f32);
+    for i in 1..pts.len() {
+        let dx = pts[i].0 - pts[i - 1].0;
+        let dy = pts[i].1 - pts[i - 1].1;
+        arc.push(arc[i - 1] + (dx * dx + dy * dy).sqrt());
+    }
+    let total = *arc.last().unwrap();
+    if total < 1e-10 {
+        return vec![(pts[0].0, pts[0].1); n];
+    }
+
+    let denom = (n - 1).max(1) as f32;
+    (0..n)
+        .map(|i| {
+            let s = total * i as f32 / denom;
+            let j = arc
+                .partition_point(|&a| a < s)
+                .saturating_sub(1)
+                .min(pts.len() - 2);
+            let seg_len = arc[j + 1] - arc[j];
+            let t = if seg_len > 1e-10 {
+                (s - arc[j]) / seg_len
+            } else {
+                0.0
+            };
+            (
+                pts[j].0 + t * (pts[j + 1].0 - pts[j].0),
+                pts[j].1 + t * (pts[j + 1].1 - pts[j].1),
+            )
+        })
+        .collect()
+}
+
+/// Generate NACA 4-digit airfoil coordinates
+///
+/// # Arguments
+/// * `m` - Maximum camber as fraction of chord (0-0.1 typical)
+/// * `p` - Location of maximum camber as fraction of chord (0-1)
+/// * `t` - Maximum thickness as fraction of chord (0-0.3 typical)
+/// * `n_points` - Number of points to generate (50-100 recommended)
+///
+/// Returns vector of (x, y) coordinates from trailing edge (1, 0) around leading edge to trailing edge
+pub fn naca_4digit(m: f32, p: f32, t: f32, n_points: usize) -> Vec<(f32, f32)> {
+    naca_4digit_with_te_floor(m, p, t, n_points, Some(0.006))
+}
+
+fn naca_4digit_with_te_floor(
+    m: f32,
+    p: f32,
+    t: f32,
+    n_points: usize,
+    min_half_te_thickness_chord: Option<f32>,
+) -> Vec<(f32, f32)> {
+    let mut points = Vec::with_capacity(n_points * 2);
+
+    // Generate x coordinates using cosine spacing (better resolution at leading edge)
+    let mut x_coords = Vec::with_capacity(n_points);
+    for i in 0..n_points {
+        let beta = std::f32::consts::PI * (i as f32) / ((n_points - 1) as f32);
+        let x = 0.5 * (1.0 - beta.cos());
+        x_coords.push(x);
+    }
+
+    // Calculate thickness distribution.
+    // Use -0.1015 (open TE variant) so the trailing edge has finite thickness
+    // (~0.252% of chord). Export-safe profiles may additionally clamp to a
+    // minimum half-thickness so tapered wingtips render cleanly.
+    let thickness = |x: f32| {
+        let yt = 5.0
+            * t
+            * (
+                0.2969 * x.sqrt() - 0.1260 * x - 0.3516 * x.powi(2) + 0.2843 * x.powi(3)
+                    - 0.1015 * x.powi(4)
+                // -0.1015 = open TE; small but finite thickness at x=1
+            );
+        min_half_te_thickness_chord.map_or(yt, |floor| yt.max(floor))
+    };
+
+    // Calculate mean camber line and its derivative
+    let camber = |x: f32| {
+        if p < 0.0001 {
+            0.0
+        } else if x < p {
+            (m / p.powi(2)) * (2.0 * p * x - x.powi(2))
+        } else {
+            (m / (1.0 - p).powi(2)) * ((1.0 - 2.0 * p) + 2.0 * p * x - x.powi(2))
+        }
+    };
+
+    let camber_deriv = |x: f32| {
+        if p < 0.0001 {
+            0.0
+        } else if x < p {
+            (2.0 * m / p.powi(2)) * (p - x)
+        } else {
+            (2.0 * m / (1.0 - p).powi(2)) * (p - x)
+        }
+    };
+
+    // Generate upper surface points (from leading edge to trailing edge)
+    for i in (0..n_points).rev() {
+        let x = x_coords[i];
+        let yt = thickness(x);
+        let yc = camber(x);
+        let dyc_dx = camber_deriv(x);
+
+        let theta = dyc_dx.atan();
+        let xu = x - yt * theta.sin();
+        let yu = yc + yt * theta.cos();
+
+        points.push((xu, yu));
+    }
+
+    // Generate lower surface points (from trailing edge to leading edge)
+    for i in 1..n_points {
+        // Skip first point to avoid duplication
+        let x = x_coords[i];
+        let yt = thickness(x);
+        let yc = camber(x);
+        let dyc_dx = camber_deriv(x);
+
+        let theta = dyc_dx.atan();
+        let xl = x + yt * theta.sin();
+        let yl = yc - yt * theta.cos();
+
+        points.push((xl, yl));
+    }
+
+    // Close the polyline: connect lower TE back to upper TE.
+    // This is critical for correct winding-number inside/outside tests.
+    if let Some(&first) = points.first() {
+        points.push(first);
+    }
+
+    points
+}
+
+fn natural_naca_leading_edge_radius_mm(thickness_ratio: f32, chord: f32) -> f32 {
+    1.1019 * thickness_ratio * thickness_ratio * chord.max(1e-6)
+}
+
+fn trailing_edge_thickness_from_points(points: &[(f32, f32)], chord: f32) -> f32 {
+    if points.len() < 2 {
+        return 0.0;
+    }
+    (points[0].1 - points[points.len() - 2].1).abs() * chord
+}
+
+fn enforce_min_trailing_edge_thickness(points: &mut [(f32, f32)], chord: f32, min_te_mm: f32) {
+    if points.len() < 3 || chord <= 1e-6 {
+        return;
+    }
+    let half = (min_te_mm.max(0.0) * 0.5) / chord;
+    points[0] = (1.0, half);
+    let last = points.len() - 2;
+    points[last] = (1.0, -half);
+    let closing = points.len() - 1;
+    points[closing] = points[0];
+}
+
+fn build_naca_airfoil(
+    designation: &str,
+    chord: f32,
+    export_options: Option<AirfoilExportOptions>,
+) -> Airfoil {
+    let (m, p, nominal_t) = parse_naca_4digit(designation).unwrap_or((0.0, 0.0, 0.12));
+    let (effective_t, export_safe) = if let Some(options) = export_options {
+        let required_t =
+            (options.min_leading_edge_radius_mm.max(0.0) / (1.1019 * chord.max(1e-6))).sqrt();
+        (nominal_t.max(required_t), true)
+    } else {
+        (nominal_t, false)
+    };
+
+    let mut points = if let Some(options) = export_options {
+        if options.clip_trailing_edge {
+            let half_te_floor =
+                (options.min_trailing_edge_thickness_mm.max(0.0) * 0.5) / chord.max(1e-6);
+            naca_4digit_with_te_floor(m, p, effective_t, 100, Some(half_te_floor))
+        } else {
+            naca_4digit_with_te_floor(m, p, effective_t, 100, None)
+        }
+    } else {
+        naca_4digit(m, p, effective_t, 100)
+    };
+    if let Some(options) = export_options {
+        if options.clip_trailing_edge {
+            enforce_min_trailing_edge_thickness(
+                &mut points,
+                chord,
+                options.min_trailing_edge_thickness_mm,
+            );
+        }
+    }
+
+    let trailing_edge_thickness_mm = trailing_edge_thickness_from_points(&points, chord);
+    let leading_edge_radius_mm = natural_naca_leading_edge_radius_mm(effective_t, chord);
+    let min_feature_size_mm = trailing_edge_thickness_mm.min(leading_edge_radius_mm * 2.0);
+    let mut airfoil = Airfoil::with_feature_metadata(
+        points,
+        chord,
+        AirfoilFeatureMetadata {
+            trailing_edge_thickness_mm,
+            leading_edge_radius_mm,
+            min_feature_size_mm,
+            export_safe,
+        },
+    );
+    // Explicit clipping remains a separate legacy geometry contract.
+    if !export_options.is_some_and(|o| o.clip_trailing_edge) {
+        airfoil.points = naca_4digit_with_te_floor(m,p,effective_t,100,None);
+        let a=airfoil.points[0];let b=airfoil.points[airfoil.points.len()-2];
+        airfoil.representation = NacaSpline::new(m as f64,p as f64,effective_t as f64,
+            [a.0 as f64,a.1 as f64],[b.0 as f64,b.1 as f64])
+            .map(|s|AirfoilRepresentation::SmoothSpline(Arc::new(s)))
+            .unwrap_or(AirfoilRepresentation::UnresolvedSpline);
+        if let Some(meta)=&mut airfoil.feature_metadata {
+            meta.trailing_edge_thickness_mm=(a.1-b.1).abs()*chord;
+            meta.min_feature_size_mm=meta.trailing_edge_thickness_mm.min(meta.leading_edge_radius_mm*2.0);
+        }
+    }
+    airfoil
+}
+
+/// Returns true if the string is a valid NACA 4-digit designation.
+pub fn is_valid_naca_4digit(designation: &str) -> bool {
+    designation.len() == 4 && designation.chars().all(|c| c.is_ascii_digit())
+}
+
+/// Parse NACA 4-digit designation string
+///
+/// # Example
+/// "2412" → (m=0.02, p=0.4, t=0.12)
+fn parse_naca_4digit(designation: &str) -> Option<(f32, f32, f32)> {
+    if designation.len() != 4 {
+        return None;
+    }
+
+    let digits: Vec<char> = designation.chars().collect();
+
+    let m = digits[0].to_digit(10)? as f32 / 100.0; // Max camber in hundredths
+    let p = digits[1].to_digit(10)? as f32 / 10.0; // Position in tenths
+    let t_tens = digits[2].to_digit(10)? as f32;
+    let t_ones = digits[3].to_digit(10)? as f32;
+    let t = (t_tens * 10.0 + t_ones) / 100.0; // Thickness in hundredths
+
+    Some((m, p, t))
+}
+
+// Airfoil cache for performance
+lazy_static! {
+    static ref AIRFOIL_CACHE: RwLock<HashMap<String, Arc<Airfoil>>> = RwLock::new(HashMap::new());
+}
+
+/// Get or generate a NACA 4-digit airfoil with caching
+///
+/// # Arguments
+/// * `designation` - NACA 4-digit code (e.g., "2412", "0012")
+/// * `chord` - Chord length in model units
+///
+/// Returns cached or newly generated airfoil
+pub fn get_naca_airfoil(designation: &str, chord: f32) -> Arc<Airfoil> {
+    let key = format!("{}_{:.2}", designation, chord);
+
+    {
+        let cache = AIRFOIL_CACHE.read().unwrap();
+        if let Some(airfoil) = cache.get(&key) {
+            return Arc::clone(airfoil);
+        }
+    }
+
+    let airfoil = Arc::new(build_naca_airfoil(designation, chord, None));
+
+    {
+        let mut cache = AIRFOIL_CACHE.write().unwrap();
+        cache.insert(key, Arc::clone(&airfoil));
+    }
+
+    airfoil
+}
+
+pub fn get_naca_airfoil_export_safe(
+    designation: &str,
+    chord: f32,
+    options: AirfoilExportOptions,
+) -> Arc<Airfoil> {
+    let key = format!(
+        "{}_{:.2}_safe_{:.3}_{:.3}_clip_{}",
+        designation,
+        chord,
+        options.min_trailing_edge_thickness_mm,
+        options.min_leading_edge_radius_mm,
+        options.clip_trailing_edge
+    );
+
+    {
+        let cache = AIRFOIL_CACHE.read().unwrap();
+        if let Some(airfoil) = cache.get(&key) {
+            return Arc::clone(airfoil);
+        }
+    }
+
+    let airfoil = Arc::new(build_naca_airfoil(designation, chord, Some(options)));
+    {
+        let mut cache = AIRFOIL_CACHE.write().unwrap();
+        cache.insert(key, Arc::clone(&airfoil));
+    }
+    airfoil
+}
+
+/// Extruded airfoil - simple 3D SDF from 2D airfoil profile
+pub struct ExtrudedAirfoil {
+    airfoil: Arc<Airfoil>,
+    half_span: f32,
+}
+
+impl ExtrudedAirfoil {
+    pub fn new(airfoil: Arc<Airfoil>, half_span: f32) -> Self {
+        Self { airfoil, half_span }
+    }
+
+    pub fn airfoil_feature_metadata(&self) -> Option<AirfoilFeatureMetadata> {
+        self.airfoil.feature_metadata
+    }
+}
+
+impl Sdf for ExtrudedAirfoil {
+    fn distance(&self, point: Vec3) -> f32 {
+        crate::sdf::sdf_profile_node_visit();
+        if !point.is_finite() {
+            return f32::NAN;
+        }
+        let p_2d = Vec2::new(point.x, point.y);
+        let d_profile = self.airfoil.distance_2d(p_2d);
+
+        let d_span = point.z.abs() - self.half_span;
+        if !d_profile.is_finite() || !d_span.is_finite() {
+            return f32::NAN;
+        }
+
+        let outside_profile = d_profile.max(0.0);
+        let outside_span = d_span.max(0.0);
+        let combined_outside =
+            (outside_profile * outside_profile + outside_span * outside_span).sqrt();
+
+        let inside_dist = d_profile.max(d_span).min(0.0);
+
+        combined_outside + inside_dist
+    }
+
+    fn metadata(&self) -> SdfNodeMetadata {
+        if self.airfoil.points.is_empty() {
+            return SdfNodeMetadata::new("extruded_airfoil").with_approximate_bounds();
+        }
+
+        let mut min = Vec3::splat(f32::MAX);
+        let mut max = Vec3::splat(f32::MIN);
+        for &(x, y) in &self.airfoil.points {
+            let p_min = Vec3::new(
+                x * self.airfoil.chord,
+                y * self.airfoil.chord,
+                -self.half_span,
+            );
+            let p_max = Vec3::new(
+                x * self.airfoil.chord,
+                y * self.airfoil.chord,
+                self.half_span,
+            );
+            min = min.min(p_min).min(p_max);
+            max = max.max(p_min).max(p_max);
+        }
+        if self.airfoil.spline().is_some() {
+            if let Some(b)=self.airfoil.bounds_2d() {
+                min=Vec3::new(b.min.x,b.min.y,-self.half_span);
+                max=Vec3::new(b.max.x,b.max.y,self.half_span);
+            }
+        }
+
+        let mut fingerprint_values = vec![self.half_span];
+        fingerprint_values.extend(self.airfoil.metadata_fingerprint_parameters());
+        let mut metadata = SdfNodeMetadata::new("extruded_airfoil")
+            .with_support_bounds(SdfBounds::new(min, max))
+            .with_f32_parameters(fingerprint_values);
+        if let Some(feature_metadata) = self.airfoil_feature_metadata() {
+            let margin = (feature_metadata.min_feature_size_mm * 4.0).max(1.0);
+            let y_min = -margin;
+            let y_max = margin;
+            let z_min = -self.half_span;
+            let z_max = self.half_span;
+            metadata = metadata.with_min_feature_size(feature_metadata.min_feature_size_mm);
+            metadata = metadata.with_feature_region(
+                "extruded_airfoil.leading_edge",
+                SdfBounds::new(
+                    Vec3::new(min.x - margin, y_min, z_min),
+                    Vec3::new(min.x + margin, y_max, z_max),
+                ),
+                feature_metadata.leading_edge_radius_mm * 2.0,
+            );
+            metadata = metadata.with_feature_region(
+                "extruded_airfoil.trailing_edge",
+                SdfBounds::new(
+                    Vec3::new(max.x - margin, y_min, z_min),
+                    Vec3::new(max.x + margin, y_max, z_max),
+                ),
+                feature_metadata.trailing_edge_thickness_mm,
+            );
+        }
+        metadata
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn unresolved_spline_section_fails_closed_through_extrusion_caps() {
+        let airfoil = get_naca_airfoil_export_safe("0000", 1.0, AirfoilExportOptions {
+            min_trailing_edge_thickness_mm: 0.0,
+            min_leading_edge_radius_mm: 0.0,
+            clip_trailing_edge: false,
+        });
+        let extrusion = ExtrudedAirfoil::new(airfoil, 0.05);
+        assert!(extrusion.distance(Vec3::new(0.3, 0.0, 0.0)).is_nan());
+        assert!(extrusion.distance(Vec3::new(0.3, 0.0, f32::NAN)).is_nan());
+    }
+    use crate::sdf::aerospace::section::Section2D;
+
+    #[test]
+    fn test_parse_naca_4digit() {
+        let (m, p, t) = parse_naca_4digit("2412").unwrap();
+        assert!((m - 0.02).abs() < 0.001, "Max camber should be 0.02");
+        assert!((p - 0.4).abs() < 0.001, "Position should be 0.4");
+        assert!((t - 0.12).abs() < 0.001, "Thickness should be 0.12");
+    }
+
+    #[test]
+    fn test_naca_0012_symmetric() {
+        let points = naca_4digit(0.0, 0.0, 0.12, 50);
+
+        let first_point = points.first().unwrap();
+        assert!(
+            (first_point.0 - 1.0).abs() < 0.05,
+            "First point should be near trailing edge x=1"
+        );
+
+        let last_point = points.last().unwrap();
+        assert!(
+            (last_point.0 - 1.0).abs() < 0.05,
+            "Last point should be near trailing edge x=1"
+        );
+
+        // Trailing edge should have small but non-zero thickness (open TE formula)
+        assert!(
+            first_point.1.abs() < 0.05,
+            "Trailing edge upper should be near y=0"
+        );
+        assert!(
+            last_point.1.abs() < 0.05,
+            "Trailing edge lower should be near y=0"
+        );
+
+        let mut leading_edge = &points[0];
+        for point in &points {
+            if point.0 < leading_edge.0 {
+                leading_edge = point;
+            }
+        }
+        assert!(leading_edge.0 < 0.05, "Leading edge should be near x=0");
+    }
+
+    #[test]
+    fn test_naca_2412_cambered() {
+        let points = naca_4digit(0.02, 0.4, 0.12, 50);
+
+        let mid = points.len() / 2;
+        let upper = points[mid / 2];
+        let lower = points[mid + mid / 2];
+
+        assert!(
+            upper.1 > lower.1.abs(),
+            "Cambered airfoil should be asymmetric"
+        );
+    }
+
+    #[test]
+    fn test_airfoil_cache() {
+        let airfoil1 = get_naca_airfoil("2412", 10.0);
+        let airfoil2 = get_naca_airfoil("2412", 10.0);
+        assert!(
+            Arc::ptr_eq(&airfoil1, &airfoil2),
+            "Cache should return same Arc"
+        );
+    }
+
+    #[test]
+    fn test_extruded_airfoil_sdf() {
+        let airfoil = get_naca_airfoil("0012", 10.0);
+        let extruded = ExtrudedAirfoil::new(airfoil, 5.0);
+
+        let _ = extruded.distance(Vec3::new(5.0, 0.0, 0.0));
+
+        let dist_outside = extruded.distance(Vec3::new(50.0, 50.0, 50.0));
+        assert!(
+            dist_outside > 5.0,
+            "Point far outside should have positive distance"
+        );
+
+        let dist_beyond_span = extruded.distance(Vec3::new(5.0, 0.0, 20.0));
+        assert!(
+            dist_beyond_span > 5.0,
+            "Point beyond span should be far outside"
+        );
+    }
+
+    #[test]
+    fn extruded_airfoil_metadata_reports_bounds() {
+        let airfoil = Arc::new(Airfoil::new(
+            vec![(0.0, 0.0), (1.0, 0.1), (1.0, -0.1), (0.0, 0.0)],
+            20.0,
+        ));
+        let extruded = ExtrudedAirfoil::new(airfoil, 5.0);
+
+        let metadata = extruded.metadata();
+
+        assert_eq!(metadata.node_kind, "extruded_airfoil");
+        assert_eq!(
+            metadata.support_bounds,
+            Some(SdfBounds::new(
+                Vec3::new(0.0, -2.0, -5.0),
+                Vec3::new(20.0, 2.0, 5.0)
+            ))
+        );
+    }
+
+    #[test]
+    fn export_safe_airfoil_metadata_reports_feature_regions() {
+        let airfoil = get_naca_airfoil_export_safe(
+            "0012",
+            20.0,
+            AirfoilExportOptions {
+                min_trailing_edge_thickness_mm: 1.5,
+                min_leading_edge_radius_mm: 1.0,
+                clip_trailing_edge: true,
+            },
+        );
+        let extruded = ExtrudedAirfoil::new(airfoil, 100.0);
+
+        let metadata = extruded.metadata();
+
+        assert_eq!(metadata.min_feature_size, Some(1.5));
+        assert_eq!(metadata.feature_regions.len(), 2);
+        assert!(
+            metadata
+                .feature_regions
+                .iter()
+                .any(|region| region.feature_id == "extruded_airfoil.leading_edge")
+        );
+        assert!(
+            metadata
+                .feature_regions
+                .iter()
+                .any(|region| region.feature_id == "extruded_airfoil.trailing_edge")
+        );
+    }
+
+    #[test]
+    fn export_safe_airfoil_can_disable_trailing_edge_clip() {
+        let clipped = get_naca_airfoil_export_safe(
+            "2412",
+            100.0,
+            AirfoilExportOptions {
+                min_trailing_edge_thickness_mm: 1.0,
+                min_leading_edge_radius_mm: 1.0,
+                clip_trailing_edge: true,
+            },
+        );
+        let unclipped = get_naca_airfoil_export_safe(
+            "2412",
+            100.0,
+            AirfoilExportOptions {
+                min_trailing_edge_thickness_mm: 1.0,
+                min_leading_edge_radius_mm: 1.0,
+                clip_trailing_edge: false,
+            },
+        );
+
+        let clipped_te = clipped
+            .feature_metadata
+            .expect("clipped profile should expose metadata")
+            .trailing_edge_thickness_mm;
+        let unclipped_te = unclipped
+            .feature_metadata
+            .expect("unclipped profile should expose metadata")
+            .trailing_edge_thickness_mm;
+
+        assert!(clipped_te > 0.9);
+        assert!(
+            unclipped_te < clipped_te * 0.5,
+            "natural NACA trailing edge should be much thinner than the export-safe clip"
+        );
+    }
+
+    #[test]
+    fn extruded_airfoil_metadata_fingerprint_tracks_same_bounds_profile_edits() {
+        let airfoil_a = Arc::new(Airfoil::new(
+            vec![(0.0, 0.0), (0.5, 0.04), (1.0, 0.1), (1.0, -0.1), (0.0, 0.0)],
+            20.0,
+        ));
+        let airfoil_b = Arc::new(Airfoil::new(
+            vec![(0.0, 0.0), (0.5, 0.07), (1.0, 0.1), (1.0, -0.1), (0.0, 0.0)],
+            20.0,
+        ));
+        let extruded_a = ExtrudedAirfoil::new(airfoil_a, 5.0);
+        let extruded_b = ExtrudedAirfoil::new(airfoil_b, 5.0);
+
+        let metadata_a = extruded_a.metadata();
+        let metadata_b = extruded_b.metadata();
+
+        assert_eq!(metadata_a.support_bounds, metadata_b.support_bounds);
+        assert_ne!(
+            metadata_a.parameter_fingerprint, metadata_b.parameter_fingerprint,
+            "same-envelope airfoil profile edits must be visible to dirty-region metadata"
+        );
+    }
+
+    #[test]
+    fn test_airfoil_lerp_same_designation() {
+        // Lerp between two NACA 0012 airfoils of different chord should give mid chord
+        let a = get_naca_airfoil("0012", 10.0);
+        let b = get_naca_airfoil("0012", 6.0);
+        let mid = a.lerp(&b, 0.5);
+        assert!((mid.chord - 8.0).abs() < 0.01, "Lerped chord should be 8");
+        assert_eq!(mid.points.len(), a.points.len(), "Point count should match");
+    }
+
+    #[test]
+    fn test_airfoil_lerp_to_trait() {
+        let a = get_naca_airfoil("0012", 10.0);
+        let b = get_naca_airfoil("2412", 8.0);
+        let mid = a.lerp_to(b.as_ref(), 0.5);
+        // Should produce a valid section at an intermediate point inside the airfoil
+        let d = mid.distance_2d(Vec2::new(5.0, 0.0));
+        assert!(
+            d < 0.0,
+            "Mid-chord centerline should be inside interpolated airfoil"
+        );
+    }
+
+    #[test]
+    fn test_resample_polyline_same_count() {
+        let pts: Vec<(f32, f32)> = (0..10).map(|i| (i as f32, 0.0)).collect();
+        let resampled = resample_polyline(&pts, 10);
+        assert_eq!(resampled.len(), 10);
+        for (a, b) in pts.iter().zip(resampled.iter()) {
+            assert!((a.0 - b.0).abs() < 1e-6);
+        }
+    }
+
+    #[test]
+    fn test_resample_polyline_different_count() {
+        // 5 points on unit line, resample to 9
+        let pts: Vec<(f32, f32)> = (0..5).map(|i| (i as f32 / 4.0, 0.0)).collect();
+        let resampled = resample_polyline(&pts, 9);
+        assert_eq!(resampled.len(), 9);
+        // Endpoints should be preserved
+        assert!((resampled[0].0 - 0.0).abs() < 1e-5);
+        assert!((resampled[8].0 - 1.0).abs() < 1e-5);
+    }
+}

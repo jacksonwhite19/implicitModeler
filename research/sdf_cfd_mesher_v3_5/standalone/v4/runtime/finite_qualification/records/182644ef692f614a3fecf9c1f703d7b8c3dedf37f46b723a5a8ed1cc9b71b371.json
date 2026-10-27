@@ -1,0 +1,33 @@
+{
+  "actual_guard_count": 2739,
+  "actual_review_pin_map_digest": "896c91518e7e4d4e4add47dd0c4119e214099e774b4f248be33f74933a5b9394",
+  "all_completion_source_acceptance_release_links_verified": true,
+  "all_execution_pins_match": true,
+  "all_review_handles_closed": true,
+  "blockers": [],
+  "execution_closure_sha256": "617d630fbf66e2dc7e7a7e8becd239bf84e0f6b9b904713adccef7384b550567",
+  "execution_held_pins": 2392,
+  "files": {
+    "CURRENT_TASK.md": "7ea43f1aa51b3ae59b23289ec0007040798d7366267ba883b7e297e8286fe75e",
+    "DOCUMENT_UPDATE.json": "35ddf481468501e67f73e6d300b3cb649a36ee7361c9be59dd85c624cff45880",
+    "EVIDENCE.json": "97a63282d0c6a9e47a2ed96020cf8238ccaf04b662ba2467f3cc63fba63ea199",
+    "PRESERVATION.json": "e44859c4e562155f17eb14d359bd1be027466908d1197966e0dca0d0b3ea19b0",
+    "README.md": "a03865d871466b52fb66849a94ca233fd3e3a7de46e7035de164051e30db9d17",
+    "REPORT.md": "7bc8a87c20f0e62692dcfc59ec7bfdd367a63c52e8a173c697b87b6935915ae2"
+  },
+  "further_execution_authorized": false,
+  "guards_closed_utc": "2026-10-19T02:11:39.4666753Z",
+  "linux_and_monitor_retired": true,
+  "no_reviewer_imports_tests_edits_or_array_decodes": true,
+  "production_promotion": false,
+  "reporting_approved": true,
+  "reviewer": "/root/completed_roles_review",
+  "schema": "FreshFiniteTransitionReview/1",
+  "scientific_acceptance": "Existing owner accepted this finite transition; review did not rerun its certificates",
+  "scope": "FreshOriginalCasePrivateFiniteTransitionReportingOnly",
+  "scope_closure_sha256": "debb24862814e56d353df2c4651275116cf2c9ab9d3073c3b8ced081e095db7b",
+  "transition_acceptance_sha256": "6973c67c24ebd66d046578f82817dc2eb5751cbfd1ee4e1fe4b217fbc5cb9f53",
+  "transition_arrays_sha256": "555c923e79c471219ddcf2c6ecfe92698659e939eb1fc0add39e7b601e88c65e",
+  "verdict": "PASS",
+  "windows_jobs_empty": true
+}

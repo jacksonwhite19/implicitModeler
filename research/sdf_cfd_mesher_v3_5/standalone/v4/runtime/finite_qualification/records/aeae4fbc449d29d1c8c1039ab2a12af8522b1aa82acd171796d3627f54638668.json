@@ -1,0 +1,9 @@
+{
+  "controller_process_age_seconds": 1.649498701095581,
+  "deadline": 2202568.890905399,
+  "entry_elapsed_seconds": 1.5431260000914335,
+  "entry_perf_counter": 2202518.9972781,
+  "launch_pid": 34668,
+  "owner_ceiling_seconds": 110,
+  "payload_seconds": 50
+}

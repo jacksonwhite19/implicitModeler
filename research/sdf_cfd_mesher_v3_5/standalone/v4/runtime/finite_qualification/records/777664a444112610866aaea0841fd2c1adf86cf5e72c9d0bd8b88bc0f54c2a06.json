@@ -1,0 +1,18 @@
+{
+  "actual_command_sha256": "a26b41e79e2d53b5eea82a8acff0529fbb34a5a549cf7c7a05fc1b7b195413c7",
+  "actual_native_json_encoder_permitted": true,
+  "actual_source_host_permitted_inside_control": false,
+  "approved": true,
+  "assignment": "Task69",
+  "authority_scope": "Standing actual human stress/development approval and separately bounded Advisor Task69; not a new direct-human yes.",
+  "callback_human_message": "01a1521a-9fef-70c0-8d8d-174e7fcdfc2e",
+  "human_message": "01a153cf-8c05-73b2-a64f-2dd890f4b76a",
+  "live_execution_approved": false,
+  "manifest_sha256": "4fdc1f9d7eff85bff1bd966f06c5dfdb53fcb7da29b97a89ea98e5cb4b080e90",
+  "maximum_invocations": 1,
+  "mode": "nonmeshing_only",
+  "owner_seconds": 110,
+  "payload_seconds": 50,
+  "schema": "Task69NonmeshingControlAuthorization/1",
+  "task_sha256": "9d89bc02f1f2892a5e3f80725461527b1c2b599ff8c5f3e93b7257ca078ba20a"
+}

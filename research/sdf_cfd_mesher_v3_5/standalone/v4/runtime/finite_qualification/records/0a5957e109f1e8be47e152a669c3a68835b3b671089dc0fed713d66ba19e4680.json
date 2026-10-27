@@ -1,0 +1,87 @@
+{"deadline": 2202568.890905399, "event": "control_begin", "perf_counter": 2202533.2204699, "pid": 40296, "sequence": 1}
+{"event": "check", "name": "fixed_current_generator_root", "passed": true, "perf_counter": 2202533.2301603, "pid": 40296, "sequence": 2}
+{"event": "check", "name": "same_fixed_fresh_template", "passed": true, "perf_counter": 2202533.2302073, "pid": 40296, "sequence": 3}
+{"event": "check", "name": "actual_selected_native_after_fixture", "passed": true, "perf_counter": 2202533.2361718, "pid": 40296, "sequence": 4}
+{"binding": {"canonical_objects": true, "here": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\owner", "native_scope": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\owner\\native_scope.py", "native_sha256": "0d4b89cee4bf36a29e9e4de4ed20d2c1866de57fee0c4302519db0225b60ff5d", "wire": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\owner\\wire.py", "wire_sha256": "735c1854a94a0bc66df0b82f4783fadcd74ae9ff033bc84ce276ed329bb10a52"}, "event": "actual_owner_binding", "perf_counter": 2202533.2364424, "pid": 40296, "resource_limits": {"linux_memory_max_bytes": 2147483648, "linux_swap_max_bytes": 0, "minimum_free_bytes": 1000000000, "output_limit_bytes": 4000000000, "windows_job_commit_bytes": 17179869184}, "resource_origin": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\owner\\resource_profile_16gib_3600\\resource_limits.py", "sequence": 5, "sitecustomize": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\owner\\sitecustomize.py"}
+{"event": "check", "name": "child_sitecustomize_selected_bundle", "passed": true, "perf_counter": 2202533.2382192, "pid": 40296, "sequence": 6}
+{"event": "check", "name": "actual_time_profile_origin", "passed": true, "perf_counter": 2202533.2383743, "pid": 40296, "sequence": 7}
+{"event": "check", "name": "time_profile3600", "passed": true, "perf_counter": 2202533.2384949, "pid": 40296, "sequence": 8}
+{"error": "ValueError('UnboundFixedNativeOwner', 'C:\\\\Users\\\\Jackson\\\\Desktop\\\\02_Projects\\\\09b_Implicit_CAD_claude\\\\research\\\\sdf_cfd_mesher_v4\\\\results\\\\small_complete_transition_20261016\\\\retirement\\\\reusable_finite_doubled_time_live01\\\\owner\\\\native_scope.py')", "event": "refusal", "name": "simulated_wrong_owner_pin", "perf_counter": 2202533.239632, "pid": 40296, "sequence": 9, "winerror": null}
+{"event": "check", "name": ["simulated_wrong_owner_pin", "ValueError('UnboundFixedNativeOwner', 'C:\\\\Users\\\\Jackson\\\\Desktop\\\\02_Projects\\\\09b_Implicit_CAD_claude\\\\research\\\\sdf_cfd_mesher_v4\\\\results\\\\small_complete_transition_20261016\\\\retirement\\\\reusable_finite_doubled_time_live01\\\\owner\\\\native_scope.py')"], "passed": true, "perf_counter": 2202533.239654, "pid": 40296, "sequence": 10}
+{"error": "ValueError('WrongFixedTemplateRoot')", "event": "refusal", "name": "simulated_wrong_template_root", "perf_counter": 2202533.2408022, "pid": 40296, "sequence": 11, "winerror": null}
+{"event": "check", "name": ["simulated_wrong_template_root", "ValueError('WrongFixedTemplateRoot')"], "passed": true, "perf_counter": 2202533.2408205, "pid": 40296, "sequence": 12}
+{"error": "ValueError('ChangedFixedTemplateSource', 'run.py')", "event": "refusal", "name": "simulated_changed_template_source", "perf_counter": 2202533.2414381, "pid": 40296, "sequence": 13, "winerror": null}
+{"event": "check", "name": ["simulated_changed_template_source", "ValueError('ChangedFixedTemplateSource', 'run.py')"], "passed": true, "perf_counter": 2202533.2414557, "pid": 40296, "sequence": 14}
+{"error": "ValueError('ExactAssignmentAllowancesRequired')", "event": "refusal", "name": "simulated_old_owner_time", "perf_counter": 2202533.2414922, "pid": 40296, "sequence": 15, "winerror": null}
+{"event": "check", "name": ["simulated_old_owner_time", "ValueError('ExactAssignmentAllowancesRequired')"], "passed": true, "perf_counter": 2202533.2415019, "pid": 40296, "sequence": 16}
+{"event": "check", "name": "preparation_scopes_restored", "passed": true, "perf_counter": 2202537.2868894, "pid": 40296, "sequence": 17}
+{"event": "check", "name": "held_prepared_connection.py", "passed": true, "perf_counter": 2202537.2921162, "pid": 40296, "sequence": 18}
+{"event": "check", "name": "held_prepared_LIVE_REQUEST.json", "passed": true, "perf_counter": 2202537.292522, "pid": 40296, "sequence": 19}
+{"event": "check", "name": "held_prepared_PINNED_SOURCES.json", "passed": true, "perf_counter": 2202537.2942711, "pid": 40296, "sequence": 20}
+{"event": "check", "name": "held_prepared_PYTHON_IDENTITY.json", "passed": true, "perf_counter": 2202537.2946517, "pid": 40296, "sequence": 21}
+{"event": "check", "name": "held_prepared_routing_body.py", "passed": true, "perf_counter": 2202537.2950415, "pid": 40296, "sequence": 22}
+{"event": "check", "name": "held_prepared_run.py", "passed": true, "perf_counter": 2202537.2954139, "pid": 40296, "sequence": 23}
+{"event": "check", "name": "held_prepared_stage.py", "passed": true, "perf_counter": 2202537.2957825, "pid": 40296, "sequence": 24}
+{"event": "check", "name": "held_prepared_STAGE_REQUEST.json", "passed": true, "perf_counter": 2202537.2961402, "pid": 40296, "sequence": 25}
+{"event": "check", "name": "held_prepared_finite_collar_command.py", "passed": true, "perf_counter": 2202537.2965222, "pid": 40296, "sequence": 26}
+{"event": "check", "name": "held_prepared_standalone_background.py", "passed": true, "perf_counter": 2202537.2969336, "pid": 40296, "sequence": 27}
+{"event": "check", "name": "held_prepared_tet_layer_adapter.py", "passed": true, "perf_counter": 2202537.2973169, "pid": 40296, "sequence": 28}
+{"event": "check", "name": "held_prepared_tet_layer_controls.py", "passed": true, "perf_counter": 2202537.2976857, "pid": 40296, "sequence": 29}
+{"event": "check", "name": "held_prepared_tet_layer_handoff.py", "passed": true, "perf_counter": 2202537.2980595, "pid": 40296, "sequence": 30}
+{"event": "check", "name": "pending_prepared_verified", "passed": true, "perf_counter": 2202538.465481, "pid": 40296, "sequence": 31}
+{"event": "check", "name": "held_derived_ACTIVATION.json", "passed": true, "perf_counter": 2202546.6314869, "pid": 40296, "sequence": 32}
+{"event": "check", "name": "held_derived_connection.py", "passed": true, "perf_counter": 2202546.6318031, "pid": 40296, "sequence": 33}
+{"event": "check", "name": "held_derived_LIVE_REQUEST.json", "passed": true, "perf_counter": 2202546.6320786, "pid": 40296, "sequence": 34}
+{"event": "check", "name": "held_derived_PINNED_SOURCES.json", "passed": true, "perf_counter": 2202546.6336812, "pid": 40296, "sequence": 35}
+{"event": "check", "name": "held_derived_PYTHON_IDENTITY.json", "passed": true, "perf_counter": 2202546.6339971, "pid": 40296, "sequence": 36}
+{"event": "check", "name": "held_derived_routing_body.py", "passed": true, "perf_counter": 2202546.634278, "pid": 40296, "sequence": 37}
+{"event": "check", "name": "held_derived_run.py", "passed": true, "perf_counter": 2202546.6345723, "pid": 40296, "sequence": 38}
+{"event": "check", "name": "held_derived_stage.py", "passed": true, "perf_counter": 2202546.6349983, "pid": 40296, "sequence": 39}
+{"event": "check", "name": "held_derived_STAGE_REQUEST.json", "passed": true, "perf_counter": 2202546.6352907, "pid": 40296, "sequence": 40}
+{"event": "check", "name": "held_derived_TASK.json", "passed": true, "perf_counter": 2202546.6355603, "pid": 40296, "sequence": 41}
+{"event": "check", "name": "held_derived_finite_collar_command.py", "passed": true, "perf_counter": 2202546.6358543, "pid": 40296, "sequence": 42}
+{"event": "check", "name": "held_derived_standalone_background.py", "passed": true, "perf_counter": 2202546.6361841, "pid": 40296, "sequence": 43}
+{"event": "check", "name": "held_derived_tet_layer_adapter.py", "passed": true, "perf_counter": 2202546.6364687, "pid": 40296, "sequence": 44}
+{"event": "check", "name": "held_derived_tet_layer_controls.py", "passed": true, "perf_counter": 2202546.6367267, "pid": 40296, "sequence": 45}
+{"event": "check", "name": "held_derived_tet_layer_handoff.py", "passed": true, "perf_counter": 2202546.6370486, "pid": 40296, "sequence": 46}
+{"event": "check", "name": "held_generated_manifest_matches_activation", "passed": true, "perf_counter": 2202546.6384289, "pid": 40296, "sequence": 47}
+{"event": "check", "name": "generated_files_match_held_manifest_before_import", "passed": true, "perf_counter": 2202546.6460342, "pid": 40296, "sequence": 48}
+{"event": "check", "name": "same_actual_owner_selection_all_roles", "passed": true, "perf_counter": 2202546.6782771, "pid": 40296, "sequence": 49}
+{"error": "ValueError('ChangedPreparedLiveSelection')", "event": "refusal", "name": "simulated_wrong_selector", "perf_counter": 2202546.6785639, "pid": 40296, "sequence": 50, "winerror": null}
+{"event": "check", "name": ["simulated_wrong_selector", "ValueError('ChangedPreparedLiveSelection')"], "passed": true, "perf_counter": 2202546.6785841, "pid": 40296, "sequence": 51}
+{"event": "check", "name": "actual_generator_input_binding", "passed": true, "perf_counter": 2202546.6786064, "pid": 40296, "sequence": 52}
+{"event": "check", "name": "actual_observer_copied_both_bundles", "passed": true, "perf_counter": 2202546.6789318, "pid": 40296, "sequence": 53}
+{"event": "check", "name": "zero_live_null_dates", "passed": true, "perf_counter": 2202546.6789523, "pid": 40296, "sequence": 54}
+{"event": "check", "name": "unchanged_pending42000_capacity", "passed": true, "perf_counter": 2202546.6791653, "pid": 40296, "sequence": 55}
+{"event": "check", "name": "actual_future_path_and_argv", "passed": true, "perf_counter": 2202546.6792751, "pid": 40296, "sequence": 56}
+{"error": "ValueError('NumericalExecutionDisabledResearchPreparation', 'launch')", "event": "refusal", "name": "prepared_launch", "perf_counter": 2202546.6793021, "pid": 40296, "sequence": 57, "winerror": null}
+{"event": "check", "name": ["prepared_launch", "ValueError('NumericalExecutionDisabledResearchPreparation', 'launch')"], "passed": true, "perf_counter": 2202546.6793126, "pid": 40296, "sequence": 58}
+{"error": "ValueError('NumericalExecutionDisabledResearchPreparation', 'coordinator')", "event": "refusal", "name": "prepared_coordinator", "perf_counter": 2202546.6793247, "pid": 40296, "sequence": 59, "winerror": null}
+{"event": "check", "name": ["prepared_coordinator", "ValueError('NumericalExecutionDisabledResearchPreparation', 'coordinator')"], "passed": true, "perf_counter": 2202546.6793322, "pid": 40296, "sequence": 60}
+{"error": "ValueError('NumericalExecutionDisabledResearchPreparation', 'worker')", "event": "refusal", "name": "prepared_worker", "perf_counter": 2202546.6793407, "pid": 40296, "sequence": 61, "winerror": null}
+{"event": "check", "name": ["prepared_worker", "ValueError('NumericalExecutionDisabledResearchPreparation', 'worker')"], "passed": true, "perf_counter": 2202546.6793476, "pid": 40296, "sequence": 62}
+{"error": "ValueError('MissingSeparateLiveGrant', 'launch')", "event": "refusal", "name": "derived_launch", "perf_counter": 2202546.6794214, "pid": 40296, "sequence": 63, "winerror": null}
+{"event": "check", "name": ["derived_launch", "ValueError('MissingSeparateLiveGrant', 'launch')"], "passed": true, "perf_counter": 2202546.6794317, "pid": 40296, "sequence": 64}
+{"error": "ValueError('MissingSeparateLiveGrant', 'coordinator')", "event": "refusal", "name": "derived_coordinator", "perf_counter": 2202546.67947, "pid": 40296, "sequence": 65, "winerror": null}
+{"event": "check", "name": ["derived_coordinator", "ValueError('MissingSeparateLiveGrant', 'coordinator')"], "passed": true, "perf_counter": 2202546.6794788, "pid": 40296, "sequence": 66}
+{"error": "ValueError('MissingSeparateLiveGrant', 'worker')", "event": "refusal", "name": "derived_worker", "perf_counter": 2202546.6795165, "pid": 40296, "sequence": 67, "winerror": null}
+{"event": "check", "name": ["derived_worker", "ValueError('MissingSeparateLiveGrant', 'worker')"], "passed": true, "perf_counter": 2202546.6795254, "pid": 40296, "sequence": 68}
+{"event": "check", "name": "exact_historical_receipt_set", "passed": true, "perf_counter": 2202546.6834302, "pid": 40296, "sequence": 69}
+{"count": 104, "detail": "RESULT.json#/receipts", "event": "real_receipt_check_begin", "perf_counter": 2202546.7226494, "pid": 40296, "sequence": 70}
+{"count": 104, "event": "real_receipt_check_pass", "integration_root": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01", "perf_counter": 2202546.73932, "pid": 40296, "producer_key": "candidate\\tet_layer_handoff.py", "sequence": 71}
+{"event": "check", "name": "distinct_fixed69_integration_root", "passed": true, "perf_counter": 2202546.7393501, "pid": 40296, "sequence": 72}
+{"error": "ValueError('ClosedReviewedTimingConnectionRequired', 'C:\\\\Users\\\\Jackson\\\\Desktop\\\\02_Projects\\\\09b_Implicit_CAD_claude\\\\research\\\\sdf_cfd_mesher_v4\\\\results\\\\small_complete_transition_20261016\\\\retirement\\\\reusable_finite_timing_connection01')", "event": "refusal", "name": "simulated_missing_producer_metadata", "perf_counter": 2202546.7548023, "pid": 40296, "sequence": 73, "winerror": null}
+{"event": "check", "name": ["simulated_missing_producer_metadata", "ValueError('ClosedReviewedTimingConnectionRequired', 'C:\\\\Users\\\\Jackson\\\\Desktop\\\\02_Projects\\\\09b_Implicit_CAD_claude\\\\research\\\\sdf_cfd_mesher_v4\\\\results\\\\small_complete_transition_20261016\\\\retirement\\\\reusable_finite_timing_connection01')"], "passed": true, "perf_counter": 2202546.7548292, "pid": 40296, "sequence": 74}
+{"error": "ValueError('ClosedReviewedTimingConnectionRequired', 'C:\\\\Users\\\\Jackson\\\\Desktop\\\\02_Projects\\\\09b_Implicit_CAD_claude\\\\research\\\\sdf_cfd_mesher_v4\\\\results\\\\small_complete_transition_20261016\\\\retirement\\\\reusable_finite_timing_connection01')", "event": "refusal", "name": "simulated_wrong_digest_producer_metadata", "perf_counter": 2202546.7700294, "pid": 40296, "sequence": 75, "winerror": null}
+{"event": "check", "name": ["simulated_wrong_digest_producer_metadata", "ValueError('ClosedReviewedTimingConnectionRequired', 'C:\\\\Users\\\\Jackson\\\\Desktop\\\\02_Projects\\\\09b_Implicit_CAD_claude\\\\research\\\\sdf_cfd_mesher_v4\\\\results\\\\small_complete_transition_20261016\\\\retirement\\\\reusable_finite_timing_connection01')"], "passed": true, "perf_counter": 2202546.7700578, "pid": 40296, "sequence": 76}
+{"event": "check", "name": "simulated_metadata_reader_restored", "passed": true, "perf_counter": 2202546.7700845, "pid": 40296, "sequence": 77}
+{"error": "ValueError('ReviewedControlReceiptsRequired')", "event": "refusal", "name": "missing_real_receipt", "perf_counter": 2202546.7701034, "pid": 40296, "sequence": 78, "winerror": null}
+{"event": "check", "name": ["missing_real_receipt", "ValueError('ReviewedControlReceiptsRequired')"], "passed": true, "perf_counter": 2202546.7701111, "pid": 40296, "sequence": 79}
+{"error": "ValueError('ReviewedControlReceiptsRequired')", "event": "refusal", "name": "changed_real_receipt_digest", "perf_counter": 2202546.7774772, "pid": 40296, "sequence": 80, "winerror": null}
+{"event": "check", "name": ["changed_real_receipt_digest", "ValueError('ReviewedControlReceiptsRequired')"], "passed": true, "perf_counter": 2202546.777496, "pid": 40296, "sequence": 81}
+{"event": "check", "name": "real_historical_receipts_preserved", "passed": true, "perf_counter": 2202546.7866522, "pid": 40296, "sequence": 82}
+{"event": "check", "name": "generated_sources_preserved", "passed": true, "perf_counter": 2202546.7914494, "pid": 40296, "sequence": 83}
+{"event": "check", "name": "no_live_authority_or_outputs", "passed": true, "perf_counter": 2202546.7916907, "pid": 40296, "sequence": 84}
+{"event": "check", "name": "input_and_path_scopes_restored", "passed": true, "perf_counter": 2202546.7927229, "pid": 40296, "sequence": 85}
+{"event": "control_complete", "passed": true, "perf_counter": 2202546.7930973, "pid": 40296, "sequence": 86}
+{"event": "control_cleanup", "numerical_execution": false, "perf_counter": 2202546.7931135, "pid": 40296, "sequence": 87}

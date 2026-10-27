@@ -1,0 +1,14 @@
+{
+  "actual_command_sha256": "cedddaee01f1f8040e0427512a9e7848f23e58211b4dd35d9336565388c7f520",
+  "approved": true,
+  "assignment": "Task85",
+  "human_message": "01a1562e-fbe0-74d2-9298-5eb7eb9659aa",
+  "manifest_sha256": "309a956aad9a95a55ef6441740c79f57ca1043c00a5d8622c659d7884c9a4e4a",
+  "maximum_invocations": 1,
+  "mode": "nonmeshing_only",
+  "owner_seconds": 110,
+  "payload_seconds": 50,
+  "schema": "Task85FocusedControlAuthorization/1",
+  "scope": "One reviewed focused generator/template/native-owner binding control; no SDF/native geometry/mesh. Requires independent launch review.",
+  "task_sha256": "3c095670ba441028d8c48ee7abb29c24e8b26960f55188cb163898a628105f6c"
+}

@@ -1,0 +1,823 @@
+{
+  "canonical_installer_calls": 2,
+  "canonical_owners": {
+    "after_object_ids": [
+      1552478325504,
+      1552487225856,
+      1552494757184,
+      1552494635872,
+      1552474116064,
+      1552478321600,
+      1552492238496,
+      1552492240368,
+      1552492247232,
+      1552492248864
+    ],
+    "background_sha256": "4fc20f61279c1a06ef55dd5775e2d4de0244acdb2eaf345767963b126ccc44c6",
+    "background_source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\tools\\rolling_fast_state.py",
+    "before_object_ids": [
+      1552478325504,
+      1552487225856,
+      1552494757184,
+      1552494635872,
+      1552474116064,
+      1552478321600,
+      1552492238496,
+      1552492240368,
+      1552492247232,
+      1552492248864
+    ],
+    "exact_objects_unchanged": true,
+    "issuer_sha256": "71a10b3d1d007c349c3fa2b5e88347fe0d1202a87570689ad90a6b9ff263d483",
+    "issuer_source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\tools\\tet_layer_handoff.py",
+    "symbols": [
+      "TransitionInputs",
+      "_issued",
+      "_capture",
+      "fluid_owner",
+      "BackgroundInputs",
+      "LiveAcceptance",
+      "_background_issued",
+      "_background_active",
+      "_background_views",
+      "_background_pending"
+    ]
+  },
+  "genuine_terminal_admission_tested": false,
+  "geometry_identity": "acaa30f1d68a361c4782efc1ccaaea929064e3b1a8c5fa6a10e95140dd859dba",
+  "helper_classes": {
+    "finite_stage_adapter": {
+      "LocalRepair": {
+        "module": "background_local_repair",
+        "name": "LocalRepair",
+        "object_id": 1552474111184
+      },
+      "defaultdict": {
+        "module": "collections",
+        "name": "defaultdict",
+        "object_id": 1551629019216
+      }
+    },
+    "finite_stage_background": {
+      "Path": {
+        "module": "pathlib",
+        "name": "Path",
+        "object_id": 1551630104208
+      }
+    },
+    "finite_stage_command": {
+      "ExitStack": {
+        "module": "contextlib",
+        "name": "ExitStack",
+        "object_id": 1551629857136
+      },
+      "Path": {
+        "module": "pathlib",
+        "name": "Path",
+        "object_id": 1551630104208
+      }
+    },
+    "finite_stage_controls": {},
+    "finite_stage_handoff": {
+      "ExitStack": {
+        "module": "contextlib",
+        "name": "ExitStack",
+        "object_id": 1551629857136
+      },
+      "TransitionInputs": {
+        "module": "tet_layer_handoff",
+        "name": "TransitionInputs",
+        "object_id": 1552478325504
+      }
+    }
+  },
+  "helper_functions": {
+    "finite_stage_adapter": {
+      "_coordinates": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_adapter",
+        "name": "_coordinates",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_adapter.py",
+        "source_sha256": "477aa9a1772b1b6d37edb8f0e8d4c344536decaa088513bb6104e9cfe0ce6bc3"
+      },
+      "_place": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_adapter",
+        "name": "_place",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_adapter.py",
+        "source_sha256": "477aa9a1772b1b6d37edb8f0e8d4c344536decaa088513bb6104e9cfe0ce6bc3"
+      },
+      "_placement_result": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_adapter",
+        "name": "_placement_result",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_adapter.py",
+        "source_sha256": "477aa9a1772b1b6d37edb8f0e8d4c344536decaa088513bb6104e9cfe0ce6bc3"
+      },
+      "admit": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_adapter",
+        "name": "admit",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_adapter.py",
+        "source_sha256": "477aa9a1772b1b6d37edb8f0e8d4c344536decaa088513bb6104e9cfe0ce6bc3"
+      },
+      "array_hash": {
+        "module": "sdf_cfd_mesher_v4.common.authority",
+        "name": "array_hash",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\src\\sdf_cfd_mesher_v4\\common\\authority.py",
+        "source_sha256": "a691a40f864e786179b3af6ab24477f449cffec5ce607de63636861b7fbe3331"
+      },
+      "batch_quality": {
+        "module": "prism_hotpath_v2",
+        "name": "batch_quality",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\tools\\prism_hotpath_v2.py",
+        "source_sha256": "0201fe8e73651b79b0e2ef7b58ce4268e1252b8362efbc69cc1d24bea5e6ecb0"
+      },
+      "boundary": {
+        "module": "background_topology_repair",
+        "name": "boundary",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\tools\\background_topology_repair.py",
+        "source_sha256": "0e4270206a6d18ee00042f1b00241e26f0bc2d1f3b42794c36e273132fdebdd6"
+      },
+      "build": {
+        "module": "background_materialization",
+        "name": "build",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\tools\\background_materialization.py",
+        "source_sha256": "4d94cd5baec66ecfe561217b302484565fb680bca7728f3e132d856d0d92acbe"
+      },
+      "completed_incidence": {
+        "module": "prism_hotpath_v2",
+        "name": "completed_incidence",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\tools\\prism_hotpath_v2.py",
+        "source_sha256": "0201fe8e73651b79b0e2ef7b58ce4268e1252b8362efbc69cc1d24bea5e6ecb0"
+      },
+      "filling": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_adapter",
+        "name": "filling",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_adapter.py",
+        "source_sha256": "477aa9a1772b1b6d37edb8f0e8d4c344536decaa088513bb6104e9cfe0ce6bc3"
+      },
+      "finite_collar": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_controls",
+        "name": "finite_collar",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_controls.py",
+        "source_sha256": "ccf3f00380493f4053e3db4d922ef2af7f50545ef3938e3a34ee98f5b0087d87"
+      },
+      "identity": {
+        "module": "sdf_cfd_mesher_v4.common.authority",
+        "name": "identity",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\src\\sdf_cfd_mesher_v4\\common\\authority.py",
+        "source_sha256": "a691a40f864e786179b3af6ab24477f449cffec5ce607de63636861b7fbe3331"
+      },
+      "initialize": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_adapter",
+        "name": "initialize",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_adapter.py",
+        "source_sha256": "477aa9a1772b1b6d37edb8f0e8d4c344536decaa088513bb6104e9cfe0ce6bc3"
+      },
+      "key": {
+        "module": "background_topology_repair",
+        "name": "key",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\tools\\background_topology_repair.py",
+        "source_sha256": "0e4270206a6d18ee00042f1b00241e26f0bc2d1f3b42794c36e273132fdebdd6"
+      },
+      "local_outer_faces": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_adapter",
+        "name": "local_outer_faces",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_adapter.py",
+        "source_sha256": "477aa9a1772b1b6d37edb8f0e8d4c344536decaa088513bb6104e9cfe0ce6bc3"
+      },
+      "place": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_adapter",
+        "name": "place",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_adapter.py",
+        "source_sha256": "477aa9a1772b1b6d37edb8f0e8d4c344536decaa088513bb6104e9cfe0ce6bc3"
+      },
+      "prepared": {
+        "module": "local_constraint_plan",
+        "name": "prepared",
+        "source": "C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\Lib\\contextlib.py",
+        "source_sha256": "a53b1db774f19c6b1e4320c2bc64058c49e3fba58b20b9c1158e5a8d02069890"
+      },
+      "product": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_adapter",
+        "name": "product",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_adapter.py",
+        "source_sha256": "477aa9a1772b1b6d37edb8f0e8d4c344536decaa088513bb6104e9cfe0ce6bc3"
+      },
+      "quality": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_adapter",
+        "name": "quality",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_adapter.py",
+        "source_sha256": "477aa9a1772b1b6d37edb8f0e8d4c344536decaa088513bb6104e9cfe0ce6bc3"
+      },
+      "raw_failures": {
+        "module": "background_core_repair",
+        "name": "atoms",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\tools\\background_core_repair.py",
+        "source_sha256": "be64af88672d9f40da69458fd48f37b23abdacec1bf2f6991d47f6379c8a1d0f"
+      },
+      "reverse_cycle": {
+        "module": "prism_hotpath_v2",
+        "name": "reverse_cycle",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\tools\\prism_hotpath_v2.py",
+        "source_sha256": "0201fe8e73651b79b0e2ef7b58ce4268e1252b8362efbc69cc1d24bea5e6ecb0"
+      },
+      "star_index": {
+        "module": "background_local_repair",
+        "name": "star_index",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\tools\\background_local_repair.py",
+        "source_sha256": "1874fbfd326b3e8999b6abc30b76f6c0b401cc38aba88e27711209844b90948b"
+      },
+      "validate": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_controls",
+        "name": "validate",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_controls.py",
+        "source_sha256": "ccf3f00380493f4053e3db4d922ef2af7f50545ef3938e3a34ee98f5b0087d87"
+      },
+      "variable_shape": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_controls",
+        "name": "variable_shape",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_controls.py",
+        "source_sha256": "ccf3f00380493f4053e3db4d922ef2af7f50545ef3938e3a34ee98f5b0087d87"
+      }
+    },
+    "finite_stage_background": {
+      "_check_box_fast": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_background",
+        "name": "_check_box_fast",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\standalone_background.py",
+        "source_sha256": "cf249b36d6b1b64c9b45a8591d271c7072b2b018d5c5dcf1b954ee25adb401a2"
+      },
+      "_check_box_legacy": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_background",
+        "name": "_check_box_legacy",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\standalone_background.py",
+        "source_sha256": "cf249b36d6b1b64c9b45a8591d271c7072b2b018d5c5dcf1b954ee25adb401a2"
+      },
+      "_interface": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_background",
+        "name": "_interface",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\standalone_background.py",
+        "source_sha256": "cf249b36d6b1b64c9b45a8591d271c7072b2b018d5c5dcf1b954ee25adb401a2"
+      },
+      "_qualify": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_background",
+        "name": "_qualify",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\standalone_background.py",
+        "source_sha256": "cf249b36d6b1b64c9b45a8591d271c7072b2b018d5c5dcf1b954ee25adb401a2"
+      },
+      "_stop_record": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_background",
+        "name": "_stop_record",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\standalone_background.py",
+        "source_sha256": "cf249b36d6b1b64c9b45a8591d271c7072b2b018d5c5dcf1b954ee25adb401a2"
+      },
+      "_wire_interface": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_background",
+        "name": "_wire_interface",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\standalone_background.py",
+        "source_sha256": "cf249b36d6b1b64c9b45a8591d271c7072b2b018d5c5dcf1b954ee25adb401a2"
+      },
+      "array_hash": {
+        "module": "sdf_cfd_mesher_v4.common.authority",
+        "name": "array_hash",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\src\\sdf_cfd_mesher_v4\\common\\authority.py",
+        "source_sha256": "a691a40f864e786179b3af6ab24477f449cffec5ce607de63636861b7fbe3331"
+      },
+      "assurance_mode": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_background",
+        "name": "assurance_mode",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\standalone_background.py",
+        "source_sha256": "cf249b36d6b1b64c9b45a8591d271c7072b2b018d5c5dcf1b954ee25adb401a2"
+      },
+      "backend_command": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_background",
+        "name": "backend_command",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\standalone_background.py",
+        "source_sha256": "cf249b36d6b1b64c9b45a8591d271c7072b2b018d5c5dcf1b954ee25adb401a2"
+      },
+      "check_box": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_background",
+        "name": "check_box",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\standalone_background.py",
+        "source_sha256": "cf249b36d6b1b64c9b45a8591d271c7072b2b018d5c5dcf1b954ee25adb401a2"
+      },
+      "compare_boundary": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_background",
+        "name": "compare_boundary",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\standalone_background.py",
+        "source_sha256": "cf249b36d6b1b64c9b45a8591d271c7072b2b018d5c5dcf1b954ee25adb401a2"
+      },
+      "complete_mesh_payload": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_background",
+        "name": "complete_mesh_payload",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\standalone_background.py",
+        "source_sha256": "cf249b36d6b1b64c9b45a8591d271c7072b2b018d5c5dcf1b954ee25adb401a2"
+      },
+      "durable_json": {
+        "module": "optimized_durable_json",
+        "name": "durable_json",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\tools\\optimized_durable_json.py",
+        "source_sha256": "ad26501c76044dac6a78f38e342a300bf0c32e394871f76ee3567ee16ce4fe7e"
+      },
+      "execute": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_background",
+        "name": "execute",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\standalone_background.py",
+        "source_sha256": "cf249b36d6b1b64c9b45a8591d271c7072b2b018d5c5dcf1b954ee25adb401a2"
+      },
+      "file_hash": {
+        "module": "sdf_cfd_mesher_v4.common.authority",
+        "name": "file_hash",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\src\\sdf_cfd_mesher_v4\\common\\authority.py",
+        "source_sha256": "a691a40f864e786179b3af6ab24477f449cffec5ce607de63636861b7fbe3331"
+      },
+      "identity": {
+        "module": "sdf_cfd_mesher_v4.common.authority",
+        "name": "identity",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\src\\sdf_cfd_mesher_v4\\common\\authority.py",
+        "source_sha256": "a691a40f864e786179b3af6ab24477f449cffec5ce607de63636861b7fbe3331"
+      },
+      "interface": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_background",
+        "name": "interface",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\standalone_background.py",
+        "source_sha256": "cf249b36d6b1b64c9b45a8591d271c7072b2b018d5c5dcf1b954ee25adb401a2"
+      },
+      "interface_seeds": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_background",
+        "name": "interface_seeds",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\standalone_background.py",
+        "source_sha256": "cf249b36d6b1b64c9b45a8591d271c7072b2b018d5c5dcf1b954ee25adb401a2"
+      },
+      "policy_backend": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_background",
+        "name": "policy_backend",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\standalone_background.py",
+        "source_sha256": "cf249b36d6b1b64c9b45a8591d271c7072b2b018d5c5dcf1b954ee25adb401a2"
+      },
+      "preflight": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_background",
+        "name": "preflight",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\standalone_background.py",
+        "source_sha256": "cf249b36d6b1b64c9b45a8591d271c7072b2b018d5c5dcf1b954ee25adb401a2"
+      },
+      "probe_backend": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_background",
+        "name": "probe_backend",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\standalone_background.py",
+        "source_sha256": "cf249b36d6b1b64c9b45a8591d271c7072b2b018d5c5dcf1b954ee25adb401a2"
+      },
+      "qualify": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_background",
+        "name": "qualify",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\standalone_background.py",
+        "source_sha256": "cf249b36d6b1b64c9b45a8591d271c7072b2b018d5c5dcf1b954ee25adb401a2"
+      },
+      "stop_backend": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_background",
+        "name": "stop_backend",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\standalone_background.py",
+        "source_sha256": "cf249b36d6b1b64c9b45a8591d271c7072b2b018d5c5dcf1b954ee25adb401a2"
+      },
+      "validate_assurance_mode": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_background",
+        "name": "validate_assurance_mode",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\standalone_background.py",
+        "source_sha256": "cf249b36d6b1b64c9b45a8591d271c7072b2b018d5c5dcf1b954ee25adb401a2"
+      },
+      "validate_completion": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_background",
+        "name": "validate_completion",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\standalone_background.py",
+        "source_sha256": "cf249b36d6b1b64c9b45a8591d271c7072b2b018d5c5dcf1b954ee25adb401a2"
+      },
+      "validate_execution_target": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_background",
+        "name": "validate_execution_target",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\standalone_background.py",
+        "source_sha256": "cf249b36d6b1b64c9b45a8591d271c7072b2b018d5c5dcf1b954ee25adb401a2"
+      },
+      "validate_policy": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_background",
+        "name": "validate_policy",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\standalone_background.py",
+        "source_sha256": "cf249b36d6b1b64c9b45a8591d271c7072b2b018d5c5dcf1b954ee25adb401a2"
+      }
+    },
+    "finite_stage_command": {
+      "array_hash": {
+        "module": "sdf_cfd_mesher_v4.common.authority",
+        "name": "array_hash",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\src\\sdf_cfd_mesher_v4\\common\\authority.py",
+        "source_sha256": "a691a40f864e786179b3af6ab24477f449cffec5ce607de63636861b7fbe3331"
+      },
+      "construct": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_command",
+        "name": "construct",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\finite_collar_command.py",
+        "source_sha256": "c7b8f616d5ff7de4fabeb0190d906200763b587436b0eab893ed5c05a07cafd8"
+      },
+      "contextmanager": {
+        "module": "contextlib",
+        "name": "contextmanager",
+        "source": "C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\Lib\\contextlib.py",
+        "source_sha256": "a53b1db774f19c6b1e4320c2bc64058c49e3fba58b20b9c1158e5a8d02069890"
+      },
+      "distribution": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_command",
+        "name": "distribution",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\finite_collar_command.py",
+        "source_sha256": "c7b8f616d5ff7de4fabeb0190d906200763b587436b0eab893ed5c05a07cafd8"
+      },
+      "durable_json": {
+        "module": "optimized_durable_json",
+        "name": "durable_json",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\tools\\optimized_durable_json.py",
+        "source_sha256": "ad26501c76044dac6a78f38e342a300bf0c32e394871f76ee3567ee16ce4fe7e"
+      },
+      "file_hash": {
+        "module": "sdf_cfd_mesher_v4.common.authority",
+        "name": "file_hash",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\src\\sdf_cfd_mesher_v4\\common\\authority.py",
+        "source_sha256": "a691a40f864e786179b3af6ab24477f449cffec5ce607de63636861b7fbe3331"
+      },
+      "finite_collar": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_controls",
+        "name": "finite_collar",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_controls.py",
+        "source_sha256": "ccf3f00380493f4053e3db4d922ef2af7f50545ef3938e3a34ee98f5b0087d87"
+      },
+      "frozen": {
+        "module": "sdf_cfd_mesher_v4.common.authority",
+        "name": "frozen",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\src\\sdf_cfd_mesher_v4\\common\\authority.py",
+        "source_sha256": "a691a40f864e786179b3af6ab24477f449cffec5ce607de63636861b7fbe3331"
+      },
+      "identity": {
+        "module": "sdf_cfd_mesher_v4.common.authority",
+        "name": "identity",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\src\\sdf_cfd_mesher_v4\\common\\authority.py",
+        "source_sha256": "a691a40f864e786179b3af6ab24477f449cffec5ce607de63636861b7fbe3331"
+      },
+      "native_command": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_command",
+        "name": "native_command",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\finite_collar_command.py",
+        "source_sha256": "c7b8f616d5ff7de4fabeb0190d906200763b587436b0eab893ed5c05a07cafd8"
+      },
+      "prepare": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_command",
+        "name": "prepare",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\finite_collar_command.py",
+        "source_sha256": "c7b8f616d5ff7de4fabeb0190d906200763b587436b0eab893ed5c05a07cafd8"
+      },
+      "produce": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_command",
+        "name": "produce",
+        "source": "C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\Lib\\contextlib.py",
+        "source_sha256": "a53b1db774f19c6b1e4320c2bc64058c49e3fba58b20b9c1158e5a8d02069890"
+      },
+      "require_live_parent": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_command",
+        "name": "require_live_parent",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\finite_collar_command.py",
+        "source_sha256": "c7b8f616d5ff7de4fabeb0190d906200763b587436b0eab893ed5c05a07cafd8"
+      },
+      "reviewed_construction": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_command",
+        "name": "reviewed_construction",
+        "source": "C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\Lib\\contextlib.py",
+        "source_sha256": "a53b1db774f19c6b1e4320c2bc64058c49e3fba58b20b9c1158e5a8d02069890"
+      },
+      "source_pins": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_command",
+        "name": "source_pins",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\finite_collar_command.py",
+        "source_sha256": "c7b8f616d5ff7de4fabeb0190d906200763b587436b0eab893ed5c05a07cafd8"
+      },
+      "validate": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_controls",
+        "name": "validate",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_controls.py",
+        "source_sha256": "ccf3f00380493f4053e3db4d922ef2af7f50545ef3938e3a34ee98f5b0087d87"
+      },
+      "verify_inputs": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_command",
+        "name": "verify_inputs",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\finite_collar_command.py",
+        "source_sha256": "c7b8f616d5ff7de4fabeb0190d906200763b587436b0eab893ed5c05a07cafd8"
+      }
+    },
+    "finite_stage_controls": {
+      "finite_collar": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_controls",
+        "name": "finite_collar",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_controls.py",
+        "source_sha256": "ccf3f00380493f4053e3db4d922ef2af7f50545ef3938e3a34ee98f5b0087d87"
+      },
+      "physical_shape": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_controls",
+        "name": "physical_shape",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_controls.py",
+        "source_sha256": "ccf3f00380493f4053e3db4d922ef2af7f50545ef3938e3a34ee98f5b0087d87"
+      },
+      "seed_controls": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_controls",
+        "name": "seed_controls",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_controls.py",
+        "source_sha256": "ccf3f00380493f4053e3db4d922ef2af7f50545ef3938e3a34ee98f5b0087d87"
+      },
+      "validate": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_controls",
+        "name": "validate",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_controls.py",
+        "source_sha256": "ccf3f00380493f4053e3db4d922ef2af7f50545ef3938e3a34ee98f5b0087d87"
+      },
+      "validate_custom": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_controls",
+        "name": "validate_custom",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_controls.py",
+        "source_sha256": "ccf3f00380493f4053e3db4d922ef2af7f50545ef3938e3a34ee98f5b0087d87"
+      },
+      "validate_finite_collar": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_controls",
+        "name": "validate_finite_collar",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_controls.py",
+        "source_sha256": "ccf3f00380493f4053e3db4d922ef2af7f50545ef3938e3a34ee98f5b0087d87"
+      },
+      "validate_physical": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_controls",
+        "name": "validate_physical",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_controls.py",
+        "source_sha256": "ccf3f00380493f4053e3db4d922ef2af7f50545ef3938e3a34ee98f5b0087d87"
+      },
+      "validate_shape": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_controls",
+        "name": "validate_shape",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_controls.py",
+        "source_sha256": "ccf3f00380493f4053e3db4d922ef2af7f50545ef3938e3a34ee98f5b0087d87"
+      },
+      "variable_shape": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_controls",
+        "name": "variable_shape",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_controls.py",
+        "source_sha256": "ccf3f00380493f4053e3db4d922ef2af7f50545ef3938e3a34ee98f5b0087d87"
+      }
+    },
+    "finite_stage_handoff": {
+      "_capture": {
+        "module": "tet_layer_handoff",
+        "name": "_capture",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\tools\\tet_layer_handoff.py",
+        "source_sha256": "71a10b3d1d007c349c3fa2b5e88347fe0d1202a87570689ad90a6b9ff263d483"
+      },
+      "admit": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_adapter",
+        "name": "admit",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_adapter.py",
+        "source_sha256": "477aa9a1772b1b6d37edb8f0e8d4c344536decaa088513bb6104e9cfe0ce6bc3"
+      },
+      "array_hash": {
+        "module": "sdf_cfd_mesher_v4.common.authority",
+        "name": "array_hash",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\src\\sdf_cfd_mesher_v4\\common\\authority.py",
+        "source_sha256": "a691a40f864e786179b3af6ab24477f449cffec5ce607de63636861b7fbe3331"
+      },
+      "contextmanager": {
+        "module": "contextlib",
+        "name": "contextmanager",
+        "source": "C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\Lib\\contextlib.py",
+        "source_sha256": "a53b1db774f19c6b1e4320c2bc64058c49e3fba58b20b9c1158e5a8d02069890"
+      },
+      "durable_json": {
+        "module": "optimized_durable_json",
+        "name": "durable_json",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\tools\\optimized_durable_json.py",
+        "source_sha256": "ad26501c76044dac6a78f38e342a300bf0c32e394871f76ee3567ee16ce4fe7e"
+      },
+      "file_hash": {
+        "module": "sdf_cfd_mesher_v4.common.authority",
+        "name": "file_hash",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\src\\sdf_cfd_mesher_v4\\common\\authority.py",
+        "source_sha256": "a691a40f864e786179b3af6ab24477f449cffec5ce607de63636861b7fbe3331"
+      },
+      "finite_collar": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_controls",
+        "name": "finite_collar",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_controls.py",
+        "source_sha256": "ccf3f00380493f4053e3db4d922ef2af7f50545ef3938e3a34ee98f5b0087d87"
+      },
+      "fluid_owner": {
+        "module": "tet_layer_handoff",
+        "name": "fluid_owner",
+        "source": "C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\Lib\\contextlib.py",
+        "source_sha256": "a53b1db774f19c6b1e4320c2bc64058c49e3fba58b20b9c1158e5a8d02069890"
+      },
+      "frozen": {
+        "module": "sdf_cfd_mesher_v4.common.authority",
+        "name": "frozen",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\src\\sdf_cfd_mesher_v4\\common\\authority.py",
+        "source_sha256": "a691a40f864e786179b3af6ab24477f449cffec5ce607de63636861b7fbe3331"
+      },
+      "guard": {
+        "module": "immutable_state_access",
+        "name": "guard",
+        "source": "C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\Lib\\contextlib.py",
+        "source_sha256": "a53b1db774f19c6b1e4320c2bc64058c49e3fba58b20b9c1158e5a8d02069890"
+      },
+      "identity": {
+        "module": "sdf_cfd_mesher_v4.common.authority",
+        "name": "identity",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\src\\sdf_cfd_mesher_v4\\common\\authority.py",
+        "source_sha256": "a691a40f864e786179b3af6ab24477f449cffec5ce607de63636861b7fbe3331"
+      },
+      "initialize": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_adapter",
+        "name": "initialize",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_adapter.py",
+        "source_sha256": "477aa9a1772b1b6d37edb8f0e8d4c344536decaa088513bb6104e9cfe0ce6bc3"
+      },
+      "place": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_adapter",
+        "name": "place",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_adapter.py",
+        "source_sha256": "477aa9a1772b1b6d37edb8f0e8d4c344536decaa088513bb6104e9cfe0ce6bc3"
+      },
+      "produce": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_handoff",
+        "name": "produce",
+        "source": "C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\Lib\\contextlib.py",
+        "source_sha256": "a53b1db774f19c6b1e4320c2bc64058c49e3fba58b20b9c1158e5a8d02069890"
+      },
+      "stage_clock": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_collar_stage_adapter",
+        "name": "stage_clock",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\stage.py",
+        "source_sha256": "19b1e8ab62e9b15ba35387197351442e4d60b6777a57ea08efd97f53df1fb5f1"
+      },
+      "validate": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_controls",
+        "name": "validate",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_controls.py",
+        "source_sha256": "ccf3f00380493f4053e3db4d922ef2af7f50545ef3938e3a34ee98f5b0087d87"
+      },
+      "variable_shape": {
+        "module": "sdf_cfd_mesher_v4._frozen_finite_stage_controls",
+        "name": "variable_shape",
+        "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\candidate\\tet_layer_controls.py",
+        "source_sha256": "ccf3f00380493f4053e3db4d922ef2af7f50545ef3938e3a34ee98f5b0087d87"
+      }
+    }
+  },
+  "host": {
+    "canonical_sha256": "272211056be8d1e0bad6f2e65bb4c2956e109201569975cfd21c83160f0a915d",
+    "canonical_source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\src\\sdf_cfd_mesher_v4\\sdf\\canonical.py",
+    "command": [
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\runtime\\bin\\canonical_kernel_host.exe"
+    ],
+    "creation_time": 1792372649.0370526,
+    "file_identity": {
+      "device": 9562447785075378926,
+      "file_id": 10414574141275212,
+      "size": 31728640
+    },
+    "image": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\runtime\\bin\\canonical_kernel_host.exe",
+    "image_sha256": "0b793568a41027791f865f635f2e15d40d57a76dced890724c4d0d1aef7ea2b4",
+    "pid": 44276
+  },
+  "installers": [
+    {
+      "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\tools\\optimized_admission.py"
+    },
+    {
+      "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\tools\\optimized_admission.py"
+    }
+  ],
+  "negatives": [
+    "PartialSetupMissingSourcePin",
+    "ConflictingHelperModule",
+    "UnknownThreadAtLoading",
+    "NonParentTerminalCall",
+    "StaleHelperFunction",
+    "ReplacedCanonicalRegistry",
+    "ForeignThreadConsumer",
+    "GuardedSourceWriteOpenDenied",
+    "ProtectedRealSourceMutation",
+    "ExpiredHelperScope"
+  ],
+  "numerical_entries": [],
+  "passed": true,
+  "phases": [
+    {
+      "count": 1,
+      "phase": "helpers_loaded"
+    },
+    {
+      "count": 3,
+      "phase": "host_before_initializers",
+      "readers": [
+        {
+          "ident": 39864,
+          "name": "Thread-2 (stdout)",
+          "native_id": 39864,
+          "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\src\\sdf_cfd_mesher_v4\\sdf\\canonical.py",
+          "source_sha256": "272211056be8d1e0bad6f2e65bb4c2956e109201569975cfd21c83160f0a915d",
+          "target": "stdout",
+          "transport_object": 1552494778160
+        },
+        {
+          "ident": 35972,
+          "name": "Thread-3 (stderr)",
+          "native_id": 35972,
+          "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\src\\sdf_cfd_mesher_v4\\sdf\\canonical.py",
+          "source_sha256": "272211056be8d1e0bad6f2e65bb4c2956e109201569975cfd21c83160f0a915d",
+          "target": "stderr",
+          "transport_object": 1552494778160
+        }
+      ]
+    },
+    {
+      "count": 3,
+      "phase": "host_after_initializers",
+      "readers": [
+        {
+          "ident": 39864,
+          "name": "Thread-2 (stdout)",
+          "native_id": 39864,
+          "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\src\\sdf_cfd_mesher_v4\\sdf\\canonical.py",
+          "source_sha256": "272211056be8d1e0bad6f2e65bb4c2956e109201569975cfd21c83160f0a915d",
+          "target": "stdout",
+          "transport_object": 1552494778160
+        },
+        {
+          "ident": 35972,
+          "name": "Thread-3 (stderr)",
+          "native_id": 35972,
+          "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\src\\sdf_cfd_mesher_v4\\sdf\\canonical.py",
+          "source_sha256": "272211056be8d1e0bad6f2e65bb4c2956e109201569975cfd21c83160f0a915d",
+          "target": "stderr",
+          "transport_object": 1552494778160
+        }
+      ]
+    },
+    {
+      "count": 3,
+      "phase": "consumer_error_before_retirement",
+      "readers": [
+        {
+          "ident": 39864,
+          "name": "Thread-2 (stdout)",
+          "native_id": 39864,
+          "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\src\\sdf_cfd_mesher_v4\\sdf\\canonical.py",
+          "source_sha256": "272211056be8d1e0bad6f2e65bb4c2956e109201569975cfd21c83160f0a915d",
+          "target": "stdout",
+          "transport_object": 1552494778160
+        },
+        {
+          "ident": 35972,
+          "name": "Thread-3 (stderr)",
+          "native_id": 35972,
+          "source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\src\\sdf_cfd_mesher_v4\\sdf\\canonical.py",
+          "source_sha256": "272211056be8d1e0bad6f2e65bb4c2956e109201569975cfd21c83160f0a915d",
+          "target": "stderr",
+          "transport_object": 1552494778160
+        }
+      ]
+    }
+  ],
+  "primary_preserved": true,
+  "requests": [
+    "load_rhai",
+    "describe",
+    "release",
+    "describe"
+  ],
+  "restoration": true,
+  "retirement": {
+    "closed_event": true,
+    "original_process_identity": {
+      "canonical_sha256": "272211056be8d1e0bad6f2e65bb4c2956e109201569975cfd21c83160f0a915d",
+      "canonical_source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\src\\sdf_cfd_mesher_v4\\sdf\\canonical.py",
+      "command": [
+        "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\runtime\\bin\\canonical_kernel_host.exe"
+      ],
+      "creation_time": 1792372649.0370526,
+      "file_identity": {
+        "device": 9562447785075378926,
+        "file_id": 10414574141275212,
+        "size": 31728640
+      },
+      "image": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\runtime\\bin\\canonical_kernel_host.exe",
+      "image_sha256": "0b793568a41027791f865f635f2e15d40d57a76dced890724c4d0d1aef7ea2b4",
+      "pid": 44276
+    },
+    "popen_returncode": 1,
+    "readers_dead": [
+      true,
+      true
+    ]
+  },
+  "same_process_until_close": true,
+  "scientific_acceptance": false,
+  "scope": "RealCanonicalHostHelperLifetimeComponentOnly",
+  "supported": "Actual early helper loading, both real initializers with live SDF readers, guarded metadata consumer and cleanup",
+  "untested": "Fresh CLI meshing, genuine terminal issuance, fluid admission, transition construction and publication"
+}

@@ -1,0 +1,81 @@
+{
+  "schema": "Task61IndependentPrivateObserverConnectionReview/1",
+  "recorded_utc": "2026-10-19T10:39:19.796449+00:00",
+  "reviewer": "/root/completed_roles_review",
+  "status": "PASS",
+  "scope": "PrivateProducerFluidConnectionNonmeshingSourceAndReportingOnly",
+  "blockers": [],
+  "reviewed_files": {
+    "REPORT.md": "78c6a486c9b83c702907cdcf774f5b791183bb6bc53c45db4f7d606b04162142",
+    "EVIDENCE.json": "1bf44a5b6dd641071fb850d87178bad97b762e432f33c0856b48f86307ec2b9d",
+    "PRESERVATION.json": "425c594f4b86ecd3fc63edb5fe2efb8bcd9fd098962dbaff97b2e2374a6e1926",
+    "USAGE.md": "03764688b62f3369fb82ece94404577d7b03f820cb0db529229aacdfb4f075e6",
+    "DOCUMENT_UPDATE.json": "104580ad45b4e35be5f2f8f1ef501a5319f811427d2fee14183b25c99f30dd8e",
+    "ACTIVE_DOCUMENT_UPDATE.json": "4d1f026767dbaa1670e71809a48db08594058d6b0f64246294eccc92840a37c3",
+    "SOURCE_REUSE.json": "2b8dd0cbc983722d8be81650ac03b2228934c56615ec7968f2c148ffa614ba85",
+    "RECORD_SCHEMA.md": "dc123cfa8ed41a22c0b9748adca697400afee497dfa65dc123c630f8b1bd7a20",
+    "OUTPUT_SCOPE.json": "c55835b7a938084be4583bc6c79ca2c7caf2cb50ff5516f2ffbd792edf8ec79e",
+    "prepare.py": "0768530b58acf18df485d7291f23dc8f5adaa55ae0e1d16ba4d1d46dbf3e90d9",
+    "activate.py": "ac955227beda2e6fa8f6bdef1f17d5e5e45bc4734a5ad385cd2c23bd2dc92dd3",
+    "candidate/tet_layer_handoff.py": "b3c4970da6508cd27603244f5bc98333c5a5505a4fb5b718963966ae6c0c6261",
+    "controls.py": "a348983eb028217b12a1cb0af6b643f9d9f60d6295a90365b1967048199864a2",
+    "control_run.py": "4170f332c6f7a3f4c725b6f591bf07b5fd5fe3a83573b6a60ea013a41850c69c",
+    "CONTROL_CASES.json": "bca754dd7c48de70e445c67ad964411fe12647d550341155f021327e0b3c2974",
+    "PYTHON_IDENTITY.json": "c8ecaa8cd37718e86bc3264a6a004d705c3b5b93e1432f218f87ce70e9c13e53",
+    "TASK.json": "3a0c7028bf0da001270094d197a9022142ea54bc95c37d10b170220221a78dbf",
+    "PINNED_SOURCES.json": "68481190776f2cf48ef5c77e8889399240c33db143ef8713bf00d58b1008e4ce",
+    "CONTROL_AUTHORIZATION.json": "188f07c59e492a389d0398caafdce1c17c49af272f41e43fe9280851c2b91238",
+    "ACTUAL_CONTROL_COMMAND.txt": "cdc9d95434304d5bdbed6e7c73940bb0f5883c9a3be46ecf0eedf7e387cf7367",
+    "CONTROL_PLAN.json": "fca1ea5283c6611803b2ae0d4128872c9d3d0410c711c0652f44ce4fc8f26532"
+  },
+  "reviewed_V4_documents": {
+    "CURRENT_TASK.md": "130c908e0259e662a34498cd61f5dae41461488a1fcc4ac19241ad92570a000c",
+    "README.md": "b54d4537f97ad0247f0d9534a99833c781044694cc33c5e3fd043a3e63ac791c"
+  },
+  "launch_review_sha256": "e10748d4c0dc87554ad264ca7f80fa9e0e900a2fff8f017ff28d68e703dec4d4",
+  "raw_review": {
+    "status": "PASS",
+    "scope": "ActualGeneratedSourceSelectionAndLocalObserverNonmeshingComponent",
+    "guarded_files": 2660,
+    "map_sha256": "e0dc2a64c7a0bec8b44c24ecb9d63a7d74e84506c29329199046a57fc17cdd14",
+    "opened_utc": "2026-10-19T10:34:49.4840374Z",
+    "all_handles_closed_utc": "2026-10-19T10:34:52.0918499Z",
+    "before_after_sha_and_file_tokens_equal": true
+  },
+  "physical_snapshot": {
+    "guarded_files": 4097,
+    "map_sha256": "36c266f5555a944b3e368105ce08d25def61bf333d8cc21889f9338afde09ed6",
+    "map_encoding": "Ordinal absolute-path SHA256 map; UTF8 PowerShell ConvertTo-Json -Compress",
+    "opened_utc": "2026-10-19T10:37:44.2355586Z",
+    "all_handles_closed_utc": "2026-10-19T10:38:09.9244187Z",
+    "all_handles_physically_closed": true,
+    "before_after_sha_and_file_tokens_equal": true
+  },
+  "independently_verified": {
+    "execution_pins": 2609,
+    "generated_files": 28,
+    "prior_sealed_files": 1627,
+    "runtime_release_sources": 1244,
+    "runtime_review_links": 1,
+    "document_prefix_and_active_suffix_chains": true,
+    "normal_git_baseline_exact": true
+  },
+  "findings": [
+    "Actual generated source selection and observer pass; canonical owner aliases and registry preserved.",
+    "97 assertions are not independent test cases; four scientific comparisons and six role denials passed.",
+    "Primary error propagates through both exits with one snapshot; observer expires while canonical retained behavior unchanged.",
+    "Positive accepted-parent producer/admission/publication and positive live gate remain source-reviewed, unexecuted.",
+    "Unknown per-cell/depth/time fields remain null; overlapping counters and natural arithmetic subset accurately reported.",
+    "Nested clocks do not establish speedup; individual native host job membership/peak unobserved."
+  ],
+  "reviewer_actions": {
+    "candidate_execution": false,
+    "imports": false,
+    "tests": false,
+    "queries": false,
+    "array_decodes": false,
+    "wsl": false,
+    "edits": false
+  },
+  "production_or_run_authorized": false
+}

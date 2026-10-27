@@ -1,0 +1,335 @@
+"""Prepare a disabled finite-transition research request. Never run a mesh."""
+from pathlib import Path
+from contextlib import contextmanager, ExitStack
+import argparse
+import hashlib
+import json
+import math
+import sys
+
+HERE = Path(__file__).resolve().parent
+R = Path('C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement')
+READINESS_ROOT = Path('C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01')
+GENERATOR_ROOT = Path('C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01')
+S = R.parent
+V4 = S.parents[1]
+TEMPLATE = R/'finite_collar_live_B05'
+SELECTOR = '9ed95d87d77a148e6e5329ea7c04606f3cde20f4b4108c1a0b093787daae9b3d'
+FILES = ('run.py', 'connection.py', 'stage.py', 'routing_body.py', 'PYTHON_IDENTITY.json',
+         'candidate/tet_layer_controls.py', 'candidate/tet_layer_adapter.py',
+         'candidate/standalone_background.py', 'candidate/finite_collar_command.py',
+         'candidate/tet_layer_handoff.py')
+FORBIDDEN = ('AUTHORIZATION.json', 'LAUNCH_REVIEW.json', 'TASK.json', 'CLOCK.json',
+             'live01_INPUT_PINS.json', 'CONTROL_AUTHORIZATION.json')
+
+
+def sha(path):
+    with Path(path).open('rb') as stream:
+        return hashlib.file_digest(stream, 'sha256').hexdigest()
+
+
+def read(path):
+    return json.loads(Path(path).read_text(encoding='utf-8'))
+
+
+def encoded(value):
+    return (json.dumps(value, indent=2, sort_keys=True, allow_nan=False)+'\n').encode()
+
+
+def write_new(path, raw):
+    path = Path(path)
+    with path.open('xb') as stream:
+        stream.write(raw)
+    if path.read_bytes() != raw:
+        raise ValueError('PreparedFileReadbackMismatch', str(path))
+
+
+def replace_once(text, old, new):
+    if text.count(old) != 1:
+        raise ValueError('ChangedTemplatePlumbing', old)
+    return text.replace(old, new, 1)
+
+
+def parser():
+    p = argparse.ArgumentParser(description=__doc__)
+    for name in ('case', 'policy', 'request-dir', 'output'):
+        p.add_argument('--'+name, type=Path, required=True)
+    p.add_argument('--source-manifest-sha256', required=True)
+    p.add_argument('--assignment', type=Path, required=True)
+    p.add_argument('--assignment-sha256', required=True)
+    p.add_argument('--input-contract', required=True)
+    p.add_argument('--maximum-faces', type=int, required=True)
+    p.add_argument('--payload-seconds', type=float, required=True)
+    p.add_argument('--owner-seconds', type=float, required=True)
+    return p
+
+
+def assignment_capacity(task):
+    value=task.get('maximum_faces')
+    if type(value) is not int or value<=0:
+        raise ValueError('ExplicitPositiveIntegerAssignmentCapacityRequired')
+    return value
+
+
+def assignment_intent(task):
+    from datetime import datetime, timedelta
+    count=task.get('maximum_live_invocations')
+    if (task.get('schema')!='ReusableFiniteInputAssignment/1'
+            or type(count) is not int or count not in (0,1)):
+        raise ValueError('ExactPendingOrOneLiveAssignmentRequired')
+    permitted=count==1
+    if (task.get('execution_authorized') is not permitted
+            or task.get('live_payload_seconds')!=(1740 if permitted else 0)
+            or task.get('live_owner_seconds')!=(1800 if permitted else 0)
+            or task.get('live_transition_seconds')!=(720 if permitted else 0)
+            or task.get('proposed_live_payload_seconds')!=1740
+            or task.get('proposed_live_owner_seconds')!=1800
+            or task.get('proposed_transition_seconds')!=720
+            or task.get('proposed_live_window_seconds')!=3600
+            or task.get('proposed_live_launch_cutoff_seconds')!=1200):
+        raise ValueError('ExactAssignmentAllowancesRequired')
+    dates=[task.get(k) for k in ('start_utc','deadline_utc','live_cutoff_utc')]
+    if not permitted:
+        if any(value is not None for value in dates):
+            raise ValueError('PendingAssignmentDatesMustBeNull')
+    else:
+        if not all(isinstance(value,str) for value in dates):
+            raise ValueError('ExactFreshLiveWindowRequired')
+        start,end,cutoff=map(datetime.fromisoformat,dates)
+        if (any(value.utcoffset() is None for value in (start,end,cutoff))
+                or end-start!=timedelta(seconds=3600)
+                or cutoff-start!=timedelta(seconds=1200)):
+            raise ValueError('ExactFreshLiveWindowRequired')
+    return permitted
+
+
+def paths_and_bounds(args):
+    case, policy, packet, output = (getattr(args, n).resolve() for n in
+                                   ('case', 'policy', 'request_dir', 'output'))
+    if packet.exists() or output.exists():
+        raise ValueError('FreshRequestAndOutputRequired')
+    if not packet.parent.is_dir() or packet not in output.parents:
+        raise ValueError('ExistingParentAndContainedOutputRequired')
+    if packet in case.parents or packet in policy.parents:
+        raise ValueError('InputsMustPreexistOutsideRequest')
+    if type(args.maximum_faces) is not int or args.maximum_faces<=0:
+        raise ValueError('ExplicitPositiveIntegerCapacityRequired')
+    if (not all(math.isfinite(x) and x > 0 for x in
+                (args.payload_seconds, args.owner_seconds))
+            or args.payload_seconds > 1740 or args.owner_seconds > 1800
+            or args.owner_seconds < args.payload_seconds+60):
+        raise ValueError('ExplicitBoundedPayloadAndCleanupReserveRequired')
+    return case, policy, packet, output
+
+
+@contextmanager
+def source_scope(expected):
+    """Use existing source custody; no cached authentication or new loader."""
+    manifest = HERE/'PINNED_SOURCES.json'
+    if sha(manifest) != expected:
+        raise ValueError('ChangedPreparationManifest')
+    before = sys.path[:]
+    try:
+        sys.path[:0] = [str(S), str(R), str(V4/'tools'), str(V4/'src')]
+        import fixture_study as d
+        with ExitStack() as held:
+            held.enter_context(d.guard(manifest))
+            if sha(manifest) != expected:
+                raise ValueError('ChangedPreparationManifest')
+            pins = read(manifest)
+            for path, digest in pins.items():
+                held.enter_context(d.guard(Path(path)))
+                if sha(path) != digest:
+                    raise ValueError('ChangedPreparationSource', path)
+            if pins.get(str(HERE/'prepare.py')) != sha(HERE/'prepare.py'):
+                raise ValueError('UnboundPreparationCommand')
+            for name in ('prepare.py','activate.py'):
+                reference=GENERATOR_ROOT/name
+                historical=READINESS_ROOT/name
+                if (pins.get(str(reference))!=sha(reference)
+                        or pins.get(str(historical))!=sha(historical)
+                        or pins.get(str(HERE/name))!=sha(HERE/name)
+                        or sha(HERE/name)!=sha(reference)):
+                    raise ValueError('UnchangedReviewedGeneratorRequired',name)
+            review_path=GENERATOR_ROOT/'CONTROL_LAUNCH_REVIEW.json'
+            held.enter_context(d.guard(review_path))
+            review=read(review_path)
+            held.enter_context(d.guard(GENERATOR_ROOT/'PINNED_SOURCES.json'))
+            names=('prepare.py','activate.py','candidate/tet_layer_handoff.py')
+            if (review.get('approved') is not True or review.get('mode')!='nonmeshing_only'
+                    or review.get('manifest_sha256')!=sha(GENERATOR_ROOT/'PINNED_SOURCES.json')
+                    or any(review.get('reviewed_files',{}).get(n)!=sha(GENERATOR_ROOT/n) for n in names)
+                    or any(pins.get(str(GENERATOR_ROOT/n))!=sha(GENERATOR_ROOT/n) for n in names)):
+                raise ValueError('ExactReviewedObserverGeneratorRequired')
+            pins[str(review_path)]=sha(review_path)
+            yield d, pins
+    finally:
+        sys.path[:] = before
+
+
+def copy_sources(packet, selector, payload, owner):
+    for name in FILES:
+        source=GENERATOR_ROOT/name if name=='candidate/tet_layer_handoff.py' else TEMPLATE/name
+        raw = source.read_bytes()
+        if name.endswith('.py'):
+            text = raw.decode().replace('\r\n', '\n')
+            if name == 'run.py':
+                start, end = text.index('def gate(role):'), text.index('\ndef read(path):')
+                text = text[:start]+('def gate(role):\n'
+                    '    raise ValueError("NumericalExecutionDisabledResearchPreparation", role)\n\n')+text[end:]
+                text = replace_once(text, 'R = HERE.parent', 'R = Path('+repr(str(R))+')')
+                text = replace_once(text, 'PROPOSED_PAYLOAD_SECONDS = 1740',
+                                    'PROPOSED_PAYLOAD_SECONDS = '+repr(payload))
+                text = replace_once(text, 'PROPOSED_OWNER_SECONDS = 1800',
+                                    'PROPOSED_OWNER_SECONDS = '+repr(owner))
+                text = replace_once(text, SELECTOR, selector)
+            elif name in ('connection.py', 'stage.py'):
+                text = replace_once(text, 'V4 = HERE.parents[3]', 'V4 = Path('+repr(str(V4))+')')
+                if name == 'connection.py':
+                    text = replace_once(text, SELECTOR, selector)
+            elif name == 'candidate/finite_collar_command.py':
+                text = replace_once(text, 'RETIREMENT=HERE.parents[1]', 'RETIREMENT=Path('+repr(str(R))+')')
+            else:
+                text = None
+            if text is not None:
+                raw = text.encode()
+        target = packet/name
+        target.parent.mkdir(exist_ok=True)
+        write_new(target, raw)
+
+
+def prepare(args):
+    case_path, policy_path, packet, output = paths_and_bounds(args)
+    with source_scope(args.source_manifest_sha256) as (d, pins):
+        import standalone_case as case_owner
+        from sdf_cfd_mesher_v4.common.authority import identity
+        from sdf_cfd_mesher_v4.runtime import frozen_imports
+        assignment_path=args.assignment.resolve()
+        with d.guard(assignment_path), d.guard(policy_path), case_owner.hold_inputs(case_path):
+            if (pins.get(str(assignment_path))!=args.assignment_sha256
+                    or sha(assignment_path)!=args.assignment_sha256):
+                raise ValueError('ChangedReviewedCapacityAssignment')
+            assignment=read(assignment_path)
+            capacity=assignment_capacity(assignment)
+            assignment_intent(assignment)
+            if (args.payload_seconds!=assignment['proposed_live_payload_seconds']
+                    or args.owner_seconds!=assignment['proposed_live_owner_seconds']):
+                raise ValueError('ExactAssignmentProposalBoundsRequired')
+            if args.maximum_faces!=capacity:
+                raise ValueError('CapacityArgumentAssignmentMismatch')
+            row=assignment.get('input_contracts',{}).get(args.input_contract)
+            keys={'case_path','case_sha256','imported_source_path','imported_source_sha256','policy_path','policy_sha256'}
+            if (not isinstance(row,dict) or set(row)!=keys
+                    or row['case_path']!=str(case_path) or row['policy_path']!=str(policy_path)
+                    or row['case_sha256']!=sha(case_path) or row['policy_sha256']!=sha(policy_path)
+                    or (row['imported_source_path'] is None)!=(row['imported_source_sha256'] is None)):
+                raise ValueError('ExactAssignmentInputTupleRequired')
+            case, increments, original = case_owner.load(case_path)
+            if case['schema'] != 'V4MeshCase/4' or len(increments) != 6:
+                raise ValueError('CurrentSchema4SixLayerScopeRequired')
+            if case['resources'] != dict(minimum_free_bytes=1000000000, output_limit_bytes=4000000000):
+                raise ValueError('CurrentExplicitStoragePolicyRequired')
+            policy = read(policy_path)
+            policy_hash = sha(policy_path)
+            if policy.get('backend_method') != 'HXT4DirectSizing095/1':
+                raise ValueError('UnsupportedFiniteCollarBackend')
+            aliases = ('finite_collar_stage_adapter', 'sdf_cfd_mesher_v4._frozen_finite_collar_stage_adapter')
+            if any(name in sys.modules for name in aliases):
+                raise ValueError('FreshPreparationStageRequired')
+            try:
+                stage = frozen_imports._load('finite_collar_stage_adapter', TEMPLATE/'stage.py')
+                with stage.selected_helpers(pins) as (helpers, require_active):
+                    helpers['finite_stage_background'].validate_policy(policy)
+                    helpers['finite_stage_background'].validate_execution_target(policy, True)
+                    transition = policy['tet_transition']
+                    if (transition['schema'] != 'V4TetLayerAdapter/5'
+                            or transition['seconds'] > min(720, args.payload_seconds)):
+                        raise ValueError('ExplicitBoundedFiniteTransitionRequired')
+                    value = dict(schema='FiniteCollarDownstreamRequest/1',
+                        upstream_case_sha256=original, upstream_effective_identity=identity(case),
+                        upstream_geometry_identity=identity(case['geometry']),
+                        upstream_flags=dict(surface_assurance='numerical', surface_carrier='nodal',
+                                            through_layer=6, transition_only=True),
+                        maximum_faces=args.maximum_faces, downstream_policy=policy,
+                        downstream_policy_identity=identity(policy), live_execution_authorized=False)
+                    stage.validate_case(value, case, original)
+                    require_active()
+                imported = case_owner.imported_geometry(case_path, case_owner.read(case_path))
+                if ((str(imported[0]) if imported else None)!=row['imported_source_path']
+                        or case_owner.held_import_sha256(case_path)!=row['imported_source_sha256']):
+                    raise ValueError('ChangedAssignmentImportedSource')
+                extra = {str(case_path): original, str(policy_path): policy_hash,
+                         str(assignment_path):args.assignment_sha256}
+                if imported is not None:
+                    extra[str(imported[0])] = case_owner.held_import_sha256(case_path)
+                packet.mkdir()  # Exclusive new directory; no overwrite or cleanup on failure.
+                write_new(packet/'STAGE_REQUEST.json', encoded(value))
+                selector = sha(packet/'STAGE_REQUEST.json')
+                copy_sources(packet, selector, args.payload_seconds, args.owner_seconds)
+                arguments = ['--finite-collar-selection', selector, '--case', str(case_path),
+                    '--from-layer', '0', '--through-layer', '6', '--mode', 'fastprod',
+                    '--stop-after-transition', '--output', str(output), '--minimum-free-bytes',
+                    '1000000000', '--surface-carrier', 'nodal', '--surface-assurance', 'numerical']
+                request = dict(schema='DisabledLiveRequest/1', case=str(case_path),
+                    assignment_task=str(assignment_path), assignment_task_sha256=args.assignment_sha256,
+                    input_contract_id=args.input_contract, live_payload_seconds=0, live_owner_seconds=0,
+                    case_sha256=original, output=str(output), output_must_not_exist=True,
+                    entry=str(packet/'run.py'), execution_authorized=False, selector=selector,
+                    stage_request=str(packet/'STAGE_REQUEST.json'), stage_request_sha256=selector,
+                    arguments=arguments, proposed_payload_seconds=args.payload_seconds,
+                    proposed_owner_seconds=args.owner_seconds, transition_stage_seconds=transition['seconds'],
+                    original_policy_path=str(policy_path), original_policy_sha256=policy_hash,
+                    preparation_manifest_sha256=args.source_manifest_sha256,
+                    imported_source_sha256=case_owner.held_import_sha256(case_path),
+                    scope='Prepared research inputs only; numerical entry always denies')
+                write_new(packet/'LIVE_REQUEST.json', encoded(request))
+                selected = dict(pins, **extra)
+                for name in (*FILES, 'STAGE_REQUEST.json', 'LIVE_REQUEST.json'):
+                    selected[str(packet/name)] = sha(packet/name)
+                write_new(packet/'PINNED_SOURCES.json', encoded(selected))
+                if sha(case_path) != original or sha(policy_path) != policy_hash:
+                    raise ValueError('ChangedOriginalInputs')
+                return dict(request_dir=str(packet), manifest_sha256=sha(packet/'PINNED_SOURCES.json'),
+                            selector=selector, execution_authorized=False)
+            finally:
+                for name in aliases:
+                    sys.modules.pop(name, None)
+
+
+def verify_prepared(packet, expected_manifest):
+    """Read-only prepared-input check. Cannot issue launch authority."""
+    packet = Path(packet).resolve()
+    if any((packet/name).exists() for name in FORBIDDEN):
+        raise ValueError('UnexpectedOrConsumedExecutionAuthority')
+    if sha(packet/'PINNED_SOURCES.json') != expected_manifest:
+        raise ValueError('ChangedPreparedManifest')
+    for path, digest in read(packet/'PINNED_SOURCES.json').items():
+        if sha(path) != digest:
+            raise ValueError('ChangedPreparedSourceOrInput', path)
+    value = read(packet/'LIVE_REQUEST.json')
+    if value['execution_authorized'] is not False or Path(value['output']).exists():
+        raise ValueError('DisabledFreshOutputRequired')
+    if sha(packet/'STAGE_REQUEST.json') != value['selector']:
+        raise ValueError('ChangedPreparedSelection')
+    selected=read(packet/'PINNED_SOURCES.json')
+    assignment_path=Path(value['assignment_task'])
+    if (selected.get(str(assignment_path))!=value['assignment_task_sha256']
+            or sha(assignment_path)!=value['assignment_task_sha256']):
+        raise ValueError('ChangedPreparedCapacityAssignment')
+    stage=read(packet/'STAGE_REQUEST.json')
+    assignment=read(assignment_path)
+    assignment_intent(assignment)
+    capacity=assignment_capacity(assignment)
+    if type(stage['maximum_faces']) is not int or stage['maximum_faces']!=capacity:
+        raise ValueError('PreparedCapacityAssignmentMismatch')
+    return value
+
+
+def main(argv=None):
+    result = prepare(parser().parse_args(argv))
+    print(json.dumps(result, sort_keys=True))
+    return result
+
+
+if __name__ == '__main__':
+    main()

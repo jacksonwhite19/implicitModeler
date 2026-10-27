@@ -1,0 +1,49 @@
+{
+  "schema": "PrivateCommandExecutableRoles/1",
+  "controller": {
+    "executable": "C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\python3.12.exe",
+    "sha256": "5365b422ee178f691988eb937b7abca5f48910b148f76fcce6dbaf5585c948d0",
+    "file_identity": {
+      "device": 9562447785075378926,
+      "file_id": 11821949022807555,
+      "size": 172912
+    }
+  },
+  "child": {
+    "executable": "C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\python.exe",
+    "file_identity": {
+      "device": 9562447785075378926,
+      "file_id": 11821949022807554,
+      "size": 172912
+    },
+    "sha256": "5365b422ee178f691988eb937b7abca5f48910b148f76fcce6dbaf5585c948d0"
+  },
+  "roles": {
+    "launch": {
+      "own": "controller",
+      "parent": null,
+      "explicit_argv0": false
+    },
+    "coordinator": {
+      "own": "child",
+      "parent": "controller",
+      "explicit_argv0": true
+    },
+    "phase": {
+      "own": "child",
+      "parent": "child",
+      "explicit_argv0": true
+    },
+    "worker": {
+      "own": "child",
+      "parent": "child",
+      "explicit_argv0": true
+    }
+  },
+  "provenance": {
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\finite_collar_common_identity01\\STARTUP_IDENTITY.json": "3dc428885c7e3c36c14f60f44f31b8c8c54434056611405d3c86f7b5dec05aff",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\finite_collar_common_identity01\\PYTHON_IDENTITY.json": "528fa26cd817f92e94c55eebe928e902a8de58aac5ed8e1dcb65c680578a1ed6"
+  },
+  "recorded_before_invocation": true,
+  "observed_child_mapping_qualified": false
+}

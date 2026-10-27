@@ -1,0 +1,16 @@
+{
+  "approved": true,
+  "mode": "nonmeshing_only",
+  "assignment": "Task61",
+  "human_message": "01a15205-b727-7a00-bde6-abe5727700d0",
+  "callback_human_message": "01a1521a-9fef-70c0-8d8d-174e7fcdfc2e",
+  "authority_scope": "Standing bounded engineering and specific Advisor61 private producer connection; one nonmeshing control only",
+  "task_sha256": "3a0c7028bf0da001270094d197a9022142ea54bc95c37d10b170220221a78dbf",
+  "manifest_sha256": "68481190776f2cf48ef5c77e8889399240c33db143ef8713bf00d58b1008e4ce",
+  "actual_command_sha256": "cdc9d95434304d5bdbed6e7c73940bb0f5883c9a3be46ecf0eedf7e387cf7367",
+  "maximum_invocations": 1,
+  "payload_seconds": 50,
+  "owner_seconds": 110,
+  "actual_source_host_permitted_inside_control": true,
+  "live_execution_approved": false
+}

@@ -1,0 +1,571 @@
+{
+  "actual_derivations": 1,
+  "actual_native_hosts": 1,
+  "actual_preparations": 1,
+  "actual_source": {
+    "geometry": "48cd50a8e2393401b9750727eb23a00ce420b4a471c8e1f28e864a8767a2a000",
+    "kernel_source": "57266a804ad81f42e94813336dcdaeedcc9fec58ae0bedac756f52342406713b",
+    "native_sha256": "0b793568a41027791f865f635f2e15d40d57a76dced890724c4d0d1aef7ea2b4",
+    "release_inventory": "b3720d161088f5f74fc47d391e5bfb0a306a71d024db3c7c34222658f1b2caea"
+  },
+  "argv": [
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\control_run.py",
+    "coordinator",
+    "2158917.6956371"
+  ],
+  "binding": {
+    "activation_source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\activate.py",
+    "activation_source_sha256": "ac955227beda2e6fa8f6bdef1f17d5e5e45bc4734a5ad385cd2c23bd2dc92dd3",
+    "assignment_task": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\PENDING_ASSIGNMENT.json",
+    "assignment_task_sha256": "1cfa2c7e92d1123bb21b4d34c4c3b2fb5c7fd3f8af4ee3aee92aefd0e8fe6dc8",
+    "canonical_inputs": {
+      "case_sha256": "8422d6c44e053ee6beff824c1ab5906c6eea6ad43defc6eb1ffc29c9c88488e5",
+      "effective_case_identity": "a9751b9f51877d0dfc5d810fe7e399663269f00f46e1bb5482cc00f80eae57aa",
+      "geometry_identity": "b5989ef5898dd8e73c4825183960d1e30b9b3f75afdd87aae860b629627ebe66",
+      "imported_source_path": null,
+      "imported_source_sha256": null,
+      "metres_per_model_unit": 0.001,
+      "policy_identity": "33f32945f5ccbb6ba75e57e4fa339eb08a7bdf9bf980b46d27cfd68274694732",
+      "policy_sha256": "efee99c1191def7303e02c8cfdf3a118652e45a9e1bf15db099acb1e087dcb9d"
+    },
+    "generated_files": [
+      "run.py",
+      "connection.py",
+      "stage.py",
+      "routing_body.py",
+      "PYTHON_IDENTITY.json",
+      "candidate/tet_layer_controls.py",
+      "candidate/tet_layer_adapter.py",
+      "candidate/standalone_background.py",
+      "candidate/finite_collar_command.py",
+      "candidate/tet_layer_handoff.py"
+    ],
+    "generator_root": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01",
+    "input_contract": {
+      "case_path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_blend_live01\\inputs\\varying_curvature_six_CASE.json",
+      "case_sha256": "8422d6c44e053ee6beff824c1ab5906c6eea6ad43defc6eb1ffc29c9c88488e5",
+      "imported_source_path": null,
+      "imported_source_sha256": null,
+      "policy_path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_command02\\CONTROL_POLICY.json",
+      "policy_sha256": "efee99c1191def7303e02c8cfdf3a118652e45a9e1bf15db099acb1e087dcb9d"
+    },
+    "input_contract_id": "inline_base",
+    "live_request_sha256": "5e44dd8f4ac78725978ccb8eb7fcd941d9ed94fbec38b0250b82a841efae6b56",
+    "prepared_manifest_sha256": "82b66f806709fc1c7eb2ca039f28651971846aa2a0861019c43b042b39ef052a",
+    "prepared_request": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\prepared_request",
+    "prepared_request_sha256": "963d196019540f4b1045ec7ef605a1406c1044093e42b86cd976553c7b2f0d06",
+    "producer_sha256": "b3c4970da6508cd27603244f5bc98333c5a5505a4fb5b718963966ae6c0c6261",
+    "producer_source": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\candidate\\tet_layer_handoff.py",
+    "readiness_root": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01",
+    "receipts": {
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\finite_collar_live_B04\\CLOSED.json": "e867766552c80c82957eecf2828e3ff1d058e68bfd14dc911713fafa7d5ba14d",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\finite_collar_live_B04\\CONTROL_RESULT_REVIEW.json": "dedbeab7c990269734d95e3ec3f194fdaeb30ba5678c907b1f8026aa7da1cb26",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\finite_collar_live_B04\\LAUNCH_REVIEW.json": "a0b188546eb7ac4263366747fe17e840371ee2447e81fae42aab69bf7544b4b3",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\finite_collar_live_B04\\REVIEW.json": "e777a4c4029c5f400f1910411b337f794d1d0f153d2f7472c8d1b0115501f6ca",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\finite_collar_live_B05\\CLOSED.json": "535b3cdacde54bcfef686b680a40d4bb57a552a0238f4a996614d8555b562023",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\finite_collar_live_B05\\REVIEW.json": "182644ef692f614a3fecf9c1f703d7b8c3dedf37f46b723a5a8ed1cc9b71b371",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\CLOSED.json": "d2f6c59cf3bf02261f472d6a97fc723f0b9c30e02e3d9f49b100167ac5934f3f",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\CONTROL_LAUNCH_REVIEW.json": "16f6040e05bd2d2e3ec9d630d9b51e6a59c12348ff5ab015b490009f59d32d5d",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\REVIEW.json": "7e1ac82cc5e15e2c6e6e5ad76fbc61f217451dd520d423b207e0fea1907f2978",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01\\CONTROL_STARTUP_IDENTITY.json": "25c0f0355f5db252d994b5512e1cd7db3ec1b5a5cd1362d285d194e3893a9bd1",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01\\HOST_CONTROL_EVIDENCE.json": "e4a18b94ab78acf73502a663d5b6f1e4a0d6030ea7b035e5c045c630417afb35",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01\\LOADED_SOURCE_CLOSURE.json": "303fad2b9f99db10385d855ec809aaa1f207b819dfb7968cb5ab51b6e2cfae22",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01\\RESULT.json": "b3a22bd1b61d940fb3cf7b806d927c7a51e2852304dfa5ce651f05f6e4a90dda",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01\\WORKER_COMPLETION.json": "c2b6d4136626b28fa37ac9da65caa5474abd4ce6bd0dc2e0948da8f201365829",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01_EXECUTION.json": "757f0fac9f0c53704e358a806d03ed6a3635e274595ecb3341a3a8583e4feed3",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01_EXECUTION_CLOSURE.json": "6cdb4aa82c5ce759ee2f74d369a8bc5cdf5dbfaef0b120456bbe758527d7e2d7",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01_RESOURCE_RESULT.json": "c7da2f4cccf035b8af8b889249464d0f5c58fb19cb799a8a6453202189b17dfa",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01_SCOPE_CLOSURE.json": "0b35c3d5aa55f7f2356cfcfd95dcf0af4bb5ae2f6b0f0b12720a1b21ec27e487",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01_SCOPE_RESULT.json": "045e4abd98b7f01e39ad8ad41475c628f76263b3405dbbd8b96e5569c2203e45",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_blend_live01\\CLOSED.json": "b5c541b71ec909da26bc671a27ca93b4e6dd7f12fbcdb5aa0f6310bfabd52245",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_blend_live01\\REVIEW.json": "7dc73937e68d07f55d6343d0a4624317da01d2d74a1f98b912c8bbf1a70a04fc",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity01\\CLOSED.json": "eace93e4729ff03be7fbdfdf1e4a745f328031d1a3860ea0a709f3a002f7feb4",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity01\\REVIEW.json": "261aee12b2f90888c7e0ade5e60b878f8cb2504fc55853090273e7e235ae6488",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_command02\\CLOSED.json": "0efcd165f5ed90bef61bba3b055ebbd61b6372e2d5579639147c1f196a25d70b",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_command02\\REVIEW.json": "2f05c593c7db1a93ca49c0c4cea6cfcba0a8d9f7b0b830978f1ae5cd69a3048e",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_inputs02\\CLOSED.json": "903ead6da5ab6c094813194041cc45734ac37a884349c291529448f8e017c96d",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_inputs02\\CONTROL_RESULT_REVIEW.json": "9a2ae98c2d0bdf05ad58c79ba4554029451a392dc284be6bf2131b4c5e660d6f",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_inputs02\\REVIEW.json": "deb1cb07599ac23e519a0b5da860a049aa7f08364c71c450fc9289136bd8573f"
+    },
+    "schema": "PreparedLiveDerivative/1",
+    "selector": "cc599d9ccc65ff97fbc3ef65526863690d5fdda9a594580403ebdab9bb41dc77",
+    "task_sha256": "4ce5e370a3af72cd73ca324870b8e846b6200eefecd66b790b1621cc2c461492"
+  },
+  "calls": {
+    "clear": {
+      "baseline": {
+        "check_count": 1,
+        "diagnostics": null,
+        "science": {
+          "cells": 1,
+          "fluid_boxes_scope": "Per tetrahedron; whole-stage seconds remain a separate bound",
+          "geometry": "48cd50a8e2393401b9750727eb23a00ce420b4a471c8e1f28e864a8767a2a000",
+          "method": "SameRealSource/ConservativeValueFilterWithExactFallback/StrictPositive/ExactLongestEdgeCover",
+          "minimum_real_field_lower_m": "2251799813685245/2251799813685248",
+          "passed": true,
+          "region_queries": 1,
+          "scope": "Continuous real-source field sign for transition cells; no claim of native floating-point arithmetic equivalence or inherited surface completeness."
+        }
+      },
+      "observed": {
+        "check_count": 1,
+        "diagnostics": {
+          "cells": 1,
+          "cells_without_subdivision": null,
+          "exclusive_component_seconds": null,
+          "maximum_observed_depth": null,
+          "maximum_region_queries_per_cell": null,
+          "query_scope_counts": {
+            "full_checks": 0,
+            "nested_checks_reused": 3
+          },
+          "region_queries": 1,
+          "regional_filter_counts": {
+            "exact_query_fallbacks": 0,
+            "real_sign_arithmetic_fallbacks": 0,
+            "real_sign_exact_fallbacks": 0,
+            "real_sign_filtered": 1,
+            "real_sign_requests": 1
+          },
+          "schema": "V4TetFluidCallWorkload/1",
+          "scientific_acceptance": false,
+          "scope": "Single canonical fluid call including initial/final verification, result assembly and callbacks; excludes construction, other admission work and later scope exits.",
+          "scope_exit_verified": false,
+          "status": "completed_canonical_fluid_call",
+          "subdivisions_from_completed_cover": 0
+        },
+        "science": {
+          "cells": 1,
+          "fluid_boxes_scope": "Per tetrahedron; whole-stage seconds remain a separate bound",
+          "geometry": "48cd50a8e2393401b9750727eb23a00ce420b4a471c8e1f28e864a8767a2a000",
+          "method": "SameRealSource/ConservativeValueFilterWithExactFallback/StrictPositive/ExactLongestEdgeCover",
+          "minimum_real_field_lower_m": "2251799813685245/2251799813685248",
+          "passed": true,
+          "region_queries": 1,
+          "scope": "Continuous real-source field sign for transition cells; no claim of native floating-point arithmetic equivalence or inherited surface completeness."
+        }
+      }
+    },
+    "empty": {
+      "baseline": {
+        "check_count": 0,
+        "diagnostics": null,
+        "science": {
+          "cells": 0,
+          "fluid_boxes_scope": "Per tetrahedron; whole-stage seconds remain a separate bound",
+          "geometry": "48cd50a8e2393401b9750727eb23a00ce420b4a471c8e1f28e864a8767a2a000",
+          "method": "SameRealSource/ConservativeValueFilterWithExactFallback/StrictPositive/ExactLongestEdgeCover",
+          "minimum_real_field_lower_m": "None",
+          "passed": true,
+          "region_queries": 0,
+          "scope": "Continuous real-source field sign for transition cells; no claim of native floating-point arithmetic equivalence or inherited surface completeness."
+        }
+      },
+      "observed": {
+        "check_count": 0,
+        "diagnostics": {
+          "cells": 0,
+          "cells_without_subdivision": null,
+          "exclusive_component_seconds": null,
+          "maximum_observed_depth": null,
+          "maximum_region_queries_per_cell": null,
+          "query_scope_counts": {
+            "full_checks": 0,
+            "nested_checks_reused": 0
+          },
+          "region_queries": 0,
+          "regional_filter_counts": {
+            "exact_query_fallbacks": 0,
+            "real_sign_arithmetic_fallbacks": 0,
+            "real_sign_exact_fallbacks": 0,
+            "real_sign_filtered": 0,
+            "real_sign_requests": 0
+          },
+          "schema": "V4TetFluidCallWorkload/1",
+          "scientific_acceptance": false,
+          "scope": "Single canonical fluid call including initial/final verification, result assembly and callbacks; excludes construction, other admission work and later scope exits.",
+          "scope_exit_verified": false,
+          "status": "completed_canonical_fluid_call",
+          "subdivisions_from_completed_cover": 0
+        },
+        "science": {
+          "cells": 0,
+          "fluid_boxes_scope": "Per tetrahedron; whole-stage seconds remain a separate bound",
+          "geometry": "48cd50a8e2393401b9750727eb23a00ce420b4a471c8e1f28e864a8767a2a000",
+          "method": "SameRealSource/ConservativeValueFilterWithExactFallback/StrictPositive/ExactLongestEdgeCover",
+          "minimum_real_field_lower_m": "None",
+          "passed": true,
+          "region_queries": 0,
+          "scope": "Continuous real-source field sign for transition cells; no claim of native floating-point arithmetic equivalence or inherited surface completeness."
+        }
+      }
+    },
+    "isolated_again": {
+      "baseline": {
+        "check_count": 1,
+        "diagnostics": null,
+        "science": {
+          "cells": 1,
+          "fluid_boxes_scope": "Per tetrahedron; whole-stage seconds remain a separate bound",
+          "geometry": "48cd50a8e2393401b9750727eb23a00ce420b4a471c8e1f28e864a8767a2a000",
+          "method": "SameRealSource/ConservativeValueFilterWithExactFallback/StrictPositive/ExactLongestEdgeCover",
+          "minimum_real_field_lower_m": "2251799813685245/2251799813685248",
+          "passed": true,
+          "region_queries": 1,
+          "scope": "Continuous real-source field sign for transition cells; no claim of native floating-point arithmetic equivalence or inherited surface completeness."
+        }
+      },
+      "observed": {
+        "check_count": 1,
+        "diagnostics": {
+          "cells": 1,
+          "cells_without_subdivision": null,
+          "exclusive_component_seconds": null,
+          "maximum_observed_depth": null,
+          "maximum_region_queries_per_cell": null,
+          "query_scope_counts": {
+            "full_checks": 0,
+            "nested_checks_reused": 3
+          },
+          "region_queries": 1,
+          "regional_filter_counts": {
+            "exact_query_fallbacks": 0,
+            "real_sign_arithmetic_fallbacks": 0,
+            "real_sign_exact_fallbacks": 0,
+            "real_sign_filtered": 1,
+            "real_sign_requests": 1
+          },
+          "schema": "V4TetFluidCallWorkload/1",
+          "scientific_acceptance": false,
+          "scope": "Single canonical fluid call including initial/final verification, result assembly and callbacks; excludes construction, other admission work and later scope exits.",
+          "scope_exit_verified": false,
+          "status": "completed_canonical_fluid_call",
+          "subdivisions_from_completed_cover": 0
+        },
+        "science": {
+          "cells": 1,
+          "fluid_boxes_scope": "Per tetrahedron; whole-stage seconds remain a separate bound",
+          "geometry": "48cd50a8e2393401b9750727eb23a00ce420b4a471c8e1f28e864a8767a2a000",
+          "method": "SameRealSource/ConservativeValueFilterWithExactFallback/StrictPositive/ExactLongestEdgeCover",
+          "minimum_real_field_lower_m": "2251799813685245/2251799813685248",
+          "passed": true,
+          "region_queries": 1,
+          "scope": "Continuous real-source field sign for transition cells; no claim of native floating-point arithmetic equivalence or inherited surface completeness."
+        }
+      }
+    },
+    "subdivide": {
+      "baseline": {
+        "check_count": 187,
+        "diagnostics": null,
+        "science": {
+          "cells": 1,
+          "fluid_boxes_scope": "Per tetrahedron; whole-stage seconds remain a separate bound",
+          "geometry": "48cd50a8e2393401b9750727eb23a00ce420b4a471c8e1f28e864a8767a2a000",
+          "method": "SameRealSource/ConservativeValueFilterWithExactFallback/StrictPositive/ExactLongestEdgeCover",
+          "minimum_real_field_lower_m": "1/18014398509481984",
+          "passed": true,
+          "region_queries": 187,
+          "scope": "Continuous real-source field sign for transition cells; no claim of native floating-point arithmetic equivalence or inherited surface completeness."
+        }
+      },
+      "observed": {
+        "check_count": 187,
+        "diagnostics": {
+          "cells": 1,
+          "cells_without_subdivision": null,
+          "exclusive_component_seconds": null,
+          "maximum_observed_depth": null,
+          "maximum_region_queries_per_cell": null,
+          "query_scope_counts": {
+            "full_checks": 0,
+            "nested_checks_reused": 759
+          },
+          "region_queries": 187,
+          "regional_filter_counts": {
+            "exact_query_fallbacks": 99,
+            "real_sign_arithmetic_fallbacks": 2,
+            "real_sign_exact_fallbacks": 99,
+            "real_sign_filtered": 88,
+            "real_sign_requests": 187
+          },
+          "schema": "V4TetFluidCallWorkload/1",
+          "scientific_acceptance": false,
+          "scope": "Single canonical fluid call including initial/final verification, result assembly and callbacks; excludes construction, other admission work and later scope exits.",
+          "scope_exit_verified": false,
+          "status": "completed_canonical_fluid_call",
+          "subdivisions_from_completed_cover": 93
+        },
+        "science": {
+          "cells": 1,
+          "fluid_boxes_scope": "Per tetrahedron; whole-stage seconds remain a separate bound",
+          "geometry": "48cd50a8e2393401b9750727eb23a00ce420b4a471c8e1f28e864a8767a2a000",
+          "method": "SameRealSource/ConservativeValueFilterWithExactFallback/StrictPositive/ExactLongestEdgeCover",
+          "minimum_real_field_lower_m": "1/18014398509481984",
+          "passed": true,
+          "region_queries": 187,
+          "scope": "Continuous real-source field sign for transition cells; no claim of native floating-point arithmetic equivalence or inherited surface completeness."
+        }
+      }
+    }
+  },
+  "checks": [
+    "fixed_current_generator_root",
+    "preparation_scopes_restored",
+    "held_prepared_connection.py",
+    "held_prepared_LIVE_REQUEST.json",
+    "held_prepared_PINNED_SOURCES.json",
+    "held_prepared_PYTHON_IDENTITY.json",
+    "held_prepared_routing_body.py",
+    "held_prepared_run.py",
+    "held_prepared_stage.py",
+    "held_prepared_STAGE_REQUEST.json",
+    "held_prepared_finite_collar_command.py",
+    "held_prepared_standalone_background.py",
+    "held_prepared_tet_layer_adapter.py",
+    "held_prepared_tet_layer_controls.py",
+    "held_prepared_tet_layer_handoff.py",
+    "pending_prepared_verified",
+    "held_derived_ACTIVATION.json",
+    "held_derived_connection.py",
+    "held_derived_LIVE_REQUEST.json",
+    "held_derived_PINNED_SOURCES.json",
+    "held_derived_PYTHON_IDENTITY.json",
+    "held_derived_routing_body.py",
+    "held_derived_run.py",
+    "held_derived_stage.py",
+    "held_derived_STAGE_REQUEST.json",
+    "held_derived_TASK.json",
+    "held_derived_finite_collar_command.py",
+    "held_derived_standalone_background.py",
+    "held_derived_tet_layer_adapter.py",
+    "held_derived_tet_layer_controls.py",
+    "held_derived_tet_layer_handoff.py",
+    "held_generated_manifest_matches_activation",
+    "generated_files_match_held_manifest_before_import",
+    "actual_generator_input_binding",
+    "actual_observer_copied_both_bundles",
+    "zero_live_null_dates",
+    "unchanged_pending42000_capacity",
+    "actual_future_path_and_argv",
+    [
+      "prepared_launch",
+      "ValueError('NumericalExecutionDisabledResearchPreparation', 'launch')"
+    ],
+    [
+      "prepared_coordinator",
+      "ValueError('NumericalExecutionDisabledResearchPreparation', 'coordinator')"
+    ],
+    [
+      "prepared_worker",
+      "ValueError('NumericalExecutionDisabledResearchPreparation', 'worker')"
+    ],
+    [
+      "derived_launch",
+      "ValueError('MissingSeparateLiveGrant', 'launch')"
+    ],
+    [
+      "derived_coordinator",
+      "ValueError('MissingSeparateLiveGrant', 'coordinator')"
+    ],
+    [
+      "derived_worker",
+      "ValueError('MissingSeparateLiveGrant', 'worker')"
+    ],
+    [
+      "simulated_wrong_producer_binding",
+      "ValueError('ChangedObserverProducerBinding')"
+    ],
+    [
+      "missing_required_closed_receipts",
+      "ValueError('ReviewedControlReceiptsRequired')"
+    ],
+    "future_positive_gate_keeps_old_and_new_review_roots",
+    "unchanged_helper_except_existing_path_binding_candidate/tet_layer_controls.py",
+    "unchanged_helper_except_existing_path_binding_candidate/tet_layer_adapter.py",
+    "unchanged_helper_except_existing_path_binding_candidate/standalone_background.py",
+    "unchanged_helper_except_existing_path_binding_candidate/finite_collar_command.py",
+    [
+      "actual_wrong_helper_hash",
+      "ValueError('ChangedPrivateStageHelper', 'finite_stage_controls')"
+    ],
+    "generated_original_canonical_aliases",
+    "original_canonical_path",
+    "actual_generated_observer_function",
+    "no_issued_transition_before",
+    [
+      "actual_produce_nonlive_parent",
+      "ValueError('LiveAcceptedTetPrismInputsRequired')"
+    ],
+    "actual_native_identity",
+    "original_science_equal_clear",
+    "original_region_callbacks_clear",
+    "distinct_descriptive_schema_clear",
+    "unobserved_fields_null_clear",
+    "actual_filter_counts_clear",
+    "successful_binary_cover_clear",
+    "integer_count_deltas_clear",
+    "original_science_equal_subdivide",
+    "original_region_callbacks_subdivide",
+    "distinct_descriptive_schema_subdivide",
+    "unobserved_fields_null_subdivide",
+    "actual_filter_counts_subdivide",
+    "successful_binary_cover_subdivide",
+    "integer_count_deltas_subdivide",
+    "original_science_equal_empty",
+    "original_region_callbacks_empty",
+    "distinct_descriptive_schema_empty",
+    "unobserved_fields_null_empty",
+    "actual_filter_counts_empty",
+    "successful_binary_cover_empty",
+    "integer_count_deltas_empty",
+    "original_science_equal_isolated_again",
+    "original_region_callbacks_isolated_again",
+    "distinct_descriptive_schema_isolated_again",
+    "unobserved_fields_null_isolated_again",
+    "actual_filter_counts_isolated_again",
+    "successful_binary_cover_isolated_again",
+    "integer_count_deltas_isolated_again",
+    "actual_filter_and_exact_tiers_reached",
+    "prior_and_repeated_call_isolation",
+    [
+      "simulated_primary_check_failure",
+      "TimeoutError('SimulatedPrimaryFluidCheckFailure')"
+    ],
+    "primary_error_preserved_through_both_scope_exits_no_after_snapshot",
+    [
+      "observer_expired_scope",
+      "ValueError('ExpiredGeneralQueryScope')"
+    ],
+    "canonical_retained_behavior_unchanged",
+    "actual_native_retirement",
+    "no_issued_transition_after",
+    "generated_files_preserved",
+    "future_live_artifacts_absent",
+    "final_input_path_scope_restoration"
+  ],
+  "derived": {
+    "activation_sha256": "920c547bed7d05e4ab7d21fabbea4608705689acdc1e4ae7dd2f5b7ee4db4793",
+    "execution_authorized": false,
+    "manifest_sha256": "3c523a04c21716f821bd9cda2859c98c5055d8450b607185f144163bffaab963",
+    "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\live_request",
+    "prepared_manifest_sha256": "82b66f806709fc1c7eb2ca039f28651971846aa2a0861019c43b042b39ef052a",
+    "selector": "cc599d9ccc65ff97fbc3ef65526863690d5fdda9a594580403ebdab9bb41dc77"
+  },
+  "generated_files": {
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\live_request\\ACTIVATION.json": "920c547bed7d05e4ab7d21fabbea4608705689acdc1e4ae7dd2f5b7ee4db4793",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\live_request\\LIVE_REQUEST.json": "5e44dd8f4ac78725978ccb8eb7fcd941d9ed94fbec38b0250b82a841efae6b56",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\live_request\\PINNED_SOURCES.json": "3c523a04c21716f821bd9cda2859c98c5055d8450b607185f144163bffaab963",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\live_request\\PYTHON_IDENTITY.json": "c8ecaa8cd37718e86bc3264a6a004d705c3b5b93e1432f218f87ce70e9c13e53",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\live_request\\STAGE_REQUEST.json": "cc599d9ccc65ff97fbc3ef65526863690d5fdda9a594580403ebdab9bb41dc77",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\live_request\\TASK.json": "4ce5e370a3af72cd73ca324870b8e846b6200eefecd66b790b1621cc2c461492",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\live_request\\candidate\\finite_collar_command.py": "02572c622ea07b009434832bb22b301cfacb6a0d2d100889f82faed086d0bb96",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\live_request\\candidate\\standalone_background.py": "cf249b36d6b1b64c9b45a8591d271c7072b2b018d5c5dcf1b954ee25adb401a2",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\live_request\\candidate\\tet_layer_adapter.py": "477aa9a1772b1b6d37edb8f0e8d4c344536decaa088513bb6104e9cfe0ce6bc3",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\live_request\\candidate\\tet_layer_controls.py": "ccf3f00380493f4053e3db4d922ef2af7f50545ef3938e3a34ee98f5b0087d87",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\live_request\\candidate\\tet_layer_handoff.py": "b3c4970da6508cd27603244f5bc98333c5a5505a4fb5b718963966ae6c0c6261",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\live_request\\connection.py": "7cf85d51f1b0a7f1d68295c8723eb3a811bbf69ca9d46f72cf353cd6a302aeee",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\live_request\\routing_body.py": "41f01e23f129a2d4cabb9cc966cc4c202ee22a25d221fbf4392c4f99dcb6c510",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\live_request\\run.py": "7e6cffeb1cd57a85b0cbf940c22e635dcb919166eaac335a9ee109a050e771a8",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\live_request\\stage.py": "14b9c8c8127a622a1e40c12fcb74ac9d3005ae87731e3f3cf3ec5f8cee126f4b"
+  },
+  "genuine_accepted_parent_producer_executed": false,
+  "live_credentials": 0,
+  "mesh_runs": 0,
+  "native_retirement": {
+    "closed": true,
+    "pid": 2404,
+    "protected_handles": 0,
+    "readers_alive": [
+      false,
+      false
+    ],
+    "returncode": 1
+  },
+  "parent_pid": 41988,
+  "passed": true,
+  "performance_claim": false,
+  "pid": 13156,
+  "positive_live_gate_executed": false,
+  "prepared": {
+    "execution_authorized": false,
+    "manifest_sha256": "82b66f806709fc1c7eb2ca039f28651971846aa2a0861019c43b042b39ef052a",
+    "request_dir": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\prepared_request",
+    "selector": "cc599d9ccc65ff97fbc3ef65526863690d5fdda9a594580403ebdab9bb41dc77"
+  },
+  "prepared_files": {
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\prepared_request\\LIVE_REQUEST.json": "963d196019540f4b1045ec7ef605a1406c1044093e42b86cd976553c7b2f0d06",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\prepared_request\\PINNED_SOURCES.json": "82b66f806709fc1c7eb2ca039f28651971846aa2a0861019c43b042b39ef052a",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\prepared_request\\PYTHON_IDENTITY.json": "c8ecaa8cd37718e86bc3264a6a004d705c3b5b93e1432f218f87ce70e9c13e53",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\prepared_request\\STAGE_REQUEST.json": "cc599d9ccc65ff97fbc3ef65526863690d5fdda9a594580403ebdab9bb41dc77",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\prepared_request\\candidate\\finite_collar_command.py": "02572c622ea07b009434832bb22b301cfacb6a0d2d100889f82faed086d0bb96",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\prepared_request\\candidate\\standalone_background.py": "cf249b36d6b1b64c9b45a8591d271c7072b2b018d5c5dcf1b954ee25adb401a2",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\prepared_request\\candidate\\tet_layer_adapter.py": "477aa9a1772b1b6d37edb8f0e8d4c344536decaa088513bb6104e9cfe0ce6bc3",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\prepared_request\\candidate\\tet_layer_controls.py": "ccf3f00380493f4053e3db4d922ef2af7f50545ef3938e3a34ee98f5b0087d87",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\prepared_request\\candidate\\tet_layer_handoff.py": "b3c4970da6508cd27603244f5bc98333c5a5505a4fb5b718963966ae6c0c6261",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\prepared_request\\connection.py": "7cf85d51f1b0a7f1d68295c8723eb3a811bbf69ca9d46f72cf353cd6a302aeee",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\prepared_request\\routing_body.py": "41f01e23f129a2d4cabb9cc966cc4c202ee22a25d221fbf4392c4f99dcb6c510",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\prepared_request\\run.py": "413d872b337bf80bf5a3e94b85f8eb4b1f9991b87974dacabfe881cd3b4bc9ba",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\prepared_request\\stage.py": "14b9c8c8127a622a1e40c12fcb74ac9d3005ae87731e3f3cf3ec5f8cee126f4b"
+  },
+  "refusals": {
+    "actual_produce_nonlive_parent": {
+      "message": "LiveAcceptedTetPrismInputsRequired",
+      "type": "ValueError"
+    },
+    "actual_wrong_helper_hash": {
+      "message": "('ChangedPrivateStageHelper', 'finite_stage_controls')",
+      "type": "ValueError"
+    },
+    "derived_coordinator": {
+      "message": "('MissingSeparateLiveGrant', 'coordinator')",
+      "type": "ValueError"
+    },
+    "derived_launch": {
+      "message": "('MissingSeparateLiveGrant', 'launch')",
+      "type": "ValueError"
+    },
+    "derived_worker": {
+      "message": "('MissingSeparateLiveGrant', 'worker')",
+      "type": "ValueError"
+    },
+    "missing_required_closed_receipts": {
+      "message": "ReviewedControlReceiptsRequired",
+      "type": "ValueError"
+    },
+    "observer_expired_scope": {
+      "message": "ExpiredGeneralQueryScope",
+      "type": "ValueError"
+    },
+    "prepared_coordinator": {
+      "message": "('NumericalExecutionDisabledResearchPreparation', 'coordinator')",
+      "type": "ValueError"
+    },
+    "prepared_launch": {
+      "message": "('NumericalExecutionDisabledResearchPreparation', 'launch')",
+      "type": "ValueError"
+    },
+    "prepared_worker": {
+      "message": "('NumericalExecutionDisabledResearchPreparation', 'worker')",
+      "type": "ValueError"
+    },
+    "simulated_primary_check_failure": {
+      "message": "SimulatedPrimaryFluidCheckFailure",
+      "type": "TimeoutError"
+    },
+    "simulated_wrong_producer_binding": {
+      "message": "ChangedObserverProducerBinding",
+      "type": "ValueError"
+    }
+  },
+  "resource_limit": "Individual native-host job membership and peak attribution not independently observed",
+  "scientific_acceptance": false,
+  "scope": "Actual generated source selection and observer on actual source; accepted-parent producer/admission/publication only source-reviewed, unexecuted.",
+  "seconds": 5.836856099776924,
+  "shared_deadline": 2158917.6956371,
+  "simulations": [
+    "Parent origin lookup only, not a credential",
+    "In-memory wrong producer binding",
+    "Injected primary check failure and snapshot counter"
+  ]
+}

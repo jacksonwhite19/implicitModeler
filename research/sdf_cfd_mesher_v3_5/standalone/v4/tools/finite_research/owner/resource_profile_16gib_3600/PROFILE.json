@@ -1,0 +1,16 @@
+{
+  "authority": "Task170 human authorized isolated generous time profile. Existing memory/storage policy unchanged. No scientific promotion.",
+  "historical_resource_owner_sha256": "eee6eb409c7531f3685d32c276c6b92db077c50a9d0fb1187032528d72349f7e",
+  "limits": {
+    "linux_memory_max_bytes": 2147483648,
+    "linux_swap_max_bytes": 0,
+    "minimum_free_bytes": 1000000000,
+    "output_limit_bytes": 4000000000,
+    "windows_job_commit_bytes": 17179869184
+  },
+  "maximum_whole_seconds": 14700,
+  "mesh_execution_requested": false,
+  "resource_owner": "resource_limits.py",
+  "resource_owner_sha256": "a636a89d73ac31d9c770cf119232fad66d4e7d4575f9e122cddfdb6e8a072fa8",
+  "schema": "ForwardResourceProfile/1"
+}

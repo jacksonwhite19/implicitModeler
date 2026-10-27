@@ -1,0 +1,9 @@
+{
+  "schema": "V4IndependentReview/1",
+  "passed": true,
+  "reviewer": "/root/launch_review",
+  "source_inventory_identity": "a541cb34ce5c783f5e1d4d3e17a20261dd9a58944444101aa5b57aa88480a485",
+  "review_receipt_sha256": "a1998b493495cb8c4d35cbd2e2751b3b5d78a945246ed872fb0a9917029170fe",
+  "scope": "Isolated source publication only. No real-row execution, Prism acceptance, full-mesh resource qualification or promotion approved.",
+  "reviewed_utc": "2026-10-24T19:26:49Z"
+}

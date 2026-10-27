@@ -1,0 +1,108 @@
+{
+  "backend_seconds": 3.1785084350267425,
+  "cleanup_closed": true,
+  "error": "ModuleNotFoundError(\"No module named 'psutil'\")",
+  "exclusive_times": {
+    "generate_seconds": 0.004953557043336332
+  },
+  "field_samples": {
+    "inner": {
+      "count": 4,
+      "maximum": 0.0010502384173069624,
+      "minimum": 0.0010502384173069624,
+      "quantiles": [
+        0.0010502384173069624,
+        0.0010502384173069624,
+        0.0010502384173069624,
+        0.0010502384173069624,
+        0.0010502384173069624
+      ]
+    },
+    "outer": {
+      "count": 4,
+      "maximum": 0.0013126026817744533,
+      "minimum": 0.0013126026817744533,
+      "quantiles": [
+        0.0013126026817744533,
+        0.0013126026817744533,
+        0.0013126026817744533,
+        0.0013126026817744533,
+        0.0013126026817744533
+      ]
+    }
+  },
+  "locks": {
+    "backend_method": {
+      "algorithm3d": 10,
+      "callback": "owned_direct_c_query",
+      "effective_sizing": "3D target = 0.95 * pinned callback target after Gmsh clamping; 2D target unchanged. Effective 3D cap and growth scale change.",
+      "generation_dimensions": [
+        3
+      ],
+      "generation_factor_hex": "0x1.e666666666666p-1",
+      "name": "HXT4DirectSizing095/1",
+      "native_builds": {
+        "direct": {
+          "binary_sha256": "5c270a7c7fcb9ee08b570b29e2df78e0a765f9bffc0d5266281ebed026c2f956",
+          "library": "runtime/source/background/direct/direct_f1862ca1b8db042dc11b5bbcf8dad557cb037e9b310e9d738848507cd8e32386.so",
+          "record": "runtime/source/background/direct/DIRECT_BUILD.json",
+          "record_sha256": "9c744bb2f8f3e73ce1d9e3561af6785df5a14936b537675e29972eb565ecd124"
+        },
+        "query": {
+          "binary_sha256": "5153928e8a1e6b64e40fec0a99c4ba7f6526327f7dff0fbaae658d492f1907c1",
+          "library": "runtime/source/background/direct/query_6f7676a1dd54fe1569a63f8e5602c5417037a525dd9185c8568d61df14a72e11.so",
+          "record": "runtime/source/background/direct/QUERY_BUILD.json",
+          "record_sha256": "f384820803a199a6418d10d394ff75c03887f8947ae5e1b947610b6e14e81953"
+        }
+      },
+      "schema": "V4BackgroundBackendMethod/1",
+      "source_pins": {
+        "tools/background_backend_method.py": "3e1f3ac193cba304753e35223e02b11c7913fb14d7c2f5a1e383f26bda153131",
+        "tools/background_completion_controls.py": "cc2e2d560d71cdd9d9193bf6e55ec05fbb67f307ba195b7cba8e39ecf3a746da",
+        "tools/background_direct_callback.py": "8bc7dfc6edfc0d585a8b4a49f96d3c969add4933c5face6e97757044fed24eda",
+        "tools/background_interface_completion.py": "8319d2667e2b72ea06af7d3aa76e0112592c37418b0cb7ec6f67f9653a1da7cb",
+        "tools/background_native_query.py": "296410506947364bd90d276630162f7c6ffb84bd1dc7efea288f3836ad4ec6a4",
+        "tools/background_query_build.py": "0e1c01d71a9c28e75b3711cb78a43f559531ad81f10abe0dc91546e5d53fe5ae",
+        "tools/background_sizing.py": "62b33d9f18f12067ae22ef0b6ab91b1e8547e020eeb452962a0ba5a64af36b19",
+        "tools/core_backend.py": "d462172cb99a4904747a549811b876b8f07d1cb9eefd6db67860ad7b96136474",
+        "tools/generic_core_sizing.py": "eb10b993743aa454fff054f1c78e283764a670d80a2490cd7f57807f2bbcc861",
+        "tools/gmsh_core_setup.py": "e23d1df38dd82117f8e0a2425d1ebf656e90c40f5772b05a94a534108ebb6749",
+        "tools/optimized_core_sizing.py": "fef78249784a0608d62e03562324cf053abf94e4af0a19a2e46f0861f3affa4b"
+      },
+      "threads3d": 4
+    },
+    "files": {
+      "backend": "d462172cb99a4904747a549811b876b8f07d1cb9eefd6db67860ad7b96136474",
+      "capsule_helpers": "aef12c865aaf13317b44dbcfa43cdc3359fb39d7de48a1295245bc56fdf859bb",
+      "core_field": "eb10b993743aa454fff054f1c78e283764a670d80a2490cd7f57807f2bbcc861",
+      "gmsh_library": "9db3090d3b720c57b76bcbfa01d13854823ae2698c91343c20bdd4c2b81f6317",
+      "gmsh_python": "f4b0935cebde899750293d87a643090e5ea33c9b18d249267f507db68a0e01c3",
+      "optimized_field": "fef78249784a0608d62e03562324cf053abf94e4af0a19a2e46f0861f3affa4b",
+      "setup": "e23d1df38dd82117f8e0a2425d1ebf656e90c40f5772b05a94a534108ebb6749"
+    },
+    "sizing": {
+      "binary_sha256": "f7f56cd3c3649e31735cd970e7c78cfb862e21ef33fad26bbd6a94bfa86590f8",
+      "build_sha256": "a06d98dd2f0c4243ae637e87d9193e1882394cef6abe5f8c0b24fceb66680669",
+      "implementation": "ExistingNumPy1264SSE2LeafCompiled/1",
+      "machine": "x86_64",
+      "numpy": "1.26.4",
+      "numpy_arithmetic_sha256": "fe5efe31c55326b072c8fb239a225819211826cb45cd3c74ed0af0030e70f3a1",
+      "owner_sha256": "fef78249784a0608d62e03562324cf053abf94e4af0a19a2e46f0861f3affa4b",
+      "source_sha256": "d75dbcb8b56e933e52c6b0a0ce941112c29361f13557fda3b9320dcd669fbbd6",
+      "wrapper_sha256": "62b33d9f18f12067ae22ef0b6ab91b1e8547e020eeb452962a0ba5a64af36b19"
+    },
+    "version": "4.15.2"
+  },
+  "passed": false,
+  "schema": "PrivateFiniteCollarBackend/1",
+  "sizing_options": {
+    "Mesh.MeshSizeExtendFromBoundary": 0,
+    "Mesh.MeshSizeFactor": 1,
+    "Mesh.MeshSizeFromCurvature": 0,
+    "Mesh.MeshSizeFromPoints": 0,
+    "Mesh.MeshSizeMax": 0.0038,
+    "Mesh.MeshSizeMin": 0
+  },
+  "stage": "generation",
+  "traceback": "Traceback (most recent call last):\n  File \"/mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v4/results/small_complete_transition_20261016/retirement/gmsh_collar_impl02/backend.py\", line 108, in run\n    tick=time.perf_counter();raw=stage_audit(p,t,x,tri,outer,folder,'RAW');times['raw_boundary_seconds']=time.perf_counter()-tick\n  File \"/mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v4/results/small_complete_transition_20261016/retirement/gmsh_collar_impl02/backend.py\", line 60, in stage_audit\n    a,inner,far=compare_boundary(p,t,x,tri,outer,tri)\n  File \"/mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v4/tools/standalone_background.py\", line 314, in compare_boundary\n    from incremental_layer_validation import t\n  File \"/mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v4/tools/incremental_layer_validation.py\", line 9, in <module>\n    import local_termination_topology as t\n  File \"/mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v4/tools/local_termination_topology.py\", line 4, in <module>\n    import residual_layer5_study as r\n  File \"/mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v4/tools/residual_layer5_study.py\", line 4, in <module>\n    import compressed_layer_recovery as r\n  File \"/mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v4/tools/compressed_layer_recovery.py\", line 4, in <module>\n    import general_local_correction as g\n  File \"/mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v4/tools/general_local_correction.py\", line 9, in <module>\n    import coupled_tangent_study as c\n  File \"/mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v4/tools/coupled_tangent_study.py\", line 6, in <module>\n    import qualify_branch_aware_capacity as d\n  File \"/mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v4/tools/qualify_branch_aware_capacity.py\", line 6, in <module>\n    import qualify_general_sdf_witness as w\n  File \"/mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v4/tools/qualify_general_sdf_witness.py\", line 7, in <module>\n    import qualify_capacity_valid_prefix as q\n  File \"/mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v4/tools/qualify_capacity_valid_prefix.py\", line 2, in <module>\n    from qualify_complete_capacity_fixtures import *\n  File \"/mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v4/tools/qualify_complete_capacity_fixtures.py\", line 7, in <module>\n    import psutil\nModuleNotFoundError: No module named 'psutil'\n"
+}

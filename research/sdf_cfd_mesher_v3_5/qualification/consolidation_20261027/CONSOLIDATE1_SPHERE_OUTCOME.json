@@ -1,0 +1,1141 @@
+{
+  "schema": "V35ConsolidationClosedComparison/1",
+  "label": "sphere",
+  "classification": "PASS_SAME_BUILD_UNCHANGED_REGRESSION",
+  "run": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\consolidate1_sphere_01",
+  "baseline": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\sphere_live4_01",
+  "checks": {
+    "source_identity_equal_passage": true,
+    "source_inventory_equal": true,
+    "source_current_mismatches": [],
+    "clean_closure": true,
+    "case_equals_preflight": true,
+    "no_resource_stop": true,
+    "passed_complete": true,
+    "mode": {
+      "schema": "V35SurfaceConstructionSelection/1",
+      "requested": "adaptive",
+      "effective": "adaptive",
+      "origin": "explicit_cli",
+      "assurance": "numerical",
+      "profile": "fastprod",
+      "final_acceptance": "unchanged"
+    },
+    "cold_pass": true,
+    "critical_pins": {
+      "mesh": true,
+      "readback": true,
+      "manifest": true
+    },
+    "proof_receipt_pins": {
+      "boundary_collision": true,
+      "collision": true,
+      "domain": true,
+      "enclosure": true,
+      "filling": true,
+      "incidence": true,
+      "interface_qa": true,
+      "joined_qa": true,
+      "physical_qa": true,
+      "preservation": true,
+      "surfaces": true,
+      "winding": true
+    },
+    "baseline_arrays_equal": true
+  },
+  "comparison": {
+    "complete_arrays": {
+      "points": {
+        "byte_equal": true,
+        "fresh_shape": [
+          14798,
+          3
+        ],
+        "baseline_shape": [
+          14798,
+          3
+        ]
+      },
+      "prisms": {
+        "byte_equal": true,
+        "fresh_shape": [
+          12780,
+          6
+        ],
+        "baseline_shape": [
+          12780,
+          6
+        ]
+      },
+      "tetrahedra": {
+        "byte_equal": true,
+        "fresh_shape": [
+          40448,
+          4
+        ],
+        "baseline_shape": [
+          40448,
+          4
+        ]
+      },
+      "wall": {
+        "byte_equal": true,
+        "fresh_shape": [
+          2556,
+          3
+        ],
+        "baseline_shape": [
+          2556,
+          3
+        ]
+      },
+      "farfield": {
+        "byte_equal": true,
+        "fresh_shape": [
+          3672,
+          3
+        ],
+        "baseline_shape": [
+          3672,
+          3
+        ]
+      }
+    },
+    "counts_equal": true,
+    "quality_minima_equal": {
+      "all_bulk_tetrahedra": true,
+      "interface_tetrahedra": true,
+      "preserved_cap_triangles": true
+    },
+    "previous_worker_seconds": 494.0247957999818,
+    "fresh_worker_seconds": 495.1104752002284,
+    "timing_role": "Observed separate runs; not an isolated speedup claim",
+    "previous_compressed_vertices": 0,
+    "fresh_compressed_vertices": 0
+  },
+  "metrics": {
+    "points": 14798,
+    "prisms": 12780,
+    "tetrahedra": 40448,
+    "cells": 53228,
+    "shape": {
+      "all_bulk_tetrahedra": {
+        "count": 40448,
+        "minimum": 0.4836897980570004,
+        "required_minimum": 0.25,
+        "mandatory_passed": true,
+        "percentage_status": "TARGETS_MET",
+        "population_targets": [
+          {
+            "actual_count": 40448,
+            "actual_fraction": 1.0,
+            "fraction": 0.99,
+            "minimum": 0.4,
+            "passed": true,
+            "required_count": 40044
+          },
+          {
+            "actual_count": 40428,
+            "actual_fraction": 0.9995055379746836,
+            "fraction": 0.9,
+            "minimum": 0.6,
+            "passed": true,
+            "required_count": 36404
+          }
+        ]
+      },
+      "interface_tetrahedra": {
+        "count": 2556,
+        "minimum": 0.6060645893270594,
+        "required_minimum": 0.25,
+        "mandatory_passed": true,
+        "percentage_status": "TARGETS_MET",
+        "population_targets": [
+          {
+            "actual_count": 2556,
+            "actual_fraction": 1.0,
+            "fraction": 0.99,
+            "minimum": 0.4,
+            "passed": true,
+            "required_count": 2531
+          },
+          {
+            "actual_count": 2556,
+            "actual_fraction": 1.0,
+            "fraction": 0.9,
+            "minimum": 0.6,
+            "passed": true,
+            "required_count": 2301
+          }
+        ]
+      },
+      "preserved_cap_triangles": {
+        "count": 2556,
+        "minimum": 0.7505408777371186,
+        "required_minimum": 0.3,
+        "mandatory_passed": true,
+        "percentage_status": "TARGETS_MET",
+        "population_targets": [
+          {
+            "actual_count": 2556,
+            "actual_fraction": 1.0,
+            "fraction": 0.99,
+            "minimum": 0.6,
+            "passed": true,
+            "required_count": 2531
+          },
+          {
+            "actual_count": 2553,
+            "actual_fraction": 0.9988262910798122,
+            "fraction": 0.9,
+            "minimum": 0.8,
+            "passed": true,
+            "required_count": 2301
+          }
+        ]
+      }
+    },
+    "interface_qa": {
+      "faces": 2556,
+      "failure_count": 0,
+      "failures": [],
+      "geometry_identity": "d375a197d576c4e5e38f5c2f56a5121a1b492713420e1fa5f26695b816069a26",
+      "maximum_nonorthogonality": 31.854487014112486,
+      "maximum_skewness": 0.3444295061222739,
+      "minimum_symmetric_volume_ratio": 0.49724188471963804,
+      "minimum_weight": 0.3322823641615688,
+      "nonorthogonality_role": "descriptive_only",
+      "passed": true,
+      "scientific_acceptance": false,
+      "wall_contract": "StoredFluidBoundaryWall/1"
+    },
+    "conditioning": {
+      "cavity_invoked": false,
+      "conditioned_points": "189fb1d8c7634e2e3430e664f58fc6d03dbbc806ed0a92c56ddcad152aae1f41",
+      "files": {
+        "CONDITIONED.npz": "a2d67c731d3e1abae570dc181db72fc892fef48d333113874c3333879037d816",
+        "INPUT.npz": "a2d67c731d3e1abae570dc181db72fc892fef48d333113874c3333879037d816"
+      },
+      "final_bad_cells": [],
+      "final_core_cells": 40448,
+      "final_minimum": 0.4836897980570004,
+      "initial_bad_cells": [],
+      "initial_core_cells": 40448,
+      "initial_minimum": 0.4836897980570004,
+      "input_sha256": "a2d67c731d3e1abae570dc181db72fc892fef48d333113874c3333879037d816",
+      "live_parent": true,
+      "method": {
+        "cavity_policy": {
+          "max_boundary_faces": 512,
+          "max_cavity_cells": 256,
+          "max_commits": 2,
+          "max_native_calls": 12,
+          "max_new_points": 128,
+          "max_new_tets": 4096,
+          "max_seeds": 2,
+          "max_snapshots": 24,
+          "native_seconds": 360,
+          "point_rules": [
+            "existing",
+            "seed",
+            "spread"
+          ],
+          "rings": [
+            1,
+            2,
+            3,
+            4
+          ],
+          "seconds": 7200.0
+        },
+        "commit": "Whole private passing transactions only; exact fixed interfaces and unchanged quality floors",
+        "order": "Current deficient cells -> bounded existing-vertex family -> bounded constrained cavities",
+        "schema": "V35BackgroundConditioning/1",
+        "vertex_policy": {
+          "max_candidates": 512,
+          "max_cavity_cells": 40,
+          "max_commits": 8,
+          "max_edge_cells": 8,
+          "seconds": 1800.0
+        }
+      },
+      "native_calls": 0,
+      "original_points": "189fb1d8c7634e2e3430e664f58fc6d03dbbc806ed0a92c56ddcad152aae1f41",
+      "outcome": "AlreadyAboveFloor",
+      "output_sha256": "a2d67c731d3e1abae570dc181db72fc892fef48d333113874c3333879037d816",
+      "parent": {
+        "actual_positions_sha256": "f3a0e0197f9e71cea1d62821ccc5b993218540635bed8a1eb6c70f1502e66f48",
+        "case_sha256": "dcd39e8aca6e46806b266da7ab328dcd705dc88476df589654d2fbd5b827780f",
+        "interface_identity": "59c77dd000ad2945365c9f810b7f52dc55af16ca314c82d555240e5c63cf0040",
+        "native_identity": "e1396bcec33bad0d52d564050767f92e3647f27965dfccbf4c9d5514d986522c",
+        "parent_prism_mesh": "aaa7f65638a541d55b33dd4b4bca416a107f1d08e9424cb07efde7819a832665",
+        "policy_identity": "11c1b1a36125a20707239a581bdaffca6a7b87bf694b2d1c22cf2d5eaba64260",
+        "schema": "V35V4DirectParent/1",
+        "source_identity": "03621d1c7199b1004d998a2b3958d2243167b57dbf306f08f14864008154517d"
+      },
+      "passed": true,
+      "policy_identity": "11c1b1a36125a20707239a581bdaffca6a7b87bf694b2d1c22cf2d5eaba64260",
+      "seconds": 6.625,
+      "steps": [],
+      "timings": {
+        "initial_population": 3.280999999959022
+      },
+      "vertex_invoked": false
+    },
+    "repair": {
+      "acceptance_contract": {
+        "contract_identity": "0ca4092aff4f177c7742bfe1d0a5d1575b7a353298992c8b3245c433d1a2aa4a",
+        "policy_identity": "11c1b1a36125a20707239a581bdaffca6a7b87bf694b2d1c22cf2d5eaba64260",
+        "version": "DirectFillEngineering/1"
+      },
+      "baseline_quality": {
+        "compact_output": true,
+        "failures": [],
+        "passed": true,
+        "summary": {
+          "affected_cells": 53228,
+          "affected_faces": 109732,
+          "exact_nonpositive_cells": 0,
+          "maximum_aspect": 4.501354177760646,
+          "maximum_skewness": 0.519723492896431,
+          "minimum_determinant": 0.06714918495037536,
+          "minimum_symmetric_volume_ratio": 0.2438306559518604,
+          "minimum_weight": 0.19603203602122296
+        }
+      },
+      "changed_count": 0,
+      "changed_vertices": [],
+      "classification": "UNQUALIFIED",
+      "classification_scope": "Changed rows source-float AND exact binary-coordinate classifications; untouched rows source-float only. No global exact-Q population claim.",
+      "conditioning_receipt_sha256": "cfcae7fe432cdf2b5a3dbccd12f4b4dad106e8cae6403851f74172bc2b0ac6f3",
+      "connectivity_changed": false,
+      "coordinates_sha256": "189fb1d8c7634e2e3430e664f58fc6d03dbbc806ed0a92c56ddcad152aae1f41",
+      "method": {
+        "acceptance": "Strict fresh batch AND scalar source QA, exact signs/star volume, immutable boundary/prefix, mandatory cumulative mean-ratio minimum and local weight improvement; percentage counts are diagnostics. No solver-status authority.",
+        "ftol": 1e-12,
+        "maximum_construction_seconds": 3600,
+        "maximum_search_evaluations_per_vertex": 8192,
+        "maximum_search_seconds_per_vertex": 30,
+        "maximum_vertices": 32,
+        "maxiter": 120,
+        "movement": "Euclidean ball radius half the shortest incident apex-edge length; fixed before solve; strict stored-coordinate displacement norm",
+        "order": "Unique eligible apices sorted by vertex index derived from actual failed interface faces; one pass, refresh complete star/halo before each solve",
+        "schema": "GenericInteriorSharedApexRepair/231",
+        "search_reserve": 9.5367431640625e-07,
+        "solver": "SLSQP; stage1 minimum normalized displacement; stage2 interface .6 deficit plus1e-4 displacement penalty",
+        "solver_stages": 2
+      },
+      "mixed_bulk_counts": [
+        40448,
+        40448,
+        40428
+      ],
+      "mixed_interface_counts": [
+        2556,
+        2556,
+        2556
+      ],
+      "original_coordinates_sha256": "189fb1d8c7634e2e3430e664f58fc6d03dbbc806ed0a92c56ddcad152aae1f41",
+      "parent_native_sha256": "73b1475c47f49c859950efe843b7acd874adf49ca41b6579867a743b9f8bfde2",
+      "protected_coordinate_bits_unchanged": true,
+      "records": [],
+      "repair_invocations": 1,
+      "scientific_acceptance": false,
+      "selected_vertices": [],
+      "selection_refusals": [],
+      "source_float_bulk": {
+        "count": 40448,
+        "diagnostic_quantile_values": [
+          0.4836897980570004,
+          0.6865024574609809,
+          0.7822398226711837,
+          0.8864201246500827,
+          0.9560345101489099,
+          0.9998216177215031
+        ],
+        "minimum": 0.4836897980570004,
+        "minimum_passed": true,
+        "passed": true,
+        "population_targets": [
+          {
+            "actual_count": 40448,
+            "actual_fraction": 1.0,
+            "fraction": 0.99,
+            "minimum": 0.4,
+            "passed": true,
+            "required_count": 40044
+          },
+          {
+            "actual_count": 40428,
+            "actual_fraction": 0.9995055379746836,
+            "fraction": 0.9,
+            "minimum": 0.6,
+            "passed": true,
+            "required_count": 36404
+          }
+        ],
+        "quantiles": [
+          0,
+          0.01,
+          0.1,
+          0.5,
+          0.9,
+          1
+        ],
+        "required_minimum": 0.25
+      },
+      "source_float_interface": {
+        "count": 2556,
+        "diagnostic_quantile_values": [
+          0.6060645893270594,
+          0.6604351867795322,
+          0.7315064593095066,
+          0.8319872714573235,
+          0.9381058014505785,
+          0.9958765149298171
+        ],
+        "minimum": 0.6060645893270594,
+        "minimum_passed": true,
+        "passed": true,
+        "population_targets": [
+          {
+            "actual_count": 2556,
+            "actual_fraction": 1.0,
+            "fraction": 0.99,
+            "minimum": 0.4,
+            "passed": true,
+            "required_count": 2531
+          },
+          {
+            "actual_count": 2556,
+            "actual_fraction": 1.0,
+            "fraction": 0.9,
+            "minimum": 0.6,
+            "passed": true,
+            "required_count": 2301
+          }
+        ],
+        "quantiles": [
+          0,
+          0.01,
+          0.1,
+          0.5,
+          0.9,
+          1
+        ],
+        "required_minimum": 0.25
+      },
+      "source_queries": 0,
+      "task": 231,
+      "union_affected_tets": 0
+    },
+    "checkmesh": {
+      "failed_lines": [],
+      "literal_mesh_ok": true,
+      "mesh_quality": "NOT_RUN_NO_APPLICABLE_APPROVED_DICTIONARY",
+      "passed": true,
+      "returncode": 0,
+      "warnings": []
+    },
+    "root_stage_seconds": {
+      "surface": 39.68091160012409,
+      "first_front": 11.183353600092232,
+      "v3_complete_plan": 7.96937739988789,
+      "v4_prospective_shell_checks": 23.746979999821633,
+      "v3_native_construction": 4.178743099793792,
+      "v4_shell_admission": 4.160428300034255,
+      "v4_direct_fill": 402.78669760003686
+    },
+    "direct_stage_seconds": {
+      "bulk": 101.87410310003906,
+      "bulk_conditioning": 7.316666099708527,
+      "cap_compatibility": 0.5355695001780987,
+      "export": 16.49820900009945,
+      "farfield": 86.62980430014431,
+      "independent_readback": 86.21730089979246,
+      "joined_proofs": 89.23001360008493,
+      "parent": 11.211715099867433,
+      "repair": 3.201387600041926
+    },
+    "joined_stage_seconds": {
+      "boundary_collision": 0.6431208001449704,
+      "collision": 48.92343769967556,
+      "domain": 0.03447100007906556,
+      "enclosure": 0.5865036998875439,
+      "filling": 20.730917300097644,
+      "incidence": 1.9956435998901725,
+      "interface_qa": 0.784753100015223,
+      "joined_qa": 1.8772215000353754,
+      "physical_qa": 0.88331100018695,
+      "preservation": 8.996576070785522e-07,
+      "surfaces": 0.13075749995186925,
+      "winding": 0.7853065999224782
+    },
+    "cold_readback": {
+      "CFD_qualified": false,
+      "actual_shape_populations_recomputed": true,
+      "all_twelve_semantically_replayed": true,
+      "conditioning_replayed": true,
+      "geometry_identity": "d375a197d576c4e5e38f5c2f56a5121a1b492713420e1fa5f26695b816069a26",
+      "manifest_sha256": "4e32b2d7cc2a56df9dcadddd9e3f2c1194e0bae40edd7e62694c915672b63873",
+      "passed": true,
+      "points": 14798,
+      "prisms": 12780,
+      "proofs": 12,
+      "repair_replayed": true,
+      "schema": "V35DirectIndependentReadback/1",
+      "tetrahedra": 40448
+    }
+  },
+  "supervisor": {
+    "command": [
+      "C:\\Users\\Jackson\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+      "-B",
+      "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3_5\\standalone\\mesh.py",
+      "--case",
+      "fixtures/v4_case_template.json",
+      "--geometry",
+      "fixtures/sphere.rhai",
+      "--metres-per-model-unit",
+      "0.001",
+      "--prism-first-height",
+      "0.00002",
+      "--prism-growth",
+      "1.3",
+      "--prism-layers",
+      "5",
+      "--surface-size",
+      "0.0002",
+      "--surface-policy",
+      "size-led",
+      "--surface-carrier",
+      "adaptive",
+      "--background",
+      "fixtures/background_direct_v4.json",
+      "--output",
+      "results/consolidate1_sphere_01",
+      "--stop-after",
+      "complete",
+      "--timeout-seconds",
+      "43200",
+      "--memory-limit-gib",
+      "16",
+      "--output-limit-bytes",
+      "16000000000",
+      "--worker"
+    ],
+    "exit_code": 0,
+    "stop_reason": null,
+    "monitor_error": null,
+    "source_identity": "5e38fe034bb6f90fd23f5fee854293960e3ead35c289450ebe8d4f5a935f6666",
+    "source_custody_passed": true,
+    "seconds": 497.174707100261,
+    "peak_sampled_windows_tree_rss_bytes": 954343424,
+    "last_sampled_output_bytes": 312655190,
+    "output_limit_bytes": 16000000000,
+    "timeout_seconds": 43200.0,
+    "memory_limit_gib": 16.0,
+    "linux_memory": "RLIMIT_AS per Linux process, inherited by children; not aggregate RSS"
+  },
+  "source_custody": {
+    "identity": "5e38fe034bb6f90fd23f5fee854293960e3ead35c289450ebe8d4f5a935f6666",
+    "files": 1866,
+    "state": "closed",
+    "passed": true
+  },
+  "result": {
+    "passed": true,
+    "completed_stage": "complete",
+    "full_mesh_complete": true,
+    "requested": {
+      "first_height_m": 2e-05,
+      "growth": 1.3,
+      "layers": 5,
+      "nominal_increments_m": [
+        2e-05,
+        2.6000000000000002e-05,
+        3.380000000000001e-05,
+        4.394e-05,
+        5.712200000000001e-05
+      ],
+      "nominal_total_m": 0.000180862
+    },
+    "achieved": {
+      "layers": 5,
+      "scalar_total_min_m": 0.000180862,
+      "scalar_total_max_m": 0.000180862,
+      "compressed_vertices": 0,
+      "row2_increased_vertices": 0,
+      "path_totals_m": {
+        "count": 1280,
+        "values": "Retained in original run receipt"
+      },
+      "per_layer_min_m": [
+        2e-05,
+        2.6000000000000002e-05,
+        3.380000000000001e-05,
+        4.394e-05,
+        5.712200000000001e-05
+      ],
+      "per_layer_max_m": [
+        2e-05,
+        2.6000000000000002e-05,
+        3.380000000000001e-05,
+        4.394e-05,
+        5.712200000000001e-05
+      ],
+      "changed_from_numerical_plan_vertices": 0
+    },
+    "native": {
+      "passed": true,
+      "first": {
+        "command": [
+          "wsl",
+          "-d",
+          "Ubuntu-22.04",
+          "--",
+          "bash",
+          "-lc",
+          "source /opt/openfoam13/etc/bashrc >/dev/null 2>&1; exec setsid --wait bash /mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v3_5/standalone/results/consolidate1_sphere_01/native/contractDirect.launch.sh"
+        ],
+        "seconds": 1.9454053998924792,
+        "exit_code": 0,
+        "linux_address_space_limit_bytes": 17179869184
+      },
+      "later": {
+        "command": [
+          "wsl",
+          "-d",
+          "Ubuntu-22.04",
+          "--",
+          "bash",
+          "-lc",
+          "source /opt/openfoam13/etc/bashrc >/dev/null 2>&1; exec setsid --wait bash /mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v3_5/standalone/results/consolidate1_sphere_01/native/contractStaged.launch.sh"
+        ],
+        "seconds": 1.6979673001915216,
+        "exit_code": 0,
+        "linux_address_space_limit_bytes": 17179869184
+      },
+      "physical_prisms": 12780,
+      "carrier_fluid_cells": 0,
+      "points": 7680,
+      "max_coordinate_error_m": 0.0,
+      "minimum_native_volume_m3": 4.886194352576761e-14,
+      "scope": "Native identity/construction only; not V4 shell admission"
+    },
+    "background": {
+      "schema": "V35V4DirectComplete/1",
+      "passed": true,
+      "full_mesh_complete": true,
+      "provisional": false,
+      "parent": {
+        "schema": "V35V4DirectParent/1",
+        "case_sha256": "dcd39e8aca6e46806b266da7ab328dcd705dc88476df589654d2fbd5b827780f",
+        "parent_prism_mesh": "aaa7f65638a541d55b33dd4b4bca416a107f1d08e9424cb07efde7819a832665",
+        "native_identity": "e1396bcec33bad0d52d564050767f92e3647f27965dfccbf4c9d5514d986522c",
+        "actual_positions_sha256": "f3a0e0197f9e71cea1d62821ccc5b993218540635bed8a1eb6c70f1502e66f48",
+        "source_identity": "03621d1c7199b1004d998a2b3958d2243167b57dbf306f08f14864008154517d",
+        "policy_identity": "11c1b1a36125a20707239a581bdaffca6a7b87bf694b2d1c22cf2d5eaba64260",
+        "interface_identity": "59c77dd000ad2945365c9f810b7f52dc55af16ca314c82d555240e5c63cf0040"
+      },
+      "acceptance_contract": {
+        "version": "DirectFillEngineering/1",
+        "contract_identity": "0ca4092aff4f177c7742bfe1d0a5d1575b7a353298992c8b3245c433d1a2aa4a",
+        "policy_identity": "11c1b1a36125a20707239a581bdaffca6a7b87bf694b2d1c22cf2d5eaba64260"
+      },
+      "geometry_identity": "d375a197d576c4e5e38f5c2f56a5121a1b492713420e1fa5f26695b816069a26",
+      "proof": {
+        "schema": "Task135WholeRetainedJoinedGeometry/1",
+        "geometry_identity": "d375a197d576c4e5e38f5c2f56a5121a1b492713420e1fa5f26695b816069a26",
+        "whole_joined_geometry_passed": true,
+        "scientific_acceptance": false,
+        "extent_reached": false,
+        "original_sdf_fluid_proof": "NOT_PERFORMED",
+        "field_attainment": "NOT_MEASURED",
+        "generation_invocations": 1,
+        "construction_invocations": 1,
+        "live_parent": true,
+        "lease_issued": false,
+        "publication": "NOT_RUN",
+        "cells": 53228,
+        "points": 14798,
+        "bulk_cells": 40448,
+        "receipt_readbacks": 12,
+        "all_faces_checked": 115960,
+        "collision_scope": "ALL_FACES_INCLUDING_ALL_OLD_OLD_RELATIONS",
+        "post_audit_geometry_custody": true,
+        "proof_receipts": {
+          "preservation": {
+            "identity": "52340d0b1dc5ec8e276dc4a212a433312554dd0ec83b253a18743c51c3999abd",
+            "sha256": "9468a70ac7f4c27cb65e265a700b9d4118eeeff1bf00426d7929116fff747b80"
+          },
+          "domain": {
+            "identity": "b7d74089afd570b9d866387a0eaf23086ac6cb93aeff6f927e513743d4061693",
+            "sha256": "45980ab2fe76c2e6e76d3e6f56ef8148b9ce689db8135f919ab11a1702c95670"
+          },
+          "incidence": {
+            "identity": "e1c084ba36da7c050a0fca7b942242f13416d0bbd75ac4af19a26caef5be3a61",
+            "sha256": "e58db332cd818baabe6b7ffe33e595e60678f45be933b86ebffa9bbcdb05eab8"
+          },
+          "winding": {
+            "identity": "f9d4c711f50e2abbe6aed33ccbe4c943eed9a2abd6ae1e654fa912ad5ade70a1",
+            "sha256": "44fb2f5378622800a940dd9f88d617515af31029a326c6d83912d910ee8c09fc"
+          },
+          "interface_qa": {
+            "identity": "bb07d1a9a2de9ae7ebfae3ff1e243b44589869b46f7695a681548e8105824512",
+            "sha256": "349abfe423066fc7d9f02a0dfc7611812bea2ecf34124520da4055f57a1c0d47"
+          },
+          "joined_qa": {
+            "identity": "9ec9d20e21f1e39e08eab472cfe172860a73a5fd28186a6dc0b93c2f0217dfa0",
+            "sha256": "a3d3e84163c16b9ddc0c884ce50aca7126e5259f13fe470e4ffcd8aab4bf84bb"
+          },
+          "physical_qa": {
+            "identity": "8e0f9199c153288cd140f7443ba43805373e02c2ad657370ac2ef8a953c8ce69",
+            "sha256": "dca04eab105579c4c50ba2202104900bf6d4ed615cdaaf3973a77727d7738b96"
+          },
+          "surfaces": {
+            "identity": "d94b258a941d1168f72c3c6eef9bef9d43422ad63d3b156325dae25684171c3f",
+            "sha256": "8581c09582b01eb22f283f6cf29781b950b4086b491934555362e6adc67aea71"
+          },
+          "boundary_collision": {
+            "identity": "e2ef5e558a478150ee507ad7ee625a70b203169d8cccbc6be15be8feca180f2c",
+            "sha256": "06e6485901c8474f93bd4ac86957d6cf97c208606e40f0b8126e2014c58cf5cf"
+          },
+          "enclosure": {
+            "identity": "2bc06df466311bf0ac0d7c770793f48c1d71d30e4fe9d3a249e2cc9ddd5aadd3",
+            "sha256": "66af1fe2df6b5e1c48ab37492af2253811b7ed8a7cf323eb520bb7d21b3475f3"
+          },
+          "collision": {
+            "identity": "666c7c74d1895e122e919835c29cfa395b0d7c81aeedadbfdfc7f1f906d02bc4",
+            "sha256": "e6dcc0d469e6c736c3c8220c59d8e06adf026cfc664dc0746e6220932293d0bb"
+          },
+          "filling": {
+            "identity": "9474234effe45f762e2ea69b02e68a16ee30217d957adee614f0b82c73e0366d",
+            "sha256": "c966e49b02a53490013774dc1b4b0daab118eda1815af437642e22630ae4206c"
+          }
+        },
+        "stage_seconds": {
+          "preservation": 8.996576070785522e-07,
+          "domain": 0.03447100007906556,
+          "incidence": 1.9956435998901725,
+          "winding": 0.7853065999224782,
+          "interface_qa": 0.784753100015223,
+          "joined_qa": 1.8772215000353754,
+          "physical_qa": 0.88331100018695,
+          "surfaces": 0.13075749995186925,
+          "boundary_collision": 0.6431208001449704,
+          "enclosure": 0.5865036998875439,
+          "collision": 48.92343769967556,
+          "filling": 20.730917300097644
+        },
+        "seconds": 88.36392879998311,
+        "not_run": []
+      },
+      "points": 14798,
+      "prism_cells": 12780,
+      "core_cells": 40448,
+      "conditioning": {
+        "method_identity": "f304264e3e13202b0e0c1e0fc4ab629316896968d22bc97fe5af87900d864b30",
+        "receipt_sha256": "cfcae7fe432cdf2b5a3dbccd12f4b4dad106e8cae6403851f74172bc2b0ac6f3",
+        "input_sha256": "a2d67c731d3e1abae570dc181db72fc892fef48d333113874c3333879037d816",
+        "output_sha256": "a2d67c731d3e1abae570dc181db72fc892fef48d333113874c3333879037d816",
+        "outcome": "AlreadyAboveFloor",
+        "initial_bad_count": 0,
+        "final_bad_count": 0,
+        "original_coordinate_identity": "189fb1d8c7634e2e3430e664f58fc6d03dbbc806ed0a92c56ddcad152aae1f41",
+        "coordinate_identity": "189fb1d8c7634e2e3430e664f58fc6d03dbbc806ed0a92c56ddcad152aae1f41",
+        "existing_vertex_commits": 0,
+        "cavity_commits": 0,
+        "native_calls": 0,
+        "timings": {
+          "initial_population": 3.280999999959022
+        }
+      },
+      "repair": {
+        "method_identity": "ed9a12ebb9c793a408bc4507f21669df8e050d7a13e8ff6c73b5fdb7340d8928",
+        "receipt_sha256": "2332559de317b5504283c271cd058550318012294f7b016f49fdafa401035e9d",
+        "original_coordinate_identity": "189fb1d8c7634e2e3430e664f58fc6d03dbbc806ed0a92c56ddcad152aae1f41",
+        "coordinate_identity": "189fb1d8c7634e2e3430e664f58fc6d03dbbc806ed0a92c56ddcad152aae1f41",
+        "changed_count": 0,
+        "changed_vertices": [],
+        "repair_invocations": 1,
+        "acceptance_contract": {
+          "version": "DirectFillEngineering/1",
+          "contract_identity": "0ca4092aff4f177c7742bfe1d0a5d1575b7a353298992c8b3245c433d1a2aa4a",
+          "policy_identity": "11c1b1a36125a20707239a581bdaffca6a7b87bf694b2d1c22cf2d5eaba64260"
+        }
+      },
+      "shape": {
+        "interface_tetrahedra": {
+          "passed": true,
+          "count": 2556,
+          "minimum": 0.6060645893270594,
+          "required_minimum": 0.25,
+          "minimum_passed": true,
+          "population_targets": [
+            {
+              "fraction": 0.99,
+              "minimum": 0.4,
+              "required_count": 2531,
+              "actual_count": 2556,
+              "actual_fraction": 1.0,
+              "passed": true
+            },
+            {
+              "fraction": 0.9,
+              "minimum": 0.6,
+              "required_count": 2301,
+              "actual_count": 2556,
+              "actual_fraction": 1.0,
+              "passed": true
+            }
+          ],
+          "quantiles": [
+            0,
+            0.01,
+            0.1,
+            0.5,
+            0.9,
+            1
+          ],
+          "diagnostic_quantile_values": [
+            0.6060645893270594,
+            0.6604351867795322,
+            0.7315064593095066,
+            0.8319872714573235,
+            0.9381058014505785,
+            0.9958765149298171
+          ],
+          "contract_version": "DirectFillEngineering/1",
+          "contract_identity": "0ca4092aff4f177c7742bfe1d0a5d1575b7a353298992c8b3245c433d1a2aa4a",
+          "minimum_role": "MANDATORY",
+          "percentage_role": "NONBLOCKING_ENGINEERING_DIAGNOSTIC",
+          "population_targets_blocking": false,
+          "mandatory_passed": true,
+          "percentage_targets_met": true,
+          "percentage_status": "TARGETS_MET",
+          "minimum_actual_count": 2556,
+          "population_identity": "30909b87ff4580ece7c1135d57fb6dfa77bc18e120f8c723e53dab9c4a28f103",
+          "points_identity": "189fb1d8c7634e2e3430e664f58fc6d03dbbc806ed0a92c56ddcad152aae1f41",
+          "targets_identity": "75763b4442a0724d5fa2225b297fbd5169cb849d89f969b229faa9977cd7eceb",
+          "selected_ids": {
+            "count": 2556,
+            "values": "Retained in original run receipt"
+          }
+        },
+        "all_bulk_tetrahedra": {
+          "passed": true,
+          "count": 40448,
+          "minimum": 0.4836897980570004,
+          "required_minimum": 0.25,
+          "minimum_passed": true,
+          "population_targets": [
+            {
+              "fraction": 0.99,
+              "minimum": 0.4,
+              "required_count": 40044,
+              "actual_count": 40448,
+              "actual_fraction": 1.0,
+              "passed": true
+            },
+            {
+              "fraction": 0.9,
+              "minimum": 0.6,
+              "required_count": 36404,
+              "actual_count": 40428,
+              "actual_fraction": 0.9995055379746836,
+              "passed": true
+            }
+          ],
+          "quantiles": [
+            0,
+            0.01,
+            0.1,
+            0.5,
+            0.9,
+            1
+          ],
+          "diagnostic_quantile_values": [
+            0.4836897980570004,
+            0.6865024574609809,
+            0.7822398226711837,
+            0.8864201246500827,
+            0.9560345101489099,
+            0.9998216177215031
+          ],
+          "contract_version": "DirectFillEngineering/1",
+          "contract_identity": "0ca4092aff4f177c7742bfe1d0a5d1575b7a353298992c8b3245c433d1a2aa4a",
+          "minimum_role": "MANDATORY",
+          "percentage_role": "NONBLOCKING_ENGINEERING_DIAGNOSTIC",
+          "population_targets_blocking": false,
+          "mandatory_passed": true,
+          "percentage_targets_met": true,
+          "percentage_status": "TARGETS_MET",
+          "minimum_actual_count": 40448,
+          "population_identity": "861d17335d585ce61a583df1c87e55a59c5db6779c39072d7712eac0aa61a756",
+          "points_identity": "189fb1d8c7634e2e3430e664f58fc6d03dbbc806ed0a92c56ddcad152aae1f41",
+          "targets_identity": "75763b4442a0724d5fa2225b297fbd5169cb849d89f969b229faa9977cd7eceb",
+          "selected_ids": {
+            "count": 40448,
+            "values": "Retained in original run receipt"
+          }
+        },
+        "preserved_cap_triangles": {
+          "passed": true,
+          "count": 2556,
+          "minimum": 0.7505408777371186,
+          "required_minimum": 0.3,
+          "minimum_passed": true,
+          "population_targets": [
+            {
+              "fraction": 0.99,
+              "minimum": 0.6,
+              "required_count": 2531,
+              "actual_count": 2556,
+              "actual_fraction": 1.0,
+              "passed": true
+            },
+            {
+              "fraction": 0.9,
+              "minimum": 0.8,
+              "required_count": 2301,
+              "actual_count": 2553,
+              "actual_fraction": 0.9988262910798122,
+              "passed": true
+            }
+          ],
+          "quantiles": [
+            0,
+            0.01,
+            0.1,
+            0.5,
+            0.9,
+            1
+          ],
+          "diagnostic_quantile_values": [
+            0.7505408777371186,
+            0.841178873382826,
+            0.9157579433682377,
+            0.9730502992013359,
+            0.9960245963905672,
+            0.9999767164333581
+          ],
+          "contract_version": "DirectFillEngineering/1",
+          "contract_identity": "0ca4092aff4f177c7742bfe1d0a5d1575b7a353298992c8b3245c433d1a2aa4a",
+          "minimum_role": "MANDATORY",
+          "percentage_role": "NONBLOCKING_ENGINEERING_DIAGNOSTIC",
+          "population_targets_blocking": false,
+          "mandatory_passed": true,
+          "percentage_targets_met": true,
+          "percentage_status": "TARGETS_MET",
+          "minimum_actual_count": 2556,
+          "population_identity": "c51e46d7d78e5c678f9367674c0d52354f177ac10f7ab776c38d7a40f01d25d3",
+          "points_identity": "189fb1d8c7634e2e3430e664f58fc6d03dbbc806ed0a92c56ddcad152aae1f41",
+          "targets_identity": "953e753c9e2f5a24abc6a0478d5c518bee21d30ccc8415cec488e048cd34338b",
+          "selected_ids": {
+            "count": 2556,
+            "values": "Retained in original run receipt"
+          }
+        }
+      },
+      "export": {
+        "passed": true,
+        "conversion_fidelity": true,
+        "point_bijection_exact": true,
+        "cell_bijection_exact": true,
+        "all_face_incidence_and_winding_exact": true,
+        "boundary_labels": [
+          "wall",
+          "farfield"
+        ],
+        "writer": {
+          "sha256": "cc4225794e6fc6d6d0d8f12b9f0909f6603658c304a60ce63e3cf3871f0078f8",
+          "bytes": 3310710,
+          "nodes": 14798,
+          "elements": 59456
+        },
+        "checkmesh": {
+          "returncode": 0,
+          "literal_mesh_ok": true,
+          "failed_lines": [],
+          "warnings": [],
+          "mesh_quality": "NOT_RUN_NO_APPLICABLE_APPROVED_DICTIONARY",
+          "passed": true
+        },
+        "commands": {
+          "gmshToFoam": {
+            "command": [
+              "wsl",
+              "-d",
+              "Ubuntu-22.04",
+              "--",
+              "bash",
+              "-lc",
+              "source /opt/openfoam13/etc/bashrc >/dev/null 2>&1; exec setsid --wait bash /mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v3_5/standalone/results/consolidate1_sphere_01/background/export/gmshToFoam.launch.sh"
+            ],
+            "seconds": 1.64677539980039,
+            "exit_code": 0,
+            "linux_address_space_limit_bytes": 17179869184,
+            "returncode": 0
+          },
+          "foundationAudit": {
+            "command": [
+              "wsl",
+              "-d",
+              "Ubuntu-22.04",
+              "--",
+              "bash",
+              "-lc",
+              "source /opt/openfoam13/etc/bashrc >/dev/null 2>&1; exec setsid --wait bash /mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v3_5/standalone/results/consolidate1_sphere_01/background/export/openfoam_case/contractAudit.launch.sh"
+            ],
+            "seconds": 1.592992499936372,
+            "exit_code": 0,
+            "linux_address_space_limit_bytes": 17179869184
+          },
+          "checkMesh": {
+            "command": [
+              "wsl",
+              "-d",
+              "Ubuntu-22.04",
+              "--",
+              "bash",
+              "-lc",
+              "source /opt/openfoam13/etc/bashrc >/dev/null 2>&1; exec setsid --wait bash /mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v3_5/standalone/results/consolidate1_sphere_01/background/export/checkMesh.launch.sh"
+            ],
+            "seconds": 2.174725499935448,
+            "exit_code": 0,
+            "linux_address_space_limit_bytes": 17179869184,
+            "returncode": 0
+          }
+        },
+        "source_archive_sha256": "3748989798b5eeb7df0920503aa9c847b1337be3a7aece100e29014e7b8f554b",
+        "mapping_sha256": "b2803dce83651990512eae8c54498bad03836f2931e87531f334203983f44fe2",
+        "counts": {
+          "points": 14798,
+          "prisms": 12780,
+          "tetrahedra": 40448
+        },
+        "CFD_qualified": false
+      },
+      "independent_transition_band": false,
+      "continuous_sdf_fluid": "NOT_PERFORMED",
+      "CFD_qualified": false,
+      "restart_supported": false,
+      "native_budget": {
+        "limit_seconds": 7200.0,
+        "used_seconds": 188.48500000033528
+      },
+      "seconds": 402.7147706998512,
+      "stage_seconds": {
+        "parent": 11.211715099867433,
+        "cap_compatibility": 0.5355695001780987,
+        "farfield": 86.62980430014431,
+        "bulk": 101.87410310003906,
+        "bulk_conditioning": 7.316666099708527,
+        "repair": 3.201387600041926,
+        "joined_proofs": 89.23001360008493,
+        "export": 16.49820900009945,
+        "independent_readback": 86.21730089979246
+      },
+      "mesh_sha256": "3748989798b5eeb7df0920503aa9c847b1337be3a7aece100e29014e7b8f554b",
+      "readback_sha256": "6581e39de0fd2a7eeaad70e8e9ec0de44e0256fce85bd624fcc5047ec60e9c09",
+      "manifest_sha256": "4e32b2d7cc2a56df9dcadddd9e3f2c1194e0bae40edd7e62694c915672b63873"
+    },
+    "export": {
+      "passed": true,
+      "conversion_fidelity": true,
+      "point_bijection_exact": true,
+      "cell_bijection_exact": true,
+      "all_face_incidence_and_winding_exact": true,
+      "boundary_labels": [
+        "wall",
+        "farfield"
+      ],
+      "writer": {
+        "sha256": "cc4225794e6fc6d6d0d8f12b9f0909f6603658c304a60ce63e3cf3871f0078f8",
+        "bytes": 3310710,
+        "nodes": 14798,
+        "elements": 59456
+      },
+      "checkmesh": {
+        "returncode": 0,
+        "literal_mesh_ok": true,
+        "failed_lines": [],
+        "warnings": [],
+        "mesh_quality": "NOT_RUN_NO_APPLICABLE_APPROVED_DICTIONARY",
+        "passed": true
+      },
+      "commands": {
+        "gmshToFoam": {
+          "command": [
+            "wsl",
+            "-d",
+            "Ubuntu-22.04",
+            "--",
+            "bash",
+            "-lc",
+            "source /opt/openfoam13/etc/bashrc >/dev/null 2>&1; exec setsid --wait bash /mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v3_5/standalone/results/consolidate1_sphere_01/background/export/gmshToFoam.launch.sh"
+          ],
+          "seconds": 1.64677539980039,
+          "exit_code": 0,
+          "linux_address_space_limit_bytes": 17179869184,
+          "returncode": 0
+        },
+        "foundationAudit": {
+          "command": [
+            "wsl",
+            "-d",
+            "Ubuntu-22.04",
+            "--",
+            "bash",
+            "-lc",
+            "source /opt/openfoam13/etc/bashrc >/dev/null 2>&1; exec setsid --wait bash /mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v3_5/standalone/results/consolidate1_sphere_01/background/export/openfoam_case/contractAudit.launch.sh"
+          ],
+          "seconds": 1.592992499936372,
+          "exit_code": 0,
+          "linux_address_space_limit_bytes": 17179869184
+        },
+        "checkMesh": {
+          "command": [
+            "wsl",
+            "-d",
+            "Ubuntu-22.04",
+            "--",
+            "bash",
+            "-lc",
+            "source /opt/openfoam13/etc/bashrc >/dev/null 2>&1; exec setsid --wait bash /mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v3_5/standalone/results/consolidate1_sphere_01/background/export/checkMesh.launch.sh"
+          ],
+          "seconds": 2.174725499935448,
+          "exit_code": 0,
+          "linux_address_space_limit_bytes": 17179869184,
+          "returncode": 0
+        }
+      },
+      "source_archive_sha256": "3748989798b5eeb7df0920503aa9c847b1337be3a7aece100e29014e7b8f554b",
+      "mapping_sha256": "b2803dce83651990512eae8c54498bad03836f2931e87531f334203983f44fe2",
+      "counts": {
+        "points": 14798,
+        "prisms": 12780,
+        "tetrahedra": 40448
+      },
+      "CFD_qualified": false
+    },
+    "times": {
+      "surface": 39.68091160012409,
+      "first_front": 11.183353600092232,
+      "v3_complete_plan": 7.96937739988789,
+      "v4_prospective_shell_checks": 23.746979999821633,
+      "v3_native_construction": 4.178743099793792,
+      "v4_shell_admission": 4.160428300034255,
+      "v4_direct_fill": 402.78669760003686
+    },
+    "seconds": 495.1104752002284,
+    "CFD_qualified": false
+  },
+  "attempts": 1,
+  "retries": 0,
+  "implementation_changes": 0,
+  "mode": "explicit adaptive",
+  "passage_mode": "explicit nodal",
+  "automation": false
+}

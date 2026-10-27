@@ -1,0 +1,74 @@
+{
+  "base_prefix": "C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0",
+  "executable_override": {
+    "executable": "C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\python.exe"
+  },
+  "expected": {
+    "executable": "C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\python.exe",
+    "file_identity": {
+      "device": 9562447785075378926,
+      "file_id": 11821949022807554,
+      "size": 172912
+    },
+    "sha256": "5365b422ee178f691988eb937b7abca5f48910b148f76fcce6dbaf5585c948d0"
+  },
+  "expected_parent": {
+    "executable": "C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\python3.12.exe",
+    "file_identity": {
+      "device": 9562447785075378926,
+      "file_id": 11821949022807555,
+      "size": 172912
+    },
+    "sha256": "5365b422ee178f691988eb937b7abca5f48910b148f76fcce6dbaf5585c948d0"
+  },
+  "expected_parent_pid": 41988,
+  "expected_resolved": "C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\python.exe",
+  "identity_contract_sha256": "c8ecaa8cd37718e86bc3264a6a004d705c3b5b93e1432f218f87ce70e9c13e53",
+  "image_file_identity": {
+    "device": 9562447785075378926,
+    "file_id": 11821949022807554,
+    "size": 172912
+  },
+  "image_sha256": "5365b422ee178f691988eb937b7abca5f48910b148f76fcce6dbaf5585c948d0",
+  "os_command": [
+    "C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\python.exe",
+    "-B",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\control_run.py",
+    "coordinator",
+    "2158917.6956371"
+  ],
+  "os_image": "C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\python.exe",
+  "os_image_resolved": "C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\python.exe",
+  "owner_executable": "C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\python.exe",
+  "owner_executable_resolved": "C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\python.exe",
+  "parent_image": "C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\python3.12.exe",
+  "parent_image_file_identity": {
+    "device": 9562447785075378926,
+    "file_id": 11821949022807555,
+    "size": 172912
+  },
+  "parent_image_sha256": "5365b422ee178f691988eb937b7abca5f48910b148f76fcce6dbaf5585c948d0",
+  "parent_pid": 41988,
+  "pid": 13156,
+  "requested_argv": [
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\control_run.py",
+    "coordinator",
+    "2158917.6956371"
+  ],
+  "resource_limits": {
+    "linux_memory_max_bytes": 2147483648,
+    "linux_swap_max_bytes": 0,
+    "minimum_free_bytes": 1000000000,
+    "output_limit_bytes": 4000000000,
+    "windows_job_commit_bytes": 17179869184
+  },
+  "resource_owner": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\resource_profile_16gib01\\resource_limits.py",
+  "role": "coordinator",
+  "role_contract": {
+    "explicit_argv0": true,
+    "own": "child",
+    "parent": "controller"
+  },
+  "sys_executable": "C:\\Users\\Jackson\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+  "sys_executable_resolved": "C:\\Users\\Jackson\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe"
+}

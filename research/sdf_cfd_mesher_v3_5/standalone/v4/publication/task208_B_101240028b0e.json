@@ -1,0 +1,9 @@
+{
+  "schema": "V4IndependentReview/1",
+  "passed": true,
+  "reviewer": "/root/sphere_review",
+  "source_inventory_identity": "101240028b0e3a41fe90142cad8029e71b1063763b1616123e6a330cff17ecdb",
+  "review_receipt_sha256": "d5a00154a415dae7227e2a5d5099608182b07b859ae9c831738bd3ce29841f58",
+  "scope": "Source publication and prospective synthetic harness review only. Exact owned launch review remains required. No geometry, Prism candidate or default promotion approved.",
+  "reviewed_utc": "2026-10-24T22:12:38.3259557Z"
+}

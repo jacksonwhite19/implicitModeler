@@ -1,0 +1,156 @@
+{
+  "cleanup_error": null,
+  "host_scope": "parent control process and OS services are outside payload memory accounting",
+  "limits": {
+    "linux_memory_max_bytes": 2147483648,
+    "linux_swap_max_bytes": 0,
+    "minimum_free_bytes": 1000000000,
+    "output_limit_bytes": 4000000000,
+    "windows_job_commit_bytes": 17179869184
+  },
+  "linux_retired": true,
+  "monitor_retired": true,
+  "native_memory_scope": "broker, payload descendants and live inspection children in the authenticated cgroup; external bounded retirement verifier is outside it",
+  "observation": {
+    "contract": "separate Windows aggregate commit and Linux cgroup charged-memory caps; no shared host-wide budget",
+    "disk_scope": "invocation output tree, native scope tree, sibling logs and receipts; sampled, possible write overshoot",
+    "errors": [],
+    "last": {
+      "disk": {
+        "free_bytes": 99963330560,
+        "logical_bytes": 1575807,
+        "measurement": "sampled logical output bytes; not an atomic disk quota"
+      },
+      "linux": {
+        "current_bytes": 15577088,
+        "events": {
+          "high": 0,
+          "low": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_group_kill": 0,
+          "oom_kill": 0
+        },
+        "memory_max_bytes": 2147483648,
+        "passed": true,
+        "swap_max_bytes": 0
+      },
+      "windows": {
+        "active_processes": 4,
+        "flags": 8704,
+        "limit_bytes": 17179869184,
+        "peak_job_commit_bytes": 854519808,
+        "total_processes": 5
+      }
+    },
+    "native_counter_at_retirement": null,
+    "native_final_counter_observation": "scope already retired; last live sample retained",
+    "passed": true,
+    "samples": 8,
+    "windows_denial_observation": "none observed; absence is not proof"
+  },
+  "passed": true,
+  "primary_error": null,
+  "scientific_acceptance": false,
+  "windows_payload_retirement": {
+    "after": {
+      "active_processes": 0,
+      "flags": 8704,
+      "limit_bytes": 17179869184,
+      "peak_job_commit_bytes": 854519808,
+      "total_processes": 5
+    },
+    "before": {
+      "active_processes": 4,
+      "flags": 8704,
+      "limit_bytes": 17179869184,
+      "peak_job_commit_bytes": 854519808,
+      "total_processes": 5
+    },
+    "denial_observation": "ordinary job notifications are not guaranteed",
+    "messages": [
+      {
+        "message": 6,
+        "pid": 43780
+      },
+      {
+        "message": 6,
+        "pid": 33392
+      },
+      {
+        "message": 6,
+        "pid": 44064
+      },
+      {
+        "message": 6,
+        "pid": 13564
+      },
+      {
+        "message": 6,
+        "pid": 34904
+      },
+      {
+        "message": 7,
+        "pid": 43780
+      }
+    ],
+    "passed": true
+  },
+  "windows_retirement": {
+    "after": {
+      "active_processes": 0,
+      "flags": 8704,
+      "limit_bytes": 17179869184,
+      "peak_job_commit_bytes": 13889536,
+      "total_processes": 4
+    },
+    "before": {
+      "active_processes": 0,
+      "flags": 8704,
+      "limit_bytes": 17179869184,
+      "peak_job_commit_bytes": 13889536,
+      "total_processes": 4
+    },
+    "denial_observation": "ordinary job notifications are not guaranteed",
+    "messages": [
+      {
+        "message": 6,
+        "pid": 41012
+      },
+      {
+        "message": 6,
+        "pid": 45076
+      },
+      {
+        "message": 6,
+        "pid": 14992
+      },
+      {
+        "message": 6,
+        "pid": 18160
+      },
+      {
+        "message": 7,
+        "pid": 45076
+      },
+      {
+        "message": 7,
+        "pid": 41012
+      },
+      {
+        "message": 7,
+        "pid": 14992
+      },
+      {
+        "message": 7,
+        "pid": 18160
+      },
+      {
+        "message": 4,
+        "pid": null
+      }
+    ],
+    "passed": true
+  },
+  "worker_returncode": 0
+}

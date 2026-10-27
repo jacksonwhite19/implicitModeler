@@ -1,0 +1,20 @@
+{
+  "approved": true,
+  "mode": "nonmeshing_only",
+  "scope": "OneRealCanonicalHostMetadataControlOnly",
+  "reviewer": "/root/completed_roles_review",
+  "task_sha256": "17a2b1bda9990010b0326dee533a853d6f617d7134d8ef9b98817973617ee933",
+  "manifest_sha256": "b1532a2b828cb22848e6745b6d0ec7bbf56b9aa70c85aad8609946c04e724426",
+  "authorization_sha256": "406107bd0946a2403a8d9b1cf4594ed5505bfb6bd452abfccb00869f7389d863",
+  "actual_guard_count": 2359,
+  "actual_review_pin_map_digest": "e13b981be1ce5130db603fb67c666bdf4624b4c4d5e4bcd341f47de085c88008",
+  "all_review_handles_closed": true,
+  "guards_closed_utc": "2026-10-19T01:16:58.1371159Z",
+  "maximum_invocations": 1,
+  "payload_seconds": 50,
+  "owner_seconds": 110,
+  "scientific_acceptance": false,
+  "future_live_approval": false,
+  "launch_before_utc": "2026-10-19T01:27:45+00:00",
+  "no_reviewer_imports_tests_or_edits": true
+}

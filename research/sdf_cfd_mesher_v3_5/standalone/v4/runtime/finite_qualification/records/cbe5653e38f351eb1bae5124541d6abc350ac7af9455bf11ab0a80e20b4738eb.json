@@ -1,0 +1,36 @@
+{
+  "actual_command_sha256": "a26b41e79e2d53b5eea82a8acff0529fbb34a5a549cf7c7a05fc1b7b195413c7",
+  "all_handles_physically_closed": true,
+  "approved": true,
+  "authorization_sha256": "777664a444112610866aaea0841fd2c1adf86cf5e72c9d0bd8b88bc0f54c2a06",
+  "before_after_sha_and_token_checks_equal": true,
+  "blockers": [],
+  "guarded_files": 5173,
+  "guards_closed_utc": "2026-10-19T15:33:59.5631646Z",
+  "guards_opened_utc": "2026-10-19T15:33:54.5620429Z",
+  "manifest_sha256": "4fdc1f9d7eff85bff1bd966f06c5dfdb53fcb7da29b97a89ea98e5cb4b080e90",
+  "mode": "nonmeshing_only",
+  "normal_git_rows": 1115,
+  "notes": [
+    "Static exact source/templates/complete generation branches reviewed; actual generated artifacts will be reviewed after the sole control",
+    "Original science reconstructs exactly; timing writer body matches68",
+    "Fixed57 readiness/61observer/68comparison/69integration roots, complete future gates retained",
+    "No SDF/mesh/positive grant/accepted-parent/durability-equivalence qualification",
+    "Both wrapper roles retain startup deduction and original resources/retirement"
+  ],
+  "physical_snapshot_digest": "26e4cffaaf0b746e3e8244426aaa82755ca94d4f669ef01d4bc76437bdb1deda",
+  "prior_sealed_files": 2774,
+  "reviewed_files": {
+    "activate.py": "5ea7b950960fbe712e60034a291927abdeeed14ce4cc22bc7fdb4b79abb0efdc",
+    "candidate/tet_layer_handoff.py": "9451e3063248632e5ae4b0ee0c6efbde6cb47c3847f90a608816dd8650d58eec",
+    "prepare.py": "8688339c95cff5ac11f1cdf6804551c951c4b49925faed534d9b4c0778dfd750"
+  },
+  "reviewer": "/root/completed_roles_review",
+  "reviewer_imports_tests_native_arrays_edits": false,
+  "runtime_reviews": 1,
+  "runtime_sources": 1244,
+  "schema": "Task69ExactPrelaunchReview/1",
+  "snapshot_digest_format": "Ordinal absolute-path SHA map / UTF8 PowerShell compressedJSON",
+  "source_pins": 2702,
+  "task_sha256": "9d89bc02f1f2892a5e3f80725461527b1c2b599ff8c5f3e93b7257ca078ba20a"
+}

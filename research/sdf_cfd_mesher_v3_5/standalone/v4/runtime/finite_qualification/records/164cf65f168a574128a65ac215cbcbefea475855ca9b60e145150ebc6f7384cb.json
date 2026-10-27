@@ -1,0 +1,335 @@
+"""One bounded comparison on owned sacrificial files; no numerical entry."""
+from contextlib import contextmanager
+import ctypes
+from ctypes import wintypes as W
+import hashlib
+import json
+import os
+from pathlib import Path
+import threading
+import time
+
+HERE = Path(__file__).resolve().parent
+
+
+def parent(selected, observed, deadline, folder):
+    # This sink is independent of both writers under test and exists before any
+    # risky operation. Flush each observation before checking its consequences.
+    sink = (folder/'EVENTS.jsonl').open('x', encoding='utf-8', newline='\n')
+    lock = threading.Lock()
+    sequence = [0]
+    owned = {}
+    rows = []
+    failures = []
+    started = time.perf_counter()
+
+    def event(kind, **data):
+        with lock:
+            sequence[0] += 1
+            record = dict(sequence=sequence[0], event=kind, pid=os.getpid(),
+                          thread=threading.get_ident(), elapsed=time.perf_counter()-started, **data)
+            sink.write(json.dumps(record, sort_keys=True, allow_nan=False)+'\n')
+            sink.flush()
+
+    def error_record(exc):
+        return dict(type=type(exc).__name__, repr=repr(exc),
+                    errno=getattr(exc, 'errno', None), winerror=getattr(exc, 'winerror', None))
+
+    def primary_event(exc, kind, **data):
+        try:
+            event(kind, exception=error_record(exc), **data)
+        except BaseException as evidence_error:
+            exc.add_note('Independent evidence sink failed: '+repr(evidence_error))
+            raise exc
+
+    def clock():
+        if time.perf_counter() >= deadline:
+            raise TimeoutError('Task68SharedFilesystemDeadline')
+
+    def require(ok, name):
+        event('check', name=name, passed=bool(ok))
+        if not ok:
+            raise AssertionError(name)
+        clock()
+
+    def value(n):
+        return dict(generation=n, marker='generation-'+str(n),
+                    body=(str(n)+':')*256, sequence=list(range(12)))
+
+    def digest(data):
+        return hashlib.sha256(data).hexdigest()
+
+    def image(path):
+        path=Path(path)
+        if not path.exists():
+            return dict(path=str(path), exists=False)
+        st=path.stat(); raw=path.read_bytes()
+        return dict(path=str(path), exists=True, device=st.st_dev,
+                    file_id=st.st_ino, size=st.st_size, attributes=st.st_file_attributes,
+                    links=st.st_nlink, sha256=digest(raw), generation=json.loads(raw)['generation'])
+
+    try:
+        event('control_start', deadline=deadline, scope='filesystem_only')
+        clock()
+        import fixture_study as d
+        import optimized_durable_json as baseline
+        import path_preserving_deduplication as replacement
+        import immutable_state_access as immutable
+        import optimized_mixed_certificate as mixed
+        reader=d.module('task68_unchanged_live_snapshot', HERE/'live_snapshot.py')
+        candidate=d.module('task68_private_writer', HERE/'candidate_writer.py')
+        observed.update(private_reader=str(HERE/'live_snapshot.py'),
+                        private_writer=str(HERE/'candidate_writer.py'))
+        native=mixed.Native()
+        dll=str(Path(native.dll._name).resolve())
+        paths=[baseline.__file__, replacement.__file__, immutable.__file__,
+               mixed.__file__, reader.__file__, candidate.__file__, dll]
+        for path in paths:
+            path=str(Path(path).resolve())
+            require(selected.get(path)==digest(Path(path).read_bytes()), 'pinned actual source '+path)
+        require(candidate.encoded is baseline.encoded, 'actual canonical encoder identity')
+        require(candidate.replace_open_destination is replacement.replace_open_destination,
+                'actual existing POSIX helper identity')
+        require(baseline.atomic_replace is replacement.atomic_replace, 'actual baseline replacement identity')
+        expected={n:baseline.encoded(value(n)) for n in range(33)}
+        k=reader.api()
+        k.GetHandleInformation.argtypes=[W.HANDLE, ctypes.POINTER(W.DWORD)]
+        k.GetHandleInformation.restype=W.BOOL
+        k.SetFileAttributesW.argtypes=[W.LPCWSTR,W.DWORD]
+        k.SetFileAttributesW.restype=W.BOOL
+        k.GetVolumeInformationW.argtypes=[W.LPCWSTR,W.LPWSTR,W.DWORD,
+            ctypes.POINTER(W.DWORD),ctypes.POINTER(W.DWORD),ctypes.POINTER(W.DWORD),W.LPWSTR,W.DWORD]
+        k.GetVolumeInformationW.restype=W.BOOL
+        label=ctypes.create_unicode_buffer(261);fs=ctypes.create_unicode_buffer(261)
+        serial=W.DWORD();maximum=W.DWORD();flags=W.DWORD()
+        if not k.GetVolumeInformationW(folder.anchor,label,len(label),ctypes.byref(serial),
+                ctypes.byref(maximum),ctypes.byref(flags),fs,len(fs)):
+            raise ctypes.WinError(ctypes.get_last_error())
+        event('environment', directory=str(folder), volume=folder.anchor, filesystem=fs.value,
+              volume_label=label.value, volume_serial=serial.value, filesystem_flags=flags.value,
+              directory_attributes=folder.stat().st_file_attributes,
+              encoder_dll=dll, encoder_sha256=selected[dll],
+              baseline_operation='MoveFileExW flags=9',
+              candidate_operation='SetFileInformationByHandle class=22 flags=3',
+              raw_syscall_return_unknown=True, ntstatus_unknown=True)
+
+        def snapshot(path, events=None, hook=None):
+            result=reader.read_snapshot(path, _test_events=events, _test_after_open=hook)
+            event('reader_return', path=str(path), result=result)
+            return result
+
+        class ReaderEvents:
+            def __init__(self): self.rows=[]
+            def append(self,row):
+                self.rows.append(dict(row))
+                event('reader_handle', access=0x80000000, share=7, disposition=3, flags=0, reader_event=row)
+                if row['event']=='opened': owned[row['handle']]=row['path']
+                elif row['event']=='closed': owned.pop(row['handle'],None)
+
+        def publish(writer, variant, path, n):
+            clock();event('writer_start',variant=variant,path=str(path),generation=n)
+            try:
+                writer(path,value(n))
+            except BaseException as exc:
+                primary_event(exc,'writer_exception',variant=variant,path=str(path),generation=n)
+                raise
+            event('writer_success',variant=variant,path=str(path),generation=n)
+
+        def attempt(writer, variant, path):
+            try:
+                publish(writer,variant,path,1)
+                result=dict(success=True,error=None)
+            except OSError as exc:
+                result=dict(success=False,error=error_record(exc))
+            result.update(target=image(path),pending=image(path.with_name(path.name+'.pending')))
+            event('replacement_observation',variant=variant,**result)
+            if result['success']:
+                require(path.read_bytes()==expected[1] and not result['pending']['exists'], 'successful whole B and no pending')
+            else:
+                require(path.read_bytes()==expected[0] and path.with_name(path.name+'.pending').read_bytes()==expected[1],
+                        'failed replacement preserves committed A and complete pending B')
+            return result
+
+        @contextmanager
+        def held(path, share):
+            h=k.CreateFileW(str(path),0x80000000,share,None,3,0,None)
+            if h==W.HANDLE(-1).value:
+                exc=ctypes.WinError(ctypes.get_last_error())
+                primary_event(exc,'handle_open_error',path=str(path),access=0x80000000,share=share,disposition=3,flags=0)
+                raise exc
+            owned[h]=str(path)
+            try:
+                event('owned_handle_open',handle=h,path=str(path),access=0x80000000,share=share,disposition=3,flags=0)
+                yield h
+            finally:
+                ok=k.CloseHandle(h);code=ctypes.get_last_error() if not ok else None
+                if ok:owned.pop(h,None)
+                event('owned_handle_close',handle=h,success=bool(ok),winerror=code)
+                if not ok:raise ctypes.WinError(code)
+
+        def held_bytes(h):
+            buf=ctypes.create_string_buffer(8192);count=W.DWORD()
+            if not k.ReadFile(h,buf,len(buf),ctypes.byref(count),None):
+                raise ctypes.WinError(ctypes.get_last_error())
+            return buf.raw[:count.value]
+
+        writers=[('baseline',baseline.durable_json),('candidate',candidate.durable_json)]
+        # Matrix1: first publication and ordinary closed-destination replacement.
+        for variant,writer in writers:
+            path=folder/(variant+'_closed.json')
+            event('scenario_start',scenario='closed',variant=variant)
+            publish(writer,variant,path,0)
+            before=image(path);event('first_generation',variant=variant,record=before)
+            require(path.read_bytes()==expected[0], 'first exact encoded A')
+            result=attempt(writer,variant,path)
+            require(result['success'], 'closed destination replacement succeeds')
+            require(before['device']==result['target']['device']==folder.stat().st_dev, 'same volume')
+            rows.append(dict(scenario='closed',variant=variant,before=before,**result))
+        # Matrix2: known target handles; actual results are observations, not
+        # assumptions that share7 necessarily makes legacy replacement work.
+        for share in (3,7):
+            for variant,writer in writers:
+                path=folder/(variant+'_target_share'+str(share)+'.json')
+                event('scenario_start',scenario='target_handle',variant=variant,share=share)
+                publish(writer,variant,path,0);before=image(path)
+                with held(path,share) as h:
+                    result=attempt(writer,variant,path)
+                    old=held_bytes(h);event('held_old_read',handle=h,sha256=digest(old),bytes=len(old))
+                    require(old==expected[0], 'held target handle retains whole A')
+                rows.append(dict(scenario='target_handle',variant=variant,share=share,before=before,**result))
+        # Matrix3: unchanged Task64 reader and its existing test-only hook.
+        for variant,writer in writers:
+            path=folder/(variant+'_reader_hook.json')
+            event('scenario_start',scenario='reader_hook',variant=variant)
+            publish(writer,variant,path,0);reader_events=ReaderEvents();write_result={}
+            def hook(handle):
+                try:
+                    publish(writer,variant,path,1)
+                    write_result.update(success=True,error=None)
+                except BaseException as exc:
+                    write_result.update(success=False,error=error_record(exc))
+                    raise
+            result=snapshot(path,reader_events,hook)
+            record=dict(scenario='reader_hook',variant=variant,reader=result,writer=write_result,
+                        reader_events=reader_events.rows,target=image(path),pending=image(path.with_name(path.name+'.pending')))
+            event('reader_hook_observation',record=record);rows.append(record)
+            require(not owned, 'reader owned handles closed')
+            if write_result.get('success'):
+                require(result['ok'] and result['value']==value(0) and path.read_bytes()==expected[1], 'hook whole old/new generations')
+            else:
+                require(not result['ok'] and result['status']=='read_error' and path.read_bytes()==expected[0]
+                        and path.with_name(path.name+'.pending').read_bytes()==expected[1], 'hook failure evidence and committed A preserved')
+        # Matrix4: unchanged immutable guard, source deny-delete, readonly target.
+        for variant,writer in writers:
+            path=folder/(variant+'_immutable_guard.json')
+            event('scenario_start',scenario='immutable_guard',variant=variant)
+            publish(writer,variant,path,0);before=image(path)
+            guard_handle=None
+            try:
+                with immutable.guard(path) as h:
+                    guard_handle=h;owned[h]=str(path)
+                    event('immutable_guard_open',handle=h,path=str(path),access=0x80000000,share=1,disposition=3,flags=0)
+                    # Check direct content-write exclusion before any rename.
+                    wh=k.CreateFileW(str(path),0x40000000,7,None,3,0,None)
+                    code=ctypes.get_last_error() if wh==W.HANDLE(-1).value else None
+                    direct_refused=wh==W.HANDLE(-1).value
+                    event('direct_content_write_open',path=str(path),access=0x40000000,share=7,
+                          disposition=3,flags=0,refused=direct_refused,winerror=code)
+                    if not direct_refused:
+                        close_ok=k.CloseHandle(wh)
+                        event('unexpected_write_handle_close',handle=wh,success=bool(close_ok))
+                        require(close_ok, 'unexpected write handle closed')
+                    result=attempt(writer,variant,path)
+                    current=image(path)
+                    invariant=(not result['success'] and result['error']['winerror'] in (5,32) and current['file_id']==before['file_id']
+                               and current['sha256']==before['sha256'] and direct_refused and code in (5,32))
+                    event('immutable_path_invariant',variant=variant,passed=invariant,before=before,after=current)
+                    rows.append(dict(scenario='immutable_guard',variant=variant,passed=invariant,
+                                     direct_content_write_refused=direct_refused,before=before,**result))
+                    if not invariant:failures.append(variant+': immutable protected pathname changed or access admitted')
+            finally:
+                if guard_handle is not None:
+                    status=W.DWORD();alive=k.GetHandleInformation(guard_handle,ctypes.byref(status))
+                    code=ctypes.get_last_error() if not alive else None
+                    if not alive and code==6:owned.pop(guard_handle,None)
+                    event('immutable_guard_closed_check',handle=guard_handle,invalid=not bool(alive),winerror=code)
+                    require(not alive and code==6, 'actual immutable guard handle closed')
+        # These independent negative scenarios still run if the candidate is
+        # unfit; the dependent positive publication sequence below is skipped.
+        for variant,writer in writers:
+            path=folder/(variant+'_source_deny_delete.json');pending=path.with_name(path.name+'.pending')
+            event('scenario_start',scenario='source_deny_delete',variant=variant)
+            publish(writer,variant,path,0)
+            with pending.open('xb') as stream:stream.write(expected[0]);stream.flush();os.fsync(stream.fileno())
+            with held(pending,3):
+                result=attempt(writer,variant,path)
+                require(not result['success'] and result['error']['winerror'] in (5,32), 'source DELETE denied and replacement refused')
+            rows.append(dict(scenario='source_deny_delete',variant=variant,**result))
+            path=folder/(variant+'_readonly_target.json')
+            event('scenario_start',scenario='readonly_target',variant=variant)
+            publish(writer,variant,path,0);attrs=path.stat().st_file_attributes
+            if not k.SetFileAttributesW(str(path),attrs|1):raise ctypes.WinError(ctypes.get_last_error())
+            event('owned_readonly_set',path=str(path),attributes=attrs|1)
+            try:
+                result=attempt(writer,variant,path)
+                require(not result['success'] and result['error']['winerror'] in (5,32), 'readonly target replacement refused')
+                rows.append(dict(scenario='readonly_target',variant=variant,**result))
+            finally:
+                ok=k.SetFileAttributesW(str(path),attrs);code=ctypes.get_last_error() if not ok else None
+                event('owned_attributes_restored',path=str(path),attributes=attrs,success=bool(ok),winerror=code)
+                if not ok:raise ctypes.WinError(code)
+        compatible=all(row['writer']['success'] for row in rows
+                       if row['scenario']=='reader_hook' and row['variant']=='candidate')
+        compatible=compatible and all(row['success'] for row in rows
+                       if row['scenario']=='target_handle' and row['variant']=='candidate' and row['share']==7)
+        stress=dict(reached=False,reason='Guard or compatibility condition not satisfied')
+        if not failures and compatible:
+            path=folder/'candidate_sequence.json';publish(candidate.durable_json,'candidate',path,0)
+            stop=threading.Event();done=threading.Event();committed=[0];observations=[];write_errors=[]
+            def publishing():
+                try:
+                    for n in range(1,33):
+                        if stop.is_set():break
+                        publish(candidate.durable_json,'candidate_sequence',path,n);committed.append(n)
+                        time.sleep(.001)
+                except BaseException as exc:
+                    write_errors.append(error_record(exc));primary_event(exc,'sequence_writer_error')
+                finally:done.set()
+            thread=threading.Thread(target=publishing,name='task68-sacrificial-writer',daemon=True)
+            event('sequence_start',maximum_publications=32,maximum_reads=256)
+            thread.start()
+            try:
+                for _ in range(256):
+                    clock();result=snapshot(path,ReaderEvents())
+                    if not result['ok']:raise AssertionError('Sequence reader failure')
+                    n=result['value'].get('generation')
+                    require(type(n) is int and 0<=n<=32 and result['value']==value(n),'whole sequence generation')
+                    observations.append(n)
+                    if done.is_set():break
+                    time.sleep(.001)
+            finally:
+                stop.set() if not done.is_set() and time.perf_counter()>=deadline else None
+                thread.join(5)
+                event('sequence_thread_cleanup',retired=not thread.is_alive())
+            stress=dict(reached=True,committed=committed,observations=observations,
+                        write_errors=write_errors,thread_retired=not thread.is_alive())
+            require(not thread.is_alive() and not write_errors and committed==list(range(33)), 'all bounded sequence publications accounted')
+            require(all(n in committed for n in observations) and path.read_bytes()==expected[32], 'all reads are committed whole generations')
+        else:
+            event('dependent_sequence_skipped',failures=failures,compatibility_passed=compatible)
+        require(not owned, 'all tracked owned handles closed')
+        passed=not failures and compatible and stress['reached']
+        classification='PRIVATE_VISIBILITY_MATRIX_PASSED' if passed else ('UNFIT_IMMUTABLE_GUARD' if failures else 'INCOMPLETE_COMPATIBILITY')
+        result=dict(passed=passed,classification=classification,rows=rows,failures=failures,
+                    sequence=stress,owned_handles_remaining=dict(owned),event_count=sequence[0],
+                    canonical_writer_unchanged=True,scientific_acceptance=False,mesh_invocations=0,
+                    sdf_queries=0,historical_denier_known=False,crash_durability_equivalence=False,
+                    raw_syscall_return_known=False,ntstatus_known=False,
+                    scope='Observed in-process fixture visibility/refusal only; no installation or production qualification')
+        event('control_complete',classification=classification,passed=passed)
+        return result
+    except BaseException as exc:
+        primary_event(exc,'control_failure',completed_rows=rows,owned_handles_remaining=dict(owned))
+        raise
+    finally:
+        sink.close()

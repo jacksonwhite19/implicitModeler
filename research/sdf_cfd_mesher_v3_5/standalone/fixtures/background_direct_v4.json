@@ -1,0 +1,55 @@
+{
+  "schema": "V4DirectFillEngineeringPolicy/1",
+  "backend_method": "DelaunayDirectSizing095SharedApex231/1",
+  "bounds_m": [
+    [
+      -0.008,
+      0.008
+    ],
+    [
+      -0.008,
+      0.008
+    ],
+    [
+      -0.008,
+      0.008
+    ]
+  ],
+  "growth_per_m": 0.26236426446749106,
+  "maximum_size_m": 0.001,
+  "interface_seed_policy": "balanced_centroid_volume/1",
+  "quality_targets": {
+    "outer_tetrahedra": {
+      "minimum": 0.25,
+      "population_targets": [
+        {
+          "fraction": 0.99,
+          "minimum": 0.4
+        },
+        {
+          "fraction": 0.9,
+          "minimum": 0.6
+        }
+      ]
+    },
+    "outer_triangles": {
+      "minimum": 0.3,
+      "population_targets": [
+        {
+          "fraction": 0.99,
+          "minimum": 0.6
+        },
+        {
+          "fraction": 0.9,
+          "minimum": 0.8
+        }
+      ]
+    }
+  },
+  "downstream_seconds": 10800,
+  "native_seconds": 7200,
+  "geometry_assurance": "all_twelve_fresh",
+  "continuous_sdf_fluid": "NOT_PERFORMED",
+  "acceptance_contract_version": "DirectFillEngineering/1",
+  "acceptance_contract_identity": "0ca4092aff4f177c7742bfe1d0a5d1575b7a353298992c8b3245c433d1a2aa4a"
+}

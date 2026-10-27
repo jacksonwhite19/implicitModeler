@@ -1,0 +1,10 @@
+{
+  "actual_command_sha256": "cedddaee01f1f8040e0427512a9e7848f23e58211b4dd35d9336565388c7f520",
+  "allocation_seconds": 50,
+  "maximum_allowed": 2,
+  "number": 1,
+  "owner_ceiling_seconds": 110,
+  "recorded_utc": "2026-10-19T22:40:15.447506+00:00",
+  "review_sha256": "3bb2bf2c1f8bf3482cc3e12294555268f7ca1ba6936b51f9b050db0c77f296b0",
+  "scope": "One focused binding control; not numerical."
+}

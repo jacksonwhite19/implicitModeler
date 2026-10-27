@@ -1,0 +1,10 @@
+{
+  "schema": "V4ResearchNativeSeedBuild/1",
+  "kernel_source_sha256": "16ce24ebd31a385904864572c81cc4e8f6032b325b3a02d4e94cc34a70afd45d",
+  "executable_sha256": "faedd874619c0c6946a855ad04124e2bbddd942140fe15f21763fc194eb41f5e",
+  "build": "cargo build --offline --release --bin canonical_kernel_host",
+  "root_dependency": "Unmodified current production sources compiled as dependency; source inventory in Task172 BASELINE.json",
+  "root_modified": false,
+  "wrapper_source": "Private canonical_kernel/src, Cargo.toml/build.rs included in release inventory",
+  "scope": "Resource/seed construction only; no numerical/full-mesh qualification"
+}

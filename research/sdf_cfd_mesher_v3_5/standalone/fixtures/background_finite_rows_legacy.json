@@ -1,0 +1,41 @@
+{
+  "assurance_mode": "backend_trusted",
+  "backend_method": "HXT4DirectSizing095/1",
+  "bounds_m": [
+    [
+      -0.008,
+      0.008
+    ],
+    [
+      -0.008,
+      0.008
+    ],
+    [
+      -0.008,
+      0.008
+    ]
+  ],
+  "growth_per_m": 0.26236426446749106,
+  "interface_completion": {
+    "ftol": 1e-10,
+    "maxiter": 30,
+    "preservation_max_depth": 30,
+    "preservation_steps_per_vertex": 30,
+    "schema": "V4CoreMeshCompletion/1",
+    "seconds_per_sweep": 105,
+    "support_policy": "all_current_raw_defects"
+  },
+  "interface_seed_policy": "balanced_centroid_volume/1",
+  "maximum_size_m": 0.001,
+  "schema": "V4GradedBackground/6",
+  "tet_transition": {
+    "schema": "V4TetLayerAdapter/1",
+    "maximum_distance_m": 0.002905963150560233,
+    "rows": 3,
+    "maxiter": 30,
+    "ftol": 1e-10,
+    "seconds": 1800,
+    "fluid_depth": 20,
+    "fluid_boxes": 10000
+  }
+}

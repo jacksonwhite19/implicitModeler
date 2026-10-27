@@ -1,0 +1,33 @@
+{
+  "actual_review_pin_map_digest": "ccfb72f089e2165f65fbd82411d995373a71279a8ffc588bf1e6b9055a53c292",
+  "all_review_handles_closed": true,
+  "approved": true,
+  "authorization_sha256": "43f153ecaf31ce92a691b6d57452a81158b1664e3a3a6835797082a2a585e655",
+  "control_receipts": {
+    "CONTROL_RESULT_REVIEW.json": "dedbeab7c990269734d95e3ec3f194fdaeb30ba5678c907b1f8026aa7da1cb26",
+    "controls01/IDENTITY_CONTROL.json": "587aeac705fca931086d3873e6581f971a1ec8e61799e17ad1f5c78899ceadfc",
+    "controls01/LOADED_SOURCE_CLOSURE.json": "9bbf05d7d146bc9727a6b6cef5166cccf174dadf58fa069c7bd92e3c1240774f",
+    "controls01/RESULT.json": "e880a9bf74b929c8bcfd8a2e4876ca2c1955becb093102ff1eb55c29042258ad",
+    "controls01/WORKER_COMPLETION.json": "cd78523da8d08b1105a6dc1b13de1e8d6a5f1b594ecc4b5aaa0f74569f64e79e",
+    "controls01_EXECUTION_CLOSURE.json": "b11b2aeb0ca8f77623e8db5ca5a96a98e1897033ad1e97ad0810792bca7a5a36",
+    "controls01_RESOURCE_RESULT.json": "17dc0e19255d99ada760829fbf569a569d0286cd5b2f5d42d89d5ff65df821c9",
+    "controls01_SCOPE_RESULT.json": "3764d3d6380fde60aeb1c3f827fa0f636d950e5f41c13e1aeb066be59bcf2c35"
+  },
+  "guarded_files": 2374,
+  "guards_closed_utc": "2026-10-19T00:33:17.905+00:00",
+  "launch_before_utc": "2026-10-19T00:37:17+00:00",
+  "manifest_pins": 2338,
+  "manifest_sha256": "d462279c1d3da86910d15df02463dd1070b588098bc4c4e241675fc3980c8198",
+  "maximum_invocations": 1,
+  "mode": "fresh_live_once",
+  "no_reviewer_project_imports_tests_or_edits": true,
+  "owner_seconds": 1800,
+  "payload_seconds": 1740,
+  "request_sha256": "efeff82d12a608190991fa3701ecb5dbb502e424994a3dc0fde0f2cdff1a74c5",
+  "reviewer": "/root/completed_roles_review",
+  "scientific_acceptance": false,
+  "scope": "OneFreshOriginalBSixLayerFiniteOnlyRun",
+  "task_sha256": "1586e29bbbbef6ced7e2eae1bff6cd169cb9f3e9b16c6341d1b60516f2fd6bb3",
+  "transition_seconds": 720,
+  "windows_job_commit_bytes": 17179869184
+}

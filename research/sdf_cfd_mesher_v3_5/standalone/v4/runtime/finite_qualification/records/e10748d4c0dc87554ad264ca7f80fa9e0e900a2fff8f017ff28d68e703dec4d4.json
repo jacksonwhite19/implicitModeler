@@ -1,0 +1,47 @@
+{
+  "approved": true,
+  "mode": "nonmeshing_only",
+  "scope": "Task61OnePrivateGeneratedFluidObserverNonmeshingControlOnly",
+  "reviewer": "/root/completed_roles_review",
+  "recorded_utc": "2026-10-19T10:32:34.897938+00:00",
+  "authorization_sha256": "188f07c59e492a389d0398caafdce1c17c49af272f41e43fe9280851c2b91238",
+  "manifest_sha256": "68481190776f2cf48ef5c77e8889399240c33db143ef8713bf00d58b1008e4ce",
+  "command_sha256": "cdc9d95434304d5bdbed6e7c73940bb0f5883c9a3be46ecf0eedf7e387cf7367",
+  "reviewed_files": {
+    "prepare.py": "0768530b58acf18df485d7291f23dc8f5adaa55ae0e1d16ba4d1d46dbf3e90d9",
+    "activate.py": "ac955227beda2e6fa8f6bdef1f17d5e5e45bc4734a5ad385cd2c23bd2dc92dd3",
+    "candidate/tet_layer_handoff.py": "b3c4970da6508cd27603244f5bc98333c5a5505a4fb5b718963966ae6c0c6261",
+    "controls.py": "a348983eb028217b12a1cb0af6b643f9d9f60d6295a90365b1967048199864a2",
+    "control_run.py": "4170f332c6f7a3f4c725b6f591bf07b5fd5fe3a83573b6a60ea013a41850c69c",
+    "CONTROL_CASES.json": "bca754dd7c48de70e445c67ad964411fe12647d550341155f021327e0b3c2974",
+    "PYTHON_IDENTITY.json": "c8ecaa8cd37718e86bc3264a6a004d705c3b5b93e1432f218f87ce70e9c13e53",
+    "TASK.json": "3a0c7028bf0da001270094d197a9022142ea54bc95c37d10b170220221a78dbf",
+    "PINNED_SOURCES.json": "68481190776f2cf48ef5c77e8889399240c33db143ef8713bf00d58b1008e4ce",
+    "CONTROL_AUTHORIZATION.json": "188f07c59e492a389d0398caafdce1c17c49af272f41e43fe9280851c2b91238",
+    "ACTUAL_CONTROL_COMMAND.txt": "cdc9d95434304d5bdbed6e7c73940bb0f5883c9a3be46ecf0eedf7e387cf7367",
+    "OUTPUT_SCOPE.json": "c55835b7a938084be4583bc6c79ca2c7caf2cb50ff5516f2ffbd792edf8ec79e",
+    "CONTROL_PLAN.json": "fca1ea5283c6611803b2ae0d4128872c9d3d0410c711c0652f44ce4fc8f26532",
+    "SOURCE_REUSE.json": "2b8dd0cbc983722d8be81650ac03b2228934c56615ec7968f2c148ffa614ba85",
+    "RECORD_SCHEMA.md": "dc123cfa8ed41a22c0b9748adca697400afee497dfa65dc123c630f8b1bd7a20"
+  },
+  "maximum_invocations": 1,
+  "aggregate_payload_seconds": 50,
+  "whole_owner_seconds": 110,
+  "blockers": [],
+  "physical_snapshot": {
+    "guarded_files": 2608,
+    "manifest_entries": 2603,
+    "map_sha256": "085e4ffe6bc50584de2207bcf85681f5476c8e6918e3558946817a413807f34d",
+    "map_encoding": "Ordinal absolute-path SHA256 map; UTF8 PowerShell ConvertTo-Json -Compress",
+    "opened_utc": "2026-10-19T10:29:52.5263678Z",
+    "closed_utc": "2026-10-19T10:29:55.1434843Z",
+    "all_hashes_and_tokens_equal": true,
+    "all_handles_closed": true
+  },
+  "limitations": [
+    "Generated source selection and observer only; no accepted-parent positive producer or publication",
+    "No positive live gate, source promotion, speed or broad geometry qualification",
+    "Individual native host job membership/peak contribution not inferred"
+  ],
+  "reviewer_execution": false
+}

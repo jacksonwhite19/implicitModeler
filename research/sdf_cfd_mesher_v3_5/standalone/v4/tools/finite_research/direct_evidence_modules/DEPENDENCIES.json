@@ -1,0 +1,24 @@
+{
+  "inputs": {
+    "CONVERSION_AUDIT": {
+      "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3\\pmp_failure_forensics\\surface_acceptance_contract\\bounded_downstream_integration.py",
+      "sha256": "ec5ba36576237061b12699410e187f491d2586c28225e03e0f9d5004a620347b",
+      "bytes": 34948
+    },
+    "LEGACY_WRITER": {
+      "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3\\farfield_core_transition\\run_farfield_complete.py",
+      "sha256": "365649cc3131a1eed5fdc43bcb60738201ed4d6c647c9150c7ba5cbaa9e48ebd",
+      "bytes": 23688
+    },
+    "LEGACY_CASE": {
+      "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3\\held_out_geometry_cohort\\run_complete_stage.py",
+      "sha256": "76a106cd0f59679a42eecc087949ad35fd48a2db0b7845da5dec5e1f385ea27b",
+      "bytes": 9651
+    },
+    "LINUX_TOOLCHAIN": {
+      "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\finite_cli_runs\\158\\research\\sdf_cfd_mesher_v4\\tools\\finite_research\\direct_evidence_modules\\LINUX_TOOLCHAIN.json",
+      "sha256": "0435b524e2bcb0060e897a4bdd6af3a491aee18db228bf4a79ddf85ba8d6b11e",
+      "bytes": 326204
+    }
+  }
+}

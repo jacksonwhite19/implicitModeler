@@ -1,0 +1,185 @@
+"""Private producer connection; canonical lease class and registry remain owners."""
+from contextlib import contextmanager, ExitStack
+import json, time, os
+from pathlib import Path
+from optimized_durable_json import encoded
+from path_preserving_deduplication import replace_open_destination
+import numpy as np
+from sdf_cfd_mesher_v4.common.authority import frozen, array_hash, identity, file_hash
+from path_preserving_deduplication import durable_json
+from immutable_state_access import guard
+from finite_stage_adapter import initialize, place, admit, validate
+from finite_stage_controls import variable_shape, finite_collar
+from tet_layer_handoff import TransitionInputs, _issued, _capture, fluid_owner
+from finite_collar_stage_adapter import stage_clock
+
+def observe_fluid_call(fluid, statistics):
+    """Observe one unchanged canonical call; these counts do not accept a mesh."""
+    def observed(points, cells):
+        before = statistics()
+        result = fluid(points, cells)  # Exactly once. A primary failure skips the after snapshot.
+        after = statistics()
+        query_names = ('full_checks', 'nested_checks_reused')
+        filter_names = ('real_sign_requests', 'real_sign_filtered',
+            'real_sign_arithmetic_fallbacks', 'real_sign_exact_fallbacks', 'exact_query_fallbacks')
+        diagnostic = dict(schema='V4TetFluidCallWorkload/1', status='completed_canonical_fluid_call',
+            scope='Single canonical fluid call including initial/final verification, result assembly and callbacks; excludes construction, other admission work and later scope exits.',
+            scientific_acceptance=False, scope_exit_verified=False,
+            query_scope_counts={k:after['counts'].get(k,0)-before['counts'].get(k,0) for k in query_names},
+            regional_filter_counts={k:after['regional_filter']['counts'].get(k,0)-before['regional_filter']['counts'].get(k,0) for k in filter_names},
+            cells=result['cells'], region_queries=result['region_queries'],
+            subdivisions_from_completed_cover=(result['region_queries']-result['cells'])//2,
+            cells_without_subdivision=None, maximum_region_queries_per_cell=None,
+            maximum_observed_depth=None, exclusive_component_seconds=None)
+        return dict(result, diagnostics=diagnostic)
+    return observed
+
+def publish_timing_json(path,value):
+    path=Path(path);pending=path.with_name(path.name+'.pending')
+    data=encoded(value)
+    with pending.open('wb') as stream:
+        stream.write(data);stream.flush();os.fsync(stream.fileno())
+    replace_open_destination(pending,path)
+
+
+def timing_trace(folder,start):
+    phase_started={};timings={};phase_progress={}
+    def trace(name,event,details=None):
+        now=time.perf_counter()
+        if event=='enter':phase_started[name]=now
+        elif event=='exit':timings[name]=now-phase_started[name]
+        if details is not None:phase_progress[name]=details
+        publish_timing_json(folder/'TRANSITION_TIMING.json',dict(schema='V4TransitionTiming/1',phase=name,event=event,
+            elapsed_seconds=now-start,completed_seconds=dict(timings),progress=details,phase_progress=dict(phase_progress),
+            diagnostic_only=True,scientific_acceptance=False,restart_supported=False))
+    return trace
+
+@contextmanager
+def produce(parent,ids,triangles,terminal,volumes,centres,controls,bounds,folder,resources,*,_finite_policy=None,_outer_check=None,_stage_binding=None):
+    from rolling_fast_state import BackgroundInputs
+    from background_topology_repair import key
+    from background_mixed_geometry import batch_geometry
+    if not callable(_outer_check) or not callable(getattr(_outer_check,'remaining_seconds',None)):
+        raise ValueError('AuthenticatedOuterStageClockRequired')
+    _outer_check()
+    validate(controls)
+    if finite_collar(controls) != (_finite_policy is not None):raise ValueError("FiniteCollarPolicyConnectionRequired")
+    if _finite_policy is not None and _finite_policy["tet_transition"] != controls:raise ValueError("ChangedFiniteCollarControls")
+    if type(parent) is not BackgroundInputs:raise ValueError('LiveAcceptedTetPrismInputsRequired')
+    parent.require(parent.view);run=parent.view;start=time.perf_counter();clock_check=stage_clock(controls['seconds'],_outer_check)
+    def check():
+        clock_check()
+        parent.require_origin(parent._open()['origin'])
+    lease=None;s=None;p=None;stage='source_capability'
+    trace=timing_trace(folder,start)
+    check.repair_progress=lambda values:trace('placement','progress',values)
+    diagnostic_sink=None
+    def retain_diagnostic(event,payload):
+        nonlocal diagnostic_sink
+        if diagnostic_sink is None:
+            from background_core_repair import evidence_sink
+            diagnostic_sink=evidence_sink(folder/'TRANSITION_REPAIR_EVENTS')
+        diagnostic_sink(event,payload)
+    check.repair_diagnostics=retain_diagnostic
+    trace('source_scope','enter')
+    with ExitStack() as held:
+        try:
+            authority=parent._open()['origin'].provider.binding.authority
+            with authority.prism_query_scope() as statistics, fluid_owner(parent,check,controls,progress=lambda values:trace('source_fluid','progress',values)) as fluid:
+                observed_fluid=observe_fluid_call(fluid,statistics)
+                trace('source_scope','exit')
+                from standalone_tool import check_resources
+                available=check_resources(folder.parent,resources)
+                shape=variable_shape(controls) or finite_collar(controls)
+                check.remaining_seconds=clock_check.remaining_seconds
+                if finite_collar(controls):
+                    from finite_stage_command import construct
+                    stage='finite_collar_construction';trace(stage,'enter')
+                    s,p=construct(run.points,parent.cells(),run.topology.owners,ids,triangles,terminal,volumes,centres,
+                        _finite_policy,bounds,folder/'FINITE_COLLAR',check,parent)
+                    trace(stage,'exit')
+                else:
+                    seed_rows=controls.get('seed_rows',controls.get('rows'))
+                    minimum_arrays=(seed_rows+1)*len(ids)*24+3*seed_rows*len(triangles)*32
+                    if resources['output_limit_bytes'] is not None and available['logical_bytes']+minimum_arrays>resources['output_limit_bytes']:raise ValueError('TetTransitionOutputResourceLimit')
+                    if available['free_bytes']-minimum_arrays<resources['minimum_free_bytes']:raise ValueError('TetTransitionFreeSpaceResourceLimit')
+                    stage='initialization';trace(stage,'enter')
+                    check.remaining_seconds=clock_check.remaining_seconds
+                    parent.require(run)
+                    proposer=parent._open()['origin'].provider
+                    proposal=proposer.transition_proposal(run.points[ids],triangles,controls) if hasattr(proposer,'transition_proposal') else None
+                    if proposal is None:
+                        s=initialize(run.points,parent.cells(),run.topology.owners,ids,triangles,terminal,controls,bounds,prism_volumes=frozen(volumes,'<f8'),prism_centres=frozen(centres,'<f8'),check=check,
+                            _output=folder/'SHAPE_CONSTRUCTION' if shape else None,_resources=resources if shape else None)
+                    else:
+                        fronts,construction,direction=proposal
+                        s=initialize(run.points,parent.cells(),run.topology.owners,ids,triangles,terminal,controls,bounds,prism_volumes=frozen(volumes,'<f8'),prism_centres=frozen(centres,'<f8'),check=check,_fronts=fronts,_construction=construction,_direction=direction)
+                    if np.any(s['points']<=bounds[:,0]) or np.any(s['points']>=bounds[:,1]):raise ValueError('TetTransitionOutsideBackgroundDomain')
+                    trace('initialization','exit');stage='placement';trace(stage,'enter');p=place(s,check,parent);trace(stage,'exit')
+                    if np.any(s['points']<=bounds[:,0]) or np.any(s['points']>=bounds[:,1]):raise ValueError('TetTransitionOutsideBackgroundDomain')
+                trace('array_publication','enter')
+                compact=s['compact_ids'];inverse={int(v):i for i,v in enumerate(compact)};rows=np.asarray([[inverse[v] for v in c['vertices']] for c in s['additions']],dtype='<i8');outerids=np.asarray([inverse[int(v)] for v in s['outer'].ravel()],dtype='<i8').reshape(-1,3)
+                if not shape and not np.array_equal(outerids,triangles+controls['rows']*len(ids)):raise ValueError('ChangedTetTransitionOuterAncestry')
+                points=frozen(s['points'][compact],'<f8');rows=frozen(rows,'<i8')
+                published_outer=(np.unique(outerids) if shape else np.arange(controls['rows']*len(ids),len(compact),dtype='<i8'))
+                outer_lookup={int(v):i for i,v in enumerate(published_outer)}
+                published_triangles=(np.asarray([[outer_lookup[int(v)] for v in face] for face in outerids],dtype='<i8') if shape else triangles)
+                front=frozen(points[published_outer],'<f8')
+                # Values are provisional until TRANSITION.json and the private
+                # call-scoped lease exist. Never rewrite/copy them after proof.
+                payload=dict(points=points,tetrahedra=rows,front=front,triangles=published_triangles,cap_ids=ids)
+                if shape:payload.update(cap_triangles=triangles,outer_vertex_ids=published_outer,**{'vertex_envelope_'+k:v for k,v in s['vertex_envelope'].items()})
+                if shape:
+                    available=check_resources(folder.parent,resources);logical_minimum=sum(value.nbytes for value in payload.values())
+                    if resources['output_limit_bytes'] is not None and available['logical_bytes']+logical_minimum>resources['output_limit_bytes']:raise ValueError('ShapeTransitionOutputResourceLimit')
+                    if available['free_bytes']-logical_minimum<resources['minimum_free_bytes']:raise ValueError('ShapeTransitionFreeSpaceResourceLimit')
+                np.savez(folder/'TRANSITION.npz',**payload)
+                held.enter_context(guard(folder/'TRANSITION.npz'))
+                with np.load(folder/'TRANSITION.npz',allow_pickle=False) as readback:
+                    if set(readback.files)!=set(payload):raise ValueError('ChangedTetTransitionArraySchema')
+                    for name,expected in payload.items():
+                        value=readback[name]
+                        if value.shape!=expected.shape or value.dtype!=expected.dtype or value.tobytes()!=expected.tobytes():raise ValueError('ChangedTetTransitionArrayReadback',name)
+                durable_json(folder/'TRANSITION_PLACEMENT.json',p);trace('array_publication','exit')
+                trace('post_placement_resources','enter');check_resources(folder.parent,resources);trace('post_placement_resources','exit')
+                stage='independent_transition_admission';proof=admit(s,p,observed_fluid,check,parent,trace=trace)
+                if array_hash(s['points'])!=p['points_sha256']:raise ValueError('ChangedTetTransitionAdmissionCoordinates')
+                check_resources(folder.parent,resources);parent.require(run)
+            parent.require(run)
+            outerowners=[s['owners'][key(f)][0][0] for f in s['outer']];byid={c['id']:c for c in s['additions']};g=batch_geometry(s['points'],[byid[i] for i in outerowners])
+            volumes=frozen(np.asarray([g[i]['volume'] for i in outerowners]),'<f8');centres=frozen(np.asarray([g[i]['centre'] for i in outerowners]),'<f8')
+            report=dict(stage_binding=_stage_binding,schema='V4TetLayerAcceptance/2' if shape else 'V4TetLayerAcceptance/1',passed=True,controls=controls,parent_prism_mesh=run.live_acceptance.mesh,points_sha256=array_hash(points),tets_sha256=array_hash(rows),arrays_sha256=file_hash(folder/'TRANSITION.npz'),placement=p,proof=proof,seconds=time.perf_counter()-start,outer_bulk_neighbours_required=True,restart_supported=False)
+            authored=identity(report);durable_json(folder/'TRANSITION.json',report);held.enter_context(guard(folder/'TRANSITION.json'))
+            if identity(json.loads((folder/'TRANSITION.json').read_text(encoding='utf-8')))!=authored:raise ValueError('ChangedTetTransitionReportReadback')
+            check_resources(folder.parent,resources);report['report_sha256']=file_hash(folder/'TRANSITION.json')
+            names=([f"transition-volume:{report['arrays_sha256']}:vertex:{int(i)}" for i in published_outer] if shape else [f"transition:{controls['rows']}:parent:{int(i)}" for i in ids])
+            meta=dict(schema='V4TetLayerOuterInterface/2' if shape else 'V4TetLayerOuterInterface/1',parent_prism_mesh=run.live_acceptance.mesh,vertex_ids=names,shell_owners=list(map(str,outerowners)),owner_kind='tetrahedron',points_sha256=array_hash(front),triangles_sha256=array_hash(published_triangles),transition_arrays_sha256=report['arrays_sha256'],transition_report_sha256=report['report_sha256']);meta['identity']=identity(meta)
+            check()
+            lease=object.__new__(TransitionInputs);_issued[lease]=_capture(parent=parent,points=points,tets=rows,front=front,triangles=frozen(published_triangles,'<i8'),outer_ids=frozen(published_outer,'<i8'),volumes=volumes,centres=centres,report_json=json.dumps(report),metadata_json=json.dumps(meta))
+            stage='accepted_handoff';trace(stage,'enter')
+            check()
+            yield lease
+            check();check_resources(folder.parent,resources);lease.require(parent)
+        except BaseException as error:
+            try:
+                if lease is not None:
+                    import traceback
+                    durable_json(folder/'TRANSITION_CONSUMER_STOP.json',dict(stage=stage,error=repr(error),traceback=traceback.format_exc(),scientific_accepted=True,transition_report_sha256=file_hash(folder/'TRANSITION.json'),restart_supported=False))
+                    raise
+                # A stopped stage never leaves a usable live credential. Preserve
+                # its current private numerical state for diagnosis, not restart.
+                if s is not None and not (folder/'TRANSITION.npz').exists():
+                    compact=s['compact_ids'];lookup={int(v):i for i,v in enumerate(compact)}
+                    stopped=dict(points=s['points'][compact],tetrahedra=np.asarray([[lookup[v] for v in c['vertices']] for c in s['additions']],dtype='<i8'),cap_ids=ids)
+                    if variable_shape(controls) or finite_collar(controls):stopped.update(cap_triangles=triangles,outer_triangles=np.asarray([[lookup[v] for v in f] for f in s['outer']],dtype='<i8'),**{'vertex_envelope_'+k:v for k,v in s['vertex_envelope'].items()})
+                    else:stopped['triangles']=triangles
+                    np.savez(folder/'TRANSITION.npz',**stopped)
+                if not (folder/'TRANSITION_STOP.json').exists():
+                    import traceback
+                    durable_json(folder/'TRANSITION_STOP.json',dict(stage=stage,error=repr(error),traceback=traceback.format_exc(),scientific_accepted=False,restart_supported=False,seconds=time.perf_counter()-start,arrays_sha256=file_hash(folder/'TRANSITION.npz') if (folder/'TRANSITION.npz').exists() else None))
+                raise
+            except BaseException as diagnostic_error:
+                if diagnostic_error is not error:error.add_note('TransitionDiagnosticFailure: '+repr(diagnostic_error))
+            raise
+        finally:
+            if lease is not None:_issued.pop(lease,None)

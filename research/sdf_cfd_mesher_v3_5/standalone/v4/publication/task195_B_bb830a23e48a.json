@@ -1,0 +1,9 @@
+{
+  "schema": "V4IndependentReview/1",
+  "passed": true,
+  "reviewer": "/root/sphere_review",
+  "source_inventory_identity": "bb830a23e48a50a92b01fef0f35ada0ff4cfda7b6de810ffabfa3a893f9466b0",
+  "review_receipt_sha256": "d0a464ca1aa7610a4b45962111bad5de6bdac603295ad7945eeefc78042cdf72",
+  "scope": "Source and adapter approval for publication and metadata validation only. Scientific launch requires separate exact review.",
+  "reviewed_utc": "2026-10-24T05:53:52.5147123Z"
+}

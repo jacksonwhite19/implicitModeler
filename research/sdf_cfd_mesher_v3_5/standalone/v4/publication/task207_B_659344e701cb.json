@@ -1,0 +1,9 @@
+{
+  "schema": "V4IndependentReview/1",
+  "passed": true,
+  "reviewer": "/root/sphere_review",
+  "source_inventory_identity": "659344e701cb4049cf477cb79f242212822f8aa6c215c5ca9dd8b55c22efb8b7",
+  "review_receipt_sha256": "de3a7ee1611f6ad498b88ca45fc5c0561d0df4136d2e77a454c27087e2562c9e",
+  "scope": "Source/API/evidence/resource/publicadapter publication approval only; renewed inventorybinding supersedes earlier review. Realmetadata/exactcandidate launchreviewrequired, no candidate success orbroaderqualification.",
+  "reviewed_utc": "2026-10-24T21:38:02.3566172Z"
+}

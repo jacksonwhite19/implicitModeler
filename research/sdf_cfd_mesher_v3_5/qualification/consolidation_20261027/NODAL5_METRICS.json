@@ -1,0 +1,659 @@
+{
+  "schema": "Nodal5CompactCompleteMetrics/1",
+  "points": 207705,
+  "prisms": 298660,
+  "tetrahedra": 247804,
+  "cells": 546464,
+  "layers": {
+    "scope": "Retained-array reduction only; no source queries, proposals or native predicates",
+    "final_plan_present": true,
+    "rows": 5,
+    "wall_vertices": 29866,
+    "wall_triangles": 59732,
+    "planned_prisms": 298660,
+    "first_height_request_m": 2e-05,
+    "nominal_growth": 1.3,
+    "nominal_total_m": 0.000180862,
+    "scalar_increment_min_m": [
+      2e-05,
+      2.6000000000000002e-05,
+      3.380000000000001e-05,
+      4.394e-05,
+      5.712200000000001e-05
+    ],
+    "scalar_increment_max_m": [
+      2e-05,
+      2.6000000000000002e-05,
+      3.380000000000001e-05,
+      4.394e-05,
+      5.712200000000001e-05
+    ],
+    "scalar_total_min_m": 0.000180862,
+    "scalar_total_max_m": 0.000180862,
+    "path_increment_min_m": [
+      1.9999999999999758e-05,
+      2.5999999999999738e-05,
+      3.379999999999974e-05,
+      4.393999999999974e-05,
+      5.7121999999999735e-05
+    ],
+    "path_increment_max_m": [
+      2.0000000000000263e-05,
+      2.600000000000025e-05,
+      3.38000000000003e-05,
+      4.394000000000027e-05,
+      5.712200000000029e-05
+    ],
+    "path_total_min_m": 0.00018086199999999908,
+    "path_total_max_m": 0.000180862000000001,
+    "first_normal_min_m": 1.9999999999999758e-05,
+    "first_normal_max_m": 2.0000000000000263e-05,
+    "max_first_normal_error_m": 2.608861477543245e-19,
+    "H1_scalar_fixed": true,
+    "X1_preserved": true,
+    "scalar_growth_reversals": 0,
+    "path_growth_reversals": 0,
+    "scalar_ratio_range": [
+      1.2999999999999998,
+      1.3000000000000003
+    ],
+    "path_ratio_range": [
+      1.2999999999999745,
+      1.300000000000026
+    ],
+    "native_plan_byte_equal": {
+      "positions": true,
+      "faces": true,
+      "delta": true
+    }
+  },
+  "shape": {
+    "all_bulk_tetrahedra": {
+      "count": 247804,
+      "minimum": 0.2716482611054878,
+      "required_minimum": 0.25,
+      "minimum_passed": true,
+      "population_targets": [
+        {
+          "actual_count": 247469,
+          "actual_fraction": 0.9986481251311521,
+          "fraction": 0.99,
+          "minimum": 0.4,
+          "passed": true,
+          "required_count": 245326
+        },
+        {
+          "actual_count": 226786,
+          "actual_fraction": 0.915182967183742,
+          "fraction": 0.9,
+          "minimum": 0.6,
+          "passed": true,
+          "required_count": 223024
+        }
+      ],
+      "mandatory_passed": true,
+      "percentage_targets_met": true,
+      "percentage_status": "TARGETS_MET"
+    },
+    "interface_tetrahedra": {
+      "count": 59732,
+      "minimum": 0.32041083317825586,
+      "required_minimum": 0.25,
+      "minimum_passed": true,
+      "population_targets": [
+        {
+          "actual_count": 59600,
+          "actual_fraction": 0.9977901292439564,
+          "fraction": 0.99,
+          "minimum": 0.4,
+          "passed": true,
+          "required_count": 59135
+        },
+        {
+          "actual_count": 45572,
+          "actual_fraction": 0.7629411370789526,
+          "fraction": 0.9,
+          "minimum": 0.6,
+          "passed": false,
+          "required_count": 53759
+        }
+      ],
+      "mandatory_passed": true,
+      "percentage_targets_met": false,
+      "percentage_status": "TARGET_NOT_MET"
+    },
+    "preserved_cap_triangles": {
+      "count": 59732,
+      "minimum": 0.3304947841289329,
+      "required_minimum": 0.3,
+      "minimum_passed": true,
+      "population_targets": [
+        {
+          "actual_count": 55374,
+          "actual_fraction": 0.927040782160316,
+          "fraction": 0.99,
+          "minimum": 0.6,
+          "passed": false,
+          "required_count": 59135
+        },
+        {
+          "actual_count": 31930,
+          "actual_fraction": 0.5345543427308646,
+          "fraction": 0.9,
+          "minimum": 0.8,
+          "passed": false,
+          "required_count": 53759
+        }
+      ],
+      "mandatory_passed": true,
+      "percentage_targets_met": false,
+      "percentage_status": "TARGET_NOT_MET"
+    }
+  },
+  "conditioning": {
+    "cavity_commits": 0,
+    "coordinate_identity": "c5f8a91518e4527d998aa1bd5c900be5c0b85511339e57b9fe4d354230a5b380",
+    "existing_vertex_commits": 0,
+    "final_bad_count": 0,
+    "initial_bad_count": 0,
+    "input_sha256": "2dc471ae70119672563713a35159966ae6b8f3d4bc94c40330cc2fbfda4d29da",
+    "method_identity": "f304264e3e13202b0e0c1e0fc4ab629316896968d22bc97fe5af87900d864b30",
+    "native_calls": 0,
+    "original_coordinate_identity": "c5f8a91518e4527d998aa1bd5c900be5c0b85511339e57b9fe4d354230a5b380",
+    "outcome": "AlreadyAboveFloor",
+    "output_sha256": "2dc471ae70119672563713a35159966ae6b8f3d4bc94c40330cc2fbfda4d29da",
+    "receipt_sha256": "e20f51422df845271297d62d8e97c47eef73138486f26288613ab9ebdaf5ff41",
+    "timings": {
+      "initial_population": 21.375
+    }
+  },
+  "repair": {
+    "acceptance_contract": {
+      "contract_identity": "0ca4092aff4f177c7742bfe1d0a5d1575b7a353298992c8b3245c433d1a2aa4a",
+      "policy_identity": "11c1b1a36125a20707239a581bdaffca6a7b87bf694b2d1c22cf2d5eaba64260",
+      "version": "DirectFillEngineering/1"
+    },
+    "changed_count": 2,
+    "changed_vertices": [
+      207427,
+      207565
+    ],
+    "coordinate_identity": "6c479004c720da74bcd9adfb25d13dd81c7a769c1f3f60f3edd5949da6255a91",
+    "method_identity": "ed9a12ebb9c793a408bc4507f21669df8e050d7a13e8ff6c73b5fdb7340d8928",
+    "original_coordinate_identity": "c5f8a91518e4527d998aa1bd5c900be5c0b85511339e57b9fe4d354230a5b380",
+    "receipt_sha256": "13d2f3999864c0b5dc4ec2497aaa417a1bdabb50159b744e62f5bfe1d849573e",
+    "repair_invocations": 1
+  },
+  "repair_receipt": {
+    "acceptance_contract": {
+      "contract_identity": "0ca4092aff4f177c7742bfe1d0a5d1575b7a353298992c8b3245c433d1a2aa4a",
+      "policy_identity": "11c1b1a36125a20707239a581bdaffca6a7b87bf694b2d1c22cf2d5eaba64260",
+      "version": "DirectFillEngineering/1"
+    },
+    "baseline_quality": {
+      "compact_output": true,
+      "failures": [
+        {
+          "kind": "face_quality",
+          "owners": [
+            5012194,
+            5283932
+          ],
+          "skewness": 0.10568849697706005,
+          "symmetric_volume_ratio": 0.03625192737300141,
+          "vertices": [
+            155351,
+            155364,
+            155383
+          ],
+          "weight": 0.04859707308410087
+        },
+        {
+          "kind": "face_quality",
+          "owners": [
+            5012222,
+            5077467
+          ],
+          "skewness": 0.08192736700929416,
+          "symmetric_volume_ratio": 0.036104876157840006,
+          "vertices": [
+            155364,
+            155386,
+            155383
+          ],
+          "weight": 0.048430464020676946
+        },
+        {
+          "kind": "face_quality",
+          "owners": [
+            5018765,
+            5283899
+          ],
+          "skewness": 0.023850614298735535,
+          "symmetric_volume_ratio": 0.035624309085525496,
+          "vertices": [
+            158535,
+            158581,
+            158736
+          ],
+          "weight": 0.04744306406398393
+        },
+        {
+          "kind": "face_quality",
+          "owners": [
+            5018766,
+            5095379
+          ],
+          "skewness": 0.134803409947375,
+          "symmetric_volume_ratio": 0.03615267068463327,
+          "vertices": [
+            158535,
+            158736,
+            158661
+          ],
+          "weight": 0.04818132737219961
+        }
+      ],
+      "passed": false,
+      "summary": {
+        "affected_cells": 546464,
+        "affected_faces": 1210556,
+        "exact_nonpositive_cells": 0,
+        "maximum_aspect": 17.33734311168157,
+        "maximum_skewness": 1.026045478115849,
+        "minimum_determinant": 0.0043650528510814695,
+        "minimum_symmetric_volume_ratio": 0.035624309085525496,
+        "minimum_weight": 0.04744306406398393
+      }
+    },
+    "changed_count": 2,
+    "changed_vertices": [
+      207427,
+      207565
+    ],
+    "classification": "UNQUALIFIED",
+    "classification_scope": "Changed rows source-float AND exact binary-coordinate classifications; untouched rows source-float only. No global exact-Q population claim.",
+    "conditioning_receipt_sha256": "e20f51422df845271297d62d8e97c47eef73138486f26288613ab9ebdaf5ff41",
+    "connectivity_changed": false,
+    "coordinates_sha256": "6c479004c720da74bcd9adfb25d13dd81c7a769c1f3f60f3edd5949da6255a91",
+    "method": {
+      "acceptance": "Strict fresh batch AND scalar source QA, exact signs/star volume, immutable boundary/prefix, mandatory cumulative mean-ratio minimum and local weight improvement; percentage counts are diagnostics. No solver-status authority.",
+      "ftol": 1e-12,
+      "maximum_construction_seconds": 3600,
+      "maximum_search_evaluations_per_vertex": 8192,
+      "maximum_search_seconds_per_vertex": 30,
+      "maximum_vertices": 32,
+      "maxiter": 120,
+      "movement": "Euclidean ball radius half the shortest incident apex-edge length; fixed before solve; strict stored-coordinate displacement norm",
+      "order": "Unique eligible apices sorted by vertex index derived from actual failed interface faces; one pass, refresh complete star/halo before each solve",
+      "schema": "GenericInteriorSharedApexRepair/231",
+      "search_reserve": 9.5367431640625e-07,
+      "solver": "SLSQP; stage1 minimum normalized displacement; stage2 interface .6 deficit plus1e-4 displacement penalty",
+      "solver_stages": 2
+    },
+    "mixed_bulk_counts": [
+      247804,
+      247469,
+      226786
+    ],
+    "mixed_interface_counts": [
+      59732,
+      59600,
+      45572
+    ],
+    "original_coordinates_sha256": "c5f8a91518e4527d998aa1bd5c900be5c0b85511339e57b9fe4d354230a5b380",
+    "parent_native_sha256": "298e0028c929a808b97a8f421a670a38e5d3d9e48371328a81cfc85076ad9a90",
+    "protected_coordinate_bits_unchanged": true,
+    "records": [
+      {
+        "after_m": [
+          -0.002836017698708714,
+          0.0014725003092089634,
+          0.000572916628926409
+        ],
+        "before_m": [
+          -0.002833787281224304,
+          0.0014729794864895293,
+          0.0005731906306246692
+        ],
+        "bulk_mixed_classification_counts": [
+          247804,
+          247469,
+          226785
+        ],
+        "checked_faces": 20,
+        "displacement_m": 2.2977053665821368e-06,
+        "evaluations": 250,
+        "exact_star_volume_conserved": true,
+        "fixed_opposite_faces": 8,
+        "halo_cells": 16,
+        "incident_tet_ids": [
+          5085090,
+          5095379,
+          5095426,
+          5132076,
+          5179672,
+          5179711,
+          5191928,
+          5283899
+        ],
+        "incident_tets": 8,
+        "interface_mixed_classification_counts": [
+          59732,
+          59600,
+          45571
+        ],
+        "radius_m": 4.294471269401572e-06,
+        "source_batch_summary": {
+          "affected_cells": 8,
+          "affected_faces": 20,
+          "exact_nonpositive_cells": 0,
+          "maximum_aspect": 5.054035948306412,
+          "maximum_skewness": 0.5356373597034322,
+          "minimum_determinant": 0.10586316454656483,
+          "minimum_symmetric_volume_ratio": 0.05067459621331991,
+          "minimum_weight": 0.06616037111732324
+        },
+        "source_scalar_passed": true,
+        "status": "COMMITTED",
+        "study_per_star_count_nonregression": true,
+        "trials": [
+          {
+            "iterations": 9,
+            "message": "Optimization terminated successfully",
+            "stage": 1,
+            "status": 0,
+            "success": true
+          },
+          {
+            "iterations": 20,
+            "message": "Optimization terminated successfully",
+            "stage": 2,
+            "status": 0,
+            "success": true
+          }
+        ],
+        "vertex": 207427
+      },
+      {
+        "after_m": [
+          -0.0029108718048602147,
+          0.0006203467931300094,
+          0.0012651668999976043
+        ],
+        "before_m": [
+          -0.002909286429026615,
+          0.0006201900511022474,
+          0.0012657209297502468
+        ],
+        "bulk_mixed_classification_counts": [
+          247804,
+          247469,
+          226786
+        ],
+        "checked_faces": 20,
+        "displacement_m": 1.686693085253412e-06,
+        "evaluations": 258,
+        "exact_star_volume_conserved": true,
+        "fixed_opposite_faces": 8,
+        "halo_cells": 16,
+        "incident_tet_ids": [
+          5077467,
+          5077487,
+          5077514,
+          5077517,
+          5240054,
+          5248930,
+          5262989,
+          5283932
+        ],
+        "incident_tets": 8,
+        "interface_mixed_classification_counts": [
+          59732,
+          59600,
+          45572
+        ],
+        "radius_m": 4.2276279575229815e-06,
+        "source_batch_summary": {
+          "affected_cells": 8,
+          "affected_faces": 20,
+          "exact_nonpositive_cells": 0,
+          "maximum_aspect": 6.059187765404614,
+          "maximum_skewness": 0.5099268649931018,
+          "minimum_determinant": 0.08263598923881553,
+          "minimum_symmetric_volume_ratio": 0.04699771911901435,
+          "minimum_weight": 0.062134067190269864
+        },
+        "source_scalar_passed": true,
+        "status": "COMMITTED",
+        "study_per_star_count_nonregression": true,
+        "trials": [
+          {
+            "iterations": 10,
+            "message": "Optimization terminated successfully",
+            "stage": 1,
+            "status": 0,
+            "success": true
+          },
+          {
+            "iterations": 20,
+            "message": "Optimization terminated successfully",
+            "stage": 2,
+            "status": 0,
+            "success": true
+          }
+        ],
+        "vertex": 207565
+      }
+    ],
+    "repair_invocations": 1,
+    "scientific_acceptance": false,
+    "selected_vertices": [
+      207427,
+      207565
+    ],
+    "selection_refusals": [],
+    "source_float_bulk": {
+      "count": 247804,
+      "diagnostic_quantile_values": [
+        0.2716482611054878,
+        0.46992939844241205,
+        0.616191591721477,
+        0.8452460691916143,
+        0.9430758780485913,
+        0.9997564091185752
+      ],
+      "minimum": 0.2716482611054878,
+      "minimum_passed": true,
+      "passed": true,
+      "population_targets": [
+        {
+          "actual_count": 247469,
+          "actual_fraction": 0.9986481251311521,
+          "fraction": 0.99,
+          "minimum": 0.4,
+          "passed": true,
+          "required_count": 245326
+        },
+        {
+          "actual_count": 226786,
+          "actual_fraction": 0.915182967183742,
+          "fraction": 0.9,
+          "minimum": 0.6,
+          "passed": true,
+          "required_count": 223024
+        }
+      ],
+      "quantiles": [
+        0,
+        0.01,
+        0.1,
+        0.5,
+        0.9,
+        1
+      ],
+      "required_minimum": 0.25
+    },
+    "source_float_interface": {
+      "count": 59732,
+      "diagnostic_quantile_values": [
+        0.32041083317825586,
+        0.4401729012952186,
+        0.5364401805310749,
+        0.6932447764561802,
+        0.8616398813605853,
+        0.9978238792394675
+      ],
+      "minimum": 0.32041083317825586,
+      "minimum_passed": true,
+      "passed": false,
+      "population_targets": [
+        {
+          "actual_count": 59600,
+          "actual_fraction": 0.9977901292439564,
+          "fraction": 0.99,
+          "minimum": 0.4,
+          "passed": true,
+          "required_count": 59135
+        },
+        {
+          "actual_count": 45572,
+          "actual_fraction": 0.7629411370789526,
+          "fraction": 0.9,
+          "minimum": 0.6,
+          "passed": false,
+          "required_count": 53759
+        }
+      ],
+      "quantiles": [
+        0,
+        0.01,
+        0.1,
+        0.5,
+        0.9,
+        1
+      ],
+      "required_minimum": 0.25
+    },
+    "source_queries": 0,
+    "task": 231,
+    "union_affected_tets": 16
+  },
+  "actual_neighbour_interface": {
+    "faces": 59732,
+    "failure_count": 0,
+    "failures": [],
+    "geometry_identity": "0a7008381942d4ca9a1b54ac6adc5f9b8e84ff05dc9b63bcd5ecf4487ad600d4",
+    "maximum_nonorthogonality": 37.302082789779654,
+    "maximum_skewness": 1.026045478115849,
+    "minimum_symmetric_volume_ratio": 0.0428561553573599,
+    "minimum_weight": 0.05687894314413293,
+    "nonorthogonality_role": "descriptive_only",
+    "passed": true,
+    "scientific_acceptance": false,
+    "wall_contract": "StoredFluidBoundaryWall/1"
+  },
+  "joined_qa": {
+    "compact_output": true,
+    "failures": [],
+    "geometry_identity": "0a7008381942d4ca9a1b54ac6adc5f9b8e84ff05dc9b63bcd5ecf4487ad600d4",
+    "passed": true,
+    "summary": {
+      "affected_cells": 546464,
+      "affected_faces": 1210556,
+      "exact_nonpositive_cells": 0,
+      "maximum_aspect": 17.33734311168157,
+      "maximum_skewness": 1.026045478115849,
+      "minimum_determinant": 0.0043650528510814695,
+      "minimum_symmetric_volume_ratio": 0.0428561553573599,
+      "minimum_weight": 0.05687894314413293
+    },
+    "wall_contract": "StoredFluidBoundaryWall/1"
+  },
+  "openfoam": {
+    "max_nonorthogonality_deg": 68.98421676571267,
+    "max_skewness": 1.0260454781158368,
+    "min_determinant": 0.0043650528510814635,
+    "min_weight": 0.05687894314413066,
+    "min_volume_ratio": 0.042856155357358316
+  },
+  "checkmesh": {
+    "failed_lines": [],
+    "literal_mesh_ok": true,
+    "mesh_quality": "NOT_RUN_NO_APPLICABLE_APPROVED_DICTIONARY",
+    "passed": true,
+    "returncode": 0,
+    "warnings": []
+  },
+  "all_twelve_receipt_hashes": {
+    "boundary_collision": true,
+    "collision": true,
+    "domain": true,
+    "enclosure": true,
+    "filling": true,
+    "incidence": true,
+    "interface_qa": true,
+    "joined_qa": true,
+    "physical_qa": true,
+    "preservation": true,
+    "surfaces": true,
+    "winding": true
+  },
+  "cold_readback": {
+    "CFD_qualified": false,
+    "actual_shape_populations_recomputed": true,
+    "all_twelve_semantically_replayed": true,
+    "conditioning_replayed": true,
+    "geometry_identity": "0a7008381942d4ca9a1b54ac6adc5f9b8e84ff05dc9b63bcd5ecf4487ad600d4",
+    "manifest_sha256": "1b778396354ecbeda777d12f0bb6af5db4328298182c78232ac64209dc0b4296",
+    "passed": true,
+    "points": 207705,
+    "prisms": 298660,
+    "proofs": 12,
+    "repair_replayed": true,
+    "schema": "V35DirectIndependentReadback/1",
+    "tetrahedra": 247804
+  },
+  "root_stage_seconds": {
+    "surface": 130.72541889967397,
+    "first_front": 558.0865418999456,
+    "v3_complete_plan": 1369.9081842000596,
+    "v4_prospective_shell_checks": 1775.8258579997346,
+    "v3_native_construction": 19.91873519960791,
+    "v4_shell_admission": 107.25601350003853,
+    "v4_direct_fill": 2902.121073599905
+  },
+  "direct_stage_seconds": {
+    "bulk": 243.07583789993078,
+    "bulk_conditioning": 125.51909880014136,
+    "cap_compatibility": 35.7479952997528,
+    "export": 129.47239980008453,
+    "farfield": 86.43706070026383,
+    "independent_readback": 1031.1787522998638,
+    "joined_proofs": 1111.873342299834,
+    "parent": 88.82144069997594,
+    "repair": 49.22940710000694
+  },
+  "joined_stage_seconds": {
+    "boundary_collision": 6.213376300409436,
+    "collision": 472.2772683999501,
+    "domain": 0.03419120004400611,
+    "enclosure": 12.236199399922043,
+    "filling": 364.03345109988004,
+    "incidence": 22.3578572999686,
+    "interface_qa": 18.616615400183946,
+    "joined_qa": 22.28586780000478,
+    "physical_qa": 13.228544400073588,
+    "preservation": 9.0012326836586e-07,
+    "surfaces": 6.5482377000153065,
+    "winding": 46.98946790024638
+  },
+  "native_budget": {
+    "limit_seconds": 7200.0,
+    "used_seconds": 260.0629999996163
+  },
+  "mesh_sha256": "01604c3a076c1fa52e4106ce34183525a06eae2f05f7fa3d4f4d8c4e4e34e588",
+  "readback_sha256": "b521cca8396a7ff1e5445ef936010a81926993de039dc82b0026f168cd85e73c",
+  "manifest_sha256": "1b778396354ecbeda777d12f0bb6af5db4328298182c78232ac64209dc0b4296",
+  "geometry_identity": "0a7008381942d4ca9a1b54ac6adc5f9b8e84ff05dc9b63bcd5ecf4487ad600d4"
+}

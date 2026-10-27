@@ -1,0 +1,19 @@
+{
+  "actual_execution_held_pins": 2344,
+  "actual_review_pin_map_digest": "e90031880e150e7843ff87b680fcc299cbb5791f5b75f4ffaa3afc6520437e95",
+  "all_review_handles_closed": true,
+  "control_authorization_sha256": "839ce3bc69927c0da91d4a6785bc11267c0aec0d5713abee21078cd8e0aaa0e5",
+  "guarded_files": 2372,
+  "guards_closed_utc": "2026-10-19T00:31:51+00:00",
+  "live_launch_approved": false,
+  "live_source_ready": true,
+  "loaded_files": 215,
+  "manifest_sha256": "d462279c1d3da86910d15df02463dd1070b588098bc4c4e241675fc3980c8198",
+  "module_records": 231,
+  "no_reviewer_imports_tests_or_edits": true,
+  "passed": true,
+  "reviewer": "/root/completed_roles_review",
+  "scientific_acceptance": false,
+  "scope": "ClosedCanonicalInitializationControlAndLiveSourceReadinessOnly",
+  "unpinned": []
+}

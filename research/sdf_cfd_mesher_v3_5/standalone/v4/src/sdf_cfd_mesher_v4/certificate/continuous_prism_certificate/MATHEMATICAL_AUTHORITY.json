@@ -1,0 +1,18 @@
+{
+  "byte_identical": true,
+  "files": {
+    "bilinear_side_certificate.py": "fa204cf1307354b94dd64e1c83e4d2ed6dd9e3edf9bbda3948c5a1799f6ee8c3",
+    "coincident_rank3_certificate.py": "239615a5cc8c6911794a0f2da50bd1b3305a1fc87ccf8b348d3470834a139ebd",
+    "exact_algebraic.py": "b053838c975c59c1da76716df289d0c22a53416109207edfe4489d179f82041d",
+    "incident_contact_authority.py": "b56c19af8ee778c643f833eb1ec1ab9d510c5c925445a770066da276d45f2f5a",
+    "noncoincident_rank3_certificate.py": "c09b83957b95fd20b9a4fc4e67dea871fd03f01a2e814fc0e4bdadacd8f76dad",
+    "rank3_certificate.py": "137966ea737e0decf8818ce7e0104f52209efb42e8b351b747bb4f98cafc2d8e",
+    "rank_geometry.py": "2b9108cd3eab2c7f0d2d18cc960a66812d0f5416332bb78e55fcb794b4d3fb95",
+    "rank_mixed_certificate.py": "fb5279a2c6efdf186d1bcb6ebc6796c4cbd96d2abd94bd49b2893ddb474d6a0d",
+    "retained_canonical_adapter.py": "2e29fb6dcb55436d329a5389fed6b7b7469a70657be7c4359a6f56d4bbc3c0e7",
+    "retained_rank_dispatch.py": "a9c9650435fc8a22c6fba8b4ae9a15d25ef21acda36bb3b41b96231ce00fefc8",
+    "unordered_pair_enumerator.py": "1a88116090810611270251ec0e4bc71bfa6e105bfd4cf705567bd3fba82bf0ca"
+  },
+  "no_mathematical_changes": true,
+  "source_authority": "0fd1d85b471d626c19dc80b51b599ca7f8cad5a4349e8649d90883a50cf2e069"
+}

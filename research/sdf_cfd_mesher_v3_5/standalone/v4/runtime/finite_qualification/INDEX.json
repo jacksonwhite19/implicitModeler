@@ -1,0 +1,640 @@
+{
+  "schema": "FiniteQualificationArchive/1",
+  "records": {
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\finite_collar_live_B04\\CLOSED.json": {
+      "sha256": "e867766552c80c82957eecf2828e3ff1d058e68bfd14dc911713fafa7d5ba14d",
+      "local": "runtime/finite_qualification/records/e867766552c80c82957eecf2828e3ff1d058e68bfd14dc911713fafa7d5ba14d.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\finite_collar_live_B04\\CONTROL_RESULT_REVIEW.json": {
+      "sha256": "dedbeab7c990269734d95e3ec3f194fdaeb30ba5678c907b1f8026aa7da1cb26",
+      "local": "runtime/finite_qualification/records/dedbeab7c990269734d95e3ec3f194fdaeb30ba5678c907b1f8026aa7da1cb26.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\finite_collar_live_B04\\LAUNCH_REVIEW.json": {
+      "sha256": "a0b188546eb7ac4263366747fe17e840371ee2447e81fae42aab69bf7544b4b3",
+      "local": "runtime/finite_qualification/records/a0b188546eb7ac4263366747fe17e840371ee2447e81fae42aab69bf7544b4b3.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\finite_collar_live_B04\\REVIEW.json": {
+      "sha256": "e777a4c4029c5f400f1910411b337f794d1d0f153d2f7472c8d1b0115501f6ca",
+      "local": "runtime/finite_qualification/records/e777a4c4029c5f400f1910411b337f794d1d0f153d2f7472c8d1b0115501f6ca.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\finite_collar_live_B05\\CLOSED.json": {
+      "sha256": "535b3cdacde54bcfef686b680a40d4bb57a552a0238f4a996614d8555b562023",
+      "local": "runtime/finite_qualification/records/535b3cdacde54bcfef686b680a40d4bb57a552a0238f4a996614d8555b562023.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\finite_collar_live_B05\\REVIEW.json": {
+      "sha256": "182644ef692f614a3fecf9c1f703d7b8c3dedf37f46b723a5a8ed1cc9b71b371",
+      "local": "runtime/finite_qualification/records/182644ef692f614a3fecf9c1f703d7b8c3dedf37f46b723a5a8ed1cc9b71b371.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\CLOSED.json": {
+      "sha256": "d2f6c59cf3bf02261f472d6a97fc723f0b9c30e02e3d9f49b100167ac5934f3f",
+      "local": "runtime/finite_qualification/records/d2f6c59cf3bf02261f472d6a97fc723f0b9c30e02e3d9f49b100167ac5934f3f.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\CONTROL_LAUNCH_REVIEW.json": {
+      "sha256": "16f6040e05bd2d2e3ec9d630d9b51e6a59c12348ff5ab015b490009f59d32d5d",
+      "local": "runtime/finite_qualification/records/16f6040e05bd2d2e3ec9d630d9b51e6a59c12348ff5ab015b490009f59d32d5d.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\REVIEW.json": {
+      "sha256": "7e1ac82cc5e15e2c6e6e5ad76fbc61f217451dd520d423b207e0fea1907f2978",
+      "local": "runtime/finite_qualification/records/7e1ac82cc5e15e2c6e6e5ad76fbc61f217451dd520d423b207e0fea1907f2978.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01\\CONTROL_STARTUP_IDENTITY.json": {
+      "sha256": "25c0f0355f5db252d994b5512e1cd7db3ec1b5a5cd1362d285d194e3893a9bd1",
+      "local": "runtime/finite_qualification/records/25c0f0355f5db252d994b5512e1cd7db3ec1b5a5cd1362d285d194e3893a9bd1.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01\\HOST_CONTROL_EVIDENCE.json": {
+      "sha256": "e4a18b94ab78acf73502a663d5b6f1e4a0d6030ea7b035e5c045c630417afb35",
+      "local": "runtime/finite_qualification/records/e4a18b94ab78acf73502a663d5b6f1e4a0d6030ea7b035e5c045c630417afb35.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01\\LOADED_SOURCE_CLOSURE.json": {
+      "sha256": "303fad2b9f99db10385d855ec809aaa1f207b819dfb7968cb5ab51b6e2cfae22",
+      "local": "runtime/finite_qualification/records/303fad2b9f99db10385d855ec809aaa1f207b819dfb7968cb5ab51b6e2cfae22.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01\\RESULT.json": {
+      "sha256": "b3a22bd1b61d940fb3cf7b806d927c7a51e2852304dfa5ce651f05f6e4a90dda",
+      "local": "runtime/finite_qualification/records/b3a22bd1b61d940fb3cf7b806d927c7a51e2852304dfa5ce651f05f6e4a90dda.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01\\WORKER_COMPLETION.json": {
+      "sha256": "c2b6d4136626b28fa37ac9da65caa5474abd4ce6bd0dc2e0948da8f201365829",
+      "local": "runtime/finite_qualification/records/c2b6d4136626b28fa37ac9da65caa5474abd4ce6bd0dc2e0948da8f201365829.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01_EXECUTION.json": {
+      "sha256": "757f0fac9f0c53704e358a806d03ed6a3635e274595ecb3341a3a8583e4feed3",
+      "local": "runtime/finite_qualification/records/757f0fac9f0c53704e358a806d03ed6a3635e274595ecb3341a3a8583e4feed3.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01_EXECUTION_CLOSURE.json": {
+      "sha256": "6cdb4aa82c5ce759ee2f74d369a8bc5cdf5dbfaef0b120456bbe758527d7e2d7",
+      "local": "runtime/finite_qualification/records/6cdb4aa82c5ce759ee2f74d369a8bc5cdf5dbfaef0b120456bbe758527d7e2d7.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01_RESOURCE_RESULT.json": {
+      "sha256": "c7da2f4cccf035b8af8b889249464d0f5c58fb19cb799a8a6453202189b17dfa",
+      "local": "runtime/finite_qualification/records/c7da2f4cccf035b8af8b889249464d0f5c58fb19cb799a8a6453202189b17dfa.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01_SCOPE_CLOSURE.json": {
+      "sha256": "0b35c3d5aa55f7f2356cfcfd95dcf0af4bb5ae2f6b0f0b12720a1b21ec27e487",
+      "local": "runtime/finite_qualification/records/0b35c3d5aa55f7f2356cfcfd95dcf0af4bb5ae2f6b0f0b12720a1b21ec27e487.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01_SCOPE_RESULT.json": {
+      "sha256": "045e4abd98b7f01e39ad8ad41475c628f76263b3405dbbd8b96e5569c2203e45",
+      "local": "runtime/finite_qualification/records/045e4abd98b7f01e39ad8ad41475c628f76263b3405dbbd8b96e5569c2203e45.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_blend_live01\\CLOSED.json": {
+      "sha256": "b5c541b71ec909da26bc671a27ca93b4e6dd7f12fbcdb5aa0f6310bfabd52245",
+      "local": "runtime/finite_qualification/records/b5c541b71ec909da26bc671a27ca93b4e6dd7f12fbcdb5aa0f6310bfabd52245.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_blend_live01\\REVIEW.json": {
+      "sha256": "7dc73937e68d07f55d6343d0a4624317da01d2d74a1f98b912c8bbf1a70a04fc",
+      "local": "runtime/finite_qualification/records/7dc73937e68d07f55d6343d0a4624317da01d2d74a1f98b912c8bbf1a70a04fc.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity01\\CLOSED.json": {
+      "sha256": "eace93e4729ff03be7fbdfdf1e4a745f328031d1a3860ea0a709f3a002f7feb4",
+      "local": "runtime/finite_qualification/records/eace93e4729ff03be7fbdfdf1e4a745f328031d1a3860ea0a709f3a002f7feb4.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity01\\REVIEW.json": {
+      "sha256": "261aee12b2f90888c7e0ade5e60b878f8cb2504fc55853090273e7e235ae6488",
+      "local": "runtime/finite_qualification/records/261aee12b2f90888c7e0ade5e60b878f8cb2504fc55853090273e7e235ae6488.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\CLOSED.json": {
+      "sha256": "c20e24adee526fbfb774d7a4f062d615654047b4a71a35014fec24f0c5599985",
+      "local": "runtime/finite_qualification/records/c20e24adee526fbfb774d7a4f062d615654047b4a71a35014fec24f0c5599985.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\CONTROL_AUTHORIZATION.json": {
+      "sha256": "223561a970d8a667b2216af97f65da655e2eafa8ff376e9c9c280aa449405fd1",
+      "local": "runtime/finite_qualification/records/223561a970d8a667b2216af97f65da655e2eafa8ff376e9c9c280aa449405fd1.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\CONTROL_LAUNCH_REVIEW.json": {
+      "sha256": "bf5b61307c0d5aac876ee9920149b1ab03d39c31dd183e2f10800a7efa429d3c",
+      "local": "runtime/finite_qualification/records/bf5b61307c0d5aac876ee9920149b1ab03d39c31dd183e2f10800a7efa429d3c.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\CONTROL_RESULT_REVIEW.json": {
+      "sha256": "d9656092e891904a6e7c9777f1b9fcc95197ae78d0c5550cd60d3981a6cf32f7",
+      "local": "runtime/finite_qualification/records/d9656092e891904a6e7c9777f1b9fcc95197ae78d0c5550cd60d3981a6cf32f7.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\PINNED_SOURCES.json": {
+      "sha256": "e4a3da32084a44f71f9aaa129c2a90d1c1024d25e5d45a6e75986357c782cb40",
+      "local": "runtime/finite_qualification/records/e4a3da32084a44f71f9aaa129c2a90d1c1024d25e5d45a6e75986357c782cb40.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\REVIEW.json": {
+      "sha256": "f3a7cfd5855eda7d2bd88b793012a3a02facb06d3f0913b088b2c702345849a2",
+      "local": "runtime/finite_qualification/records/f3a7cfd5855eda7d2bd88b793012a3a02facb06d3f0913b088b2c702345849a2.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\activate.py": {
+      "sha256": "3d8aefc04a127096147e16bc26fe7bc9d5a4767e524b9a19a130e4524c40f2cf",
+      "local": "runtime/finite_qualification/records/3d8aefc04a127096147e16bc26fe7bc9d5a4767e524b9a19a130e4524c40f2cf.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\controls.py": {
+      "sha256": "453ebb3530148210aa46934a649a60aa3fe4473aa8dc162829ad7b02db96f4ec",
+      "local": "runtime/finite_qualification/records/453ebb3530148210aa46934a649a60aa3fe4473aa8dc162829ad7b02db96f4ec.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\controls01\\CONTROL_STARTUP_IDENTITY.json": {
+      "sha256": "74a16e553ec13adee5243ad0e5501991d82628cc27d04c0a932ba76f8a4a1187",
+      "local": "runtime/finite_qualification/records/74a16e553ec13adee5243ad0e5501991d82628cc27d04c0a932ba76f8a4a1187.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\controls01\\LOADED_SOURCE_CLOSURE.json": {
+      "sha256": "fd57386902dc44e6f14ad382de89824c027e7519f7b717533b8efb7943f4659b",
+      "local": "runtime/finite_qualification/records/fd57386902dc44e6f14ad382de89824c027e7519f7b717533b8efb7943f4659b.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\controls01\\RESULT.json": {
+      "sha256": "5f410d5f818c875845d3abc653be33f187291d494d412b899b11d14c60272fd3",
+      "local": "runtime/finite_qualification/records/5f410d5f818c875845d3abc653be33f187291d494d412b899b11d14c60272fd3.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\controls01\\WORKER_COMPLETION.json": {
+      "sha256": "cf3c7b7d24a2baf1c2eb4067faf75122e0cb57cc92ec67d1b4e7b6c854de596e",
+      "local": "runtime/finite_qualification/records/cf3c7b7d24a2baf1c2eb4067faf75122e0cb57cc92ec67d1b4e7b6c854de596e.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\controls01_EXECUTION.json": {
+      "sha256": "f2a606f26f77bbeb23101acdf22f6227593964e9f0a304363bc41e46d0dc9267",
+      "local": "runtime/finite_qualification/records/f2a606f26f77bbeb23101acdf22f6227593964e9f0a304363bc41e46d0dc9267.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\controls01_EXECUTION_CLOSURE.json": {
+      "sha256": "5616a3bc0e24bc8d39b65763799625e165e9ac1317871349fb421e8afc47de71",
+      "local": "runtime/finite_qualification/records/5616a3bc0e24bc8d39b65763799625e165e9ac1317871349fb421e8afc47de71.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\controls01_RESOURCE_RESULT.json": {
+      "sha256": "cb4dc7818d4ea59f9ffdb3ee973922f2681aa70e6351b50fbd990a07d8dd8c88",
+      "local": "runtime/finite_qualification/records/cb4dc7818d4ea59f9ffdb3ee973922f2681aa70e6351b50fbd990a07d8dd8c88.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\controls01_SCOPE_CLOSURE.json": {
+      "sha256": "435df812af0d6b2fe91f5c1b528f38bbdef660e808aa3b7a7961389d7b511afb",
+      "local": "runtime/finite_qualification/records/435df812af0d6b2fe91f5c1b528f38bbdef660e808aa3b7a7961389d7b511afb.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\controls01_SCOPE_RESULT.json": {
+      "sha256": "8995e0dc9abba80ab1bb04f77ef72772a9e3c39b4573598040b93a8e6ee3f24c",
+      "local": "runtime/finite_qualification/records/8995e0dc9abba80ab1bb04f77ef72772a9e3c39b4573598040b93a8e6ee3f24c.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\prepare.py": {
+      "sha256": "62e1cf7c7ae95b973ffe24115009d936086963b22068c026aca15d5df9c9345e",
+      "local": "runtime/finite_qualification/records/62e1cf7c7ae95b973ffe24115009d936086963b22068c026aca15d5df9c9345e.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_command02\\CLOSED.json": {
+      "sha256": "0efcd165f5ed90bef61bba3b055ebbd61b6372e2d5579639147c1f196a25d70b",
+      "local": "runtime/finite_qualification/records/0efcd165f5ed90bef61bba3b055ebbd61b6372e2d5579639147c1f196a25d70b.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_command02\\REVIEW.json": {
+      "sha256": "2f05c593c7db1a93ca49c0c4cea6cfcba0a8d9f7b0b830978f1ae5cd69a3048e",
+      "local": "runtime/finite_qualification/records/2f05c593c7db1a93ca49c0c4cea6cfcba0a8d9f7b0b830978f1ae5cd69a3048e.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\CLOSED.json": {
+      "sha256": "acaae05b54451ef2b60866355ac2e773ad2e0002203666f1fd9fabd4c433e6b2",
+      "local": "runtime/finite_qualification/records/acaae05b54451ef2b60866355ac2e773ad2e0002203666f1fd9fabd4c433e6b2.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\CONTROL_AUTHORIZATION.json": {
+      "sha256": "188f07c59e492a389d0398caafdce1c17c49af272f41e43fe9280851c2b91238",
+      "local": "runtime/finite_qualification/records/188f07c59e492a389d0398caafdce1c17c49af272f41e43fe9280851c2b91238.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\CONTROL_LAUNCH_REVIEW.json": {
+      "sha256": "e10748d4c0dc87554ad264ca7f80fa9e0e900a2fff8f017ff28d68e703dec4d4",
+      "local": "runtime/finite_qualification/records/e10748d4c0dc87554ad264ca7f80fa9e0e900a2fff8f017ff28d68e703dec4d4.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\EVIDENCE.json": {
+      "sha256": "1bf44a5b6dd641071fb850d87178bad97b762e432f33c0856b48f86307ec2b9d",
+      "local": "runtime/finite_qualification/records/1bf44a5b6dd641071fb850d87178bad97b762e432f33c0856b48f86307ec2b9d.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\PINNED_SOURCES.json": {
+      "sha256": "68481190776f2cf48ef5c77e8889399240c33db143ef8713bf00d58b1008e4ce",
+      "local": "runtime/finite_qualification/records/68481190776f2cf48ef5c77e8889399240c33db143ef8713bf00d58b1008e4ce.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\REVIEW.json": {
+      "sha256": "e22372c18d3d03a79c1feab9f508ef8ee4905d509884589e9aefde02e7100f6d",
+      "local": "runtime/finite_qualification/records/e22372c18d3d03a79c1feab9f508ef8ee4905d509884589e9aefde02e7100f6d.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\activate.py": {
+      "sha256": "ac955227beda2e6fa8f6bdef1f17d5e5e45bc4734a5ad385cd2c23bd2dc92dd3",
+      "local": "runtime/finite_qualification/records/ac955227beda2e6fa8f6bdef1f17d5e5e45bc4734a5ad385cd2c23bd2dc92dd3.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\candidate\\tet_layer_handoff.py": {
+      "sha256": "b3c4970da6508cd27603244f5bc98333c5a5505a4fb5b718963966ae6c0c6261",
+      "local": "runtime/finite_qualification/records/b3c4970da6508cd27603244f5bc98333c5a5505a4fb5b718963966ae6c0c6261.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls.py": {
+      "sha256": "a348983eb028217b12a1cb0af6b643f9d9f60d6295a90365b1967048199864a2",
+      "local": "runtime/finite_qualification/records/a348983eb028217b12a1cb0af6b643f9d9f60d6295a90365b1967048199864a2.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\CONTROL_STARTUP_IDENTITY.json": {
+      "sha256": "e0dc65da58299b14950bdaa1f04cfef6196f4f66fba3d0b9783432c5e1fc3a38",
+      "local": "runtime/finite_qualification/records/e0dc65da58299b14950bdaa1f04cfef6196f4f66fba3d0b9783432c5e1fc3a38.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\LOADED_SOURCE_CLOSURE.json": {
+      "sha256": "0aec54fb6ce97dea0dde74cb77e3abd2faec9f4e21dd1029be808960d61c6d32",
+      "local": "runtime/finite_qualification/records/0aec54fb6ce97dea0dde74cb77e3abd2faec9f4e21dd1029be808960d61c6d32.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\NATIVE_HOST_RETIREMENT.json": {
+      "sha256": "1a25ec465d14903d8338b4bf0924a0fb6f22eb176f41fa6271d9637a0c4f2750",
+      "local": "runtime/finite_qualification/records/1a25ec465d14903d8338b4bf0924a0fb6f22eb176f41fa6271d9637a0c4f2750.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\RESULT.json": {
+      "sha256": "74e2a1eedffa3f7e43dd04b0767a1986814bf3172b3631d93b59f22fd7521c76",
+      "local": "runtime/finite_qualification/records/74e2a1eedffa3f7e43dd04b0767a1986814bf3172b3631d93b59f22fd7521c76.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\WORKER_COMPLETION.json": {
+      "sha256": "610e9060d95641f9d48aa862177d2deff464580a8b79a4b14448ccd734dab134",
+      "local": "runtime/finite_qualification/records/610e9060d95641f9d48aa862177d2deff464580a8b79a4b14448ccd734dab134.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01_EXECUTION.json": {
+      "sha256": "f13ff972399896479f086ea6e855a5cca9403747df690162c508fad44ac55976",
+      "local": "runtime/finite_qualification/records/f13ff972399896479f086ea6e855a5cca9403747df690162c508fad44ac55976.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01_EXECUTION_CLOSURE.json": {
+      "sha256": "27aed7f9bcee1a6f48d072e9f176becb7e23fd63b26605c96d372c5293cef9da",
+      "local": "runtime/finite_qualification/records/27aed7f9bcee1a6f48d072e9f176becb7e23fd63b26605c96d372c5293cef9da.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01_RESOURCE_RESULT.json": {
+      "sha256": "bad786991b00448c2133d47d8b5e5c645e809014b6259c07b2ffb9bd2ac76e2b",
+      "local": "runtime/finite_qualification/records/bad786991b00448c2133d47d8b5e5c645e809014b6259c07b2ffb9bd2ac76e2b.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01_SCOPE_CLOSURE.json": {
+      "sha256": "9ebe5678f7a08f94bc250c7c918a99688def9a8c3528595088769a065a367b54",
+      "local": "runtime/finite_qualification/records/9ebe5678f7a08f94bc250c7c918a99688def9a8c3528595088769a065a367b54.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01_SCOPE_RESULT.json": {
+      "sha256": "20b81cf8768a4b800309f885badb08736db51c69acfb10ee7ff562cefcc8f4e7",
+      "local": "runtime/finite_qualification/records/20b81cf8768a4b800309f885badb08736db51c69acfb10ee7ff562cefcc8f4e7.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\prepare.py": {
+      "sha256": "0768530b58acf18df485d7291f23dc8f5adaa55ae0e1d16ba4d1d46dbf3e90d9",
+      "local": "runtime/finite_qualification/records/0768530b58acf18df485d7291f23dc8f5adaa55ae0e1d16ba4d1d46dbf3e90d9.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_inputs02\\CLOSED.json": {
+      "sha256": "903ead6da5ab6c094813194041cc45734ac37a884349c291529448f8e017c96d",
+      "local": "runtime/finite_qualification/records/903ead6da5ab6c094813194041cc45734ac37a884349c291529448f8e017c96d.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_inputs02\\CONTROL_RESULT_REVIEW.json": {
+      "sha256": "9a2ae98c2d0bdf05ad58c79ba4554029451a392dc284be6bf2131b4c5e660d6f",
+      "local": "runtime/finite_qualification/records/9a2ae98c2d0bdf05ad58c79ba4554029451a392dc284be6bf2131b4c5e660d6f.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_inputs02\\REVIEW.json": {
+      "sha256": "deb1cb07599ac23e519a0b5da860a049aa7f08364c71c450fc9289136bd8573f",
+      "local": "runtime/finite_qualification/records/deb1cb07599ac23e519a0b5da860a049aa7f08364c71c450fc9289136bd8573f.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\CLOSED.json": {
+      "sha256": "6bd98386bbe27dfe990765a3fada5dd8c916455a3b72772bb082eb9bdac9c275",
+      "local": "runtime/finite_qualification/records/6bd98386bbe27dfe990765a3fada5dd8c916455a3b72772bb082eb9bdac9c275.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\CONTROL_AUTHORIZATION.json": {
+      "sha256": "62d03e1f463d0f5f9d0e4482060484bbb7832545d8e46d45a355668def370f65",
+      "local": "runtime/finite_qualification/records/62d03e1f463d0f5f9d0e4482060484bbb7832545d8e46d45a355668def370f65.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\CONTROL_LAUNCH_REVIEW.json": {
+      "sha256": "cd64d880efa734d7cf680b53c0ab93ee49dd1422c675fd3925fd72d3192260a9",
+      "local": "runtime/finite_qualification/records/cd64d880efa734d7cf680b53c0ab93ee49dd1422c675fd3925fd72d3192260a9.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\EVIDENCE.json": {
+      "sha256": "563540add3d07de218904a141937249d595aeeb82e85ccea253f6d2f71f7fe47",
+      "local": "runtime/finite_qualification/records/563540add3d07de218904a141937249d595aeeb82e85ccea253f6d2f71f7fe47.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\PINNED_SOURCES.json": {
+      "sha256": "17ced240ca2f4f54ef210dd8ad72d6b364da3f0282ba54a559a1e64d5109b9db",
+      "local": "runtime/finite_qualification/records/17ced240ca2f4f54ef210dd8ad72d6b364da3f0282ba54a559a1e64d5109b9db.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\RAW_RESULT_REVIEW.json": {
+      "sha256": "933f6ed4002d61bacf976aeb7b18702c39e80ec8b992bb6b0429fde35a877940",
+      "local": "runtime/finite_qualification/records/933f6ed4002d61bacf976aeb7b18702c39e80ec8b992bb6b0429fde35a877940.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\REVIEW.json": {
+      "sha256": "6b9dc3d49cc033cab965eafcb12b4447240af9c0c5858594de0b92eb3aea2852",
+      "local": "runtime/finite_qualification/records/6b9dc3d49cc033cab965eafcb12b4447240af9c0c5858594de0b92eb3aea2852.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\candidate_writer.py": {
+      "sha256": "b4d03fbd472f1d8e6acd189b43e692a79ba54c614527588b171aea213e2f3bcc",
+      "local": "runtime/finite_qualification/records/b4d03fbd472f1d8e6acd189b43e692a79ba54c614527588b171aea213e2f3bcc.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls.py": {
+      "sha256": "164cf65f168a574128a65ac215cbcbefea475855ca9b60e145150ebc6f7384cb",
+      "local": "runtime/finite_qualification/records/164cf65f168a574128a65ac215cbcbefea475855ca9b60e145150ebc6f7384cb.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\CONTROL_STARTUP_IDENTITY.json": {
+      "sha256": "9ab53a2f6afd7b309b6b4445191de77c66185e5ec31dcf1fced33e1d5a0b2af8",
+      "local": "runtime/finite_qualification/records/9ab53a2f6afd7b309b6b4445191de77c66185e5ec31dcf1fced33e1d5a0b2af8.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\LOADED_SOURCE_CLOSURE.json": {
+      "sha256": "4d0ace54a2e44f92093a9750e5c9b50412c08cdef83ad2aa70ffb024792f4965",
+      "local": "runtime/finite_qualification/records/4d0ace54a2e44f92093a9750e5c9b50412c08cdef83ad2aa70ffb024792f4965.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\RESULT.json": {
+      "sha256": "931201362abfc21673467e7e43d79c50f226271c2304382f8cd2240472765edd",
+      "local": "runtime/finite_qualification/records/931201362abfc21673467e7e43d79c50f226271c2304382f8cd2240472765edd.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\WORKER_COMPLETION.json": {
+      "sha256": "32141c26d642d9c3dc9e06de7ba976002b9cb62f350a2a39e2d934a01e388e69",
+      "local": "runtime/finite_qualification/records/32141c26d642d9c3dc9e06de7ba976002b9cb62f350a2a39e2d934a01e388e69.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01_EXECUTION.json": {
+      "sha256": "c185da4ee76ddfcc0ab2c505d97e86ec24b7f63594fcfe5b1613b331e3fbfc65",
+      "local": "runtime/finite_qualification/records/c185da4ee76ddfcc0ab2c505d97e86ec24b7f63594fcfe5b1613b331e3fbfc65.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01_EXECUTION_CLOSURE.json": {
+      "sha256": "783a017010395552f0ebd8cd41b7b2a538c384ff018b3cc511b99d73ea64322d",
+      "local": "runtime/finite_qualification/records/783a017010395552f0ebd8cd41b7b2a538c384ff018b3cc511b99d73ea64322d.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01_RESOURCE_RESULT.json": {
+      "sha256": "8dc8de1c86bb11b33a8a18b68c41a042b3138200187464226b7734911b7ba29a",
+      "local": "runtime/finite_qualification/records/8dc8de1c86bb11b33a8a18b68c41a042b3138200187464226b7734911b7ba29a.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01_SCOPE_CLOSURE.json": {
+      "sha256": "4ea98a271f2f3ceba172981547c83f2eb0fbd2b722fad2cc26368339225d73d5",
+      "local": "runtime/finite_qualification/records/4ea98a271f2f3ceba172981547c83f2eb0fbd2b722fad2cc26368339225d73d5.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01_SCOPE_RESULT.json": {
+      "sha256": "e15c0a84255ed95bdc20c93caa2f639d11614af414274ca2a14c4fb3ad162839",
+      "local": "runtime/finite_qualification/records/e15c0a84255ed95bdc20c93caa2f639d11614af414274ca2a14c4fb3ad162839.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\CLOSED.json": {
+      "sha256": "d332d78d72175ccc8afa9098df6ed02db359ec17299e21b5da2438a3c77c5afa",
+      "local": "runtime/finite_qualification/records/d332d78d72175ccc8afa9098df6ed02db359ec17299e21b5da2438a3c77c5afa.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\CONTROL_AUTHORIZATION.json": {
+      "sha256": "777664a444112610866aaea0841fd2c1adf86cf5e72c9d0bd8b88bc0f54c2a06",
+      "local": "runtime/finite_qualification/records/777664a444112610866aaea0841fd2c1adf86cf5e72c9d0bd8b88bc0f54c2a06.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\CONTROL_LAUNCH_REVIEW.json": {
+      "sha256": "cbe5653e38f351eb1bae5124541d6abc350ac7af9455bf11ab0a80e20b4738eb",
+      "local": "runtime/finite_qualification/records/cbe5653e38f351eb1bae5124541d6abc350ac7af9455bf11ab0a80e20b4738eb.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\EVIDENCE.json": {
+      "sha256": "c5764aa5830b63e613c2bfe65a7435aedc637232d86634e5f4d59ca64879ac62",
+      "local": "runtime/finite_qualification/records/c5764aa5830b63e613c2bfe65a7435aedc637232d86634e5f4d59ca64879ac62.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\PINNED_SOURCES.json": {
+      "sha256": "4fdc1f9d7eff85bff1bd966f06c5dfdb53fcb7da29b97a89ea98e5cb4b080e90",
+      "local": "runtime/finite_qualification/records/4fdc1f9d7eff85bff1bd966f06c5dfdb53fcb7da29b97a89ea98e5cb4b080e90.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\RAW_RESULT_REVIEW.json": {
+      "sha256": "e3b142845662c40147bcad9fa5166f71bfdfdab74bb6319d929056c9161c8f49",
+      "local": "runtime/finite_qualification/records/e3b142845662c40147bcad9fa5166f71bfdfdab74bb6319d929056c9161c8f49.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\REVIEW.json": {
+      "sha256": "74a0a862f3ce78091ff90d1bd6ce7e38f04c1268916298129f691a87d6cd32e3",
+      "local": "runtime/finite_qualification/records/74a0a862f3ce78091ff90d1bd6ce7e38f04c1268916298129f691a87d6cd32e3.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\activate.py": {
+      "sha256": "5ea7b950960fbe712e60034a291927abdeeed14ce4cc22bc7fdb4b79abb0efdc",
+      "local": "runtime/finite_qualification/records/5ea7b950960fbe712e60034a291927abdeeed14ce4cc22bc7fdb4b79abb0efdc.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\candidate\\tet_layer_handoff.py": {
+      "sha256": "9451e3063248632e5ae4b0ee0c6efbde6cb47c3847f90a608816dd8650d58eec",
+      "local": "runtime/finite_qualification/records/9451e3063248632e5ae4b0ee0c6efbde6cb47c3847f90a608816dd8650d58eec.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\controls.py": {
+      "sha256": "b1ae03d461685a773a5ede4823d71615c455bcb34f2bfa37f70bf0f9751035dc",
+      "local": "runtime/finite_qualification/records/b1ae03d461685a773a5ede4823d71615c455bcb34f2bfa37f70bf0f9751035dc.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\controls01\\CONTROL_STARTUP_IDENTITY.json": {
+      "sha256": "b4741ccc9ce29667795270132cb5328e44c1ce09eeb205739472401cf2804ee8",
+      "local": "runtime/finite_qualification/records/b4741ccc9ce29667795270132cb5328e44c1ce09eeb205739472401cf2804ee8.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\controls01\\LOADED_SOURCE_CLOSURE.json": {
+      "sha256": "8a34cbe246dbc5e094aa986eacb940f5893b7bb961bd8f37b2e828090be9f079",
+      "local": "runtime/finite_qualification/records/8a34cbe246dbc5e094aa986eacb940f5893b7bb961bd8f37b2e828090be9f079.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\controls01\\RESULT.json": {
+      "sha256": "4a0d8e2df4158e709e196d209a9129ac9486124e117fb4da0c2145316bc08284",
+      "local": "runtime/finite_qualification/records/4a0d8e2df4158e709e196d209a9129ac9486124e117fb4da0c2145316bc08284.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\controls01\\WORKER_COMPLETION.json": {
+      "sha256": "0a2419fefdf344b0a51fc64e89fbd65e36808c835dd56cb30c7800e0133f8a66",
+      "local": "runtime/finite_qualification/records/0a2419fefdf344b0a51fc64e89fbd65e36808c835dd56cb30c7800e0133f8a66.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\controls01_EXECUTION.json": {
+      "sha256": "7ef40047daa01bba96609c04b0c2d35a967593014ea07aa215eba0a35dd52c97",
+      "local": "runtime/finite_qualification/records/7ef40047daa01bba96609c04b0c2d35a967593014ea07aa215eba0a35dd52c97.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\controls01_EXECUTION_CLOSURE.json": {
+      "sha256": "32e10f7d23b31701f7bbf3cb4da2fbbe22433627cfdffa347a04c1efc2c0c5e8",
+      "local": "runtime/finite_qualification/records/32e10f7d23b31701f7bbf3cb4da2fbbe22433627cfdffa347a04c1efc2c0c5e8.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\controls01_RESOURCE_RESULT.json": {
+      "sha256": "9828ea88faed4588006d711426307e3eadc6c74cd24c2a4e490158e7e562b3f9",
+      "local": "runtime/finite_qualification/records/9828ea88faed4588006d711426307e3eadc6c74cd24c2a4e490158e7e562b3f9.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\controls01_SCOPE_CLOSURE.json": {
+      "sha256": "0159901d58dc2bf54e2a56f374ebc093bbb71143886d09f893539285826f775b",
+      "local": "runtime/finite_qualification/records/0159901d58dc2bf54e2a56f374ebc093bbb71143886d09f893539285826f775b.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\controls01_SCOPE_RESULT.json": {
+      "sha256": "734d429d98b967bff79b64488a3cf875f2af5d5734a2efe20e60dc2c1b391101",
+      "local": "runtime/finite_qualification/records/734d429d98b967bff79b64488a3cf875f2af5d5734a2efe20e60dc2c1b391101.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\prepare.py": {
+      "sha256": "8688339c95cff5ac11f1cdf6804551c951c4b49925faed534d9b4c0778dfd750",
+      "local": "runtime/finite_qualification/records/8688339c95cff5ac11f1cdf6804551c951c4b49925faed534d9b4c0778dfd750.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_live01\\CONTROL_RESULT_REVIEW.json": {
+      "sha256": "eaa5806e4c09698db83e8ccb26aaddae1911e5276ec6cb179671a24ee79c9e45",
+      "local": "runtime/finite_qualification/records/eaa5806e4c09698db83e8ccb26aaddae1911e5276ec6cb179671a24ee79c9e45.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\CONTROL_RESULT_REVIEW.json": {
+      "sha256": "3e00524a50f13526b252f0e0c7fcbfb5cc89533a4514ccb8b4b822585c0057fb",
+      "local": "runtime/finite_qualification/records/3e00524a50f13526b252f0e0c7fcbfb5cc89533a4514ccb8b4b822585c0057fb.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\CONTROL_LAUNCH_REVIEW.json": {
+      "sha256": "3bb2bf2c1f8bf3482cc3e12294555268f7ca1ba6936b51f9b050db0c77f296b0",
+      "local": "runtime/finite_qualification/records/3bb2bf2c1f8bf3482cc3e12294555268f7ca1ba6936b51f9b050db0c77f296b0.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\PINNED_SOURCES.json": {
+      "sha256": "309a956aad9a95a55ef6441740c79f57ca1043c00a5d8622c659d7884c9a4e4a",
+      "local": "runtime/finite_qualification/records/309a956aad9a95a55ef6441740c79f57ca1043c00a5d8622c659d7884c9a4e4a.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\CLOSED.json": {
+      "sha256": "f9b199ecf00b6272a0a8e52f74fb2d328d029418a7070de66ba816b54e64e3c9",
+      "local": "runtime/finite_qualification/records/f9b199ecf00b6272a0a8e52f74fb2d328d029418a7070de66ba816b54e64e3c9.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_live01\\CLOSED.json": {
+      "sha256": "ec00400a4d7081e0adb7095943528cd9f853f8944221d490b9f05c75d6885629",
+      "local": "runtime/finite_qualification/records/ec00400a4d7081e0adb7095943528cd9f853f8944221d490b9f05c75d6885629.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\gmsh_collar_impl02\\controls01\\real_collar\\backend\\BACKEND.json": {
+      "sha256": "97579c9aae90bf23cebc4bdc8cbe00e4296989e79b278a482102b550af723499",
+      "local": "runtime/finite_qualification/records/97579c9aae90bf23cebc4bdc8cbe00e4296989e79b278a482102b550af723499.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\gmsh_collar_impl03\\runtime01\\NATIVE_RUNTIME.json": {
+      "sha256": "67fdf486262cd067bdf5ca2c8263b2aab34c0170728114b5ed34afeff6b90d5b",
+      "local": "runtime/finite_qualification/records/67fdf486262cd067bdf5ca2c8263b2aab34c0170728114b5ed34afeff6b90d5b.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\CONTROL_AUTHORIZATION.json": {
+      "sha256": "e35bec05a1e3b50e0248ea0e8c6c52772ebf4863252dc7f46489bbb12769345b",
+      "local": "runtime/finite_qualification/records/e35bec05a1e3b50e0248ea0e8c6c52772ebf4863252dc7f46489bbb12769345b.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\CONTROL_CLOCK.json": {
+      "sha256": "aeae4fbc449d29d1c8c1039ab2a12af8522b1aa82acd171796d3627f54638668",
+      "local": "runtime/finite_qualification/records/aeae4fbc449d29d1c8c1039ab2a12af8522b1aa82acd171796d3627f54638668.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\CONTROL_INVOCATION.json": {
+      "sha256": "504522543136469039e204fce25f7113e1a7c50545ecdf72ccd59c167ade73d3",
+      "local": "runtime/finite_qualification/records/504522543136469039e204fce25f7113e1a7c50545ecdf72ccd59c167ade73d3.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\CONTROL_STARTUP_IDENTITY.json": {
+      "sha256": "5fba51a667d3536ad8f91a061c0cf2e3979435fbdc359636bc2ad8fd291c5c03",
+      "local": "runtime/finite_qualification/records/5fba51a667d3536ad8f91a061c0cf2e3979435fbdc359636bc2ad8fd291c5c03.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\controls01\\CONTROL_STARTUP_IDENTITY.json": {
+      "sha256": "26ef005fdfd460ce1fe533c4b65969ed97253e09ba445c39ddcb70fca6a39c21",
+      "local": "runtime/finite_qualification/records/26ef005fdfd460ce1fe533c4b65969ed97253e09ba445c39ddcb70fca6a39c21.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\controls01\\EVENTS.jsonl": {
+      "sha256": "0a5957e109f1e8be47e152a669c3a68835b3b671089dc0fed713d66ba19e4680",
+      "local": "runtime/finite_qualification/records/0a5957e109f1e8be47e152a669c3a68835b3b671089dc0fed713d66ba19e4680.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\controls01\\LOADED_SOURCE_CLOSURE.json": {
+      "sha256": "0830ea0de68440c43db780b331fd42e0d05c0de04b64c7af83eccf44abd6d6c6",
+      "local": "runtime/finite_qualification/records/0830ea0de68440c43db780b331fd42e0d05c0de04b64c7af83eccf44abd6d6c6.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\controls01\\RESULT.json": {
+      "sha256": "82294999b00bf64353cbd8800d07a888e9a5e843d2edfd5c02bdc6caaf8b6fce",
+      "local": "runtime/finite_qualification/records/82294999b00bf64353cbd8800d07a888e9a5e843d2edfd5c02bdc6caaf8b6fce.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\controls01\\WORKER_COMPLETION.json": {
+      "sha256": "bc886a37ed1d05ec9ef62eef67aebf57521f70853ca86a84012f96866e42c50d",
+      "local": "runtime/finite_qualification/records/bc886a37ed1d05ec9ef62eef67aebf57521f70853ca86a84012f96866e42c50d.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\controls01\\live_request\\ACTIVATION.json": {
+      "sha256": "32bba53ea0a4a0cd8132e258c0d6442c4a99dd54a2e519f62b55ba823ba38c24",
+      "local": "runtime/finite_qualification/records/32bba53ea0a4a0cd8132e258c0d6442c4a99dd54a2e519f62b55ba823ba38c24.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\controls01\\live_request\\PINNED_SOURCES.json": {
+      "sha256": "8f66abf54d4f897e2f0081aa440f75cdf565c4940dabdc828273c047285b2d17",
+      "local": "runtime/finite_qualification/records/8f66abf54d4f897e2f0081aa440f75cdf565c4940dabdc828273c047285b2d17.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\controls01\\prepared_request\\PINNED_SOURCES.json": {
+      "sha256": "77ec85b1a7f49988c092959090b787ac742e0aebb2e5cee70ca115a8f5144f05",
+      "local": "runtime/finite_qualification/records/77ec85b1a7f49988c092959090b787ac742e0aebb2e5cee70ca115a8f5144f05.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\controls01_EXECUTION.json": {
+      "sha256": "e6c44c0430959020e216b4bfc00ce331152af6bb00e5e52a7816787850f78ab6",
+      "local": "runtime/finite_qualification/records/e6c44c0430959020e216b4bfc00ce331152af6bb00e5e52a7816787850f78ab6.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\controls01_EXECUTION_CLOSURE.json": {
+      "sha256": "a19c8f722b5465e0d688f52a323a2eda988e51c017c0ae0d104df54b3e53fb40",
+      "local": "runtime/finite_qualification/records/a19c8f722b5465e0d688f52a323a2eda988e51c017c0ae0d104df54b3e53fb40.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\controls01_INPUT_PINS.json": {
+      "sha256": "a8f0a33b203f2eaa5f6f3d14aa86c6c0f04c85582b5e706ceaf6205b80a1b861",
+      "local": "runtime/finite_qualification/records/a8f0a33b203f2eaa5f6f3d14aa86c6c0f04c85582b5e706ceaf6205b80a1b861.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\controls01_RESOURCE_RESULT.json": {
+      "sha256": "7349782c83d496d41a82bcdd629954a8c25b9c96a36af51eec53dc562772fa18",
+      "local": "runtime/finite_qualification/records/7349782c83d496d41a82bcdd629954a8c25b9c96a36af51eec53dc562772fa18.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\controls01_SCOPE\\RETIREMENT.json": {
+      "sha256": "b27604bfffcd697a981d6642ce813b181bed0b8e75fd3fd98594248cf9a0db38",
+      "local": "runtime/finite_qualification/records/b27604bfffcd697a981d6642ce813b181bed0b8e75fd3fd98594248cf9a0db38.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\controls01_SCOPE\\START_VALIDATED.json": {
+      "sha256": "c45dc3bd486e32447b691e9ae7315abb0c4ba8483e23287d0ced706992449c0a",
+      "local": "runtime/finite_qualification/records/c45dc3bd486e32447b691e9ae7315abb0c4ba8483e23287d0ced706992449c0a.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\controls01_SCOPE_CLOSURE.json": {
+      "sha256": "8eb07a06aceeec61e9f4c685d7c6b7b4b5808b78bfdeb609e0ce57d9d4a7d05d",
+      "local": "runtime/finite_qualification/records/8eb07a06aceeec61e9f4c685d7c6b7b4b5808b78bfdeb609e0ce57d9d4a7d05d.json"
+    },
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_doubled_time_live01\\controls01_SCOPE_RESULT.json": {
+      "sha256": "243b4941cfd9dfad067ea93ed4260aa5ea1641d3e6e6392d58289dad81708acf",
+      "local": "runtime/finite_qualification/records/243b4941cfd9dfad067ea93ed4260aa5ea1641d3e6e6392d58289dad81708acf.json"
+    }
+  },
+  "required104": [
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\finite_collar_live_B04\\CLOSED.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\finite_collar_live_B04\\CONTROL_RESULT_REVIEW.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\finite_collar_live_B04\\LAUNCH_REVIEW.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\finite_collar_live_B04\\REVIEW.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\finite_collar_live_B05\\CLOSED.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\finite_collar_live_B05\\REVIEW.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\CLOSED.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\CONTROL_LAUNCH_REVIEW.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\REVIEW.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01\\CONTROL_STARTUP_IDENTITY.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01\\HOST_CONTROL_EVIDENCE.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01\\LOADED_SOURCE_CLOSURE.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01\\RESULT.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01\\WORKER_COMPLETION.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01_EXECUTION.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01_EXECUTION_CLOSURE.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01_RESOURCE_RESULT.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01_SCOPE_CLOSURE.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\helper_lifecycle01\\controls01_SCOPE_RESULT.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_blend_live01\\CLOSED.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_blend_live01\\REVIEW.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity01\\CLOSED.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity01\\REVIEW.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\CLOSED.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\CONTROL_AUTHORIZATION.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\CONTROL_LAUNCH_REVIEW.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\CONTROL_RESULT_REVIEW.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\PINNED_SOURCES.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\REVIEW.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\activate.py",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\controls.py",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\controls01\\CONTROL_STARTUP_IDENTITY.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\controls01\\LOADED_SOURCE_CLOSURE.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\controls01\\RESULT.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\controls01\\WORKER_COMPLETION.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\controls01_EXECUTION.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\controls01_EXECUTION_CLOSURE.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\controls01_RESOURCE_RESULT.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\controls01_SCOPE_CLOSURE.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\controls01_SCOPE_RESULT.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_capacity_ready01\\prepare.py",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_command02\\CLOSED.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_command02\\REVIEW.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\CLOSED.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\CONTROL_AUTHORIZATION.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\CONTROL_LAUNCH_REVIEW.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\EVIDENCE.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\PINNED_SOURCES.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\REVIEW.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\activate.py",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\candidate\\tet_layer_handoff.py",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls.py",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\CONTROL_STARTUP_IDENTITY.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\LOADED_SOURCE_CLOSURE.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\NATIVE_HOST_RETIREMENT.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\RESULT.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01\\WORKER_COMPLETION.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01_EXECUTION.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01_EXECUTION_CLOSURE.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01_RESOURCE_RESULT.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01_SCOPE_CLOSURE.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\controls01_SCOPE_RESULT.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_fluid_connection01\\prepare.py",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_inputs02\\CLOSED.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_inputs02\\CONTROL_RESULT_REVIEW.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_inputs02\\REVIEW.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\CLOSED.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\CONTROL_AUTHORIZATION.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\CONTROL_LAUNCH_REVIEW.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\EVIDENCE.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\PINNED_SOURCES.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\RAW_RESULT_REVIEW.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\REVIEW.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\candidate_writer.py",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls.py",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\CONTROL_STARTUP_IDENTITY.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\LOADED_SOURCE_CLOSURE.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\RESULT.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01\\WORKER_COMPLETION.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01_EXECUTION.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01_EXECUTION_CLOSURE.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01_RESOURCE_RESULT.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01_SCOPE_CLOSURE.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_publication_compare01\\controls01_SCOPE_RESULT.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\CLOSED.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\CONTROL_AUTHORIZATION.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\CONTROL_LAUNCH_REVIEW.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\EVIDENCE.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\PINNED_SOURCES.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\RAW_RESULT_REVIEW.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\REVIEW.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\activate.py",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\candidate\\tet_layer_handoff.py",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\controls.py",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\controls01\\CONTROL_STARTUP_IDENTITY.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\controls01\\LOADED_SOURCE_CLOSURE.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\controls01\\RESULT.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\controls01\\WORKER_COMPLETION.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\controls01_EXECUTION.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\controls01_EXECUTION_CLOSURE.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\controls01_RESOURCE_RESULT.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\controls01_SCOPE_CLOSURE.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\controls01_SCOPE_RESULT.json",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v4\\results\\small_complete_transition_20261016\\retirement\\reusable_finite_timing_connection01\\prepare.py"
+  ],
+  "scope": "Historical exact bytes and origin keys; no execution authority or scientific acceptance. Source publication review and semantic validation pending."
+}

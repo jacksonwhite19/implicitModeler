@@ -1,0 +1,9 @@
+{
+  "schema": "V4IndependentReview/1",
+  "passed": true,
+  "reviewer": "/root/launch_review",
+  "source_inventory_identity": "0a17de933d25e34b6dd815048abc8ebedef79685ef53b11c07771e7744c8ac96",
+  "review_receipt_sha256": "de7f97c380e2c163937b55601da2295d9d9435b240fdf25c0818f753b691cbaa",
+  "scope": "Diagnostic-only source publication. Capture remains best effort. No real geometry query, candidate execution, scientific qualification, default promotion or explanation of the historical failing segment is approved.",
+  "reviewed_utc": "2026-10-24T15:23:25Z"
+}

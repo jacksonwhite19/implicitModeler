@@ -1,0 +1,30 @@
+{
+  "arithmetic_runtime": {
+    "machine": "x86_64",
+    "numpy": "1.26.4",
+    "numpy_arithmetic_sha256": "fe5efe31c55326b072c8fb239a225819211826cb45cd3c74ed0af0030e70f3a1"
+  },
+  "binary_sha256": "f7f56cd3c3649e31735cd970e7c78cfb862e21ef33fad26bbd6a94bfa86590f8",
+  "build_kind": "cxx-scalar-sizing",
+  "command": [
+    "/usr/bin/c++",
+    "-std=c++17",
+    "-shared",
+    "-fPIC",
+    "-O3",
+    "-fno-fast-math",
+    "-fno-associative-math",
+    "-ffp-contract=off",
+    "/mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v4/runtime/source/background/sizing_values.cpp",
+    "-o",
+    "/mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v4/runtime/source/background/sizing_d75dbcb8b56e933e52c6b0a0ce941112c29361f13557fda3b9320dcd669fbbd6.so"
+  ],
+  "compiler": "c++ (Ubuntu 10.5.0-1ubuntu1~22.04.3) 10.5.0\nCopyright (C) 2020 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+  "dependencies": "\tlinux-vdso.so.1 (0x0000706a2e11c000)\n\tlibm.so.6 => /lib/x86_64-linux-gnu/libm.so.6 (0x0000706a2e013000)\n\tlibc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x0000706a2dc00000)\n\t/lib64/ld-linux-x86-64.so.2 (0x0000706a2e11e000)\n",
+  "exit_code": 0,
+  "sources": {
+    "sizing_values.cpp": "d75dbcb8b56e933e52c6b0a0ce941112c29361f13557fda3b9320dcd669fbbd6"
+  },
+  "stderr": "",
+  "stdout": ""
+}

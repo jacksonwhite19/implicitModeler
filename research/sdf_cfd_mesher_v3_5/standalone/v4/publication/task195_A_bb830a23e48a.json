@@ -1,0 +1,9 @@
+{
+  "schema": "V4IndependentReview/1",
+  "passed": true,
+  "reviewer": "/root/launch_review",
+  "source_inventory_identity": "bb830a23e48a50a92b01fef0f35ada0ff4cfda7b6de810ffabfa3a893f9466b0",
+  "review_receipt_sha256": "4e059f4c8176ea8c8268fdba442de169a99ba5eb765a3f0459fb316f74ddfa22",
+  "scope": "Source publication approval for size195 surface-only numerical research. Metadata and sole candidate require exact launch review. No full-pipeline/default promotion.",
+  "reviewed_utc": "2026-10-24T05:52:25Z"
+}

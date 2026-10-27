@@ -1,0 +1,15 @@
+# Generated campaigns and operational logs are retained locally, not committed.
+/standalone/results/
+/standalone/run_logs/
+/standalone/build_logs/
+
+# Compiler and Python caches. Owned runtime binaries remain explicit inputs.
+**/target/
+**/linux64GccDPInt32Opt/
+**/__pycache__/
+*.pyc
+*.pyo
+*.tmp
+
+# Optional delivery archives are distributed separately from Git source.
+/*.zip

@@ -1,0 +1,454 @@
+{
+  "schema": "Nodal5IndependentClosedComponentReview/1",
+  "decision": "ACCEPT_FRESH_COMPLETE_PASSAGE_NUMERICAL_ENGINEERING_RESULT",
+  "scope": "Read-only retained source/receipt/hash checks and saved-array arithmetic. Actual native arrays remapped by recorded ancestry/level. Exact rational volume/sign algebra limited to the16 changed tetrahedra. No source/geometry queries, native tools, meshing, proposal searches, QA predicate reruns or global exact-Q campaign.",
+  "checks": {
+    "root_complete": true,
+    "direct_complete": true,
+    "source_closed_current": true,
+    "case_equal_nodal4": true,
+    "actual_native_positions_byte_equal": true,
+    "actual_native_delta_byte_equal": true,
+    "actual_native_coordinates_error_zero": true,
+    "first_front_byte_equal": true,
+    "wall_byte_equal": true,
+    "sealed_plan_all_byte_equal": true,
+    "nominal_schedule_every_vertex": true,
+    "native_point_identity_unique": true,
+    "native_cells_positive_finite": true,
+    "mesh_points_equal_ordered_native": true,
+    "final_prism_prefix_byte_preserved": true,
+    "final_prism_connectivity_preserved": true,
+    "conditioning_noop": true,
+    "apex_changes_exactly_recorded": true,
+    "protected_points_byte_preserved": true,
+    "core_connectivity_and_ids_preserved": true,
+    "final_joined_points_match": true,
+    "repair_stars_exact_verified": true,
+    "shell_admission": true,
+    "interface_all_faces_pass": true,
+    "joined_qa_pass": true,
+    "producer_proofs_all12": true,
+    "cold_proofs_all12": true,
+    "cold_complete": true,
+    "cold_artifact_hashes": true,
+    "manifest125_match": true,
+    "exact_export": true,
+    "checkmesh": true,
+    "operational_success": true
+  },
+  "layer_measurements": {
+    "rows": 5,
+    "wall_vertices": 29866,
+    "wall_triangles": 59732,
+    "physical_prisms": 298660,
+    "scalar_increments_m": [
+      2e-05,
+      2.6000000000000002e-05,
+      3.380000000000001e-05,
+      4.394e-05,
+      5.712200000000001e-05
+    ],
+    "scalar_increment_min_m": [
+      2e-05,
+      2.6000000000000002e-05,
+      3.380000000000001e-05,
+      4.394e-05,
+      5.712200000000001e-05
+    ],
+    "scalar_increment_max_m": [
+      2e-05,
+      2.6000000000000002e-05,
+      3.380000000000001e-05,
+      4.394e-05,
+      5.712200000000001e-05
+    ],
+    "compressed_vertices": 0,
+    "row2_increased_vertices": 0,
+    "scalar_total_min_m": 0.000180862,
+    "scalar_total_max_m": 0.000180862,
+    "physical_path_increment_min_m": [
+      1.9999999999999758e-05,
+      2.5999999999999738e-05,
+      3.379999999999974e-05,
+      4.393999999999974e-05,
+      5.7121999999999735e-05
+    ],
+    "physical_path_increment_max_m": [
+      2.0000000000000263e-05,
+      2.600000000000025e-05,
+      3.38000000000003e-05,
+      4.394000000000027e-05,
+      5.712200000000029e-05
+    ],
+    "physical_total_min_m": 0.00018086199999999908,
+    "physical_total_max_m": 0.000180862000000001,
+    "first_normal_min_m": 1.9999999999999758e-05,
+    "first_normal_max_m": 2.0000000000000263e-05,
+    "maximum_first_normal_error_m": 2.608861477543245e-19,
+    "scalar_growth_reversals": 0,
+    "path_growth_reversals": 0,
+    "physical_growth_ratio_min": 1.2999999999999745,
+    "physical_growth_ratio_max": 1.300000000000026,
+    "minimum_native_volume_m3": 2.460625498533226e-16,
+    "native_cells_per_row": {
+      "1": 59732,
+      "2": 59732,
+      "3": 59732,
+      "4": 59732,
+      "5": 59732
+    }
+  },
+  "prism_admission": {
+    "accepted_shell": {
+      "certificate_relations": 22008401,
+      "layers": 5,
+      "mesh": "014a39763f82b33a3d89e89827e39ae35a8c99382ace0fd6939e9e19ac5fd7ab",
+      "methods": {
+        "DisjointByCertifiedSupportingPlane": 4464749,
+        "ExactHullLegalContact": 5018,
+        "OwnedEdgeByCertifiedSupportingPlane": 4960100,
+        "OwnedVertexByCertifiedSupportingPlane": 12578534
+      },
+      "native": "0dcc300414eef495f8125a397d99587ff2b00d0ccc599cebd6eb72b011624359",
+      "passed": true,
+      "prisms": 298660,
+      "scope": "Live V3.5 prism shell only; no core/CFD qualification",
+      "source": "be3279b6e4c7ef572b3bafdf84bfb3b7df28669a35d0103bc4d44d7ea929615c",
+      "surface_assurance": "FastProdNumericalSurface/1"
+    },
+    "native_result": {
+      "passed": true,
+      "first": {
+        "command": [
+          "wsl",
+          "-d",
+          "Ubuntu-22.04",
+          "--",
+          "bash",
+          "-lc",
+          "source /opt/openfoam13/etc/bashrc >/dev/null 2>&1; exec setsid --wait bash /mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v3_5/standalone/results/passage_nodal5_complete_01/native/contractDirect.launch.sh"
+        ],
+        "seconds": 2.4786849999800324,
+        "exit_code": 0,
+        "linux_address_space_limit_bytes": 17179869184
+      },
+      "later": {
+        "command": [
+          "wsl",
+          "-d",
+          "Ubuntu-22.04",
+          "--",
+          "bash",
+          "-lc",
+          "source /opt/openfoam13/etc/bashrc >/dev/null 2>&1; exec setsid --wait bash /mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v3_5/standalone/results/passage_nodal5_complete_01/native/contractStaged.launch.sh"
+        ],
+        "seconds": 5.476952400058508,
+        "exit_code": 0,
+        "linux_address_space_limit_bytes": 17179869184
+      },
+      "physical_prisms": 298660,
+      "carrier_fluid_cells": 0,
+      "points": 179196,
+      "max_coordinate_error_m": 0.0,
+      "minimum_native_volume_m3": 2.460625498533226e-16,
+      "scope": "Native identity/construction only; not V4 shell admission"
+    },
+    "source_segment_and_volume_scope": "Producer source/global/volume/degree proofs were reviewed through sealed receipts/current source and enclosing live admission; not re-executed by reviewer."
+  },
+  "complete_counts": {
+    "points": 207705,
+    "prisms": 298660,
+    "tetrahedra": 247804,
+    "cells": 546464,
+    "wall_triangles": 59732,
+    "farfield_triangles": 3672
+  },
+  "conditioning": {
+    "outcome": "AlreadyAboveFloor",
+    "initial_bad_cells": 0,
+    "native_calls": 0,
+    "vertex_invoked": false,
+    "cavity_invoked": false,
+    "input_output_byte_identity": true
+  },
+  "shared_apex": {
+    "baseline_failure_count": 4,
+    "baseline_weights": [
+      0.04859707308410087,
+      0.048430464020676946,
+      0.04744306406398393,
+      0.04818132737219961
+    ],
+    "baseline_minimum": 0.04744306406398393,
+    "changed_vertex_ids": [
+      207427,
+      207565
+    ],
+    "independent_exact_star_checks": [
+      {
+        "vertex": 207427,
+        "star_tets": 8,
+        "incident_ids_match": true,
+        "before_bytes_match": true,
+        "after_bytes_match": true,
+        "fixed_star_points_byte_equal": true,
+        "exact_sum_abs_det6_equal": true,
+        "exact_orientation_signs_preserved": true,
+        "displacement_m": 2.2977053665821368e-06
+      },
+      {
+        "vertex": 207565,
+        "star_tets": 8,
+        "incident_ids_match": true,
+        "before_bytes_match": true,
+        "after_bytes_match": true,
+        "fixed_star_points_byte_equal": true,
+        "exact_sum_abs_det6_equal": true,
+        "exact_orientation_signs_preserved": true,
+        "displacement_m": 1.686693085253412e-06
+      }
+    ],
+    "connectivity_changed": false,
+    "protected_points_bitwise_preserved": true,
+    "source_queries": 0,
+    "union_affected_tets": 16,
+    "classification": "UNQUALIFIED",
+    "classification_scope": "Changed rows source-float AND exact binary-coordinate classifications; untouched rows source-float only. No global exact-Q population claim.",
+    "interpretation": "Separate existing direct shared-apex repair, not bulk conditioning. Its raw UNQUALIFIED classification and mixed exact/source-float shape counts remain distinct from complete DirectFillEngineering acceptance."
+  },
+  "actual_neighbour_qa": {
+    "interface": {
+      "faces": 59732,
+      "failure_count": 0,
+      "failures": [],
+      "geometry_identity": "0a7008381942d4ca9a1b54ac6adc5f9b8e84ff05dc9b63bcd5ecf4487ad600d4",
+      "maximum_nonorthogonality": 37.302082789779654,
+      "maximum_skewness": 1.026045478115849,
+      "minimum_symmetric_volume_ratio": 0.0428561553573599,
+      "minimum_weight": 0.05687894314413293,
+      "nonorthogonality_role": "descriptive_only",
+      "passed": true,
+      "scientific_acceptance": false,
+      "wall_contract": "StoredFluidBoundaryWall/1"
+    },
+    "joined": {
+      "compact_output": true,
+      "failures": [],
+      "geometry_identity": "0a7008381942d4ca9a1b54ac6adc5f9b8e84ff05dc9b63bcd5ecf4487ad600d4",
+      "passed": true,
+      "summary": {
+        "affected_cells": 546464,
+        "affected_faces": 1210556,
+        "exact_nonpositive_cells": 0,
+        "maximum_aspect": 17.33734311168157,
+        "maximum_skewness": 1.026045478115849,
+        "minimum_determinant": 0.0043650528510814695,
+        "minimum_symmetric_volume_ratio": 0.0428561553573599,
+        "minimum_weight": 0.05687894314413293
+      },
+      "wall_contract": "StoredFluidBoundaryWall/1"
+    },
+    "interpretation": "Passes bind the actual joined owner/neighbour geometry and were semantically replayed by the separate reader. Reviewer checked receipts/hashes, not rerun global QA predicates."
+  },
+  "shape_populations": {
+    "all_bulk_tetrahedra": {
+      "count": 247804,
+      "minimum": 0.2716482611054878,
+      "required_minimum": 0.25,
+      "mandatory_passed": true,
+      "percentage_status": "TARGETS_MET",
+      "population_targets": [
+        {
+          "actual_count": 247469,
+          "actual_fraction": 0.9986481251311521,
+          "fraction": 0.99,
+          "minimum": 0.4,
+          "passed": true,
+          "required_count": 245326
+        },
+        {
+          "actual_count": 226786,
+          "actual_fraction": 0.915182967183742,
+          "fraction": 0.9,
+          "minimum": 0.6,
+          "passed": true,
+          "required_count": 223024
+        }
+      ],
+      "population_targets_blocking": false
+    },
+    "interface_tetrahedra": {
+      "count": 59732,
+      "minimum": 0.32041083317825586,
+      "required_minimum": 0.25,
+      "mandatory_passed": true,
+      "percentage_status": "TARGET_NOT_MET",
+      "population_targets": [
+        {
+          "actual_count": 59600,
+          "actual_fraction": 0.9977901292439564,
+          "fraction": 0.99,
+          "minimum": 0.4,
+          "passed": true,
+          "required_count": 59135
+        },
+        {
+          "actual_count": 45572,
+          "actual_fraction": 0.7629411370789526,
+          "fraction": 0.9,
+          "minimum": 0.6,
+          "passed": false,
+          "required_count": 53759
+        }
+      ],
+      "population_targets_blocking": false
+    },
+    "preserved_cap_triangles": {
+      "count": 59732,
+      "minimum": 0.3304947841289329,
+      "required_minimum": 0.3,
+      "mandatory_passed": true,
+      "percentage_status": "TARGET_NOT_MET",
+      "population_targets": [
+        {
+          "actual_count": 55374,
+          "actual_fraction": 0.927040782160316,
+          "fraction": 0.99,
+          "minimum": 0.6,
+          "passed": false,
+          "required_count": 59135
+        },
+        {
+          "actual_count": 31930,
+          "actual_fraction": 0.5345543427308646,
+          "fraction": 0.9,
+          "minimum": 0.8,
+          "passed": false,
+          "required_count": 53759
+        }
+      ],
+      "population_targets_blocking": false
+    }
+  },
+  "proofs": {
+    "producer_receipt_hashes": {
+      "boundary_collision": true,
+      "collision": true,
+      "domain": true,
+      "enclosure": true,
+      "filling": true,
+      "incidence": true,
+      "interface_qa": true,
+      "joined_qa": true,
+      "physical_qa": true,
+      "preservation": true,
+      "surfaces": true,
+      "winding": true
+    },
+    "cold_receipt_hashes": {
+      "boundary_collision": true,
+      "collision": true,
+      "domain": true,
+      "enclosure": true,
+      "filling": true,
+      "incidence": true,
+      "interface_qa": true,
+      "joined_qa": true,
+      "physical_qa": true,
+      "preservation": true,
+      "surfaces": true,
+      "winding": true
+    },
+    "faces_checked": 1273960,
+    "collision_scope": "ALL_FACES_INCLUDING_ALL_OLD_OLD_RELATIONS",
+    "cold": {
+      "CFD_qualified": false,
+      "actual_shape_populations_recomputed": true,
+      "all_twelve_semantically_replayed": true,
+      "conditioning_replayed": true,
+      "geometry_identity": "0a7008381942d4ca9a1b54ac6adc5f9b8e84ff05dc9b63bcd5ecf4487ad600d4",
+      "manifest_sha256": "1b778396354ecbeda777d12f0bb6af5db4328298182c78232ac64209dc0b4296",
+      "passed": true,
+      "points": 207705,
+      "prisms": 298660,
+      "proofs": 12,
+      "repair_replayed": true,
+      "schema": "V35DirectIndependentReadback/1",
+      "tetrahedra": 247804
+    },
+    "component_authority_caveat": "Individual retained proofs carry scientific_acceptance=false/lease_issued=false; they are component evidence. The enclosing fresh normal direct result passed under its live parent/lease, followed by export and independent readback. Closed proof receipts alone are not reusable live authority."
+  },
+  "export": {
+    "passed": true,
+    "counts": {
+      "points": 207705,
+      "prisms": 298660,
+      "tetrahedra": 247804
+    },
+    "checkmesh": {
+      "returncode": 0,
+      "literal_mesh_ok": true,
+      "failed_lines": [],
+      "warnings": [],
+      "mesh_quality": "NOT_RUN_NO_APPLICABLE_APPROVED_DICTIONARY",
+      "passed": true
+    },
+    "mesh_sha256": "01604c3a076c1fa52e4106ce34183525a06eae2f05f7fa3d4f4d8c4e4e34e588",
+    "readback_sha256": "b521cca8396a7ff1e5445ef936010a81926993de039dc82b0026f168cd85e73c",
+    "manifest_sha256": "1b778396354ecbeda777d12f0bb6af5db4328298182c78232ac64209dc0b4296"
+  },
+  "operational": {
+    "worker_seconds": 6898.446807799861,
+    "supervisor_seconds": 6901.44232300017,
+    "peak_sampled_windows_tree_rss_bytes": 9698799616,
+    "last_sampled_output_bytes": 4059768705,
+    "source_identity": "5e38fe034bb6f90fd23f5fee854293960e3ead35c289450ebe8d4f5a935f6666",
+    "source_files_rehashed": 1866,
+    "manifest_files_rehashed": 125,
+    "manifest_bytes_rehashed": 2276046592,
+    "source_changes": [],
+    "stop_reason": null,
+    "monitor_error": null,
+    "native_budget": {
+      "limit_seconds": 7200.0,
+      "used_seconds": 260.0629999996163
+    },
+    "interpretation": "Nested stage times are not additive. Process completion/native retirement is taken from normal recorded exit/closure receipts; reviewer did not launch a host-wide process scan."
+  },
+  "evidence_hashes": {
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_nodal5_complete_01\\RESULT.json": "f52c1fa0f61cd5774cc96c8e2695c78cd8bd0ad059b8a64053388495d4d2b451",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_nodal5_complete_01\\CASE.json": "1ad76c7124e97def7ed6568a3cbc179d5b854abd0165200485d9fc6688ce38f4",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_nodal5_complete_01\\native\\SEALED_PLAN.npz": "496329b9b943c6b0fb2d47702758f6845e6a443f4cd0d80cde26550093bbe176",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_nodal5_complete_01\\native\\postProcessing\\stagedLayer\\prefix_5\\points.f64": "b714d526c58841b5996005a7e2f7ae0def3a6d22e42c378d5122465cf516bd11",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_nodal5_complete_01\\native\\postProcessing\\stagedLayer\\prefix_5\\point_ancestor.i32": "3519953cc805cb2f8443ee961342a8306b4ce24684703b7f7d5933d356ddcc86",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_nodal5_complete_01\\native\\postProcessing\\stagedLayer\\prefix_5\\point_level.i32": "9b8306aa57251063954956bddd89abb06dd837ec72c308105e9b70c18c125763",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_nodal5_complete_01\\native\\NATIVE_RESULT.json": "89778b53085a5e27b8e9e9f840f564bdec822a42bf5b360a43433c626481c8d5",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_nodal5_complete_01\\shell\\ACCEPTED_SHELL.json": "600515fc9b17b4049f97fd84aadb7422b9d12696c1feab6bdd1e244ad47387c5",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_nodal5_complete_01\\background\\SHARED_APEX_REPAIR.json": "13d2f3999864c0b5dc4ec2497aaa417a1bdabb50159b744e62f5bfe1d849573e",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_nodal5_complete_01\\background\\conditioning\\CONDITIONING.json": "e20f51422df845271297d62d8e97c47eef73138486f26288613ab9ebdaf5ff41",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_nodal5_complete_01\\background\\SHAPE_COUNTS.json": "3761da3468b19f0ae43571203a508f6ea84a4552ee800d197902c1835e5d7e57",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_nodal5_complete_01\\background\\MANIFEST.json": "1b778396354ecbeda777d12f0bb6af5db4328298182c78232ac64209dc0b4296",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_nodal5_complete_01\\background\\READBACK.json": "b521cca8396a7ff1e5445ef936010a81926993de039dc82b0026f168cd85e73c",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_nodal5_complete_01\\background\\COMPLETE_MESH.npz": "01604c3a076c1fa52e4106ce34183525a06eae2f05f7fa3d4f4d8c4e4e34e588",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_nodal5_complete_01\\background\\export\\EXPORT_RESULT.json": "bf337eece085a4a65618e764c9186799721f7384c35668028058c4d4a8da9860",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3_5\\standalone\\run_logs\\070bd53d3ebf.json": "3adbed228ea31fc9cd87bef85f578338d0bd97126ac86c23a678570ad4195bb2",
+    "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3_5\\standalone\\run_logs\\070bd53d3ebf.SOURCES.json": "b96da92984311884bc23ccd6097570dab57012fb1b97e58c05bf8162031dfa93"
+  },
+  "claim_limits": [
+    "Accepted complete numerical engineering result for this passage and exact current build only; no general-shape or CFD qualification.",
+    "Surface is sampled numerical. Whole-source completeness, continuous face accuracy, exact normals/root certificates, native/real-target equivalence and continuous SDF fluid clearance are not proved.",
+    "No hard final200um edge maximum or metric-ratio conformity guarantee. Surface nominal sizing remains an input target.",
+    "Mandatory shape minima pass, but interface and cap percentage targets remain TARGET_NOT_MET under the explicit nonblocking engineering policy. No fully met quality-distribution claim.",
+    "No global exact-Q population certificate. Exact changed-star sign/volume checks and hard geometric proofs do not upgrade untouched source-float shape classifications.",
+    "checkMesh Mesh OK and exact conversion passed; optional -meshQuality dictionary check remains NOT_RUN_NO_APPLICABLE_APPROVED_DICTIONARY.",
+    "Closed process-local surface/shell/direct receipts do not provide archived restart/reusable live authority. No new campaign or distribution qualification follows."
+  ],
+  "blockers": [],
+  "report_review": {
+    "path": "outputs/NODAL5_REPORT.md",
+    "sha256": "a625b7b3ed9cff96116a8318d34cffe6c5bf8f0f5efc66a53ba7c25c6cf4d1db",
+    "material_error_found": false
+  },
+  "stop": "Complete first outcome closed. Consolidate evidence; no retry, further campaign, tuning or implementation authorized by this review."
+}

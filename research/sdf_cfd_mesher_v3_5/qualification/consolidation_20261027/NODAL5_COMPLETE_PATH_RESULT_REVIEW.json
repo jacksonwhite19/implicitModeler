@@ -1,0 +1,387 @@
+{
+  "schema": "Nodal5IndependentCompletePathClosedReview/1",
+  "passed": true,
+  "blockers": [],
+  "disposition": "PASS_FRESH_COMPLETE_ENGINEERING. Approve finalreporting/callback ofthissinglecurrentnormalCLI passage result. No furthercampaign/implementation/qualification expansion.",
+  "scope": "Read-only rawclosedreceipt/sourcegate/filehash/standardprocessinventory review. No meshing,geometryqueries,nativepredicates or numericalre-audit.",
+  "outcome": {
+    "root_passed": true,
+    "full_mesh_complete": true,
+    "completed_stage": "complete",
+    "worker_seconds": 6898.446807799861,
+    "supervisor_seconds": 6901.44232300017,
+    "points": 207705,
+    "prisms": 298660,
+    "tetrahedra": 247804,
+    "cells": 546464,
+    "unique_faces": 1273960,
+    "no_separate_finite_transition_band": true
+  },
+  "fresh_authority_chain": {
+    "CASE_sha256": "1ad76c7124e97def7ed6568a3cbc179d5b854abd0165200485d9fc6688ce38f4",
+    "matches_frozen_preflight_1ad76": true,
+    "mode": {
+      "schema": "V35SurfaceConstructionSelection/1",
+      "requested": "nodal",
+      "effective": "nodal",
+      "origin": "explicit_cli",
+      "assurance": "numerical",
+      "profile": "fastprod",
+      "final_acceptance": "unchanged"
+    },
+    "fresh_surface": {
+      "assurance": "FastProdNumericalSurface/1",
+      "surface_identity": "b676ea72fb136da0838b799bb757c30f248e4a3aeea109fab7d99e478ef3b2c5",
+      "source_geometry_identity": "be3279b6e4c7ef572b3bafdf84bfb3b7df28669a35d0103bc4d44d7ea929615c",
+      "audit_passed": true,
+      "all8authorityfilepins_match": true,
+      "loader_timing": 0.3272171001881361
+    },
+    "source_allrow_segments_passed": true,
+    "shell": {
+      "certificate_relations": 22008401,
+      "layers": 5,
+      "mesh": "014a39763f82b33a3d89e89827e39ae35a8c99382ace0fd6939e9e19ac5fd7ab",
+      "methods": {
+        "DisjointByCertifiedSupportingPlane": 4464749,
+        "ExactHullLegalContact": 5018,
+        "OwnedEdgeByCertifiedSupportingPlane": 4960100,
+        "OwnedVertexByCertifiedSupportingPlane": 12578534
+      },
+      "native": "0dcc300414eef495f8125a397d99587ff2b00d0ccc599cebd6eb72b011624359",
+      "passed": true,
+      "prisms": 298660,
+      "scope": "Live V3.5 prism shell only; no core/CFD qualification",
+      "source": "be3279b6e4c7ef572b3bafdf84bfb3b7df28669a35d0103bc4d44d7ea929615c",
+      "surface_assurance": "FastProdNumericalSurface/1"
+    },
+    "native": {
+      "passed": true,
+      "first": {
+        "command": [
+          "wsl",
+          "-d",
+          "Ubuntu-22.04",
+          "--",
+          "bash",
+          "-lc",
+          "source /opt/openfoam13/etc/bashrc >/dev/null 2>&1; exec setsid --wait bash /mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v3_5/standalone/results/passage_nodal5_complete_01/native/contractDirect.launch.sh"
+        ],
+        "seconds": 2.4786849999800324,
+        "exit_code": 0,
+        "linux_address_space_limit_bytes": 17179869184
+      },
+      "later": {
+        "command": [
+          "wsl",
+          "-d",
+          "Ubuntu-22.04",
+          "--",
+          "bash",
+          "-lc",
+          "source /opt/openfoam13/etc/bashrc >/dev/null 2>&1; exec setsid --wait bash /mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/research/sdf_cfd_mesher_v3_5/standalone/results/passage_nodal5_complete_01/native/contractStaged.launch.sh"
+        ],
+        "seconds": 5.476952400058508,
+        "exit_code": 0,
+        "linux_address_space_limit_bytes": 17179869184
+      },
+      "physical_prisms": 298660,
+      "carrier_fluid_cells": 0,
+      "points": 179196,
+      "max_coordinate_error_m": 0.0,
+      "minimum_native_volume_m3": 2.460625498533226e-16,
+      "scope": "Native identity/construction only; not V4 shell admission"
+    },
+    "parent_binding": {
+      "actual_positions_sha256": "846f9f6f88ed67fc9ab395633f597cf57c2bd57e7c57ddd5cd0eb07ef23446f1",
+      "case_sha256": "1ad76c7124e97def7ed6568a3cbc179d5b854abd0165200485d9fc6688ce38f4",
+      "interface_identity": "f9b43f88d1176bf0e8c0b100eb4854f4c9e7e96e5210186a7d823e5eff34e40d",
+      "native_identity": "0dcc300414eef495f8125a397d99587ff2b00d0ccc599cebd6eb72b011624359",
+      "parent_prism_mesh": "014a39763f82b33a3d89e89827e39ae35a8c99382ace0fd6939e9e19ac5fd7ab",
+      "policy_identity": "11c1b1a36125a20707239a581bdaffca6a7b87bf694b2d1c22cf2d5eaba64260",
+      "schema": "V35V4DirectParent/1",
+      "source_identity": "be3279b6e4c7ef572b3bafdf84bfb3b7df28669a35d0103bc4d44d7ea929615c"
+    },
+    "shell_native_parent_match": true,
+    "root_background_matches_final_background_RESULT": true,
+    "basis": "Unchangedpinnednormalexecutecreatesnewoutput,freshsurfacecontext/provider,prepareproof/nativeexactreadback andone-useLiveAcceptance. directconnection requiresgenuinebackground_inputs andterminallease, currentparentexpectationsguard. Noprevioussurface/closedauthority/restartinput incommand. Scientificidentitymayrepeatforidenticaloperands; itisnotalease/resumetoken. Finalcoldreadback ispostlease semanticreplay, notnewprivateauthority."
+  },
+  "layers": {
+    "rows": 5,
+    "compressed_vertices": 0,
+    "changed_from_numerical_plan_vertices": 0,
+    "nominal_growth": 1.3,
+    "scalar_increments_m": [
+      2e-05,
+      2.6000000000000002e-05,
+      3.380000000000001e-05,
+      4.394e-05,
+      5.712200000000001e-05
+    ],
+    "scalar_total_m": 0.000180862,
+    "native_max_coordinate_error_m": 0.0,
+    "H1_scalar_fixed": true,
+    "X1_preserved": true,
+    "max_first_normal_error_m": 2.608861477543245e-19,
+    "scalar_growth_reversals": 0,
+    "path_growth_reversals": 0,
+    "limit": "Reportednativefirstnormal/patharithmeticroundofffromretainedreduction; noadditionalgeometryverificationperformedbyreviewer."
+  },
+  "direct_outer_and_repair": {
+    "conditioning": {
+      "cavity_commits": 0,
+      "coordinate_identity": "c5f8a91518e4527d998aa1bd5c900be5c0b85511339e57b9fe4d354230a5b380",
+      "existing_vertex_commits": 0,
+      "final_bad_count": 0,
+      "initial_bad_count": 0,
+      "input_sha256": "2dc471ae70119672563713a35159966ae6b8f3d4bc94c40330cc2fbfda4d29da",
+      "method_identity": "f304264e3e13202b0e0c1e0fc4ab629316896968d22bc97fe5af87900d864b30",
+      "native_calls": 0,
+      "original_coordinate_identity": "c5f8a91518e4527d998aa1bd5c900be5c0b85511339e57b9fe4d354230a5b380",
+      "outcome": "AlreadyAboveFloor",
+      "output_sha256": "2dc471ae70119672563713a35159966ae6b8f3d4bc94c40330cc2fbfda4d29da",
+      "receipt_sha256": "e20f51422df845271297d62d8e97c47eef73138486f26288613ab9ebdaf5ff41",
+      "timings": {
+        "initial_population": 21.375
+      }
+    },
+    "conditioning_proposers_not_invoked": true,
+    "conditioning_files": [
+      "CONDITIONED.npz",
+      "CONDITIONING.json",
+      "INPUT.npz"
+    ],
+    "shared_apex_repair": {
+      "changed_count": 2,
+      "classification": "UNQUALIFIED",
+      "classification_scope": "Changed rows source-float AND exact binary-coordinate classifications; untouched rows source-float only. No global exact-Q population claim.",
+      "connectivity_changed": false,
+      "protected_coordinate_bits_unchanged": true,
+      "repair_invocations": 1,
+      "union_affected_tets": 16,
+      "source_queries": 0,
+      "scientific_acceptance": false
+    },
+    "changed_vertices": [
+      207427,
+      207565
+    ],
+    "cold_conditioning_and_repair_replayed": true,
+    "runtime_prepost_passed": true,
+    "native_budget": {
+      "limit_seconds": 7200.0,
+      "used_seconds": 260.0629999996163
+    }
+  },
+  "quality": {
+    "interface_actual_neighbour_QA": {
+      "faces": 59732,
+      "failure_count": 0,
+      "failures": [],
+      "geometry_identity": "0a7008381942d4ca9a1b54ac6adc5f9b8e84ff05dc9b63bcd5ecf4487ad600d4",
+      "maximum_nonorthogonality": 37.302082789779654,
+      "maximum_skewness": 1.026045478115849,
+      "minimum_symmetric_volume_ratio": 0.0428561553573599,
+      "minimum_weight": 0.05687894314413293,
+      "nonorthogonality_role": "descriptive_only",
+      "passed": true,
+      "scientific_acceptance": false,
+      "wall_contract": "StoredFluidBoundaryWall/1"
+    },
+    "shape": {
+      "all_bulk_tetrahedra": {
+        "count": 247804,
+        "minimum": 0.2716482611054878,
+        "required_minimum": 0.25,
+        "mandatory_passed": true,
+        "passed": true,
+        "percentage_role": "NONBLOCKING_ENGINEERING_DIAGNOSTIC",
+        "percentage_status": "TARGETS_MET",
+        "percentage_targets_met": true
+      },
+      "interface_tetrahedra": {
+        "count": 59732,
+        "minimum": 0.32041083317825586,
+        "required_minimum": 0.25,
+        "mandatory_passed": true,
+        "passed": false,
+        "percentage_role": "NONBLOCKING_ENGINEERING_DIAGNOSTIC",
+        "percentage_status": "TARGET_NOT_MET",
+        "percentage_targets_met": false
+      },
+      "preserved_cap_triangles": {
+        "count": 59732,
+        "minimum": 0.3304947841289329,
+        "required_minimum": 0.3,
+        "mandatory_passed": true,
+        "passed": false,
+        "percentage_role": "NONBLOCKING_ENGINEERING_DIAGNOSTIC",
+        "percentage_status": "TARGET_NOT_MET",
+        "percentage_targets_met": false
+      }
+    },
+    "important": "Bulkmandatoryfloor.25,interface.25,cap.30allpass. Interface/cappercentageTARGET_NOT_MET remainexplicitnonblockingdiagnostics; do notsayallshapetargetspassed. Currentactualinterfaceweight.05687894314413293>.055/0failures; historical4failurecomparisonisdescriptive,notcausalproofnodalconstructionalonefixedthem. Existingapexmoved2interiorvertices andcurrentprism/downstreammethoddiffers."
+  },
+  "joined_proofs": {
+    "producer": {
+      "whole_joined_geometry_passed": true,
+      "receipt_readbacks": 12,
+      "live_parent": true,
+      "generation_invocations": 1,
+      "construction_invocations": 1,
+      "collision_scope": "ALL_FACES_INCLUDING_ALL_OLD_OLD_RELATIONS",
+      "post_audit_geometry_custody": true,
+      "scientific_acceptance": false,
+      "publication": "NOT_RUN",
+      "original_sdf_fluid_proof": "NOT_PERFORMED",
+      "not_run": []
+    },
+    "all12_receipt_integrity": {
+      "boundary_collision": {
+        "file_sha256_matches": true,
+        "canonical_identity_matches": true,
+        "cold_bytes_equal": true,
+        "geometry_identity_matches": true
+      },
+      "collision": {
+        "file_sha256_matches": true,
+        "canonical_identity_matches": true,
+        "cold_bytes_equal": true,
+        "geometry_identity_matches": true
+      },
+      "domain": {
+        "file_sha256_matches": true,
+        "canonical_identity_matches": true,
+        "cold_bytes_equal": true,
+        "geometry_identity_matches": true
+      },
+      "enclosure": {
+        "file_sha256_matches": true,
+        "canonical_identity_matches": true,
+        "cold_bytes_equal": true,
+        "geometry_identity_matches": true
+      },
+      "filling": {
+        "file_sha256_matches": true,
+        "canonical_identity_matches": true,
+        "cold_bytes_equal": true,
+        "geometry_identity_matches": true
+      },
+      "incidence": {
+        "file_sha256_matches": true,
+        "canonical_identity_matches": true,
+        "cold_bytes_equal": true,
+        "geometry_identity_matches": true
+      },
+      "interface_qa": {
+        "file_sha256_matches": true,
+        "canonical_identity_matches": true,
+        "cold_bytes_equal": true,
+        "geometry_identity_matches": true
+      },
+      "joined_qa": {
+        "file_sha256_matches": true,
+        "canonical_identity_matches": true,
+        "cold_bytes_equal": true,
+        "geometry_identity_matches": true
+      },
+      "physical_qa": {
+        "file_sha256_matches": true,
+        "canonical_identity_matches": true,
+        "cold_bytes_equal": true,
+        "geometry_identity_matches": true
+      },
+      "preservation": {
+        "file_sha256_matches": true,
+        "canonical_identity_matches": true,
+        "cold_bytes_equal": true,
+        "geometry_identity_matches": true
+      },
+      "surfaces": {
+        "file_sha256_matches": true,
+        "canonical_identity_matches": true,
+        "cold_bytes_equal": true,
+        "geometry_identity_matches": true
+      },
+      "winding": {
+        "file_sha256_matches": true,
+        "canonical_identity_matches": true,
+        "cold_bytes_equal": true,
+        "geometry_identity_matches": true
+      }
+    },
+    "cold": {
+      "CFD_qualified": false,
+      "actual_shape_populations_recomputed": true,
+      "all_twelve_semantically_replayed": true,
+      "conditioning_replayed": true,
+      "geometry_identity": "0a7008381942d4ca9a1b54ac6adc5f9b8e84ff05dc9b63bcd5ecf4487ad600d4",
+      "manifest_sha256": "1b778396354ecbeda777d12f0bb6af5db4328298182c78232ac64209dc0b4296",
+      "passed": true,
+      "points": 207705,
+      "prisms": 298660,
+      "proofs": 12,
+      "repair_replayed": true,
+      "schema": "V35DirectIndependentReadback/1",
+      "tetrahedra": 247804
+    },
+    "producer_cold_geometry_identity_equal": true,
+    "full_collision_required_pairs": 49336421,
+    "full_collision_independent_coverage_passed": true,
+    "exact_volume_balance": true,
+    "positive_cells": true,
+    "degree_passed": true,
+    "component_authority_limit": "Task135componentflags scientific_acceptance=false/lease_issued=false/publicationNOT_RUN aretruthfulhistoricalauthoritylimits; enclosingfreshparent/terminallease+DirectFillEngineeringcompletepath grantslocalengineeringcompletion only. Theyare notsubstitutedforprivateauthority."
+  },
+  "export": {
+    "passed": true,
+    "conversion_fidelity": true,
+    "point_bijection_exact": true,
+    "cell_bijection_exact": true,
+    "all_face_incidence_and_winding_exact": true,
+    "literal_mesh_ok": true,
+    "failed_lines": [],
+    "warnings": [],
+    "mesh_quality": "NOT_RUN_NO_APPLICABLE_APPROVED_DICTIONARY",
+    "maximum_nonorthogonality_degrees": 68.98421676571267,
+    "maximum_skewness": 1.0260454781158368,
+    "source_archive_sha256_matches_finalmesh": true,
+    "mapping_hash_matches": true,
+    "limit": "LiteralMeshOKwithno warnings underinvokedgeometry/topologychecks; noapplicableapprovedmeshQualitydictionarywasrun. NotCFDqualification."
+  },
+  "manifest_and_final_integrity": {
+    "manifest_members": 125,
+    "manifest_mismatches": [],
+    "final_mesh_hash_matches": true,
+    "final_readback_hash_matches": true,
+    "final_manifest_hash_matches": true,
+    "cold_manifest_hash_matches": true
+  },
+  "closure": {
+    "state": "closed",
+    "passed": true,
+    "identity": "5e38fe034bb6f90fd23f5fee854293960e3ead35c289450ebe8d4f5a935f6666",
+    "files": 1866,
+    "changed": [],
+    "added": [],
+    "independent_current_pin_mismatches": [],
+    "supervisor_exit_code": 0,
+    "stop_reason": null,
+    "monitor_error": null,
+    "peak_sampled_windows_tree_rss_bytes": 9698799616,
+    "last_sampled_output_bytes": 4059768705,
+    "matching_Windows_Python_processes": 0,
+    "recorded_Linux_scope_groups_checked": 7,
+    "remaining_group_members": [],
+    "retirement_method": "Read-onlyWindowsCIMmatch+WSLstandardlibrary/procgroupinventory forrecordedPIDs1428449,1429213,1430048,1430986,1431878,1432647,1433415. No scientific/nativechecker run.",
+    "resource_limit": "Observedbelow16GiB/16e9/43200s. LinuxASisperprocess; WindowsRSS/outputvaluesaresampled, notexactglobalpeaks."
+  },
+  "limitations": [
+    "FreshFastProdnumericalsurface,no sourcecompleteness/continuoussurfaceaccuracy/exactfinalnormalroots/repeatabilityproof/hard200ummaximumedge.",
+    "Completecurrentstoredmeshengineeringgeometry+exactexport admitted; continuousoriginalSDFfluidproofNOT_PERFORMED,globalexact-Qshapeclassificationnotclaimed,repairclassificationUNQUALIFIED.",
+    "Nohistoricalpublication/restart/scientificleaseauthority orCFD/solver/yplus/flowaccuracy qualification.",
+    "Resultqualifies thissinglefixedpassagecase/currentbuild andretainedcompletepathonly; no generalizedrandomshapequalification."
+  ],
+  "root_callback_only": true,
+  "next_action": "Reportclosedmilestone,rootauthorizedadvisorcallbackthenstop. Noadditionalrun/tuning/implementation bythisreview."
+}

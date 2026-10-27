@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sdf-cfd-mesher-v4"
+version = "0.1.0"
+description = "Standalone case-driven SDF surface and prism mesher, using the qualified V4 production stack"
+requires-python = ">=3.12"
+dependencies = ["numpy", "scipy", "sympy", "casadi", "psutil"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"*" = ["**/*.py", "**/*.json", "**/*.rs", "**/*.md"]
