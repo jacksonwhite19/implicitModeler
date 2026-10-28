@@ -1,3 +1,5 @@
+> Qualification update (2026-10-27): passage actual audit passed, but cross-run parent-token comparison stopped and production/offline remain unrun. See [stop report](qualification/passage_verification_stop_20261027/REPORT.md). Prior sphere/blend qualification remains valid; no three-case production claim is added.
+
 > Qualification update (2026-10-27): fixed sphere and thick-blend audit/production/offline sequences passed on unchanged runtime714b83dd. See [blend report](qualification/blend_verification_20261027/REPORT.md). Passage and general production remain unqualified. Older implementation-stage statements below are dated history.
 
 > Qualification update: the staged fixed-sphere sequence described below has now passed on runtime714b83dd. See [closed report](qualification/sphere_verification_20261027/REPORT.md). Other proposed fixture work remains unrun and unauthorized; original implementation-stage limits below are dated history.

@@ -1,4 +1,4 @@
-> Verification qualification (2026-10-27): runtime714b83dd passed one complete audit, production and separate offline audit each for the fixed sphere and thick blend. All physical arrays match frozen references. Blend compression, 41 faces above 70 degrees nonorthogonality and nonblocking cap/interface misses are retained. Passage/general production remains unqualified. The table below remains the frozen eff955ed reference. See [blend report](../qualification/blend_verification_20261027/REPORT.md) and [sphere report](../qualification/sphere_verification_20261027/REPORT.md).
+> Verification status (2026-10-27): sphere/adaptive and thick-blend/adaptive sequences passed on unchanged runtime714b83dd. Passage/nodal actual full audit passed, then external parent-token comparison stopped; production/offline NOT RUN. Retained physical state matches reference; first failed gate is preserved. See [stop report](../qualification/passage_verification_stop_20261027/REPORT.md). Frozen eff955ed table below remains historical and unchanged.
 
 # Mesher V3.5 frozen consolidation
 

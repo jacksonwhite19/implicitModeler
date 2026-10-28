@@ -1,0 +1,29 @@
+{
+  "schema": "V35PassageVerificationComparisonStop/1",
+  "classification": "AUDIT_ACCEPTED_FIRST_COMPARISON_STOPPED",
+  "runtime_code_commit": "714b83dd190b3c51dce2b24b837f2500817f368a",
+  "execution_commit": "2683208867a1803397ba72bf858d83eb5496ccb0",
+  "runtime_identity": "8e428c2a5e7bee83dc71c70660c40cbd1452f08ad99674ed5e4755456768c518",
+  "audit_attempts": 1,
+  "normal_audit": "audit_accepted",
+  "producer_checks": 12,
+  "semantic_checks": 12,
+  "comparison": "failed_preserved",
+  "first_error": "AssertionError('SubstantiveConditioningStateDiffers')",
+  "difference": {
+    "path": "/parent/parent_prism_mesh",
+    "current": "9edc6973e14de1502f0da99a78ce15391361fee0a2263c284f68d5ea0ef13349",
+    "frozen": "014a39763f82b33a3d89e89827e39ae35a8c99382ace0fd6939e9e19ac5fd7ab"
+  },
+  "production": "not_run",
+  "offline": "not_run",
+  "runtime_changes": 0,
+  "comparator_changes_after_failure": 0,
+  "scientific_retries": 0,
+  "raw_audit": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_audit_01",
+  "audit_wall_seconds": 6998.994109699968,
+  "physical_arrays_exact": true,
+  "plan_arrays_exact": true,
+  "independent_retained_physical_reviews": "no regression found; own parent chains authenticate; full token preimage not retained",
+  "next_step": "Proposal only: reviewed versioned read-only comparison correction with per-run token authentication; no implementation or dependent runs authorized by this stop report"
+}
