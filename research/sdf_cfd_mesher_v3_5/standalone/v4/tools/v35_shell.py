@@ -22,7 +22,7 @@ class PrismShellGeometry:
         self.check()
         return None  # Existing V4 generic finite-transition construction.
 
-def prepare(initial,owner,folder,*,source_handoff=None,verification_mode='audit'):
+def prepare(initial,owner,folder,*,source_handoff=None,verification_mode='audit',_source_evidence_scope=None):
     """Call while the surface/source lifetime and native-file guards are held."""
     import generalize_local_remesh as g
     from accepted_trajectory_contract import _planned_quality
@@ -50,11 +50,16 @@ def prepare(initial,owner,folder,*,source_handoff=None,verification_mode='audit'
             proof=initial.source.qualify_segments(positions[k-1],positions[k],first_height_m=initial.h1 if k==1 else None)
             if proof.get('passed') is not True:raise ValueError('V35SourceSegmentRefusal',k)
             proofs.append(proof)
-    g.save(folder/'SOURCE_EVALUATION.json',dict(schema=VERSION,mode=verification_mode,
+    evaluation=dict(schema=VERSION,mode=verification_mode,
         method='live_final_population_authenticated' if reused else 'recomputed',
         independent_source_recomputation=not reused,layers=N,segments=N*len(initial.x),
-        scope='Source progress and H1 only; independent face coverage and all quality/volume/degree gates remain mandatory'))
-    g.save(folder/'SOURCE_SEGMENTS.json',dict(passed=True,layers=proofs,scope='Existing source-segment predicates; source surface retains its declared assurance'))
+        scope='Source progress and H1 only; independent face coverage and all quality/volume/degree gates remain mandatory')
+    segments=dict(passed=True,layers=proofs,scope='Existing source-segment predicates; source surface retains its declared assurance')
+    if verification_mode=='production':
+        from source_evidence import retain
+        retain(folder,evaluation,segments,positions,initial.source.geometry_identity,initial.h1,_source_evidence_scope)
+    else:
+        g.save(folder/'SOURCE_EVALUATION.json',evaluation);g.save(folder/'SOURCE_SEGMENTS.json',segments)
     points,cells,outer,owners,checked=_planned_quality(positions[0],initial.tri,positions,completed_front=True)
     g.save(folder/'RAW_QUALITY.json',checked)
     if not all(checked[k]['passed'] for k in ('quality','ownership','vertex_links')):raise ValueError('V35ShellQualityOrTopologyRefusal')

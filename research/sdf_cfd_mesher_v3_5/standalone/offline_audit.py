@@ -49,6 +49,8 @@ def authenticate(folder,expected,scope):
         raise ValueError('ChangedProductionExecutionRecord')
     root_result=read('RESULT.json');direct=read('background/RESULT.json')
     validate_production_completion(folder,root_result,direct,value['finalization'])
+    from source_evidence import record as source_evidence_record
+    if value.get('source_evidence')!=source_evidence_record(folder):raise ValueError('ChangedOriginalSourceEvidenceRecord')
     return value
 
 def audit(folder,expected,verifier,output,seconds=10800):
@@ -71,6 +73,7 @@ def audit(folder,expected,verifier,output,seconds=10800):
         if custody.get('passed') is not True:raise ValueError('OfflineVerifierSourceClosureFailed')
         result=dict(schema=OFFLINE,status='audit_passed',passed=True,source_bundle_root=expected,verifier_identity=verifier,
             producer_source_identity=root['source_identity'],fresh_source_authority=False,remeshed=False,search_rerun=False,
+            source_evidence=root['source_evidence'],
             replay=replay,seconds=time.monotonic()-started,CFD_qualified=False)
     except BaseException as error:
         durable_json(output/'AUDIT_RESULT.json',dict(schema=OFFLINE,status='audit_failed',passed=False,source_bundle_root=expected,

@@ -153,6 +153,7 @@ def execute(run,case_path,folder,*,trace_files=False,_finalization_scope=None):
             binding=dict(schema='V35V4DirectParent/1',case_sha256=case_pin,parent_prism_mesh=token.mesh,
                 native_identity=run.provider.native_identity,actual_positions_sha256=array_hash(run.provider.positions),
                 source_identity=run.provider.binding.geometry_identity,policy_identity=identity(selected),interface_identity=metadata['identity'])
+            if mode=='production':binding['source_segments_identity']=run.tx.current['authority']['v35_source_segments']
             save(folder/'PARENT.json',binding)
             parent_expectations=dict(binding=binding,prefix_points=len(state['points']),prefix_digest=prefix_digest,
                 cells_identity=identity(construction.d.plain(cells)),

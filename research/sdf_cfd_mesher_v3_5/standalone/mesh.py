@@ -226,7 +226,7 @@ def execute(args):
                 if owner.positions().tobytes()!=plan['positions'].tobytes():raise ValueError('V3V4PlannedArithmeticMismatch')
                 owner.state.save(out/'plan',plan['schedule']);mark(stage,t)
                 stage='v4_prospective_shell_checks';t=time.perf_counter()
-                prepared=prepare(provider,owner,out/'shell',source_handoff=handoff,verification_mode=verification['mode']);mark(stage,t)
+                prepared=prepare(provider,owner,out/'shell',source_handoff=handoff,verification_mode=verification['mode'],_source_evidence_scope=lifetime);mark(stage,t)
             plan['source_global_proof']='passed_before_native_construction'
             save(out/'PRISM_PLAN.json',{k:v for k,v in plan.items() if k not in ('positions','delta','schedule')})
             stage='v3_native_construction';t=time.perf_counter()

@@ -15,7 +15,8 @@ from artifact_finalization import hold_manifest,safe_path
 REQUEST='FINALIZATION_HANDOFF.json';ACK='FINALIZATION_ACK.json'
 SCHEMA='V35AuditGuardHandoff/1'
 EXTRA=('CASE.json','RESULT.json','background/RESULT.json','background/READBACK.json')
-PRODUCTION_EXTRA=EXTRA[:-1]
+from source_evidence import FILES as SOURCE_EVIDENCE_FILES
+PRODUCTION_EXTRA=EXTRA[:-1]+SOURCE_EVIDENCE_FILES
 
 def handoff_contract(descriptor):
     from verification_policy import FINALIZER,profile
@@ -99,6 +100,7 @@ class SupervisorHandoff:
             assurance='Existing audited engineering path only; no production selection, CFD, continuous geometry or global exact-Q claim')
         if self.request['verification_policy']=='production':
             from verification_policy import MANIFEST,profile
+            from source_evidence import record as source_evidence_record
             # Self-contained copies retain original-run custody evidence for
             # later read-only replay; paths outside the bundle are not needed.
             directory=self.folder/'closure';directory.mkdir(exist_ok=False)
@@ -110,6 +112,7 @@ class SupervisorHandoff:
                 independent_semantic_replay='not_run',audit='not_run',independent_audit_status='not_run',acceptance_status='production_accepted',
                 geometry_complete=True,producer_checks_passed=True,artifact_fidelity_passed=True,closure_files=copied,
                 execution_record=self.finalization['execution_record'],producer_implementation_identity=sources['identity'],
+                source_evidence=source_evidence_record(self.folder),
                 assurance='Producer engineering checks and finalization only; separate audit not_run; no CFD or fresh offline source authority')
         durable_json(self.folder/'VERIFICATION.json',value)
         return value
@@ -128,6 +131,8 @@ def validate_production_completion(folder,root,direct,descriptor):
     from verification_policy import production_result,ROOT_RESULT,profile,require_selection
     production_result(direct,descriptor)
     case=read(Path(folder)/'CASE.json');require_selection(case.get('verification'),case,'production')
+    from source_evidence import validate_completion
+    validate_completion(folder,case,direct['parent'])
     if (root.get('schema')!=ROOT_RESULT or root.get('geometry_complete') is not True or root.get('producer_checks_passed') is not True
         or root.get('artifact_fidelity_passed') is not True or root.get('independent_audit_status')!='not_run'
         or root.get('acceptance_status')!='pending_supervisor' or 'passed' in root or root.get('verification_policy')!='production'

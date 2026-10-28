@@ -13,7 +13,7 @@ CONTRACT=dict(version=PROFILE,workflow='complete_v3_prisms_v4_direct',
     construction_and_quality='UNCHANGED',native_export_fidelity='MANDATORY',
     artifact_binding='GUARDED_PRODUCER_SERIALIZED_NATIVE',source_resource_closure='MANDATORY',
     separate_semantic_replay='NOT_RUN',legacy_cold_required_acceptance=False,
-    source_assurance='ORIGINAL_RUN_ONLY',
+    source_assurance='ORIGINAL_RUN_ONLY',source_evidence_binding='V35RetainedSourceEvidence/1:producer_held_full_population_and_method;offline_authenticated_no_live_source',
     source_segments='V35LiveFinalSourcePopulation/1:production_same_run_authentication_or_recompute;audit_recompute',continuous_sdf_fluid='NOT_PERFORMED',CFD_qualified=False)
 
 def profile():

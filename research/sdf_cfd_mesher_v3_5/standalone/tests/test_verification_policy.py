@@ -25,8 +25,18 @@ def production_fixture(root):
     joined,proof=copy.deepcopy(controls.export_control()[1:3])
     from direct_connection import policy as background_policy
     selected=background_policy([[-.01,.01]]*3,.26,.002)
-    case=dict(background=selected);case['verification']=policy.selection('production',case,'complete');save(root/'CASE.json',case)
-    binding=dict(case_sha256=file_hash(root/'CASE.json'),policy_identity=identity(selected),source_identity='synthetic-original-run')
+    import numpy as np
+    from source_evidence import retain
+    from source_handoff import VERSION
+    positions=np.asarray(joined['points']).reshape(2,4,3);h1=2e-5
+    rows=[dict(passed=True,segments=4,segment_proofs=[{'synthetic_source_precondition':True}]*4,
+        start=array_hash(positions[0]),end=array_hash(positions[1]),geometry_identity='synthetic-original-run',
+        first_source_normal_height_m=h1,exact_field_progress=True,positive_endpoints=True)]
+    evaluation=dict(schema=VERSION,mode='production',method='recomputed',independent_source_recomputation=True,layers=1,segments=4)
+    (root/'shell').mkdir();(root/'native').mkdir();np.savez(root/'native/SEALED_PLAN.npz',positions=positions)
+    with ExitStack() as scope:retain(root/'shell',evaluation,dict(passed=True,layers=rows),positions,'synthetic-original-run',h1,scope)
+    case=dict(background=selected,prisms=dict(first_full_normal_thickness_m_hex=h1.hex()));case['verification']=policy.selection('production',case,'complete');save(root/'CASE.json',case)
+    binding=dict(case_sha256=file_hash(root/'CASE.json'),policy_identity=identity(selected),source_identity='synthetic-original-run',actual_positions_sha256=array_hash(positions),source_segments_identity=identity(rows))
     joined['provenance']=dict(binding=binding,live_parent=True,generation_invocations=1,construction_invocations=1)
     arrays=expected_arrays(joined)
     parent=dict(binding=binding,prefix_points=joined['prefix_points'],prefix_digest=joined['prefix_digest'],cells_identity=identity(joined['cells']),
@@ -159,6 +169,8 @@ class VerificationPolicy(unittest.TestCase):
     def test_production_overlap_closure_and_no_legacy_success_aliases(self):
         root,handoff,args=self.acquire()
         with self.assertRaises(PermissionError):(root/'background/COMPLETE_MESH.npz').write_bytes(b'late')
+        for name in ('shell/SOURCE_EVALUATION.json','shell/SOURCE_SEGMENTS.json','native/SEALED_PLAN.npz'):
+            with self.assertRaises(PermissionError):(root/name).write_bytes(b'late')
         bad=dict(args[0],added=['late.py'])
         with self.assertRaises(ValueError):handoff.publish(bad,*args[1:])
         value=handoff.publish(*args);self.assertEqual(value['schema'],policy.MANIFEST);self.assertEqual(value['audit'],'not_run')
@@ -236,7 +248,7 @@ class VerificationPolicy(unittest.TestCase):
         out=self.root/'unsupported'
         with self.assertRaisesRegex(ValueError,'UnsupportedVerifierIdentity'):audit(root,pin,'unknown',out)
         with self.assertRaisesRegex(ValueError,'FreshOffline'):audit(root,pin,'unknown',out)
-        for mutation in ('root','version','missing','artifact'):
+        for mutation in ('root','version','missing','artifact','source_method','source_population','source_missing','source_operands'):
             dest=self.root/mutation;shutil.copytree(root,dest)
             expected=pin
             if mutation=='version':
@@ -244,6 +256,11 @@ class VerificationPolicy(unittest.TestCase):
             if mutation=='missing':(dest/'background/audit/DOMAIN.json').unlink()
             if mutation=='artifact':(dest/'background/COMPLETE_MESH.npz').write_bytes(b'changed')
             if mutation=='root':expected='0'*64
+            if mutation=='source_method':
+                p=dest/'shell/SOURCE_EVALUATION.json';v=json.loads(p.read_text());v['method']='historical_cache';save(p,v)
+            if mutation=='source_population':(dest/'shell/SOURCE_SEGMENTS.json').write_text('{}')
+            if mutation=='source_missing':(dest/'shell/SOURCE_SEGMENTS.json').unlink()
+            if mutation=='source_operands':(dest/'native/SEALED_PLAN.npz').write_bytes(b'changed')
             with ExitStack() as scope,self.assertRaises(Exception):authenticate(dest,expected,scope)
 
     def test_offline_success_wrapper_never_claims_fresh_source_authority(self):
