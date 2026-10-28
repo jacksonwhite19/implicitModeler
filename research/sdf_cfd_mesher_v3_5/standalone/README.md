@@ -1,4 +1,4 @@
-> Sphere verification qualification (2026-10-27): runtime714b83dd passed one complete audit, production and separate offline audit with exact frozen sphere arrays. Only the fixed adaptive sphere/settings are qualified for this production/offline route. The three-case table below remains the frozen eff955ed reference. See [sphere report](../qualification/sphere_verification_20261027/REPORT.md).
+> Verification qualification (2026-10-27): runtime714b83dd passed one complete audit, production and separate offline audit each for the fixed sphere and thick blend. All physical arrays match frozen references. Blend compression, 41 faces above 70 degrees nonorthogonality and nonblocking cap/interface misses are retained. Passage/general production remains unqualified. The table below remains the frozen eff955ed reference. See [blend report](../qualification/blend_verification_20261027/REPORT.md) and [sphere report](../qualification/sphere_verification_20261027/REPORT.md).
 
 # Mesher V3.5 — frozen working candidate
 
