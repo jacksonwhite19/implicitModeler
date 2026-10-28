@@ -1,4 +1,4 @@
-> Verification status (2026-10-27): sphere/adaptive and thick-blend/adaptive sequences passed on unchanged runtime714b83dd. Passage/nodal actual full audit passed, then external parent-token comparison stopped; production/offline NOT RUN. Retained physical state matches reference; first failed gate is preserved. See [stop report](../qualification/passage_verification_stop_20261027/REPORT.md). Frozen eff955ed table below remains historical and unchanged.
+> Verification status (2026-10-28): sphere/adaptive and thick-blend/adaptive sequences remain qualified. Passage audit V2 comparison passed; production accepted, then V2 production comparison stopped on a three-byte scratch-size counter difference. Offline NOT RUN. Actual metric/mesh/native/repair data match; failed gate preserved. See [current stop report](../qualification/passage_verification_production_comparison_stop_20261028/REPORT.md). Frozen eff955ed is historical and unchanged.
 
 # Mesher V3.5 — frozen working candidate
 

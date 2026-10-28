@@ -1,0 +1,40 @@
+{
+  "schema": "PassageVerify2ProductionComparisonStop/1",
+  "classification": "PRODUCTION_ACCEPTED_V2_COMPARISON_STOPPED",
+  "runtime_code_commit": "714b83dd190b3c51dce2b24b837f2500817f368a",
+  "runtime_identity": "8e428c2a5e7bee83dc71c70660c40cbd1452f08ad99674ed5e4755456768c518",
+  "audit": "audit_accepted_retained",
+  "audit_v1_comparison": "failed_preserved",
+  "audit_v2_comparison": "passed_reviewed",
+  "production": "production_accepted",
+  "production_comparison": "failed_preserved",
+  "error": "ValueError('ProvenanceSemantics:generation')",
+  "difference": [
+    {
+      "path": "/timing/mmgs/measured_input_bytes",
+      "production": 9321048,
+      "audit": 9321051,
+      "frozen": 9321051
+    }
+  ],
+  "offline": "not_run",
+  "attempts": {
+    "audit": 1,
+    "production": 1,
+    "offline": 0
+  },
+  "audit_rerun": false,
+  "producer_checks": 12,
+  "production_separate_semantic_checks": 0,
+  "production_verification_sha256": "9e25eb2085cba8092f2d347ec8fa18682e0e5ab47dcadba2b40327cc9d037340",
+  "production_seconds": 6124.915444999933,
+  "runtime_changes": 0,
+  "external_comparator_changed_before_production": true,
+  "comparator_changes_after_production_refusal": 0,
+  "scientific_retries": 0,
+  "full_three_fixture_qualification": false,
+  "physical_diagnostics": "Independent retained raw reviews match; failed comparison remains failed",
+  "next_step": "Proposal only: reviewed new external scratch-measurement rule and read-only reduction of unchanged saved production; no normal run rerun",
+  "frozen_untouched": true,
+  "automation": false
+}
