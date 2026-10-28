@@ -1,3 +1,5 @@
+> Qualification update: the staged fixed-sphere sequence described below has now passed on runtime714b83dd. See [closed report](qualification/sphere_verification_20261027/REPORT.md). Other proposed fixture work remains unrun and unauthorized; original implementation-stage limits below are dated history.
+
 # Phase 1B verification contract and handoff
 
 ## Scope and behavior

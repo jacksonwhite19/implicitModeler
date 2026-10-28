@@ -1,4 +1,4 @@
-> Phase 1B candidate status (2026-10-27): explicit audit/production verification and offline audit are implemented for focused review. Audit is default; production supports only complete direct workflow. No full candidate mesh or production/audit equivalence is qualified. The three-case results below belong to frozen eff955ed. See [Phase 1B contract](../PHASE1B_CONTRACT.md).
+> Sphere verification qualification (2026-10-27): runtime714b83dd passed one complete audit, production and separate offline audit with exact frozen sphere arrays. Only the fixed adaptive sphere/settings are qualified for this production/offline route. The three-case table below remains the frozen eff955ed reference. See [sphere report](../qualification/sphere_verification_20261027/REPORT.md).
 
 # Mesher V3.5 frozen consolidation
 

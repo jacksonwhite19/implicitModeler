@@ -1,0 +1,37 @@
+{
+  "schema": "V35SphereAuditProductionQualification/1",
+  "classification": "PASS_ONE_FIXED_SPHERE_AUDIT_PRODUCTION_OFFLINE",
+  "runtime_commit": "714b83dd190b3c51dce2b24b837f2500817f368a",
+  "runtime_identity": "8e428c2a5e7bee83dc71c70660c40cbd1452f08ad99674ed5e4755456768c518",
+  "attempts": {
+    "audit": 1,
+    "production": 1,
+    "offline": 1
+  },
+  "root": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration",
+  "run_paths": {
+    "audit": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\sphere_verify1_audit_01",
+    "production": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\sphere_verify1_production_01",
+    "offline": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\sphere_verify1_offline_01"
+  },
+  "wall_seconds": {
+    "audit": 524.4859392996877,
+    "production": 436.5744423996657,
+    "offline": 87.8106174999848
+  },
+  "point_count": 14798,
+  "prisms": 12780,
+  "tetrahedra": 40448,
+  "total_cells": 53228,
+  "five_physical_arrays_exact_frozen": true,
+  "eight_plan_arrays_exact_frozen": true,
+  "production_verification_sha256": "dd9c6d85c60288d3ffbcf1b69843d9766255b42f9272f446878185a029298c02",
+  "production_input_files_unchanged": 374,
+  "implementation_changes": 0,
+  "retries": 0,
+  "production_independent_audit_status": "not_run",
+  "linked_offline_audit": "audit_passed",
+  "fresh_source_authority": false,
+  "next_decision": "No larger fixtures or promotion of frozen package authorized",
+  "performance_scope": "Single sequential pair; no statistical speedup claim"
+}
