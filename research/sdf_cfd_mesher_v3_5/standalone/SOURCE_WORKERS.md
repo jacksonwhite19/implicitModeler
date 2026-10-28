@@ -23,7 +23,7 @@ refusals retain the earliest original vertex and can return to the existing
 collision proposal loop only after all current-layer workers resolve safely.
 Speculative sibling work can change attempted-call counts.
 
-The original pending â†’ selected collision outcome â†’ single-use consume gates
+The original pending → selected collision outcome → single-use consume gates
 still apply. Workers and their source hosts must close before the consumer
 receives retained proofs. First-height evidence comes from owned current local
 execution of the stock method; a saved scalar or worker JSON is not a new
