@@ -1,0 +1,55 @@
+{
+  "schema": "V35ThreeFixtureVerificationClosure/1",
+  "classification": "PASS_THREE_FIXED_CASES_AUDIT_PRODUCTION_OFFLINE",
+  "runtime_identity": "8e428c2a5e7bee83dc71c70660c40cbd1452f08ad99674ed5e4755456768c518",
+  "runtime_code_commit": "714b83dd190b3c51dce2b24b837f2500817f368a",
+  "matrix": [
+    {
+      "fixture": "Sphere",
+      "carrier": "adaptive",
+      "points": 14798,
+      "prisms": 12780,
+      "tetrahedra": 40448,
+      "wall_seconds": {
+        "audit": 524.4859392996877,
+        "production": 436.5744423996657,
+        "offline": 87.8106174999848
+      },
+      "unchanged_production_files": 374
+    },
+    {
+      "fixture": "Thick blend",
+      "carrier": "adaptive",
+      "points": 38868,
+      "prisms": 46570,
+      "tetrahedra": 72871,
+      "wall_seconds": {
+        "audit": 2850.049144699704,
+        "production": 2637.3637366001494,
+        "offline": 229.90300730010495
+      },
+      "unchanged_production_files": 548
+    },
+    {
+      "fixture": "Passage",
+      "carrier": "nodal",
+      "points": 207705,
+      "prisms": 298660,
+      "tetrahedra": 247804,
+      "wall_seconds": {
+        "audit": 6998.994109699968,
+        "production": 6124.915444999933,
+        "offline": 1029.5494609000161
+      },
+      "unchanged_production_files": 372
+    }
+  ],
+  "production_audit": "not_run",
+  "separate_offline": "audit_passed",
+  "normal_reruns": 0,
+  "scientific_retries": 0,
+  "runtime_changes": 0,
+  "promoted": false,
+  "pushed": false,
+  "dispatch": "1/5"
+}

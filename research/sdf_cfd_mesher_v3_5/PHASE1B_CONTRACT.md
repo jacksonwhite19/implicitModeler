@@ -1,3 +1,5 @@
+> Closure (2026-10-28): all three fixed fixture/carrier audit/production/offline sequences passed on unchanged runtime. See [full report](qualification/passage_verification_closed_20261028/REPORT.md). Prior implementation/stop history below is retained. No promotion or new campaign.
+
 > Qualification update (2026-10-28): passage production accepted; V2 production comparison stopped on a three-byte operational scratch aggregate, while actual native inputs/mesh/repair data match. Offline NOT RUN; no full three-case claim. See [current stop report](qualification/passage_verification_production_comparison_stop_20261028/REPORT.md). Prior records below are dated history.
 
 > Qualification update (2026-10-27): passage actual audit passed, but cross-run parent-token comparison stopped and production/offline remain unrun. See [stop report](qualification/passage_verification_stop_20261027/REPORT.md). Prior sphere/blend qualification remains valid; no three-case production claim is added.

@@ -1,4 +1,4 @@
-> Verification status (2026-10-28): sphere/adaptive and thick-blend/adaptive sequences remain qualified. Passage audit V2 comparison passed; production accepted, then V2 production comparison stopped on a three-byte scratch-size counter difference. Offline NOT RUN. Actual metric/mesh/native/repair data match; failed gate preserved. See [current stop report](../qualification/passage_verification_production_comparison_stop_20261028/REPORT.md). Frozen eff955ed is historical and unchanged.
+> Verification qualification (2026-10-28): fixed sphere/adaptive, thick-blend/adaptive and passage/nodal passed actual audit/production/separate offline on unchanged runtime714b83dd/8e428. Production audit remains not_run; separate replay passes. See [closed report](../qualification/passage_verification_closed_20261028/REPORT.md). Prior comparator failures are preserved. No automatic promotion or new campaign. Frozen eff955ed historical table below is unchanged.
 
 # Mesher V3.5 frozen consolidation
 
