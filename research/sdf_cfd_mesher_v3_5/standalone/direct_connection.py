@@ -114,6 +114,9 @@ def execute(run,case_path,folder,*,trace_files=False,_finalization_scope=None):
     from artifact_finalization import AuditedBundle,hold_manifest,run_independent_audit
     if _finalization_scope is None:raise ValueError('AuditFinalizationLifetimeRequired')
     case,_,case_pin=load(case_path);selected=validate_policy(case['background'])
+    from verification_policy import require_selection,profile,DIRECT,complete_after_finalization
+    mode=case.get('verification',{}).get('mode','audit')
+    if 'verification' in case:require_selection(case['verification'],case)
     folder=Path(folder);folder.mkdir(exist_ok=False)
     save(folder/'POLICY.json',selected)
     start=time.perf_counter();deadline=time.monotonic()+selected['downstream_seconds'];stage='parent';phase_started=start;timings={}
@@ -203,7 +206,7 @@ def execute(run,case_path,folder,*,trace_files=False,_finalization_scope=None):
             audit=folder/'audit';audit.mkdir()
             proof=joined_audit.audit(joined,preservation,helpers,construction,require,audit)
             if not proof['whole_joined_geometry_passed']:raise ValueError('DirectWholeGeometryProofFailed',proof.get('failed_stage'))
-            bundle=AuditedBundle(folder,joined,proof,_finalization_scope,require)
+            bundle=AuditedBundle(folder,joined,proof,_finalization_scope,require,verification=mode)
             from finite_research.direct_evidence_modules.collision import verify_retained
             for name in ('boundary_collision','collision'):verify_retained(driver.read(audit/(name.upper()+'.json')),audit)
             validate_filling(driver.read(audit/'FILLING.json'),all_cells)
@@ -226,18 +229,24 @@ def execute(run,case_path,folder,*,trace_files=False,_finalization_scope=None):
                 independent_transition_band=False,continuous_sdf_fluid='NOT_PERFORMED',CFD_qualified=False,restart_supported=False)
             from finite_research.direct_contract import method
             from finite_research.direct_fill_contract import acceptance
-            save(folder/'EVIDENCE_HANDOFF.json',dict(binding=binding,method_identity=identity(method()),geometry_identity=proof['geometry_identity'],
-                proof=proof,shape=populations,shape_applicability=acceptance(populations,selected),acceptance_contract=contract_binding(selected)))
+            handoff=dict(binding=binding,method_identity=identity(method()),geometry_identity=proof['geometry_identity'],
+                proof=proof,shape=populations,shape_applicability=acceptance(populations,selected),acceptance_contract=contract_binding(selected))
+            save(folder/'EVIDENCE_HANDOFF.json',handoff)
             result['native_budget']=dict(limit_seconds=budget.limit,used_seconds=budget.used)
+            if mode=='production':
+                result.pop('full_mesh_complete');result.pop('passed');result['producer_shape_contract']=result.pop('acceptance_contract')
+                result.update(schema=DIRECT,verification_policy=mode,acceptance_profile=profile(),audit='not_run',
+                    producer_checks_passed=True,geometry_complete=True,artifact_fidelity_passed=True,independent_audit_status='not_run',acceptance_status='provisional')
             save(folder/'PROVISIONAL.json',result)
+            if mode=='production':bundle.bind_production(joined,proof,selected,parent_expectations,binding,populations,exported,result,handoff,case_path)
             finalized=bundle.seal(joined,proof)
         # Only after the original live terminal lease closes do independent
         # readback and final successful-only publication take place.
-        phase('independent_readback')
+        phase('independent_readback' if mode=='audit' else 'production_finalization')
         hold_manifest(folder,finalized,_finalization_scope)
-        receipt=run_independent_audit(folder,finalized,check.remaining_seconds)
+        result=complete_after_finalization(folder,result,finalized,check.remaining_seconds)
         timings[stage]=time.perf_counter()-phase_started
-        result.update(full_mesh_complete=True,provisional=False,seconds=time.perf_counter()-start,stage_seconds=timings,mesh_sha256=file_hash(folder/'COMPLETE_MESH.npz'),readback_sha256=file_hash(folder/'READBACK.json'),manifest_sha256=file_hash(folder/'MANIFEST.json'),audit_finalization=finalized)
+        result.update(seconds=time.perf_counter()-start,stage_seconds=timings,mesh_sha256=file_hash(folder/'COMPLETE_MESH.npz'),manifest_sha256=file_hash(folder/'MANIFEST.json'))
         save(folder/'RESULT.json',result)
         return result
     except BaseException as error:

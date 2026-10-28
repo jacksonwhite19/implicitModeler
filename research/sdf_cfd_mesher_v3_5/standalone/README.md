@@ -1,4 +1,4 @@
-> Phase 1A candidate status (2026-10-27): this branch adds audit-only artifact finalization and supervisor closure. Focused tests passed. The three-case qualification below belongs to frozen commit `eff955ed3670e67b7d134b83e69c37f52b387906`, not this changed candidate. No full mesh campaign has run on this candidate. See [Phase 1A contract](../PHASE1A_CONTRACT.md).
+> Phase 1B candidate status (2026-10-27): explicit audit/production verification and offline audit are implemented for focused review. Audit is default; production supports only complete direct workflow. No full candidate mesh or production/audit equivalence is qualified. The three-case results below belong to frozen eff955ed. See [Phase 1B contract](../PHASE1B_CONTRACT.md).
 
 # Mesher V3.5 — frozen working candidate
 

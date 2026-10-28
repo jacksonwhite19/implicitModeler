@@ -6,6 +6,8 @@ No retained mesh, fixture identity or historical authorization is read here.
 """
 from pathlib import Path
 from dataclasses import asdict
+from contextlib import contextmanager
+from contextvars import ContextVar
 import json,time
 import numpy as np
 from core_connectivity import repair as vertex_repair,Policy as VertexPolicy
@@ -14,6 +16,15 @@ from background_materialization import build
 from background_topology_repair import boundary
 from sdf_cfd_mesher_v4.common.authority import array_hash,identity,file_hash
 from path_preserving_deduplication import durable_json as save
+
+_replay_output=ContextVar('v35_conditioning_replay_output',default=None)
+
+@contextmanager
+def replay_output_scope(path):
+    """Route replay diagnostics only; never changes admission predicates."""
+    token=_replay_output.set(Path(path))
+    try:yield
+    finally:_replay_output.reset(token)
 
 METHOD=dict(schema='V35BackgroundConditioning/1',vertex_policy=asdict(VertexPolicy()),cavity_policy=asdict(CavityPolicy()),
     order='Current deficient cells -> bounded existing-vertex family -> bounded constrained cavities',
@@ -145,7 +156,8 @@ def verify(folder,parent,arrays,state,policy,check):
         if initial_bad!=report['initial_bad_cells'] or float(q.min())!=report['initial_minimum']:raise ValueError('ChangedConditioningInitialPopulation')
         # First verification is within the live lease; the cold reader writes
         # a distinct audit directory. These files never alter original receipts.
-        output=folder/('conditioning_replay' if not (folder/'conditioning_replay').exists() else 'conditioning_readback')
+        output=_replay_output.get()
+        if output is None:output=folder/('conditioning_replay' if not (folder/'conditioning_replay').exists() else 'conditioning_readback')
         output.mkdir()
         edits=0
         kinds=[step['kind'] for step in report['steps']]

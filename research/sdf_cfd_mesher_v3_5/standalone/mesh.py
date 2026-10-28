@@ -66,7 +66,7 @@ def supervise(args):
         try:
             while process.poll() is None:
                 if handoff is None and (args.output/REQUEST).exists():
-                    handoff=SupervisorHandoff(args.output,process)
+                    handoff=SupervisorHandoff(args.output,process,verification=getattr(args,'verification','audit'))
                 elapsed=time.perf_counter()-start
                 if elapsed>args.timeout_seconds:
                     reason='TimeLimit';kill_owned();break
@@ -161,6 +161,9 @@ def execute(args):
     if args.stop_after in ('transition','complete') and 'background' not in settings:raise ValueError('ExplicitV4BackgroundPolicyRequired')
     direct=settings.get('background',{}).get('schema')=='V4DirectFillEngineeringPolicy/1'
     if direct and args.stop_after=='transition':raise ValueError('DirectFillHasNoSeparateTransitionTarget')
+    from verification_policy import selection
+    verification=selection(getattr(args,'verification','audit'),settings,args.stop_after,getattr(args,'verification_origin','explicit_api'))
+    settings['verification']=verification
     save(case,settings)
     construction=carrier_selection(getattr(args,'surface_carrier',None),origin='explicit_cli')
     save(out/'SURFACE_CONSTRUCTION.json',construction)
@@ -245,10 +248,19 @@ def execute(args):
                 from direct_connection import execute as connect
                 result=connect(run,case,out/'background',trace_files=args.trace_native_files,_finalization_scope=lifetime)
                 mark('v4_direct_fill',t)
-                if result.get('full_mesh_complete') is not True:raise ValueError('V4DirectCompleteRefusal')
-                save(out/'RESULT.json',dict(passed=True,completed_stage='complete',full_mesh_complete=True,requested=plan['requested'],achieved=plan['achieved'],native=native_report,background=result,export=result['export'],times=times,seconds=time.perf_counter()-started,CFD_qualified=False))
+                root_result=dict(passed=True,completed_stage='complete',requested=plan['requested'],achieved=plan['achieved'],native=native_report,background=result,export=result['export'],times=times,seconds=time.perf_counter()-started,CFD_qualified=False)
+                if verification['mode']=='audit':
+                    if result.get('full_mesh_complete') is not True:raise ValueError('V4DirectCompleteRefusal')
+                    root_result['full_mesh_complete']=True;descriptor=result['audit_finalization']
+                else:
+                    from verification_policy import production_result,ROOT_RESULT,profile
+                    production_result(result);descriptor=result['artifact_finalization']
+                    root_result.pop('passed')
+                    root_result.update(schema=ROOT_RESULT,geometry_complete=True,producer_checks_passed=True,artifact_fidelity_passed=True,
+                        independent_audit_status='not_run',acceptance_status='pending_supervisor',verification_policy='production',acceptance_profile=profile(),audit='not_run')
+                save(out/'RESULT.json',root_result)
                 from audit_completion import worker_handoff
-                worker_handoff(out,result['audit_finalization'],time.monotonic()+max(0,args.timeout_seconds-(time.perf_counter()-started)),lifetime)
+                worker_handoff(out,descriptor,time.monotonic()+max(0,args.timeout_seconds-(time.perf_counter()-started)),lifetime)
                 return 0
             import standalone_background as background
             expected=background.policy_backend(settings['background'])
@@ -284,6 +296,7 @@ def main():
     p.add_argument('--background',type=Path,help='Explicit V4 direct-fill policy; historical finite-row policies remain selectable')
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--stop-after',choices=('surface','prisms','transition','complete'),default='complete')
+    p.add_argument('--verification',choices=('audit','production'),default='audit',help='Audit retains full cold replay. Production supports complete direct workflow only and records separate audit not_run.')
     p.add_argument('--timeout-seconds',type=float,default=3600,help='Whole worker resource bound, not a runtime target')
     p.add_argument('--memory-limit-gib',type=float,default=16,help='Sampled Windows tree RSS and Linux per-process virtual-address-space limit; not aggregate Linux RSS')
     p.add_argument('--output-limit-bytes',type=int,help='Explicit positive operational output ceiling for supervisor and CASE; omitted preserves the existing supervisor 4 GB and template resource policy')
@@ -292,6 +305,7 @@ def main():
     p.add_argument('--trace-native-files',action='store_true',help='Trace native file access for standalone dependency verification; requires installed strace')
     p.add_argument('--worker',action='store_true',help=argparse.SUPPRESS)
     args=p.parse_args()
+    args.verification_origin='explicit_cli' if any(arg=='--verification' or arg.startswith('--verification=') for arg in sys.argv[1:]) else 'v35_audit_default'
     from collision_policy import Policy
     Policy(args.collision_max_candidates,args.collision_max_seconds)
     if not np.isfinite([args.timeout_seconds,args.memory_limit_gib]).all() or args.timeout_seconds<=0 or args.memory_limit_gib<=0:p.error('Finite positive resource bounds required')

@@ -1,3 +1,5 @@
+> Historical audit-only baseline at commit 828a0e06. Current candidate behavior is in [PHASE1B_CONTRACT.md](PHASE1B_CONTRACT.md).
+
 # Phase 1A audited artifact finalization
 
 ## Behavior and boundary

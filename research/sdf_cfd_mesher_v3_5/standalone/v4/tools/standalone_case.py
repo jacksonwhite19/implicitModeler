@@ -154,6 +154,12 @@ def load(path):
     if case['schema']=='V4MeshCase/2':fields.add('enclosure')
     if case['schema']=='V4MeshCase/3' or case['schema']=='V4MeshCase/4' and 'background' in case:fields.add('background')
     if case['schema']=='V4MeshCase/4':fields.add('general_sdf')
+    if 'verification' in case:
+        # V3.5's explicit versioned request extension. Validate it instead of
+        # permitting arbitrary extra legacy fields or changing physical policy.
+        from verification_policy import require_selection
+        require_selection(case['verification'],case)
+        fields.add('verification')
     if set(case)!=fields:
         raise ValueError('MeshCaseFieldsMismatch')
     case=materialize_geometry(path,case)

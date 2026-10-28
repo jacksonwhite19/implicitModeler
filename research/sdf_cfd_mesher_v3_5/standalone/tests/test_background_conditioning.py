@@ -56,6 +56,19 @@ def inserted_cavity(s,folder,*,minimum,policy,check,proposer):
     return cavity_repair(s,folder,minimum=minimum,policy=policy,check=check,proposer=synthetic)
 
 class Handoff(unittest.TestCase):
+    def test_scoped_replay_writes_only_separate_diagnostics_and_restores_context(self):
+        from background_conditioning import replay_output_scope,_replay_output
+        original=fixture(.5)
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);folder=root/'bundle';folder.mkdir();save_native(folder,original)
+            joined,r=apply(original,folder/'conditioning',selected(),lambda:None)
+            before={p.relative_to(folder).as_posix():file_hash(p) for p in folder.rglob('*') if p.is_file()}
+            with replay_output_scope(root/'offline_conditioning'):
+                points=verify(folder,dict(prefix_points=original['prefix_points']),saved_arrays(joined),joined,selected(),lambda:None)
+            self.assertEqual(points.tobytes(),joined['points'].tobytes());self.assertIsNone(_replay_output.get())
+            self.assertTrue((root/'offline_conditioning').is_dir())
+            self.assertEqual(before,{p.relative_to(folder).as_posix():file_hash(p) for p in folder.rglob('*') if p.is_file()})
+
     def test_passing_mesh_is_true_noop(self):
         original=fixture(.5);before=(original['points'].tobytes(),identity(original['cells']),repr(original['owners']))
         def forbidden(*a,**k):raise AssertionError('No repair or native proposer on passing input')

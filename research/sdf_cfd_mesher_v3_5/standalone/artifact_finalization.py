@@ -1,6 +1,6 @@
-"""Audit-only binding of saved operands to the current producer-checked state.
+"""Binding of saved operands to the current producer-checked state.
 
-No geometry predicate is replaced here. The existing cold audit remains required.
+No geometry predicate is replaced here. Explicit profiles control cold replay.
 The caller owns ``scope`` through the worker/supervisor guard handoff.
 """
 from pathlib import Path
@@ -44,7 +44,9 @@ def expected_arrays(joined):
         wall=joined['wall'],cap=joined['prefix_front'])
 
 class AuditedBundle:
-    def __init__(self,folder,joined,proof,scope,check):
+    def __init__(self,folder,joined,proof,scope,check,*,verification='audit'):
+        if verification not in ('audit','production'):raise ValueError('UnknownVerificationMode')
+        self.verification=verification;self.production_bindings=None
         self.folder=Path(folder).resolve();self.scope=scope;self.check=check;self.held=set()
         self.stamp=joined_audit.geometry_identity(joined)
         if proof.get('whole_joined_geometry_passed') is not True or proof.get('geometry_identity')!=self.stamp:
@@ -68,6 +70,51 @@ class AuditedBundle:
         if not incidence['passed'] or identity(repr(sorted(actual.items())))!=self.owners_identity:
             raise ValueError('FinalizationOwnerMismatch')
         joined_audit.readback(self.folder/'audit',proof['proof_receipts'],self.stamp)
+
+    def bind_production(self,joined,proof,selected,parent,binding,shape,exported,result,handoff,case_path):
+        """Replace cold-only identity bridges using expected live producer roots.
+
+        No geometric predicate, search or live authority is reconstructed here.
+        Caller has just revalidated repair, live parent origin and pinned case.
+        """
+        from verification_policy import require_selection,profile,DIRECT,execution_record
+        from finite_research.direct_fill_contract import binding as contract,acceptance
+        from finite_research.direct_contract import method
+        from finite_research.direct_readback import core_metadata
+        arrays=expected_arrays(joined);n=len(arrays['prisms']);cells=joined['cells']
+        case=driver.read(case_path);choice=require_selection(case.get('verification'),case,'production')
+        if choice['stop_after']!='complete' or case['background']!=selected:raise ValueError('ProductionCasePolicyMismatch')
+        if self.verification!='production' or joined_audit.geometry_identity(joined)!=self.stamp or identity(proof)!=self.proof_identity:
+            raise ValueError('ProductionChangedAuditedState')
+        if (binding.get('case_sha256')!=file_hash(case_path) or binding.get('policy_identity')!=identity(selected)
+            or joined['provenance'].get('binding')!=binding or joined['provenance'].get('live_parent') is not True
+            or joined['provenance'].get('generation_invocations')!=1 or joined['provenance'].get('construction_invocations')!=1):
+            raise ValueError('ProductionParentProvenanceMismatch')
+        if (parent.get('binding')!=binding or parent.get('prefix_points')!=joined['prefix_points']
+            or parent.get('prefix_digest')!=joined['prefix_digest'] or parent.get('cells_identity')!=identity(cells[:n])
+            or [c['id'] for c in cells[:n]]!=joined['prefix_ids']):raise ValueError('ProductionParentMetadataMismatch')
+        expected={name:array_hash(arrays[name]) for name in ('prisms','prism_ids','wall','cap')}
+        expected['points']=array_hash(arrays['points'][:joined['prefix_points']])
+        if parent.get('array_hashes')!=expected:raise ValueError('ProductionPrefixArrayMismatch')
+        rebuilt=core_metadata(arrays['background_tets'],arrays['tetrahedron_ids'],conditioned='conditioning' in joined['provenance'],first_id=int(max(arrays['prism_ids']))+1)
+        if rebuilt!=cells[n:]:raise ValueError('ProductionNoncanonicalCoreMetadata')
+        expected_handoff=dict(binding=binding,method_identity=identity(method()),geometry_identity=self.stamp,proof=proof,shape=shape,
+            shape_applicability=acceptance(shape,selected),acceptance_contract=contract(selected))
+        if handoff!=expected_handoff:raise ValueError('ProductionHandoffMismatch')
+        if (result.get('schema')!=DIRECT or result.get('verification_policy')!='production' or result.get('acceptance_profile')!=profile()
+            or result.get('audit')!='not_run' or result.get('provisional') is not True or result.get('acceptance_status')!='provisional'
+            or result.get('producer_checks_passed') is not True or result.get('geometry_complete') is not True
+            or result.get('artifact_fidelity_passed') is not True or result.get('independent_audit_status')!='not_run'
+            or 'full_mesh_complete' in result or 'passed' in result
+            or result.get('producer_shape_contract')!=contract(selected) or result.get('parent')!=binding
+            or result.get('geometry_identity')!=self.stamp or result.get('proof')!=proof or result.get('shape')!=shape
+            or result.get('export')!=exported or identity(exported)!=self.export_identity):raise ValueError('ProductionProvisionalMismatch')
+        roots={'POLICY.json':selected,'PARENT.json':binding,'PARENT_EXPECTATIONS.json':parent,'PROVISIONAL.json':result,'EVIDENCE_HANDOFF.json':handoff}
+        self.hold_existing()
+        for name,value in roots.items():
+            if driver.read(self.hold(name))!=value:raise ValueError('ProductionSavedRootMismatch',name)
+        self.production_bindings={name:identity(value) for name,value in roots.items()}
+        self.execution_record=execution_record(choice,proof)
 
     def hold(self,name):
         if name not in self.held:
@@ -115,26 +162,39 @@ class AuditedBundle:
         self.hold_existing();self.check()
         files={name:file_hash(safe_path(self.folder,name)) for name in sorted(self.held)}
         if {'MANIFEST.json','FINALIZATION.json'} & set(files):raise ValueError('FreshFinalizationManifestRequired')
-        receipt=dict(schema=SCHEMA,verification_policy='audit',production_bypass=False,geometry_identity=self.stamp,
+        from verification_policy import FINALIZER,profile
+        production=self.verification=='production'
+        if production and self.production_bindings is None:raise ValueError('ProductionIdentityBridgeRequired')
+        if production:
+            for name,pin in self.production_bindings.items():
+                if identity(driver.read(self.folder/name))!=pin:raise ValueError('ProductionChangedRoot',name)
+        receipt=dict(schema=FINALIZER if production else SCHEMA,verification_policy=self.verification,production_bypass=False,geometry_identity=self.stamp,
             arrays=self.arrays,complete_arrays=self.complete,metadata_identity=self.metadata_identity,
             owners_identity=self.owners_identity,proof_identity=self.proof_identity,export_identity=self.export_identity,
-            payload_identity=identity(files),scope='Producer-state/serialized/native-output binding; full independent audit still mandatory')
+            payload_identity=identity(files),scope='Producer-state/serialized/native-output binding')
+        if production:receipt.update(acceptance_profile=profile(),producer_bindings=self.production_bindings,audit='not_run',execution_record=self.execution_record)
         durable_json(self.folder/'FINALIZATION.json',receipt);self.hold('FINALIZATION.json')
         files['FINALIZATION.json']=file_hash(self.folder/'FINALIZATION.json')
-        durable_json(self.folder/'MANIFEST.json',dict(schema='V35DirectArtifactManifest/1',files=files,geometry_identity=self.stamp))
+        durable_json(self.folder/'MANIFEST.json',dict(schema='V35ProductionArtifactManifest/1' if production else 'V35DirectArtifactManifest/1',files=files,geometry_identity=self.stamp))
         self.hold('MANIFEST.json')
-        self.descriptor=dict(schema=SCHEMA,verification_policy='audit',manifest_sha256=file_hash(self.folder/'MANIFEST.json'),
+        self.descriptor=dict(schema=receipt['schema'],verification_policy=self.verification,manifest_sha256=file_hash(self.folder/'MANIFEST.json'),
             finalization_sha256=files['FINALIZATION.json'],geometry_identity=self.stamp)
+        if production:self.descriptor['acceptance_profile']=profile()
         return self.descriptor
 
 def hold_manifest(folder,descriptor,scope):
     folder=Path(folder).resolve()
-    if descriptor.get('schema')!=SCHEMA or descriptor.get('verification_policy')!='audit':raise ValueError('UnsupportedAuditFinalization')
+    from verification_policy import FINALIZER,profile
+    production=descriptor.get('verification_policy')=='production'
+    schema=FINALIZER if production else SCHEMA
+    if descriptor.get('schema')!=schema or descriptor.get('verification_policy') not in ('audit','production') or (production and descriptor.get('acceptance_profile')!=profile()):raise ValueError('UnsupportedAuditFinalization')
     for name,pin in [('MANIFEST.json',descriptor['manifest_sha256']),('FINALIZATION.json',descriptor['finalization_sha256'])]:
         path=safe_path(folder,name);scope.enter_context(guard(path))
         if file_hash(path)!=pin:raise ValueError('FinalizationChangedExpectedRoot',name)
     manifest=driver.read(folder/'MANIFEST.json');receipt=driver.read(folder/'FINALIZATION.json')
-    if manifest.get('schema')!='V35DirectArtifactManifest/1' or receipt.get('schema')!=SCHEMA or receipt.get('verification_policy')!='audit' or receipt.get('production_bypass') is not False:
+    if (manifest.get('schema')!=('V35ProductionArtifactManifest/1' if production else 'V35DirectArtifactManifest/1') or receipt.get('schema')!=schema
+        or receipt.get('verification_policy')!=descriptor['verification_policy'] or receipt.get('production_bypass') is not False
+        or (production and (receipt.get('acceptance_profile')!=profile() or receipt.get('audit')!='not_run' or not receipt.get('producer_bindings')))):
         raise ValueError('UnsupportedFinalizationManifest')
     if not receipt['geometry_identity']==manifest['geometry_identity']==descriptor['geometry_identity']:
         raise ValueError('FinalizationGeometryRootMismatch')
