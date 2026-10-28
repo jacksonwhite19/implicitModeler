@@ -54,44 +54,55 @@ def supervise(args):
     command=[sys.executable,'-B',str(Path(__file__).resolve()),*sys.argv[1:],'--worker']
     from source_custody import held
     with held(args.output.resolve(),logs/(key+'.SOURCES.json')) as sources,(logs/(key+'.stdout')).open('w') as stdout,(logs/(key+'.stderr')).open('w') as stderr:
-        process=subprocess.Popen(command,stdout=stdout,stderr=stderr)
-        last_disk=0
-        def kill_owned():
-            try:children=psutil.Process(process.pid).children(recursive=True)
-            except psutil.Error:children=[]
-            for child in reversed(children):
-                try:child.kill()
-                except psutil.Error:pass
-            if process.poll() is None:process.kill()
+        from runtime_environment import preflight
         try:
-            while process.poll() is None:
-                if handoff is None and (args.output/REQUEST).exists():
-                    handoff=SupervisorHandoff(args.output,process,verification=getattr(args,'verification','audit'))
-                elapsed=time.perf_counter()-start
-                if elapsed>args.timeout_seconds:
-                    reason='TimeLimit';kill_owned();break
-                try:
-                    parent=psutil.Process(process.pid);tree=[parent]+parent.children(recursive=True)
-                    memory=sum(p.memory_info().rss for p in tree if p.is_running());peak=max(peak,memory)
-                    if memory>args.memory_limit_gib*2**30:reason='WindowsProcessTreeRSSLimit'
-                    if elapsed-last_disk>5 and args.output.exists():
-                        largest=output_bytes(args.output);last_disk=elapsed
-                        if largest>output_limit:reason='OutputLimit'
-                    if reason:
-                        kill_owned()
-                        break
-                except psutil.Error:pass
-                time.sleep(.25)
+            external_preflight=preflight(ROOT,seconds=min(60,args.timeout_seconds))
+            if time.perf_counter()-start>args.timeout_seconds:raise TimeoutError('ExternalRuntimePreflightDeadline')
         except Exception as error:
-            reason='SupervisorFailure'
-            monitor_error=dict(type=type(error).__name__,details=str(error))
-            kill_owned()
-        code=process.wait()
+            external_preflight=dict(schema='V35ExternalRuntimePreflight/1',passed=False,error=repr(error))
+        if external_preflight.get('passed') is not True:
+            reason='ExternalRuntimePreflightRefusal';code=1;worker_launched=False
+            args.output.mkdir(parents=True,exist_ok=False)
+        else:
+            worker_launched=True
+            process=subprocess.Popen(command,stdout=stdout,stderr=stderr)
+            last_disk=0
+            def kill_owned():
+                try:children=psutil.Process(process.pid).children(recursive=True)
+                except psutil.Error:children=[]
+                for child in reversed(children):
+                    try:child.kill()
+                    except psutil.Error:pass
+                if process.poll() is None:process.kill()
+            try:
+                while process.poll() is None:
+                    if handoff is None and (args.output/REQUEST).exists():
+                        handoff=SupervisorHandoff(args.output,process,verification=getattr(args,'verification','audit'))
+                    elapsed=time.perf_counter()-start
+                    if elapsed>args.timeout_seconds:
+                        reason='TimeLimit';kill_owned();break
+                    try:
+                        parent=psutil.Process(process.pid);tree=[parent]+parent.children(recursive=True)
+                        memory=sum(p.memory_info().rss for p in tree if p.is_running());peak=max(peak,memory)
+                        if memory>args.memory_limit_gib*2**30:reason='WindowsProcessTreeRSSLimit'
+                        if elapsed-last_disk>5 and args.output.exists():
+                            largest=output_bytes(args.output);last_disk=elapsed
+                            if largest>output_limit:reason='OutputLimit'
+                        if reason:
+                            kill_owned()
+                            break
+                    except psutil.Error:pass
+                    time.sleep(.25)
+            except Exception as error:
+                reason='SupervisorFailure'
+                monitor_error=dict(type=type(error).__name__,details=str(error))
+                kill_owned()
+            code=process.wait()
     if sources['passed'] is not True:reason='SourceClosureChanged';code=1
     if code!=0 and reason is None:reason='AuditFinalizedWorkerFailed' if handoff is not None else 'WorkerFailed'
     if reason is None and code==0 and requires_handoff(args.output) and handoff is None:
         reason='AuditFinalizationHandoffMissing';code=1
-    record=dict(command=command,exit_code=code,stop_reason=reason,monitor_error=monitor_error,source_identity=sources['identity'],source_custody_passed=sources['passed'],seconds=time.perf_counter()-start,peak_sampled_windows_tree_rss_bytes=peak,last_sampled_output_bytes=largest,output_limit_bytes=output_limit,timeout_seconds=args.timeout_seconds,memory_limit_gib=args.memory_limit_gib,linux_memory='RLIMIT_AS per Linux process, inherited by children; not aggregate RSS')
+    record=dict(command=command,worker_launched=worker_launched,external_runtime_preflight=external_preflight,exit_code=code,stop_reason=reason,monitor_error=monitor_error,source_identity=sources['identity'],source_custody_passed=sources['passed'],seconds=time.perf_counter()-start,peak_sampled_windows_tree_rss_bytes=peak,last_sampled_output_bytes=largest,output_limit_bytes=output_limit,timeout_seconds=args.timeout_seconds,memory_limit_gib=args.memory_limit_gib,linux_memory='RLIMIT_AS per Linux process, inherited by children; not aggregate RSS')
     # Persist closure evidence before the final atomic acceptance publication.
     save(logs/(key+'.json'),record)
     publication_failed=False
@@ -106,7 +117,7 @@ def supervise(args):
     if publication_failed:save(logs/(key+'.json'),record)
     print(json.dumps(record),flush=True)
     if code and args.output.exists() and not (args.output/'RESULT.json').exists():
-        save(args.output/'RESULT.json',dict(passed=False,full_mesh_complete=False,failed_stage='configuration_or_startup',supervisor=record,stderr=str(logs/(key+'.stderr'))))
+        save(args.output/'RESULT.json',dict(passed=False,full_mesh_complete=False,failed_stage='external_runtime_preflight' if not worker_launched else 'configuration_or_startup',supervisor=record,stderr=str(logs/(key+'.stderr'))))
     if reason and args.output.exists():
         # Revoke acceptance before any fallible cleanup/import operation.
         result=args.output/'RESULT.json'

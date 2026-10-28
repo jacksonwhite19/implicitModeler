@@ -19,7 +19,8 @@ CONTRACT=dict(version=PROFILE,workflow='complete_v3_prisms_v4_direct',
 def profile():
     from finite_research.direct_fill_contract import contract_identity,VERSION
     from finite_research.direct_contract import method
-    composed=dict(CONTRACT,physical_shape_component=dict(version=VERSION,identity=contract_identity()),method_identity=identity(method()))
+    from runtime_environment import profile as runtime_profile
+    composed=dict(CONTRACT,physical_shape_component=dict(version=VERSION,identity=contract_identity()),method_identity=identity(method()),runtime_environment=runtime_profile())
     return dict(version=PROFILE,identity=identity(composed))
 
 def selection(mode,settings,stop_after,origin='explicit_api'):

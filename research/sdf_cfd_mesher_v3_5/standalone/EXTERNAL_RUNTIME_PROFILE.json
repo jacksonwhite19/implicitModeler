@@ -1,0 +1,33 @@
+{
+  "schema": "V35IsolatedBrotliRuntime/1",
+  "decision": "restore_original_bytes_in_candidate_only",
+  "baseline_identity": "95adcfdef22b3ba934bf1e32fb211f6e2aab2d15c3b2f608a67a4433addf1eb8",
+  "baseline_files": 1916,
+  "original_manifests": {
+    "v4/runtime/FINITE_NATIVE_BINDING.json": "2764009b2b225afde779b68883e61afebbdf016760496c20cd3844edce1778c8",
+    "v4/tools/finite_research/direct_evidence_modules/LINUX_TOOLCHAIN.json": "0435b524e2bcb0060e897a4bdd6af3a491aee18db228bf4a79ddf85ba8d6b11e"
+  },
+  "libraries": [
+    {
+      "original_path": "/usr/lib/x86_64-linux-gnu/libbrotlicommon.so.1.0.9",
+      "relative_path": "v4/runtime/isolated_brotli/libbrotlicommon.so.1",
+      "sha256": "abf86ae9362dbb413c740a55b194c74adb09a7bd92d8fbd96a293c797a4a6d08"
+    },
+    {
+      "original_path": "/usr/lib/x86_64-linux-gnu/libbrotlidec.so.1.0.9",
+      "relative_path": "v4/runtime/isolated_brotli/libbrotlidec.so.1",
+      "sha256": "db9dbda709a46c3ae124433f47c4db71167db8aaba4eafdfd99c8a3a14584463"
+    }
+  ],
+  "provenance": {
+    "package": "libbrotli1",
+    "version": "1.0.9-2build6",
+    "architecture": "amd64",
+    "package_sha256": "8e6aa2dfd44df287b9fb227862f3b6062ec074dd39a247874edfe12e1dcc3841",
+    "package_url": "https://archive.ubuntu.com/ubuntu/pool/main/b/brotli/libbrotli1_1.0.9-2build6_amd64.deb",
+    "signed_metadata_receipt_sha256": "b1d26dd8ba9514d1e1f1cb79cdfb6fedf041ef93e0a6373970e5a9b3df6d9fb2",
+    "artifact_receipt_sha256": "99aaa6f5737cf6ddb1a54f1ec0056f1428d9c31f560df0d66434a1448a9285f3",
+    "decision_review_sha256": "a567e836fb7dc195fe966155b00c966c226a0005e29877b5aad1a43c868a0e5e"
+  },
+  "historical_environment_qualification_inherited": false
+}

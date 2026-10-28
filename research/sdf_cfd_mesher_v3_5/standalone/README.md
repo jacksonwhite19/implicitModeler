@@ -1,5 +1,7 @@
 # Mesher V3.5 verification candidate
 
+This PERF9 candidate uses `V35IsolatedBrotliRuntime/1`: two authenticated original decoder/common libraries under `v4/runtime/isolated_brotli`. Original external hashes and manifests stay unchanged. Candidate child processes prepend only this library directory to their inherited loader path; the system package stays updated. The normal supervisor checks all 1,916 effective external byte pins and loader resolution before geometry, while holding local source/binary custody. Failed or unknown profiles refuse before the worker launches. The late runtime gate also requires actual decoder/common process mappings at the exact candidate paths and rejects foreign/deleted mappings or preloads. Production profile identity changes. This restores original bytes at new paths; historical environment qualification is not inherited. Full sphere/blend qualification remains pending. Use the normal CLI, not its hidden worker transport.
+
 V3 complete-stack prisms connect to the existing V4 direct transition/background, followed by joined checks and OpenFOAM export. There is no separate transition band. This is a separate local verification candidate. The original frozen release is unchanged.
 
 Start with [installation](INSTALL_VERIFICATION.md), then the [tested commands and results](QUALIFICATION.md). Run commands from this directory. The archive includes built native components and their runtime/source closure. It excludes result bundles and caches.

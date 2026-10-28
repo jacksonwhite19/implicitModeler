@@ -1,5 +1,7 @@
 # Mesher V3.5 verification candidate
 
+PERF9 is a separate environment candidate. It restores two authenticated original Brotli files through a process-local loader scope and new explicit profile, preserves original hashes and manifests, and audits the complete effective external closure before geometry. The shared updated package and PERF8 failed evidence remain unchanged. Focused controls pass; actual loader smoke/source review is pending. This candidate is not full-mesh qualified. See CURRENT_TASK.md and chat outputs/PERF9_* receipts. No new full qualification run is authorized by this note.
+
 This separate candidate connects V3 prisms to the existing V4 direct transition/background and joined acceptance/export. Start with [standalone instructions](standalone/README.md), [installation](standalone/INSTALL_VERIFICATION.md) and [tested commands/results](standalone/QUALIFICATION.md). No separate transition band is added.
 
 The same reviewed runtime714b83dd/8e428 (1,873files) passed fixed sphere/adaptive, thick-blend/adaptive and passage/nodal audit/production/separate offline sequences. Audit is default; production explicitly defers separate replay and keeps all producer/export/closure gates. Retained warnings/repair/quality limits remain. See [compact evidence](qualification/verification_candidate_20261028/README.md) and the full accepted [report](qualification/passage_verification_closed_20261028/REPORT.md).

@@ -24,6 +24,8 @@ def operation(program,args,case,seconds=600,*,trace_files=False,name=None):
     # exact argv under a new owned process group before exec.
     encoded=json.dumps(dict(argv=argv),separators=(',',':'))[:-1]
     script='#!/bin/bash\nset -e\n'
+    from runtime_environment import launch_prefix
+    script+=launch_prefix(ROOT)
     script+='printf '+shlex.quote(encoded+',"pid":%d,"start_ticks":%s}\n')+' "$$" "$(awk \'{print $22}\' /proc/$$/stat)" > '+shlex.quote(linux(scope))+'\n'
     script+='exec prlimit --as='+str(limit)+' -- '+trace+'timeout --kill-after=5s '+str(seconds)+'s '+' '.join(shlex.quote(x) for x in argv)+'\n'
     payload.write_bytes(script.encode())

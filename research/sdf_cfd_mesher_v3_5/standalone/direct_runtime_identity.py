@@ -14,18 +14,14 @@ class RuntimeIdentity:
         from sdf_cfd_mesher_v4.common.authority import file_hash
         self.sha=file_hash;self.allowed={};self.binding=json.loads((ROOT/'v4/runtime/FINITE_NATIVE_BINDING.json').read_text())
         if str(Path(sys.executable).resolve())!=self.binding['executable']:raise ValueError('ChangedNativeRuntimeInterpreter')
-        toolchain=json.loads((ROOT/'v4/tools/finite_research/direct_evidence_modules/LINUX_TOOLCHAIN.json').read_text())
         def add(path,pin):
             path=str(Path(path).resolve())
             if path in self.allowed and self.allowed[path]!=pin:raise ValueError('ConflictingDirectRuntimePin',path)
             self.allowed[path]=pin
-        # Original absolute repository origins are provenance, never imports.
-        # Their relocated local replacements are pinned below by the parent.
-        old='/mnt/c/Users/Jackson/Desktop/02_Projects/09b_Implicit_CAD_claude/'
-        for name,pin in toolchain['files'].items():
-            if not name.startswith(old):add(name,pin)
-        for row in self.binding['files']:
-            if 'external_path' in row:add(row['external_path'],row['sha256'])
+        # The explicit candidate profile relocates only two exact original
+        # Brotli files. All historical external digests remain mandatory.
+        from runtime_environment import effective_pins
+        for name,pin in effective_pins(ROOT).items():add(name,pin)
         for name,pin in source_files.items():
             path=(ROOT/name).resolve()
             if not path.is_relative_to(ROOT):raise ValueError('DirectSourceOutsidePackage')
@@ -49,7 +45,8 @@ class RuntimeIdentity:
         for binary in binaries:
             result=subprocess.run(['/usr/bin/ldd',binary],capture_output=True,text=True,check=True,timeout=30)
             if 'not found' in result.stdout:raise ValueError('MissingDirectNativeDependency')
-            paths=sorted({str(Path(word).resolve()) for line in result.stdout.splitlines() for word in line.split() if word.startswith('/') and Path(word).is_file()})
+            from runtime_environment import dependency_paths
+            paths=dependency_paths(result.stdout)
             for path in paths:
                 if self.allowed.get(path)!=self.sha(path):raise ValueError('UnpinnedDirectSharedLibrary',path)
             dependencies[binary]=paths
@@ -59,5 +56,8 @@ class RuntimeIdentity:
         loaded={str(Path(m.__file__).resolve()) for m in tuple(sys.modules.values()) if getattr(m,'__file__',None) and Path(m.__file__).is_file()}
         for path in sorted(loaded):
             if self.allowed.get(path)!=self.sha(path):raise ValueError('UnpinnedDirectLoadedModule',path)
+        from runtime_environment import require_mappings,profile
+        mapped=require_mappings(ROOT)
         return dict(passed=True,pinned_files=len(self.allowed),loaded_modules=len(loaded),dependencies=dependencies,
-            execution='V3.5 relocated source closure plus unchanged external byte pins; historical qualification not asserted')
+            runtime_environment=profile(ROOT),brotli_process_mappings=mapped,
+            execution='V3.5 explicit isolated Brotli path profile; unchanged original external digests; historical environment qualification not inherited')
