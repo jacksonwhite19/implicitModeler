@@ -1,4 +1,6 @@
 """Single experimental V3.5 CLI: V4 surface -> V3 stack -> V4 outer stages."""
+from source_process_owner import worker_start_gate
+worker_start_gate()
 from pathlib import Path
 from contextlib import ExitStack
 import argparse,json,os,subprocess,sys,time,traceback,hashlib,stat
@@ -65,39 +67,44 @@ def supervise(args):
             args.output.mkdir(parents=True,exist_ok=False)
         else:
             worker_launched=True
-            process=subprocess.Popen(command,stdout=stdout,stderr=stderr)
-            last_disk=0
-            def kill_owned():
-                try:children=psutil.Process(process.pid).children(recursive=True)
-                except psutil.Error:children=[]
-                for child in reversed(children):
-                    try:child.kill()
-                    except psutil.Error:pass
-                if process.poll() is None:process.kill()
-            try:
-                while process.poll() is None:
-                    if handoff is None and (args.output/REQUEST).exists():
-                        handoff=SupervisorHandoff(args.output,process,verification=getattr(args,'verification','audit'))
-                    elapsed=time.perf_counter()-start
-                    if elapsed>args.timeout_seconds:
-                        reason='TimeLimit';kill_owned();break
-                    try:
-                        parent=psutil.Process(process.pid);tree=[parent]+parent.children(recursive=True)
-                        memory=sum(p.memory_info().rss for p in tree if p.is_running());peak=max(peak,memory)
-                        if memory>args.memory_limit_gib*2**30:reason='WindowsProcessTreeRSSLimit'
-                        if elapsed-last_disk>5 and args.output.exists():
-                            largest=output_bytes(args.output);last_disk=elapsed
-                            if largest>output_limit:reason='OutputLimit'
-                        if reason:
-                            kill_owned()
-                            break
-                    except psutil.Error:pass
-                    time.sleep(.25)
-            except Exception as error:
-                reason='SupervisorFailure'
-                monitor_error=dict(type=type(error).__name__,details=str(error))
-                kill_owned()
-            code=process.wait()
+            from source_process_owner import launch
+            with launch(command,popen=subprocess.Popen,contained=os.name=='nt' and getattr(args,'source_workers',1)>1,stdout=stdout,stderr=stderr) as process:
+                last_disk=0
+                def kill_owned():
+                    if getattr(process,'_v35_source_job',None) is not None:
+                        process._v35_source_job.retire();return
+                    try:children=psutil.Process(process.pid).children(recursive=True)
+                    except psutil.Error:children=[]
+                    for child in reversed(children):
+                        try:child.kill()
+                        except psutil.Error:pass
+                    if process.poll() is None:process.kill()
+                try:
+                    while process.poll() is None:
+                        if handoff is None and (args.output/REQUEST).exists():
+                            handoff=SupervisorHandoff(args.output,process,verification=getattr(args,'verification','audit'))
+                        elapsed=time.perf_counter()-start
+                        if elapsed>args.timeout_seconds:
+                            reason='TimeLimit';kill_owned();break
+                        try:
+                            parent=psutil.Process(process.pid);tree=[parent]+parent.children(recursive=True)
+                            memory=sum(p.memory_info().rss for p in tree if p.is_running());peak=max(peak,memory)
+                            if memory>args.memory_limit_gib*2**30:reason='WindowsProcessTreeRSSLimit'
+                            if elapsed-last_disk>5 and args.output.exists():
+                                largest=output_bytes(args.output);last_disk=elapsed
+                                if largest>output_limit:reason='OutputLimit'
+                            if reason:
+                                kill_owned()
+                                break
+                        except psutil.NoSuchProcess:pass
+                        except psutil.Error:
+                            if getattr(args,'source_workers',1)>1:raise
+                        time.sleep(.25)
+                except Exception as error:
+                    reason='SupervisorFailure'
+                    monitor_error=dict(type=type(error).__name__,details=str(error))
+                    kill_owned()
+                code=process.wait()
     if sources['passed'] is not True:reason='SourceClosureChanged';code=1
     if code!=0 and reason is None:reason='AuditFinalizedWorkerFailed' if handoff is not None else 'WorkerFailed'
     if reason is None and code==0 and requires_handoff(args.output) and handoff is None:
@@ -200,7 +207,7 @@ def execute(args):
                     return AcceptedTrajectoryOwner.from_inputs(provider.source,provider.x,provider.high,provider.tri,provider.refs['face_refs'],schedule,parent='V35CompleteHorizonBeforeConstruction',surface=provider.wall_authority['surface_identity'],request=req,case_identity=identity(settings))
             nominal_owner=owner_for(request.nominal);mark(stage,t)
             from source_handoff import live_handoff
-            with live_handoff(provider.source,provider.h1,verification['mode']) as handoff:
+            with live_handoff(provider.source,provider.h1,verification['mode'],source_workers=getattr(args,'source_workers',1),deadline=started+args.timeout_seconds) as handoff:
                 stage='v3_complete_plan';t=time.perf_counter()
                 planner=Planner(request)
                 plan=plan_and_capture(planner,nominal_owner.state,out,face_refs=provider.refs['face_refs'],
@@ -309,6 +316,7 @@ def main():
     p.add_argument('--background',type=Path,help='Explicit V4 direct-fill policy; historical finite-row policies remain selectable')
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--stop-after',choices=('surface','prisms','transition','complete'),default='complete')
+    p.add_argument('--source-workers',type=int,choices=(1,2,4),default=1,help='Explicit local source-segment workers; serial default, audit serial')
     p.add_argument('--verification',choices=('audit','production'),default='audit',help='Audit retains full cold replay. Production supports complete direct workflow only and records separate audit not_run.')
     p.add_argument('--timeout-seconds',type=float,default=3600,help='Whole worker resource bound, not a runtime target')
     p.add_argument('--memory-limit-gib',type=float,default=16,help='Sampled Windows tree RSS and Linux per-process virtual-address-space limit; not aggregate Linux RSS')

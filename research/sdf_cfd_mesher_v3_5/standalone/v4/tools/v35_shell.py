@@ -39,7 +39,7 @@ def prepare(initial,owner,folder,*,source_handoff=None,verification_mode='audit'
     if initial.high.tobytes()!=positions[1].tobytes() or initial.x.tobytes()!=positions[0].tobytes():raise ValueError('V35FirstFrontMismatch')
     # Exact source-normal height and source progress on every actual segment.
     # No later path coefficient is mislabeled as a source-normal height.
-    from source_handoff import consume,VERSION
+    from source_handoff import consume,execution_record,VERSION
     if verification_mode not in ('audit','production'):raise ValueError('UnknownSourceHandoffMode')
     proofs=consume(source_handoff,initial.source,initial.h1,positions,verification_mode)
     reused=proofs is not None
@@ -54,6 +54,7 @@ def prepare(initial,owner,folder,*,source_handoff=None,verification_mode='audit'
         method='live_final_population_authenticated' if reused else 'recomputed',
         independent_source_recomputation=not reused,layers=N,segments=N*len(initial.x),
         scope='Source progress and H1 only; independent face coverage and all quality/volume/degree gates remain mandatory')
+    evaluation['execution']=execution_record(source_handoff)
     segments=dict(passed=True,layers=proofs,scope='Existing source-segment predicates; source surface retains its declared assurance')
     if verification_mode=='production':
         from source_evidence import retain

@@ -1,5 +1,8 @@
 # Mesher V3.5 verification candidate
 
+This separate PERF14 candidate is experimental. Optional [source workers](SOURCE_WORKERS.md) have focused controls, but the sample benchmark stopped at the archived CASE profile gate. Earlier full-mesh qualification applies to its recorded older runtime, not this candidate.
+
+
 PERF11 dispatch 1/5 complete: one passage production/comparison and one separate offline audit pass independent reviews on frozen runtime d14d7592 / identity 3bdd1445 (1,885 files), with no runtime edits or retries. V3 prisms connect to the existing V4 direct transition/background and joined acceptance/export. All three fixed cases now pass on the same acceptance/environment profiles. Passage: 207,705 points, 298,660 prisms, 247,804 tetrahedra, zero compression, no MeshOK warnings; production 4,637.0778 s versus archived 6,124.9154 s (24 min 47.84 s / 24.29% shorter), separate offline 1,036.1075 s, 373 production files unchanged. These are single-run differences, not stable causal speedups. All 149,330 source segments authenticated at final prepare with zero recomputation there; offline grants no fresh source authority. Both actual apex moves replay in process; no native changed-versus-all recertification occurs in passage replay. Retained nonblocking percentage misses and blend 41-face warning remain. Recommend CONSOLIDATE. No push, promotion, package, new campaign or automation. Full report: chat outputs/PERF11_REPORT.md. Callback before final then stop; next outgoing 2/5. All following PERF10/PERF9 milestone paragraphs are historical and superseded by this status.
 
 

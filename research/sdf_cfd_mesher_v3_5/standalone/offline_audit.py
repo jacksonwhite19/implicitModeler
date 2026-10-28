@@ -50,6 +50,8 @@ def authenticate(folder,expected,scope):
     root_result=read('RESULT.json');direct=read('background/RESULT.json')
     validate_production_completion(folder,root_result,direct,value['finalization'])
     from source_evidence import record as source_evidence_record
+    from source_evidence import validate_runtime
+    validate_runtime(folder,value['source_identity'])
     if value.get('source_evidence')!=source_evidence_record(folder):raise ValueError('ChangedOriginalSourceEvidenceRecord')
     return value
 

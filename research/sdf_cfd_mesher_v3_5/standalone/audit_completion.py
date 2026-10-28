@@ -101,6 +101,8 @@ class SupervisorHandoff:
         if self.request['verification_policy']=='production':
             from verification_policy import MANIFEST,profile
             from source_evidence import record as source_evidence_record
+            from source_evidence import validate_runtime
+            validate_runtime(self.folder,sources['identity'])
             # Self-contained copies retain original-run custody evidence for
             # later read-only replay; paths outside the bundle are not needed.
             directory=self.folder/'closure';directory.mkdir(exist_ok=False)

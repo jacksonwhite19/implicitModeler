@@ -7,7 +7,7 @@ remain the consumer's responsibility. No individual query scope is extended.
 from contextlib import contextmanager
 from dataclasses import asdict
 from pathlib import Path
-import ctypes,hashlib,json,os,threading
+import ctypes,hashlib,json,os,threading,time
 import numpy as np
 from general_sdf_authority import GeneralSdfAuthority,_STANDARD_SEGMENT_HANDOFF_METHODS
 from sdf_cfd_mesher_v4.sdf.operations import ProtectedQueries,_STANDARD_OUTWARD_SEGMENT
@@ -58,10 +58,13 @@ def _same_context(left,right):
             left[:3]==right[:3] and left[3] is right[3])
 
 class _HandoffState:
-    def __init__(self,source,height,mode):
+    def __init__(self,source,height,mode,source_workers=1,deadline=None):
         self.source=source;self.height=height;self.mode=mode
         self.active=True;self.thread=threading.get_ident();self.pending=None;self.accepted=None
         self.context=_context(source) if mode=='production' else None
+        if type(source_workers) is not int or source_workers not in (1,2,4):raise ValueError('InvalidSourceWorkerSelection')
+        self.workers=source_workers;self.deadline=deadline;self.pool=None;self.execution=None
+        if source_workers>1 and (deadline is None or not np.isfinite(deadline) or deadline<=time.perf_counter()):raise ValueError('SourceWorkerDeadlineRequired')
         self.events=[]
     def _live(self):
         if not self.active or threading.get_ident()!=self.thread:raise ValueError('ExpiredOrDetachedSourceHandoff')
@@ -72,12 +75,29 @@ class _HandoffState:
         from collision_policy import _segment_population
         self._live();self.discard('new_population')
         if source is not self.source or type(height) is not type(self.height) or repr(height)!=repr(self.height):
+            if self.pool is not None:
+                self.pool.abort();raise ValueError('ChangedParallelProducerSourceOrHeight')
             return _segment_population(source,height,positions,False)[0]
         before=_context(source) if self.context is not None else None
-        if not _same_context(before,self.context):return _segment_population(source,height,positions,False)[0]
+        if not _same_context(before,self.context):
+            if self.pool is not None:
+                self.pool.abort();raise ValueError('ChangedParallelProducerContext')
+            return _segment_population(source,height,positions,False)[0]
         private=frozen(positions,'<f8')
         try:
-            summary,proofs=_segment_population(source,height,private,True)
+            from source_parallel import eligible,Pool
+            reason=eligible(source,private,self.mode,self.workers)
+            if reason is None:
+                if self.pool is None:self.pool=Pool(source,height,self.workers,self.deadline)
+                capability=self.pool.qualify(private)
+                proofs=self.pool.take(capability,source,height,private)
+                summary=dict(rows=[dict(layer=k,passed=True,segments=len(private[0])) for k in range(1,len(private))],scope='Existing source progress/height predicates; no pair separation or distance bound')
+                self.execution=None
+            else:
+                if self.pool is not None:raise ValueError('ChangedParallelEligibilityAfterStart')
+                summary,proofs=_segment_population(source,height,private,True)
+                self.execution=dict(schema='V35SourceExecutionSelection/1',requested_workers=self.workers,effective_workers=1,reason=reason)
+            self.events.append(dict(event='execution_selection',requested_workers=self.workers,effective_workers=self.workers if reason is None else 1,reason=reason))
             if not _same_context(_context(source),before):raise ValueError('ChangedSourceHandoffContext')
             if np.asarray(positions).shape!=private.shape or np.asarray(positions,dtype='<f8').tobytes()!=private.tobytes():raise ValueError('ChangedSourceHandoffOperands')
             if len(proofs)!=len(private)-1:raise ValueError('IncompleteSourceHandoffPopulation')
@@ -92,7 +112,9 @@ class _HandoffState:
             self.pending=(private,payload,before)
             self.events.append(dict(event='qualified',layers=len(proofs),segments=(len(private)-1)*len(private[0])))
             return summary
-        except BaseException:
+        except BaseException as error:
+            from collision_policy import SourceSegmentRefusal
+            if self.pool is not None and not self.pool.closed and type(error) is not SourceSegmentRefusal:self.pool.abort()
             self.discard('source_failure');raise
     def accept(self,positions):
         """Called only after construct's actual selected collision outcome passes."""
@@ -106,26 +128,39 @@ class _HandoffState:
         self.accepted=pending;self.events.append(dict(event='accepted_final_collision_population'));return True
     def consume(self,source,height,positions,mode):
         self._live();accepted=self.accepted;self.accepted=None;self.pending=None
-        if accepted is None:return None
+        if accepted is None:
+            if self.pool is not None and not self.pool.closed:self.pool.finish(None,None)
+            self.execution=None
+            return None
         private,payload,context=accepted
         if (mode!='production' or mode!=self.mode or source is not self.source or
                 type(height) is not type(self.height) or repr(height)!=repr(self.height) or
                 np.asarray(positions).shape!=private.shape or np.asarray(positions,dtype='<f8').tobytes()!=private.tobytes() or
                 not _same_context(_context(source),context)):
+            if self.pool is not None and not self.pool.closed:self.pool.finish(None,None)
+            self.execution=None
             self.events.append(dict(event='fallback',reason='changed_consumer_population_or_context'));return None
         result=json.loads(payload)
+        if self.pool is not None:
+            self.execution=self.pool.finish(private,result)
+            if (not _same_context(_context(source),context) or np.asarray(positions).shape!=private.shape or np.asarray(positions,dtype='<f8').tobytes()!=private.tobytes()):
+                self.execution=None;raise ValueError('ChangedSourceConsumerDuringWorkerClosure')
         self.events.append(dict(event='consumed',layers=len(result),segments=(len(private)-1)*len(private[0])))
         return result
+    def execution_record(self):
+        self._live()
+        return json.loads(json.dumps(self.execution)) if self.execution is not None else dict(schema='V35SourceExecutionSelection/1',requested_workers=self.workers,effective_workers=1,reason='original_consumer_recomputation')
     def close(self):
         self.pending=None;self.accepted=None;self.active=False
+        if self.pool is not None and not self.pool.closed:self.pool.abort()
 
 class _Handoff:
     """Read-only callable facade; evidence stays in private run-local closures."""
-    __slots__=('qualify','discard','accept','consume','close','events')
+    __slots__=('qualify','discard','accept','consume','close','events','execution_record')
     def __setattr__(self,name,value):raise ValueError('ProtectedSourceHandoff')
-    def __init__(self,source,height,mode):
-        state=_HandoffState(source,height,mode)
-        for name in ('qualify','discard','accept','consume','close'):
+    def __init__(self,source,height,mode,source_workers=1,deadline=None):
+        state=_HandoffState(source,height,mode,source_workers,deadline)
+        for name in ('qualify','discard','accept','consume','close','execution_record'):
             method=getattr(state,name)
             def call(*args,_method=method,**kwargs):return _method(*args,**kwargs)
             object.__setattr__(self,name,call)
@@ -133,12 +168,17 @@ class _Handoff:
         object.__setattr__(self,'events',lambda:json.loads(json.dumps(state.events)))
 
 @contextmanager
-def live_handoff(source,height,mode):
+def live_handoff(source,height,mode,*,source_workers=1,deadline=None):
     if mode not in ('audit','production'):raise ValueError('UnknownSourceHandoffMode')
-    owner=_Handoff(source,height,mode)
+    owner=_Handoff(source,height,mode,source_workers,deadline)
     try:yield owner
     finally:owner.close()
 
 def consume(owner,source,height,positions,mode):
     if type(owner) is not _Handoff:return None
     return owner.consume(source,height,positions,mode)
+
+def execution_record(owner):
+    if type(owner) is not _Handoff:
+        return dict(schema='V35SourceExecutionSelection/1',requested_workers=1,effective_workers=1,reason='original_consumer_recomputation')
+    return owner.execution_record()
