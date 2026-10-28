@@ -1,0 +1,228 @@
+{
+  "schema": "PERF10IndependentFinalSynthesisReview/1",
+  "passed": true,
+  "blockers": [],
+  "classification": "PASS_TWO_FIXED_PRODUCTION_OFFLINE_SEQUENCES_CONFIGURED_HOST_ONLY",
+  "runtime_commit": "d14d7592d35e36914e2c5d3fcaa6f664843d0a96",
+  "runtime_identity": "3bdd14455b74a67e6fa1405efc945956f69bcb03925283ee1d6481b9815b82a8",
+  "runtime_files": 1885,
+  "qualification_docs_head": "d636af6ae4f291cc125a485a81fd5ebb75ca59a1",
+  "status_docs_commit": "c28246e7",
+  "final_docs_head": "c2cabe551aacf83caeb5824961df641554b9fd21",
+  "tree_clean": true,
+  "checks": {
+    "four_closed_reviews_pass": true,
+    "summary_arithmetic_independently_recomputed": true,
+    "six_nonoverlapping_preparation_stages": [
+      "surface",
+      "first_front",
+      "v3_complete_plan",
+      "v4_prospective_shell_checks",
+      "v3_native_construction",
+      "v4_shell_admission"
+    ],
+    "current1885_runtime_files_rehashed": true,
+    "docs_only_changed_since_qualification": true,
+    "original_strict_system_audit_two_known_mismatches_unchanged": true,
+    "explicit_effective_environment_profile_required": true,
+    "recorded_native_scopes_checked": 22,
+    "saved_liveness_all_owned_absent": true,
+    "preservation_receipts_pass": true
+  },
+  "measurements": {
+    "sphere": {
+      "production_seconds": 430.81234179995954,
+      "offline_seconds": 88.04220939986408,
+      "baseline_seconds": 436.5744423996657,
+      "difference_seconds": 5.762100599706173,
+      "percent_difference": 1.3198437746457015,
+      "preparation_seconds": 83.70631289994344,
+      "baseline_preparation_seconds": 91.3519659996964,
+      "production_files_unchanged": 375,
+      "trusted_root": "f6d6105a3e8e4ac88e2badbb5c4c5d49eedb7cd895d2ad69a2b0ec4b9462ef62"
+    },
+    "blend": {
+      "production_seconds": 2595.0690786996856,
+      "offline_seconds": 229.28231579996645,
+      "baseline_seconds": 2637.3637366001494,
+      "difference_seconds": 42.29465790046379,
+      "percent_difference": 1.6036717769914555,
+      "preparation_seconds": 1228.8142188000493,
+      "baseline_preparation_seconds": 1276.673068500124,
+      "production_files_unchanged": 549,
+      "trusted_root": "509d3c008757ccd19f94a242b87e0cb370a63a812bd793e6f6bc824e9f1ab650"
+    }
+  },
+  "claim_review": {
+    "material_errors": [],
+    "single_run_descriptive_only": true,
+    "no_additive_component_savings": true,
+    "no20minute_or_causal_stable_gain": true,
+    "normalCLI_auth_and_batch_subcosts_not_instrumented": true,
+    "earlier_collision_source_producer_still_executes": true,
+    "old_raw_source_baseline_locally_pinned_limitation": true,
+    "constrained_operational_history_not_raw_equal": true,
+    "CORE1_replay_schema_difference_explicit": true,
+    "blend41face_warning_and_nonblocking_targets_retained": true,
+    "production_audit_not_run_distinct_offline_success": true,
+    "fixed_fixture_host_profile_scope_only": true,
+    "no_passage_run_push_promotion_automation": true
+  },
+  "resolved_advisories": [
+    "Standalone README lower PERF9 pending sentence now explicitly historical and superseded by PERF10 above; corrected final docs pin included."
+  ],
+  "preservation": {
+    "candidate1885": 1885,
+    "PERF8_runtime_files": 1878,
+    "PERF8_completion_pins": 12,
+    "PERF9_completion_pins": 21,
+    "published_runtime_files": 1873,
+    "passage_inputs": 372,
+    "owned_manifest_files": 43,
+    "historical_external_manifests_unchanged": true,
+    "delivered_ZIP_hashes": {
+      "Mesher_V3_5_Verification_Candidate_20261028_v2.zip": "6a54404eeeb076899df20ce0ba80c913a46c7e51b55dc693a027245a7615e00e",
+      "Mesher_V3_5_CONSOLIDATE1_Frozen.zip": "88e656beca26e016ea3a894a22666c63216508c02204fb0196d3a77c53773f79"
+    },
+    "original_and_frozen_checks": 1866,
+    "unrelated_hashes": 78,
+    "original_dirty_paths": 97,
+    "shared_package_mutations": 0
+  },
+  "decision": "GO to proposing a separately authorized passage production benchmark with same frozen runtime/gates. No passage launch or other execution authorized by this review. Callback remains parent responsibility; reviewer did not perform it.",
+  "limitations": [
+    "Evidence establishes fixed sphere/adaptive and original thickblend/adaptive production plus separate offline sequences on configured host and explicit isolated environment profile only. No arbitrary geometry, CFD accuracy, continuous whole-source/fluid, hard size bound, release/package or clean-machine qualification.",
+    "Global exact-Q not claimed; shared-apex classification remains UNQUALIFIED. Mandatory numerical minima pass, nonblocking percentage misses and41-face native warning remain.",
+    "Source finalprepare authentication avoids that consumer recomputation only. Offline authenticates original source evidence, not fresh source authority; global retained collision classification reuse/fresh coverage is distinct from local edit native recertification.",
+    "Liveness is recorded PID/start-ticks evidence for22 scopes, not global absence of processes. No live process inspection was repeated by reviewer.",
+    "Current runtime hashes and scope receipt bindings independently rechecked; wider original/frozen/published/PERF8/PERF9/input/ZIP preservation reviewed through saved receipts and previously pinned reviews, not a redundant broad tree rehash.",
+    "No imports executing runtime, tests, native/geometry/source predicates, full comparators, meshing, launches, code mutations or external callback were performed."
+  ],
+  "evidence_pins": [
+    {
+      "path": "outputs\\PERF10_REPORT.md",
+      "bytes": 7806,
+      "sha256": "ba97520d43a53f39e2ff9ec7a766cedb9a9f302419e1269b3ef040580f3b2ceb"
+    },
+    {
+      "path": "outputs\\PERF10_MEASUREMENTS.json",
+      "bytes": 4510,
+      "sha256": "f4b25497a1bf4972dccf10f0e87e3a71cca1f1f699bcab0e248f999dd091c7ce"
+    },
+    {
+      "path": "work\\perf10_summarize.py",
+      "bytes": 2132,
+      "sha256": "72cbdd6bdd62fa4aa72af3c35cb02645e89695e9a932938afedd7109273dd981"
+    },
+    {
+      "path": "outputs\\PERF10_PREFLIGHT_REVIEW.json",
+      "bytes": 8586,
+      "sha256": "7a87f11b4bac9020a526753479f344138cd2409559a60a7dcd97ce599485a8b9"
+    },
+    {
+      "path": "outputs\\PERF10_CUSTODY_AND_INPUTS.json",
+      "bytes": 876,
+      "sha256": "457c434299935ddb2e40b944d4734595d64fbb3b9718cc1b2aa2eb05e8831c2d"
+    },
+    {
+      "path": "outputs\\PERF10_FINAL_PRESERVATION.json",
+      "bytes": 1104,
+      "sha256": "26a3110bbb0a09617b3c6e03226c97b6978814748c35345aefbc829b432d5819"
+    },
+    {
+      "path": "outputs\\PERF10_FINAL_EXTERNAL_RUNTIME_AUDIT.json",
+      "bytes": 824,
+      "sha256": "18a11f655b26fe3a795742ec3c5065607ac1bd470b398607449bacf7ca7ea756"
+    },
+    {
+      "path": "outputs\\PERF10_NATIVE_SCOPE_LIVENESS.json",
+      "bytes": 11409,
+      "sha256": "c708e9de87c0584e6af2b150fcd6fb1f2d46f5ded9af2aa0ff1341b64e92df54"
+    },
+    {
+      "path": "outputs\\PERF9_FINAL_REVIEW.json",
+      "bytes": 8952,
+      "sha256": "78577e6361fe7941fab3df249c2035bfbf16b73aef345de077dd804d0bedc893"
+    },
+    {
+      "path": "outputs\\PERF9_RUNTIME_INVENTORY_V2.json",
+      "bytes": 348605,
+      "sha256": "e7ce7c154a904b32ffcfb959a19dcc86fbfa2602c26c46c3007f837521466fce"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_PRODUCTION_REVIEW.json",
+      "bytes": 11839,
+      "sha256": "c448def048d6b51971bb0148b2f1c5f3440a3e402bdba6fe3bde7f345c482c86"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_PRODUCTION_RUN.json",
+      "bytes": 2264,
+      "sha256": "dc623a289bcae1127834ba2958d291279ba06586810ce9cd1ee7b59defe60bdb"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_PRODUCTION_COMPARISON.json",
+      "bytes": 828294,
+      "sha256": "586bb23c22aaa133e2da544a377be3419fa4cc42a3f80a19e39e32b8e8851779"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_OFFLINE_REVIEW.json",
+      "bytes": 8578,
+      "sha256": "95ea88966a5fabe76ff15dcff32ebf5fe37510b9ff67f08bd4e25689fa79f09d"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_OFFLINE_RUN.json",
+      "bytes": 1582,
+      "sha256": "1411b08b83ffbad5c06cf2ae44f7731452a193a917a54ce8982d9054f80d6cb7"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_OFFLINE_COMPARISON.json",
+      "bytes": 3477,
+      "sha256": "782182d1b3b1736b5151b16fcd6aa729c271f3040de8faceea4af30d32af1360"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_PRODUCTION_REVIEW.json",
+      "bytes": 19883,
+      "sha256": "f364055b6bb0b8681f93b6627586a4c7df7841bfdf68b5af5f340b14417e22ec"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_PRODUCTION_RUN.json",
+      "bytes": 2271,
+      "sha256": "0bab8e50e56a3c3e20766c2e6c6e4a47d3862bbd75e2390e844fb7590d14817a"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_PRODUCTION_COMPARISON.json",
+      "bytes": 1636264,
+      "sha256": "26f261e644fabea170a358240e790119e29000c8aed3d258b8ceb8aeac1ac185"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE_REVIEW.json",
+      "bytes": 15141,
+      "sha256": "cdc5fec1190e02604655fddd285a445e337097371fa3770455dac33c79154add"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE_RUN.json",
+      "bytes": 1579,
+      "sha256": "029584cd8fa3e1647fcac02213505b57ce50f33d2e355dafd0e31da7b96c2609"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE_COMPARISON.json",
+      "bytes": 3477,
+      "sha256": "121e9d5171448c5f6b8e309706e74b7de1a66e500387ca5c5e3a2c1f296c4c2c"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\CURRENT_TASK.md",
+      "bytes": 6294,
+      "sha256": "aa5ff21edd878677b91b56ee3bf26248e8f8bc09294b721b27d4e65b7bbe1fe2"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\README.md",
+      "bytes": 4277,
+      "sha256": "99f3a1caa85fefd9dc51a0fcf265f3d0433d05779895bbc9ca32d30e5b64c405"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\README.md",
+      "bytes": 10009,
+      "sha256": "62e914e052f4a732ff36238cff898279a18119cb7701adca422b107ddfb9c95d"
+    }
+  ]
+}

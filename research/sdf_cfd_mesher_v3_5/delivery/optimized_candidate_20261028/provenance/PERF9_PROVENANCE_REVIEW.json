@@ -1,0 +1,77 @@
+{
+  "schema": "PERF9ProvenanceDecisionReview/1",
+  "passed": true,
+  "blockers_to_bounded_download_extract": [],
+  "decision": "PASS_ONLY_AUTHENTICATED_ARTIFACT_DOWNLOAD_AND_NONEXECUTING_ISOLATED_EXTRACTION",
+  "not_approved": [
+    "System package changes/downgrades, pin amendments or candidate closure selection",
+    "Library load/native smoke, numerical/geometry test, scientific mesh/campaign or PERF8retry",
+    "Claim arbitrary process isolation, global no mappings, current full environment compatibility or new release qualification"
+  ],
+  "supported_cause_evidence": [
+    "dpkg.log lines779,784,789 explicitly records libbrotli1 amd64 upgrade1.0.9-2build6->1.0.9-2ubuntu0.1 at2026-10-28 06:10:01; apt history identifies /usr/bin/unattended-upgrade; unattended log280/282 names packages and completed upgrade. Logs corroborate a concrete package-manager event, not an unexplained package-source change.",
+    "Current dpkg package/version/ownership plus symlink targets match two PERF8 changed files; dpkg-V exit0/no output supports local package database consistency. It alone is not authenticated archive provenance.",
+    "Signed metadata receipt records gpgv successful VALIDSIG against installed Ubuntu archive keyring fingerprintF6ECB3762474EDA9D21B7022871920D1991BC93C, keyringSHA/version; uncompressed index size/hash match signed InRelease for jammy, jammy-updates and jammy-security; current package stanza identical across updates/security.",
+    "Old2build6 Debian artifact is absent only from local apt cache. Its signed jammy stanza exists; availability/extracted old-byte equality still must be tested."
+  ],
+  "signature_review_limit": "Reviewer inspected captured gpgv/metadata/index verification receipts and internally crosschecked package identities/digests; did not rerun gpgv or independently read Linux repository bytes. Trust root is the recorded existing Ubuntu archive keyring, not newly downloaded key material. Keep signature/index source artifacts or stable hashes for later provenance review.",
+  "artifact_allowlist": [
+    {
+      "Package": "libbrotli1",
+      "Source": "brotli",
+      "Architecture": "amd64",
+      "Version": "1.0.9-2build6",
+      "Filename": "pool/main/b/brotli/libbrotli1_1.0.9-2build6_amd64.deb",
+      "Size": "315164",
+      "SHA256": "8e6aa2dfd44df287b9fb227862f3b6062ec074dd39a247874edfe12e1dcc3841",
+      "Depends": "libc6 (>= 2.29)"
+    },
+    {
+      "Package": "libbrotli1",
+      "Source": "brotli",
+      "Architecture": "amd64",
+      "Version": "1.0.9-2ubuntu0.1",
+      "Filename": "pool/main/b/brotli/libbrotli1_1.0.9-2ubuntu0.1_amd64.deb",
+      "Size": "315370",
+      "SHA256": "908295e77a65219a62114c3c79690a3c99712274d1317c3ba47ffa2f8ea52ca5",
+      "Depends": "libc6 (>= 2.29)"
+    }
+  ],
+  "download_extract_conditions": [
+    "Download ONLY named exact old/newlibbrotli1amd64 Debian artifacts under fresh outputs/PERF9_PACKAGE_PROVENANCE; verify exact signed size and SHA256 before parsing/extraction. Transport URL alone never authenticates content.",
+    "Extract unprivileged as data, no install/configure/maintainer scripts, no executable/library load or LD_PRELOAD; fresh destination per version, no overwrite/move into shared/package/runtime trees.",
+    "Retain download URL, package hash/size, signed stanza/release/index/keyring linkage and extraction file/symlink inventory; validate extraction remains within intended folder.",
+    "Compare exact extracted libbrotlicommon/libbrotlidec bytes old against original required PERF8 hashes, new against observed current hashes. Mismatch stops; do not adjust expected pins.",
+    "No implicit environment choice follows from successful extraction. Inspect complete actual pinned Gmsh/runtime dependency graph and review candidate loader/pin design before restoration or versioned closure."
+  ],
+  "process_and_dependency_limits": {
+    "maps": "mapped_processes empty among accessible snapshots;47mapsunreadable. Cannot infer global absence, no consumers, safe system replacement or no old mapped versions. Snapshot also not future guarantee.",
+    "dependencies": "Captured readelf/ldd proves fontconfig->freetype and freetype directly needs brotlidec, with current ldd resolving common. Python executable direct dependencies alone exclude dynamic imports. Full pinned Gmsh/Netgen/load graph pending; do not claim only font compression or scientific irrelevance.",
+    "new_package_also_python_brotli": "Upgrade logs include python3-brotli. Existing1916externalaudit reports only two pinned mismatches, not a claim only two system files changed; any relevant extra loaded closure must still be covered."
+  },
+  "minimum_safe_environment_decision": "Remain read-only until both trusted artifacts extracted and exact old/current comparisons plus relevant dependency graph are known. Prefer exact old isolated closure if simple and completely qualified; if it requires loader aliases/transitive copies, a separate explicitly versioned candidate closure with only independently authenticated changed external pins can be reviewed. Preserve old manifests/failed receipts; no shared downgrade or silent repin. Neither option is qualified now.",
+  "preserved_stop": "PERF8 failed campaign remains STOP, no accepted bundle; no new scientific run authorized by this provenance review.",
+  "scope": "Read-only existing evidence/JSON/hash inspection; no tests, native/predicate execution, downloads, extraction, package installation or runtime edits by reviewer.",
+  "pins": [
+    {
+      "path": "outputs\\PERF9_PROVENANCE.json",
+      "bytes": 54805,
+      "sha256": "31dbeea782c72f62b96e47e36b2d2b3a5defa4f5bf13935c11ff9dfe5c86e862"
+    },
+    {
+      "path": "outputs\\PERF9_SIGNED_METADATA.json",
+      "bytes": 5630,
+      "sha256": "b1d26dd8ba9514d1e1f1cb79cdfb6fedf041ef93e0a6373970e5a9b3df6d9fb2"
+    },
+    {
+      "path": "outputs\\PERF8_EXTERNAL_RUNTIME_AUDIT.json",
+      "bytes": 776,
+      "sha256": "075a9bf1e9ab5855bc2694af17cf5a8a567d76c7de3dec6865974bfd7a0d23d7"
+    },
+    {
+      "path": "outputs\\PERF8_FINAL_REVIEW.json",
+      "bytes": 13678,
+      "sha256": "03f6df67044b64b0a0d964109bff983710a7a6d236ec89dec055a5589633080e"
+    }
+  ]
+}

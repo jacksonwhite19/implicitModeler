@@ -1,0 +1,260 @@
+{
+  "schema": "PERF10IndependentSphereProductionReview/1",
+  "passed": true,
+  "blockers": [],
+  "classification": "PASS_CLOSED_SPHERE_PRODUCTION_EXACT_BASELINE_EQUIVALENCE_OFFLINE_PENDING",
+  "trusted_root": "f6d6105a3e8e4ac88e2badbb5c4c5d49eedb7cd895d2ad69a2b0ec4b9462ef62",
+  "runtime_identity": "3bdd14455b74a67e6fa1405efc945956f69bcb03925283ee1d6481b9815b82a8",
+  "runtime_files": 1885,
+  "checks": {
+    "manifest_payload_files_rehashed": 126,
+    "native_export_files_rehashed": 42,
+    "completion_and_closure_hashes_valid": true,
+    "producer_handoff_and_finalizer_binding": true,
+    "joined_array_descriptors_match_saved_bytes": true,
+    "canonical_cell_metadata_exact_baseline": true,
+    "physical_arrays_exact_baseline": {
+      "points": {
+        "dtype": "<f8",
+        "shape": [
+          14798,
+          3
+        ],
+        "sha256": "189fb1d8c7634e2e3430e664f58fc6d03dbbc806ed0a92c56ddcad152aae1f41"
+      },
+      "prisms": {
+        "dtype": "<i8",
+        "shape": [
+          12780,
+          6
+        ],
+        "sha256": "79581cdd06a45012560eaf66e8023be60b58b4f65bdfd147da3e0767194b5388"
+      },
+      "tetrahedra": {
+        "dtype": "<i8",
+        "shape": [
+          40448,
+          4
+        ],
+        "sha256": "861d17335d585ce61a583df1c87e55a59c5db6779c39072d7712eac0aa61a756"
+      },
+      "wall": {
+        "dtype": "<i8",
+        "shape": [
+          2556,
+          3
+        ],
+        "sha256": "61f3010dd132141fad9aa69df32ebcd85878ea07752c37831a1ee7acc908c886"
+      },
+      "farfield": {
+        "dtype": "<i8",
+        "shape": [
+          3672,
+          3
+        ],
+        "sha256": "1f734ca3543edc1e36200a84238b10221322b6b17fb1f7ba0045d00dd2451dd3"
+      }
+    },
+    "plan_payload_sha256": {
+      "delta.npy": "f897cc38a51b45be53eb8c8a9a87b9a7ea221f6868ca1b86ae17efa5f7c299f2",
+      "faces.npy": "b7806bd3828d0219c3b476505831fd65a0db83753196f3cac1267c00294a58e2",
+      "first_front.npy": "ccfde76e35222139d52c9fe335202d53f8ce54f986292f5fd3c24a3dd6a095f3",
+      "increments.npy": "942e0e722fa11c7fd798c59b50d48b923426e9c62b2d6e43ae23a070b65e172c",
+      "later_vectors.npy": "4a893cc0e51a11378a6ba34629c08e61060805efe574ec146b8bfe1e607b6643",
+      "positions.npy": "f3a0e0197f9e71cea1d62821ccc5b993218540635bed8a1eb6c70f1502e66f48",
+      "source_normals.npy": "4098e6714a68c413e91f61d85336195a314b5c1a55e2fe2c32525921d943a1f2",
+      "wall.npy": "baed40340fbfcb825c30a193fbfe473687a2971a1b9013b230c0f18e1d8844d7"
+    },
+    "native_sealed_prefix_exact": true,
+    "producer_proof_receipts": 12,
+    "quality_payloads_exact_baseline": true,
+    "export_exact_fidelity": true,
+    "literal_Mesh_OK": true,
+    "checkMesh_warnings": [],
+    "source_custody_closed": true,
+    "early_effective_external_pins": 1916,
+    "late_runtime_receipts": [
+      {
+        "path": "background\\farfield\\RUNTIME_POST.json",
+        "pinned_files": 3799,
+        "loaded_modules": 1083
+      },
+      {
+        "path": "background\\farfield\\RUNTIME_PRE.json",
+        "pinned_files": 3799,
+        "loaded_modules": 1080
+      },
+      {
+        "path": "background\\native\\RUNTIME_POST.json",
+        "pinned_files": 3799,
+        "loaded_modules": 1084
+      },
+      {
+        "path": "background\\native\\RUNTIME_PRE.json",
+        "pinned_files": 3799,
+        "loaded_modules": 1080
+      }
+    ]
+  },
+  "population": {
+    "points": 14798,
+    "prisms": 12780,
+    "tetrahedra": 40448,
+    "cells": 53228,
+    "compressed_vertices": 0,
+    "conditioning": "AlreadyAboveFloor",
+    "conditioning_native_calls": 0,
+    "conditioning_edits": 0,
+    "shared_apex_changed_vertices": 0,
+    "repair_classification": "UNQUALIFIED"
+  },
+  "source": {
+    "full_payload_equal_retained_baseline": true,
+    "proof_identity": "6f1f24b2a9d2ad7a0217379ec6aaa356c84fa14d978e5c9aa706a4e14df5bfa4",
+    "layers": 5,
+    "vertices": 1280,
+    "authenticated_segments": 6400,
+    "first_height_checks": 1280,
+    "final_prepare_independent_recomputed_segments": 0,
+    "original_producer_checks_not_omitted": true,
+    "baseline_scope": "Exact comparison to preflight locally pinned raw baseline file; old manifest did not separately authenticate this file.",
+    "current_files_authenticated_in_completion": true
+  },
+  "timing": {
+    "whole_current": 430.81234179995954,
+    "whole_archived": 436.5744423996657,
+    "direct_current": 340.14398680021986,
+    "direct_archived": 340.4383406001143,
+    "interpretation": "Single fresh versus archived runs, descriptive only; no material/causal/repeatable sphere speedup claim; nested timings not summed."
+  },
+  "next_gate": "Approve at most ONE fresh separate pinned sphere offline audit using trusted_root above and verifier identity3bdd14455b74a67e6fa1405efc945956f69bcb03925283ee1d6481b9815b82a8. Blend remains blocked pending reviewed offline closure.",
+  "limitations": [
+    "Production audit remains not_run; this review is not separate offline semantic replay.",
+    "Native/export/predicate outcomes checked as saved producer receipts and byte bindings; reviewer did not rerun native conversion, geometry, proof predicates, authenticate imports, tests or source queries.",
+    "Canonical metadata and saved serialized/native file hashes were checked; no independent new owner reconstruction or global exact-Q classification was performed.",
+    "Existing numerical engineering contract only; repair remains UNQUALIFIED, optional meshQuality not run. No CFD, continuous/global SDF fluid, hard surface-size guarantee, general-shape or package/release qualification.",
+    "External16GiB RSS observation is Windows tree only; Linux RLIMIT_AS is per process, not aggregate RSS."
+  ],
+  "evidence_pins": [
+    {
+      "path": "outputs\\PERF10_PREFLIGHT.json",
+      "bytes": 7878,
+      "sha256": "35f84947f421dbb0ab0cce0fe8912a48dc86695d045b77c5ea38f7993e57a500"
+    },
+    {
+      "path": "outputs\\PERF10_PREFLIGHT_REVIEW.json",
+      "bytes": 8586,
+      "sha256": "7a87f11b4bac9020a526753479f344138cd2409559a60a7dcd97ce599485a8b9"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_PRODUCTION_RUN.json",
+      "bytes": 2264,
+      "sha256": "dc623a289bcae1127834ba2958d291279ba06586810ce9cd1ee7b59defe60bdb"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_PRODUCTION_COMPARISON.json",
+      "bytes": 828294,
+      "sha256": "586bb23c22aaa133e2da544a377be3419fa4cc42a3f80a19e39e32b8e8851779"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_sphere_production_01\\VERIFICATION.json",
+      "bytes": 9529,
+      "sha256": "f6d6105a3e8e4ac88e2badbb5c4c5d49eedb7cd895d2ad69a2b0ec4b9462ef62"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_sphere_production_01\\CASE.json",
+      "bytes": 4048,
+      "sha256": "a2452fc6f1145a56c26364e9f4a4d58b0fdf59ee7b497df016179c87a25b7b94"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_sphere_production_01\\RESULT.json",
+      "bytes": 972919,
+      "sha256": "f6bb326ef9d3b638dee2a657309aa41c1fb01a1093aab05b71072ee24972004d"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_sphere_production_01\\closure\\SOURCES.json",
+      "bytes": 348573,
+      "sha256": "675befc2ffa18f873aa0c6ad6631b6f28cef283dfc0cfff5b06126fb7bc8a205"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_sphere_production_01\\closure\\SUPERVISOR.json",
+      "bytes": 5118,
+      "sha256": "5a4da68eacf7a26af05045adca3c66d9744a1c6ff111071f9d48fa65db2c50da"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_sphere_production_01\\background\\RESULT.json",
+      "bytes": 786664,
+      "sha256": "04e1c6e6eccde83138ee259004af9b625d7af2121d9b6f65fbb973f2c68d1b59"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_sphere_production_01\\background\\MANIFEST.json",
+      "bytes": 14112,
+      "sha256": "43d7794877a503d20a1b3902a0a74581e92990e6f22288fca553cc4424d84dc5"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_sphere_production_01\\background\\FINALIZATION.json",
+      "bytes": 9583,
+      "sha256": "fb5a7803e8b57efb2515c1ba87a4ad89c188c74590063d2f476e45de2865f526"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_sphere_production_01\\background\\JOINED_RECONSTRUCTION.json",
+      "bytes": 21774936,
+      "sha256": "efd8342c86de257e603df9b681aca4556679e4552ff3491fdebfb566de22a553"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_sphere_production_01\\background\\conditioning\\CONDITIONING.json",
+      "bytes": 2796,
+      "sha256": "da0127abcfd35476fe7d31d4acd82b42c5b5cb629f24c448a52934f9e5a1ebf6"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_sphere_production_01\\background\\SHARED_APEX_REPAIR.json",
+      "bytes": 4510,
+      "sha256": "c5dced554ade8e2c18a6e6bb51fe2b6047830e285ca6a4a68ce45c82cf48936c"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_sphere_production_01\\background\\export\\EXPORT_RESULT.json",
+      "bytes": 7236,
+      "sha256": "14cb8502446bade7fd28dfd4ea43fbfa9b19d29586c8a477dc8d7e4ebc1cfc20"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_sphere_production_01\\background\\export\\checkMesh.stdout",
+      "bytes": 4365,
+      "sha256": "2c4117fa74558a2c6d45d73d2ce4afedd2279b19c73f5565a11de3f9db9a8c15"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_sphere_production_01\\native\\SEALED_PLAN.npz",
+      "bytes": 400020,
+      "sha256": "3276030500612635cb53a6ce2ab51ad8009e1c26fbce5b8afbc4f9cae913cf00"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_sphere_production_01\\shell\\SOURCE_EVALUATION.json",
+      "bytes": 326,
+      "sha256": "01756445aad4ed34959daf972943d37fcdcda33f697675282e14014fdb26ca35"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_sphere_production_01\\shell\\SOURCE_SEGMENTS.json",
+      "bytes": 8219528,
+      "sha256": "81816ede8f3dfcc3bc2691e842dede753118674a11e8f94bf1a3aeab70a987c2"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_sphere_production_01\\background\\farfield\\RUNTIME_POST.json",
+      "bytes": 4410,
+      "sha256": "004de382cd79f1bcbeecf7b636041b0cee2f82df16a140ada6b1c3a835090235"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_sphere_production_01\\background\\farfield\\RUNTIME_PRE.json",
+      "bytes": 4410,
+      "sha256": "632056d597c3db5ae231040c41cd51a3f09ffe4fa99faf215642496d6412fb4e"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_sphere_production_01\\background\\native\\RUNTIME_POST.json",
+      "bytes": 4410,
+      "sha256": "cebc70b559801e90cd26fc6be5f91e64cfb74c5bbd3970c59700ada6f52f261e"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_sphere_production_01\\background\\native\\RUNTIME_PRE.json",
+      "bytes": 4410,
+      "sha256": "632056d597c3db5ae231040c41cd51a3f09ffe4fa99faf215642496d6412fb4e"
+    }
+  ]
+}

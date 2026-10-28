@@ -1,0 +1,359 @@
+{
+  "schema": "PERF10IndependentBlendOfflineReview/1",
+  "passed": true,
+  "blockers": [],
+  "classification": "PASS_CLOSED_SEPARATE_BLEND_OFFLINE_REPLAY_NO_NEW_RUN_AUTHORIZATION",
+  "trusted_production_root": "509d3c008757ccd19f94a242b87e0cb370a63a812bd793e6f6bc824e9f1ab650",
+  "verifier_identity": "3bdd14455b74a67e6fa1405efc945956f69bcb03925283ee1d6481b9815b82a8",
+  "checks": {
+    "attempt": 1,
+    "exit_code": 0,
+    "external_stop_reason": null,
+    "actual_replay_receipts": 12,
+    "receipt_hash_identity_geometry_bindings": true,
+    "full_production_inventory_unchanged": true,
+    "production_files": 549,
+    "verifier_custody_closed_unchanged": true,
+    "current_runtime_files_independently_rehashed": 1885,
+    "production_manifest_still_production_audit_not_run": true,
+    "original_source_evidence_authenticated": true,
+    "fresh_source_authority": false,
+    "remeshed": false,
+    "search_rerun": false,
+    "new_owned_native_scope_files": 0,
+    "conditioning_replayed": true,
+    "committed_edit_candidate_supported_payloads_exact_original": true,
+    "original_point_bytes_unchanged": true,
+    "repair_replayed": true,
+    "shared_apex_changed_vertices": 0
+  },
+  "population": {
+    "points": 38868,
+    "prisms": 46570,
+    "tetrahedra": 72871,
+    "cells": 119441,
+    "all_faces_checked": 268660,
+    "inserted_points": [
+      {
+        "id": 38864,
+        "coordinates_hex": [
+          "0x1.3833761b00653p-12",
+          "0x1.438a18bfbd294p-12",
+          "-0x1.7db62905e5427p-12"
+        ]
+      },
+      {
+        "id": 38865,
+        "coordinates_hex": [
+          "0x1.33af2c1e2dd83p-12",
+          "0x1.4a941f4f802adp-12",
+          "-0x1.760cf5c3f5978p-12"
+        ]
+      },
+      {
+        "id": 38866,
+        "coordinates_hex": [
+          "0x1.3b8b157ad111dp-12",
+          "0x1.491043e736512p-12",
+          "-0x1.86e415fd9afbbp-12"
+        ]
+      },
+      {
+        "id": 38867,
+        "coordinates_hex": [
+          "0x1.2b7a9bd16b559p-12",
+          "0x1.477db40e90bf3p-12",
+          "-0x1.80f8eea03a123p-12"
+        ]
+      }
+    ]
+  },
+  "local_edit_replay": [
+    {
+      "index": 0,
+      "inserted_and_removed_payload_exact_original_commit": true,
+      "candidate_shapes": {
+        "points": [
+          38864,
+          3
+        ],
+        "inserted": [
+          2,
+          4
+        ],
+        "removed": [
+          3
+        ]
+      },
+      "whole_candidate_payload_exact_original": false,
+      "schema_note": "CORE1 original has added_ids but replay has fullpoints; originalpointbytes and sharedrows checked. Returned addedIDs enforced by source verify, not separately archived by replay.",
+      "changed_vs_all_pairs": 430,
+      "active_faces": 7,
+      "face_population": 268614,
+      "proof_hash": "22b939d6367af7a83fa62930d90a7d3320c7aac98bbf63d1534e59c4e33ee59d",
+      "witness_files_hashes_pass": true
+    },
+    {
+      "index": 1,
+      "inserted_and_removed_payload_exact_original_commit": true,
+      "candidate_shapes": {
+        "points": [
+          38868,
+          3
+        ],
+        "inserted": [
+          54,
+          4
+        ],
+        "removed": [
+          31
+        ]
+      },
+      "whole_candidate_payload_exact_original": true,
+      "schema_note": "CORE2 complete candidate arrays exact.",
+      "changed_vs_all_pairs": 11462,
+      "active_faces": 129,
+      "face_population": 268660,
+      "proof_hash": "4033819c0322b83c4a7b9ee52368f6b6cefb93883d633793a1abc32ef7c0dfab",
+      "witness_files_hashes_pass": true
+    }
+  ],
+  "resource_observations": {
+    "external_wall_seconds": 229.28231579996645,
+    "audit_seconds": 228.93699999991804,
+    "joined_replay_seconds": 174.0517609999515,
+    "peak_sampled_windows_tree_rss_bytes": 916213760,
+    "logical_output_bytes": 82002350,
+    "wall_limit_seconds": 43200,
+    "Windows_RSS_limit_bytes": 17179869184,
+    "Linux_address_space_per_process_bytes": 17179869184,
+    "output_limit_bytes": 16000000000
+  },
+  "next_gate": "No new run authorized. Final closed report/preservation/synthesis review remains; passage is recommendation only.",
+  "limitations": [
+    "Offline authenticates original23295-segment source evidence; no new source authority or independent offline source recomputation.",
+    "All12 joined semantics replayed. Global collision classifications retained with fresh coverage; both local committed edits rerun full admission including native changed-versus-all certification in process. No native conversion/checkMesh or remeshing/proposal search rerun, and no new owned native subprocess scope.",
+    "CORE1 replay candidate schema differs from production; sharedrows/fullpoints/recorded expectedIDs checked as described, not blanket raw archive equality. Exact production-versus-baseline conditioning archives are a separate prior comparison.",
+    "Retained generation/construction/live_parent fields describe original provenance, not fresh offline generation/authority.",
+    "Production separately remains auditnotrun; independent offline success does not rewrite its schema/root.",
+    "Existing41 severely nonorthogonal faces, nonblocking percentage misses and UNQUALIFIED/global exact-Q limitation remain. No CFD/continuous whole-source/general-shape/hard surface-size/release qualification or causal speedup claim.",
+    "Reviewer checked saved data/pins and exact equality only; no runtime imports, tests, predicates, new native/geometry calls or source edits."
+  ],
+  "evidence_pins": [
+    {
+      "path": "outputs\\PERF10_PREFLIGHT_REVIEW.json",
+      "bytes": 8586,
+      "sha256": "7a87f11b4bac9020a526753479f344138cd2409559a60a7dcd97ce599485a8b9"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_PRODUCTION_REVIEW.json",
+      "bytes": 19883,
+      "sha256": "f364055b6bb0b8681f93b6627586a4c7df7841bfdf68b5af5f340b14417e22ec"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE_RUN.json",
+      "bytes": 1579,
+      "sha256": "029584cd8fa3e1647fcac02213505b57ce50f33d2e355dafd0e31da7b96c2609"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE_COMPARISON.json",
+      "bytes": 3477,
+      "sha256": "121e9d5171448c5f6b8e309706e74b7de1a66e500387ca5c5e3a2c1f296c4c2c"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE_INPUT_INVENTORY.json",
+      "bytes": 92263,
+      "sha256": "df4743ec565b1dba8d8fab3a7c13e1a7bd4c696bb3bb8b4a458d22afa476b096"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE.stdout",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\AUDIT_RESULT.json",
+      "bytes": 1654,
+      "sha256": "ef901e4d34457f7cd0ae4b6704e8309630248b3e0ca77eada053516094666740"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\VERIFIER_SOURCES.json",
+      "bytes": 348573,
+      "sha256": "675befc2ffa18f873aa0c6ad6631b6f28cef283dfc0cfff5b06126fb7bc8a205"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\replay\\JOINED_PROOF_RESULT.json",
+      "bytes": 3598,
+      "sha256": "33f50e8dd212ca6fcb79081aa5d38a89e00473ba08028d6baa1f43323c5c81fb"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_blend_production_01\\VERIFICATION.json",
+      "bytes": 9530,
+      "sha256": "509d3c008757ccd19f94a242b87e0cb370a63a812bd793e6f6bc824e9f1ab650"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_blend_production_01\\background\\MANIFEST.json",
+      "bytes": 34859,
+      "sha256": "c636fb65bb6cb9db823923d6d954db9b40157bf3a6df4392c8ac8f2e22439185"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_blend_production_01\\background\\SHARED_APEX_REPAIR.json",
+      "bytes": 4565,
+      "sha256": "520c0009b284708d333d6be362b2b0ad9ba6ee658a4b210325f111aa40852eb6"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_blend_production_01\\background\\conditioning\\CONDITIONING.json",
+      "bytes": 20167,
+      "sha256": "df68040a363c032b4d23b07f071e100e4d7a76d43a2bc68241f9bb28bb319f15"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_blend_production_01\\background\\conditioning\\existing_vertices\\REPORT.json",
+      "bytes": 104454,
+      "sha256": "d707e6e75ae11eb15e433ea08823b1ae8b6728ec8557bcff586247f1a8a60401"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_blend_production_01\\background\\conditioning\\constrained\\REPORT.json",
+      "bytes": 117775,
+      "sha256": "01f3b9ff0016c6a436f6820e8ca0fdd76e133c5ba211aabadd647e74bff3aa61"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\background_conditioning.py",
+      "bytes": 16328,
+      "sha256": "ca12191ceeb2c5c2c004ae73bd6c7ed6835a75b6229f74528623c6a1852a1683"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\replay\\BOUNDARY_COLLISION.json",
+      "bytes": 764,
+      "sha256": "c85a019ed42bd68dd43dc9b62947798238096988113cc14112f2e6ff0cdf3932"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\replay\\COLLISION.json",
+      "bytes": 800,
+      "sha256": "e25991824e8a1741392241ba0e103490f13277a6e675e59d2ef4fb60f0ed3c1a"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\replay\\DOMAIN.json",
+      "bytes": 387,
+      "sha256": "646e68927a00ef41b83f9421a4119708d083ef67f6a8b2b2ae75ec3d60f1ece8"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\replay\\ENCLOSURE.json",
+      "bytes": 907695,
+      "sha256": "42bc80745be6b7cc9b422e0d8124061225889496bb6628a225607937c4364486"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\replay\\FILLING.json",
+      "bytes": 60374378,
+      "sha256": "7c3f12ae2750b6589bd0e901b40a1d72e29b6d72efbdd654742834cb9facb205"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\replay\\INCIDENCE.json",
+      "bytes": 334,
+      "sha256": "563f0dc316802b92ee3ac2861f40480fd1d62fa8b92f64f80ed1d0faa6a6efdf"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\replay\\INTERFACE_QA.json",
+      "bytes": 486,
+      "sha256": "c0e4407ed69b4db5b287a22d84d1116d49fb3da4b9fdccc2e3e259cb75d0a0b3"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\replay\\JOINED_QA.json",
+      "bytes": 555,
+      "sha256": "e5265c4abe34201fd7730d166f9ceb527c2a8017fcc75eaeef398ab2773157de"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\replay\\PHYSICAL_QA.json",
+      "bytes": 238,
+      "sha256": "4c21395192c05cd5d98e93afd36040fc31741f7721ad96f1b2b5236a96c34328"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\replay\\PRESERVATION.json",
+      "bytes": 267,
+      "sha256": "9b8b5e21ef146c4b471669df934469a36c548b09ea37f21735512d8d89d02e19"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\replay\\SURFACES.json",
+      "bytes": 663,
+      "sha256": "47b5ede803f85f89d1770e8593d701715f7739bc1c6e8d7f32b53f1f9cceb9b0"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\replay\\WINDING.json",
+      "bytes": 447,
+      "sha256": "340e5abe37eeb2085579747622c3855541c47ec0390bd992e1873e5695a02585"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\conditioning\\edit_00\\CANDIDATE.npz",
+      "bytes": 858024,
+      "sha256": "67d861e079ba2ace7978b8dd0c8d860048910603ff71c3a38147131975b45742"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\conditioning\\edit_00\\contacts\\b17b038c69c195dba8fb50fb220d4c1054dae5c1cf71f00876cd78ac505226de.json",
+      "bytes": 739,
+      "sha256": "b17b038c69c195dba8fb50fb220d4c1054dae5c1cf71f00876cd78ac505226de"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\conditioning\\edit_00\\contacts\\d937d46995b25d889b25ccc6207e4ca8f092bd4e539ca5a8a8de812b85443334.npy",
+      "bytes": 3568,
+      "sha256": "d937d46995b25d889b25ccc6207e4ca8f092bd4e539ca5a8a8de812b85443334"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\conditioning\\edit_00\\contacts\\dc9b4bcb9a16b6fb1854d37fb35eb433b33cf2f84cd6de8254d8238f65b64ed7.json",
+      "bytes": 14203,
+      "sha256": "dc9b4bcb9a16b6fb1854d37fb35eb433b33cf2f84cd6de8254d8238f65b64ed7"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\conditioning\\edit_00\\contacts\\e7aae5185ca76da38143428e8a4d8cda66d6eb0b549a18059738856aa44149e3.npy",
+      "bytes": 7008,
+      "sha256": "e7aae5185ca76da38143428e8a4d8cda66d6eb0b549a18059738856aa44149e3"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\conditioning\\edit_00\\contacts\\FACE_POPULATION.npz",
+      "bytes": 9155312,
+      "sha256": "835383de601a23ed0564920b22005894570f3ee11bab9b7ad58d14ba77080a4a"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\conditioning\\edit_00\\contacts\\WITNESSES.json",
+      "bytes": 1659,
+      "sha256": "15d4106be2390d0743053332a206094b701f3f3ee01041a9e188a27b9058d6fa"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\conditioning\\edit_01\\CANDIDATE.npz",
+      "bytes": 858514,
+      "sha256": "463be417e51bd7b5bdcac95f3ff028e4740d22e7b216c30424438ec8b9495da4"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\conditioning\\edit_01\\contacts\\2c373c1b640f0a5e1755763e0f6860984ede82e0872fc27f09049400d3628c54.npy",
+      "bytes": 91824,
+      "sha256": "2c373c1b640f0a5e1755763e0f6860984ede82e0872fc27f09049400d3628c54"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\conditioning\\edit_01\\contacts\\45e2e1a033f25b4d25994e64fb6d6e8777e00ae783f765d4e263f4da09657faf.npy",
+      "bytes": 183520,
+      "sha256": "45e2e1a033f25b4d25994e64fb6d6e8777e00ae783f765d4e263f4da09657faf"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\conditioning\\edit_01\\contacts\\7bf8a30ff638d779b790778d5584def906f157d9d06f7f62a4fa728fa3e1b909.json",
+      "bytes": 23091,
+      "sha256": "7bf8a30ff638d779b790778d5584def906f157d9d06f7f62a4fa728fa3e1b909"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\conditioning\\edit_01\\contacts\\ab03bd4bf2824abd0a226498ec01b1ea8fb7036337d521b6914d031dfbb9773b.json",
+      "bytes": 4546,
+      "sha256": "ab03bd4bf2824abd0a226498ec01b1ea8fb7036337d521b6914d031dfbb9773b"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\conditioning\\edit_01\\contacts\\FACE_POPULATION.npz",
+      "bytes": 9157760,
+      "sha256": "82559e35ba21e7d69d9c188af347d71d85b252685cbdd50a03678cf9b38b3bc0"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\conditioning\\edit_01\\contacts\\WITNESSES.json",
+      "bytes": 1743,
+      "sha256": "3122b39d2b6f81a8275f64e0434b0de72b4076c40aab9ce71aa2272a495fe5cf"
+    }
+  ]
+}

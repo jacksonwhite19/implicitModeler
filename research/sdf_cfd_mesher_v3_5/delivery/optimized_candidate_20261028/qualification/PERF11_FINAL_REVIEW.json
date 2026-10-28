@@ -1,0 +1,334 @@
+{
+  "schema": "PERF11IndependentFinalSynthesisReview/1",
+  "passed": true,
+  "blockers": [],
+  "classification": "PASS_THREE_FIXED_CASES_SAME_RUNTIME_PROFILE_CONSOLIDATE",
+  "runtime_commit": "d14d7592d35e36914e2c5d3fcaa6f664843d0a96",
+  "runtime_identity": "3bdd14455b74a67e6fa1405efc945956f69bcb03925283ee1d6481b9815b82a8",
+  "runtime_files": 1885,
+  "prior_qualification_docs_head": "c2cabe551aacf83caeb5824961df641554b9fd21",
+  "final_docs_head": "bd4d1ffd16929a48dcf12a30cddeff6d2d195f42",
+  "docs_only_changes": [
+    "research/sdf_cfd_mesher_v3_5/CURRENT_TASK.md",
+    "research/sdf_cfd_mesher_v3_5/README.md",
+    "research/sdf_cfd_mesher_v3_5/standalone/README.md"
+  ],
+  "checks": {
+    "six_closed_production_offline_reviews_pass": true,
+    "cumulative_identity_matrix_matches_raw_roots_profiles": true,
+    "cumulative_measurements_match_raw_runs_and_root_timers": true,
+    "six_nonoverlapping_preparation_stages": [
+      "surface",
+      "first_front",
+      "v3_complete_plan",
+      "v4_prospective_shell_checks",
+      "v3_native_construction",
+      "v4_shell_admission"
+    ],
+    "source_authentication_recomputation_scope_preserved": true,
+    "current1885_source_hashes_rechecked": true,
+    "seven_owned_scope_file_PIDtick_bindings_valid": true,
+    "scoped_absence_from_saved_liveness_receipt": true,
+    "preservation_receipts_pass": true,
+    "strict_original_external_audit_same_expected_two_mismatches": true,
+    "reporting_correction_history_hashes_preserved": true
+  },
+  "cases": {
+    "sphere": {
+      "carrier": "adaptive",
+      "production_root": "f6d6105a3e8e4ac88e2badbb5c4c5d49eedb7cd895d2ad69a2b0ec4b9462ef62",
+      "production_seconds": 430.81234179995954,
+      "offline_seconds": 88.04220939986408,
+      "archived_seconds": 436.5744423996657,
+      "difference_seconds": 5.762100599706173,
+      "difference_percent": 1.3198437746457015,
+      "preparation_current_seconds": 83.70631289994344,
+      "preparation_archived_seconds": 91.3519659996964,
+      "production_files_unchanged": 375
+    },
+    "blend": {
+      "carrier": "adaptive",
+      "production_root": "509d3c008757ccd19f94a242b87e0cb370a63a812bd793e6f6bc824e9f1ab650",
+      "production_seconds": 2595.0690786996856,
+      "offline_seconds": 229.28231579996645,
+      "archived_seconds": 2637.3637366001494,
+      "difference_seconds": 42.29465790046379,
+      "difference_percent": 1.6036717769914555,
+      "preparation_current_seconds": 1228.8142188000493,
+      "preparation_archived_seconds": 1276.673068500124,
+      "production_files_unchanged": 549
+    },
+    "passage": {
+      "carrier": "nodal",
+      "production_root": "037d247e36813e9841f42dad6a9acfbee4dc086b73c541609ae3dacda988f815",
+      "production_seconds": 4637.077760900371,
+      "offline_seconds": 1036.1075397999957,
+      "archived_seconds": 6124.915444999933,
+      "difference_seconds": 1487.8376840995625,
+      "difference_percent": 24.291562838049575,
+      "preparation_current_seconds": 2643.7786240004934,
+      "preparation_archived_seconds": 4067.3022712999955,
+      "production_files_unchanged": 373
+    }
+  },
+  "passage_timing": {
+    "observed_difference_seconds": 1487.8376840995625,
+    "observed_difference_minutes": 24.797294734992708,
+    "observed_difference_percent": 24.291562838049575,
+    "observed_preparation_difference_seconds": 1423.523647299502,
+    "scope": "One fresh versus one archived production. Observed reduction exceeds20minutes in this pair; repeatability, causality and separately measured authentication/batching contributions not established. No nested or diagnostic saving addition."
+  },
+  "passage_offline_scope": "Actual two shared-apex moves replayed in process with fullstar/owner domain, batch/scalarQA, exact star-volume sums and binary shape labels/minima/beforefinalbits. No native changed-versus-all recertification, no per-move replay files, zero cavityedits. Global collision classification retained with fresh coverage. Original149330source evidence authenticated only; no fresh source grant.",
+  "report_review": {
+    "material_errors": [],
+    "scope_correction_explicit": true,
+    "source_baseline_local_pin_limitation": true,
+    "retained_blend41face_warning_and_nonblocking_targets": true,
+    "UNQUALIFIED_and_no_global_exactQ_continuous_source_fluid_limits": true,
+    "nominal200um_not_hard_surface_size": true,
+    "observational_timing_language": true,
+    "no_unauthorized_run_push_promotion_package_automation": true
+  },
+  "resolved_advisories": [
+    "Final report now preserves UNQUALIFIED/source-float/global-exactQ and continuous-source/fluid limitations plus nominal surface-size limitation."
+  ],
+  "preservation_summary": {
+    "candidate_files": 1885,
+    "PERF8_files": 1878,
+    "PERF8_completion_pins": 12,
+    "PERF9_completion_pins": 21,
+    "PERF10_completion_pins": 32,
+    "published_files": 1873,
+    "retained_passage_inputs": 372,
+    "owned_manifest_files": 43,
+    "external_manifests_unchanged": true,
+    "ZIP_hashes": {
+      "Mesher_V3_5_Verification_Candidate_20261028_v2.zip": "6a54404eeeb076899df20ce0ba80c913a46c7e51b55dc693a027245a7615e00e",
+      "Mesher_V3_5_CONSOLIDATE1_Frozen.zip": "88e656beca26e016ea3a894a22666c63216508c02204fb0196d3a77c53773f79"
+    },
+    "original_and_frozen_each": 1866,
+    "unrelated_hashes": 78,
+    "original_dirty_count": 97,
+    "shared_package_mutations": 0
+  },
+  "decision": "CONSOLIDATE. Fixed sphere/adaptive, blend/adaptive and passage/nodal production plus separate offline sequences complete on configured host/exact profile. No further experiment, optimization, package/push/promotion or campaign authorized by this review. Parent callback before final/stop; reviewer performed no callback.",
+  "limitations": [
+    "Fixed-case numerical engineering contract only; not arbitrary geometry/CFD/global exact-Q/continuous whole-source-fluid/hard surface-size/clean-machine/release qualification. Shared-apex UNQUALIFIED, untouched rows sourcefloat only.",
+    "Production roots retain auditnotrun; independent offline results do not rewrite producer schema or create fresh source authority.",
+    "New report classifications do not confer historical authority or unretained ephemeral token reconstruction.",
+    "Current1885runtime and raw root/measurement/scope bindings independently checked; broader historical-tree/ZIP/preservedinput claims reviewed through saved receipts and prior pinned reviews, not a redundant complete tree rescan.",
+    "No runtime imports, scientific tests, predicates, native/geometry/source execution, complete comparator rerun, process intervention, source mutation or launch occurred."
+  ],
+  "evidence_pins": [
+    {
+      "path": "outputs\\PERF10_SPHERE_PRODUCTION_REVIEW.json",
+      "bytes": 11839,
+      "sha256": "c448def048d6b51971bb0148b2f1c5f3440a3e402bdba6fe3bde7f345c482c86"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_PRODUCTION_COMPARISON.json",
+      "bytes": 828294,
+      "sha256": "586bb23c22aaa133e2da544a377be3419fa4cc42a3f80a19e39e32b8e8851779"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_PRODUCTION_RUN.json",
+      "bytes": 2264,
+      "sha256": "dc623a289bcae1127834ba2958d291279ba06586810ce9cd1ee7b59defe60bdb"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_OFFLINE_REVIEW.json",
+      "bytes": 8578,
+      "sha256": "95ea88966a5fabe76ff15dcff32ebf5fe37510b9ff67f08bd4e25689fa79f09d"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_OFFLINE_COMPARISON.json",
+      "bytes": 3477,
+      "sha256": "782182d1b3b1736b5151b16fcd6aa729c271f3040de8faceea4af30d32af1360"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_OFFLINE_RUN.json",
+      "bytes": 1582,
+      "sha256": "1411b08b83ffbad5c06cf2ae44f7731452a193a917a54ce8982d9054f80d6cb7"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_sphere_production_01\\VERIFICATION.json",
+      "bytes": 9529,
+      "sha256": "f6d6105a3e8e4ac88e2badbb5c4c5d49eedb7cd895d2ad69a2b0ec4b9462ef62"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_OFFLINE\\AUDIT_RESULT.json",
+      "bytes": 1652,
+      "sha256": "2896088ecbbec17e2d015b4f60d4ad22a2920f010d7de3380c2974fb5c275bac"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_PRODUCTION_REVIEW.json",
+      "bytes": 19883,
+      "sha256": "f364055b6bb0b8681f93b6627586a4c7df7841bfdf68b5af5f340b14417e22ec"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_PRODUCTION_COMPARISON.json",
+      "bytes": 1636264,
+      "sha256": "26f261e644fabea170a358240e790119e29000c8aed3d258b8ceb8aeac1ac185"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_PRODUCTION_RUN.json",
+      "bytes": 2271,
+      "sha256": "0bab8e50e56a3c3e20766c2e6c6e4a47d3862bbd75e2390e844fb7590d14817a"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE_REVIEW.json",
+      "bytes": 15141,
+      "sha256": "cdc5fec1190e02604655fddd285a445e337097371fa3770455dac33c79154add"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE_COMPARISON.json",
+      "bytes": 3477,
+      "sha256": "121e9d5171448c5f6b8e309706e74b7de1a66e500387ca5c5e3a2c1f296c4c2c"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE_RUN.json",
+      "bytes": 1579,
+      "sha256": "029584cd8fa3e1647fcac02213505b57ce50f33d2e355dafd0e31da7b96c2609"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_blend_production_01\\VERIFICATION.json",
+      "bytes": 9530,
+      "sha256": "509d3c008757ccd19f94a242b87e0cb370a63a812bd793e6f6bc824e9f1ab650"
+    },
+    {
+      "path": "outputs\\PERF10_BLEND_OFFLINE\\AUDIT_RESULT.json",
+      "bytes": 1654,
+      "sha256": "ef901e4d34457f7cd0ae4b6704e8309630248b3e0ca77eada053516094666740"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_PRODUCTION_REVIEW.json",
+      "bytes": 41513,
+      "sha256": "5e6fb94bef71c470d93f8d0c169417a941e5b409e77bb1009470a6926650f2b9"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_PRODUCTION_COMPARISON.json",
+      "bytes": 6500350,
+      "sha256": "86ae45694bd78c9ea62afe145e2ac3e8ccf4fcf72615c17984dcae7ea7e8c216"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_PRODUCTION_RUN.json",
+      "bytes": 2274,
+      "sha256": "f6329aef2b24236241f24ad7feb69990adaa24633f8dc1659abde832955eed1a"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_OFFLINE_REVIEW.json",
+      "bytes": 11124,
+      "sha256": "720fc1bec92df6e8dbb79e2971a105e45cbc3120e7b4b45741b525f92290e4ee"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_OFFLINE_COMPARISON.json",
+      "bytes": 4166,
+      "sha256": "6754ebd9e6cb1fe243a194ba87833932a1ff7906a11c2266064337635bd632ee"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_OFFLINE_RUN.json",
+      "bytes": 1590,
+      "sha256": "8369eac629d551a4f9e461aa7686cf4b4116b04c4698b3513709580f96a46907"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\VERIFICATION.json",
+      "bytes": 9531,
+      "sha256": "037d247e36813e9841f42dad6a9acfbee4dc086b73c541609ae3dacda988f815"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_OFFLINE\\AUDIT_RESULT.json",
+      "bytes": 1657,
+      "sha256": "446ad009ff29f0c716535246c38f591aa37ffa4eb18d23a89f82167c3614067e"
+    },
+    {
+      "path": "outputs\\PERF11_REPORT.md",
+      "bytes": 9926,
+      "sha256": "506444202d9ce69066906dde8e841fcaf55fa8bf2dec4885a57d536c5efc59d1"
+    },
+    {
+      "path": "outputs\\PERF11_CUMULATIVE_MEASUREMENTS.json",
+      "bytes": 6739,
+      "sha256": "6e817dc61c602939c590938a4af27f25a71fb8dcd5dd24ca2d008f82f5192756"
+    },
+    {
+      "path": "outputs\\PERF11_CUMULATIVE_IDENTITY_MATRIX.json",
+      "bytes": 3612,
+      "sha256": "3f2994950a571cb99609142708262f2c71213b8308d0689e2d5ae885e828774d"
+    },
+    {
+      "path": "outputs\\PERF11_MEASUREMENTS.json",
+      "bytes": 2234,
+      "sha256": "46652ed26f86bb0a2af1c05adf0efb1094f7c565235a04ecd43211534be3c7c2"
+    },
+    {
+      "path": "outputs\\PERF11_CUSTODY_AND_INPUTS.json",
+      "bytes": 909,
+      "sha256": "3066040debf67371f4cb65a78d717e9c7a9f81d31b9d1190f415618a5ea8ea8b"
+    },
+    {
+      "path": "outputs\\PERF11_FINAL_PRESERVATION.json",
+      "bytes": 1104,
+      "sha256": "26a3110bbb0a09617b3c6e03226c97b6978814748c35345aefbc829b432d5819"
+    },
+    {
+      "path": "outputs\\PERF11_FINAL_EXTERNAL_RUNTIME_AUDIT.json",
+      "bytes": 824,
+      "sha256": "003cd9f51f486e5e109d0130724444fef19bdeb52f073b9ae8d581ea43b0cbba"
+    },
+    {
+      "path": "outputs\\PERF11_NATIVE_SCOPE_LIVENESS.json",
+      "bytes": 3501,
+      "sha256": "f4409ec57bbc9dbf511fe308c89e66203f8e8831032f5f685fd69f7dfde6a83a"
+    },
+    {
+      "path": "outputs\\PERF11_OFFLINE_SCOPE_CORRECTION.json",
+      "bytes": 597,
+      "sha256": "629555c81e065e643a07d843d18f7705c91bac7272d388b511fc8611268cccda"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_OFFLINE_COMPARISON_INITIAL_SCOPE.json",
+      "bytes": 3476,
+      "sha256": "5a6956370406e2845680b53b03ce52a3de1b1a4488a69e9a33604f386243887a"
+    },
+    {
+      "path": "outputs\\PERF11_PREFLIGHT_REVIEW.json",
+      "bytes": 9370,
+      "sha256": "58ebb5dea979653df72ec1f9830cde6b679ea8edee0c3dcf809a0c19d570a344"
+    },
+    {
+      "path": "outputs\\PERF11_PREFLIGHT_REVIEW_BLOCKED.json",
+      "bytes": 3173,
+      "sha256": "4dbb1435158da9e03c2c151ab34ac5586a8dbabb61f7b965bab068e2fb709012"
+    },
+    {
+      "path": "outputs\\PERF11_INITIAL_PREFLIGHT_FINDING.json",
+      "bytes": 448,
+      "sha256": "a45857cfe15e248b127ff7f8db67acf2a9c8328408b28a8c35a229bd8f8e40bd"
+    },
+    {
+      "path": "outputs\\PERF10_FINAL_REVIEW.json",
+      "bytes": 10171,
+      "sha256": "b07b557e171fb5978405b92f484a3b56c9e2b9254208b1bac83a913e11c1599c"
+    },
+    {
+      "path": "outputs\\PERF9_RUNTIME_INVENTORY_V2.json",
+      "bytes": 348605,
+      "sha256": "e7ce7c154a904b32ffcfb959a19dcc86fbfa2602c26c46c3007f837521466fce"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\CURRENT_TASK.md",
+      "bytes": 7584,
+      "sha256": "43a1f6332c716f12c69350562603afbe15bd3fa40f9fb2f58254989311c5fd02"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\README.md",
+      "bytes": 5567,
+      "sha256": "5837266c845bff60bc9910cb064e1b011385a431fd820ff648ad34bb32f84871"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\README.md",
+      "bytes": 11299,
+      "sha256": "4e0d02e02ce6ae30292b2ff6df3c393f347552cb4e54106b09693d53029982b0"
+    }
+  ]
+}

@@ -1,0 +1,178 @@
+{
+  "sphere": {
+    "production_seconds": 430.81234179995954,
+    "baseline_seconds": 436.5744423996657,
+    "difference_seconds": 5.762100599706173,
+    "percent_reduction": 1.3198437746457015,
+    "preparation_stage_sum_seconds": 83.70631289994344,
+    "baseline_preparation_stage_sum_seconds": 91.3519659996964,
+    "root_stage_seconds": {
+      "surface": 40.48793449997902,
+      "first_front": 11.294493699911982,
+      "v3_complete_plan": 8.40537660010159,
+      "v4_prospective_shell_checks": 15.398411400150508,
+      "v3_native_construction": 3.9033152000047266,
+      "v4_shell_admission": 4.216781499795616,
+      "v4_direct_fill": 340.14398680021986
+    },
+    "baseline_root_stage_seconds": {
+      "surface": 40.062633600085974,
+      "first_front": 11.316357200033963,
+      "v3_complete_plan": 8.02209430001676,
+      "v4_prospective_shell_checks": 24.080860099755228,
+      "v3_native_construction": 3.6669961996376514,
+      "v4_shell_admission": 4.203024600166827,
+      "v4_direct_fill": 340.4383406001143
+    },
+    "direct_stage_seconds": {
+      "parent": 11.345562600065023,
+      "cap_compatibility": 0.5260585001669824,
+      "farfield": 93.59462539991364,
+      "bulk": 112.10128400009125,
+      "bulk_conditioning": 7.403937099967152,
+      "repair": 3.2400532998144627,
+      "joined_proofs": 92.2015442000702,
+      "export": 19.377478799782693,
+      "production_finalization": 0.2559188003651798
+    },
+    "offline_seconds": 88.04220939986408,
+    "production_bytes": 290188237,
+    "offline_bytes": 27376531,
+    "windows_tree_peak_bytes": 839041024,
+    "offline_windows_tree_peak_bytes": 474411008,
+    "source_authenticated_segments": 6400,
+    "source_recomputed_segments": 0,
+    "source_population": {
+      "vertices": 1280,
+      "layers": 5,
+      "segments": 6400,
+      "first_height_checks": 1280
+    },
+    "points": 14798,
+    "prisms": 12780,
+    "tetrahedra": 40448,
+    "compressed_vertices": 0,
+    "warnings": [],
+    "early_external_preflight_seconds": 0.5661345329135656,
+    "production_input_files": 375,
+    "trusted_root": "f6d6105a3e8e4ac88e2badbb5c4c5d49eedb7cd895d2ad69a2b0ec4b9462ef62"
+  },
+  "blend": {
+    "production_seconds": 2595.0690786996856,
+    "baseline_seconds": 2637.3637366001494,
+    "difference_seconds": 42.29465790046379,
+    "percent_reduction": 1.6036717769914555,
+    "preparation_stage_sum_seconds": 1228.8142188000493,
+    "baseline_preparation_stage_sum_seconds": 1276.673068500124,
+    "root_stage_seconds": {
+      "surface": 726.4607053999789,
+      "first_front": 48.8451461000368,
+      "v3_complete_plan": 366.3087284998037,
+      "v4_prospective_shell_checks": 64.47385800024495,
+      "v3_native_construction": 6.139277599751949,
+      "v4_shell_admission": 16.586503200232983,
+      "v4_direct_fill": 1353.8206790997647
+    },
+    "baseline_root_stage_seconds": {
+      "surface": 716.7532472000457,
+      "first_front": 48.84946779999882,
+      "v3_complete_plan": 366.60871609998867,
+      "v4_prospective_shell_checks": 121.79089629976079,
+      "v3_native_construction": 5.986531800124794,
+      "v4_shell_admission": 16.68420930020511,
+      "v4_direct_fill": 1351.0250861998647
+    },
+    "direct_stage_seconds": {
+      "parent": 21.522454999852926,
+      "cap_compatibility": 2.8787708999589086,
+      "farfield": 93.30577610014006,
+      "bulk": 121.22655180003494,
+      "bulk_conditioning": 819.8583863000385,
+      "repair": 7.674753400031477,
+      "joined_proofs": 225.82781000016257,
+      "export": 60.797391899861395,
+      "production_finalization": 0.549851399846375
+    },
+    "offline_seconds": 229.28231579996645,
+    "production_bytes": 845460974,
+    "offline_bytes": 82002350,
+    "windows_tree_peak_bytes": 2010243072,
+    "offline_windows_tree_peak_bytes": 916213760,
+    "source_authenticated_segments": 23295,
+    "source_recomputed_segments": 0,
+    "source_population": {
+      "vertices": 4659,
+      "layers": 5,
+      "segments": 23295,
+      "first_height_checks": 4659
+    },
+    "points": 38868,
+    "prisms": 46570,
+    "tetrahedra": 72871,
+    "compressed_vertices": 1663,
+    "warnings": [
+      "*Number of severely non-orthogonal (> 70 degrees) faces: 41."
+    ],
+    "early_external_preflight_seconds": 0.9080919250845909,
+    "production_input_files": 549,
+    "trusted_root": "509d3c008757ccd19f94a242b87e0cb370a63a812bd793e6f6bc824e9f1ab650"
+  },
+  "passage": {
+    "production_seconds": 4637.077760900371,
+    "baseline_seconds": 6124.915444999933,
+    "difference_seconds": 1487.8376840995625,
+    "percent_reduction": 24.291562838049575,
+    "preparation_stage_sum_seconds": 2643.7786240004934,
+    "baseline_preparation_stage_sum_seconds": 4067.3022712999955,
+    "root_stage_seconds": {
+      "surface": 132.8310639001429,
+      "first_front": 557.0209114002064,
+      "v3_complete_plan": 1378.7278884998523,
+      "v4_prospective_shell_checks": 448.2314105001278,
+      "v3_native_construction": 19.71773299993947,
+      "v4_shell_admission": 107.24961670022458,
+      "v4_direct_fill": 1948.988703600131
+    },
+    "baseline_root_stage_seconds": {
+      "surface": 135.59840960009024,
+      "first_front": 574.7567397998646,
+      "v3_complete_plan": 1416.1191270002164,
+      "v4_prospective_shell_checks": 1806.0229515000246,
+      "v3_native_construction": 20.643891599960625,
+      "v4_shell_admission": 114.16115179983899,
+      "v4_direct_fill": 2015.2353429999202
+    },
+    "direct_stage_seconds": {
+      "parent": 88.12574719963595,
+      "cap_compatibility": 35.98875589994714,
+      "farfield": 94.55664180032909,
+      "bulk": 254.5504302997142,
+      "bulk_conditioning": 126.37199980020523,
+      "repair": 49.15040390007198,
+      "joined_proofs": 1151.9459512000903,
+      "export": 146.3055483996868,
+      "production_finalization": 1.3271554000675678
+    },
+    "offline_seconds": 1036.1075397999957,
+    "production_bytes": 3843721391,
+    "offline_bytes": 281591606,
+    "windows_tree_peak_bytes": 9372995584,
+    "offline_windows_tree_peak_bytes": 3574554624,
+    "source_authenticated_segments": 149330,
+    "source_recomputed_segments": 0,
+    "source_population": {
+      "vertices": 29866,
+      "layers": 5,
+      "segments": 149330,
+      "first_height_checks": 29866
+    },
+    "points": 207705,
+    "prisms": 298660,
+    "tetrahedra": 247804,
+    "compressed_vertices": 0,
+    "warnings": [],
+    "early_external_preflight_seconds": 0.5365069201216102,
+    "production_input_files": 373,
+    "trusted_root": "037d247e36813e9841f42dad6a9acfbee4dc086b73c541609ae3dacda988f815"
+  }
+}

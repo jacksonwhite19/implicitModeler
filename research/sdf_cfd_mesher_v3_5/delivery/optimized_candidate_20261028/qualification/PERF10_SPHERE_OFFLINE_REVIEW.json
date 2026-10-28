@@ -1,0 +1,190 @@
+{
+  "schema": "PERF10IndependentSphereOfflineReview/1",
+  "passed": true,
+  "blockers": [],
+  "classification": "PASS_CLOSED_SEPARATE_SPHERE_OFFLINE_REPLAY_BLEND_GATE_SATISFIED",
+  "trusted_production_root": "f6d6105a3e8e4ac88e2badbb5c4c5d49eedb7cd895d2ad69a2b0ec4b9462ef62",
+  "verifier_identity": "3bdd14455b74a67e6fa1405efc945956f69bcb03925283ee1d6481b9815b82a8",
+  "checks": {
+    "attempt": 1,
+    "exit_code": 0,
+    "external_stop_reason": null,
+    "actual_replay_receipts": 12,
+    "receipt_hash_and_identity_bindings": true,
+    "joined_geometry_identity_exact": true,
+    "full_production_inventory_unchanged": true,
+    "production_files": 375,
+    "verifier_custody_closed_unchanged": true,
+    "current_runtime_files_independently_rehashed": 1885,
+    "production_manifest_still_production_audit_not_run": true,
+    "original_source_evidence_authenticated": true,
+    "fresh_source_authority": false,
+    "remeshed": false,
+    "search_rerun": false,
+    "new_owned_native_scope_files": 0,
+    "conditioning_replayed": true,
+    "conditioning_stored_commits": 0,
+    "repair_replayed": true,
+    "repair_stored_changed_vertices": 0,
+    "conditioning_diagnostics_routed_outside_production": true
+  },
+  "population": {
+    "points": 14798,
+    "prisms": 12780,
+    "tetrahedra": 40448,
+    "cells": 53228,
+    "all_faces_checked": 115960
+  },
+  "resource_observations": {
+    "external_wall_seconds": 88.04220939986408,
+    "audit_seconds": 87.71900000004098,
+    "joined_replay_seconds": 71.3699485999532,
+    "peak_sampled_windows_tree_rss_bytes": 474411008,
+    "logical_output_bytes": 27376531,
+    "wall_limit_seconds": 43200,
+    "address_space_per_Linux_process_bytes": 17179869184,
+    "Windows_RSS_limit_bytes": 17179869184,
+    "output_limit_bytes": 16000000000
+  },
+  "next_gate": "Approve at most ONE fresh blend production using exact reviewed runtime3bdd14455b74a67e6fa1405efc945956f69bcb03925283ee1d6481b9815b82a8 and unchanged preflight command/settings. Blend offline still requires closed reviewed production comparison. No launch by reviewer.",
+  "limitations": [
+    "Offline checks original authenticated source evidence; it creates no new live SDF/source authority and does not independently recompute the6400 source segments.",
+    "All12 joined semantics and shape populations are reported replayed. Global collision classifications are retained with fresh coverage; no claim that all native collision classifications were recomputed.",
+    "Sphere has no committed conditioning edits or moved apex vertices. Flags certify no-op reconstruction/check paths here, not an exercised local-edit native certification path. No native conversion/checkMesh rerun or new owned native subprocess scope.",
+    "Retained generation_invocations/construction_invocations/live_parent in JOINED_PROOF_RESULT describe original provenance, not fresh offline generation or authority.",
+    "No CFD, continuous whole-source/fluid, general-shape, global exact-Q, package or release qualification. No performance improvement claim from one archived comparison.",
+    "Reviewer performed only raw saved-data/hash/source inspection. No runtime imports, tests, geometry/native predicates, audit rerun, source changes or launch."
+  ],
+  "evidence_pins": [
+    {
+      "path": "outputs\\PERF10_PREFLIGHT_REVIEW.json",
+      "bytes": 8586,
+      "sha256": "7a87f11b4bac9020a526753479f344138cd2409559a60a7dcd97ce599485a8b9"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_PRODUCTION_REVIEW.json",
+      "bytes": 11839,
+      "sha256": "c448def048d6b51971bb0148b2f1c5f3440a3e402bdba6fe3bde7f345c482c86"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_OFFLINE_RUN.json",
+      "bytes": 1582,
+      "sha256": "1411b08b83ffbad5c06cf2ae44f7731452a193a917a54ce8982d9054f80d6cb7"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_OFFLINE_COMPARISON.json",
+      "bytes": 3477,
+      "sha256": "782182d1b3b1736b5151b16fcd6aa729c271f3040de8faceea4af30d32af1360"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_OFFLINE_INPUT_INVENTORY.json",
+      "bytes": 60226,
+      "sha256": "ef9a14d776d6fc02de89b55bbcf87abdef3665a7f96fc1ff3dd7999746eec3cb"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_OFFLINE.stdout",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_OFFLINE.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_OFFLINE\\AUDIT_RESULT.json",
+      "bytes": 1652,
+      "sha256": "2896088ecbbec17e2d015b4f60d4ad22a2920f010d7de3380c2974fb5c275bac"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_OFFLINE\\VERIFIER_SOURCES.json",
+      "bytes": 348573,
+      "sha256": "675befc2ffa18f873aa0c6ad6631b6f28cef283dfc0cfff5b06126fb7bc8a205"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_OFFLINE\\replay\\JOINED_PROOF_RESULT.json",
+      "bytes": 3599,
+      "sha256": "44dd67fafbbd1e3cb9169968245b838ddd7e58be828d00400e71c642411f1378"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_sphere_production_01\\VERIFICATION.json",
+      "bytes": 9529,
+      "sha256": "f6d6105a3e8e4ac88e2badbb5c4c5d49eedb7cd895d2ad69a2b0ec4b9462ef62"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_sphere_production_01\\background\\MANIFEST.json",
+      "bytes": 14112,
+      "sha256": "43d7794877a503d20a1b3902a0a74581e92990e6f22288fca553cc4424d84dc5"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_sphere_production_01\\background\\conditioning\\CONDITIONING.json",
+      "bytes": 2796,
+      "sha256": "da0127abcfd35476fe7d31d4acd82b42c5b5cb629f24c448a52934f9e5a1ebf6"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf10_sphere_production_01\\background\\SHARED_APEX_REPAIR.json",
+      "bytes": 4510,
+      "sha256": "c5dced554ade8e2c18a6e6bb51fe2b6047830e285ca6a4a68ce45c82cf48936c"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_OFFLINE\\replay\\BOUNDARY_COLLISION.json",
+      "bytes": 763,
+      "sha256": "6b9e01bf8ae9bb3d3f593cfd32e0274c56229fc3a3124a99edf89effa747fd5a"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_OFFLINE\\replay\\COLLISION.json",
+      "bytes": 796,
+      "sha256": "c9856e83a8cca6a0e1ba384b98d35e893214d1e80356c0f03926fe23f9c21231"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_OFFLINE\\replay\\DOMAIN.json",
+      "bytes": 387,
+      "sha256": "f659521f20a23318796b6c56fdedb2e5ff2358355dbb016398edb6b59e6dc5c9"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_OFFLINE\\replay\\ENCLOSURE.json",
+      "bytes": 247510,
+      "sha256": "88dc0967ca9b134cd5892997e6eae9f9b4b041f2719bbd8a3d45c2940758758a"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_OFFLINE\\replay\\FILLING.json",
+      "bytes": 26770272,
+      "sha256": "ffd49dd6e9a52b4c9f2b164fb2769ed03d9d435a947768b64033049ac52178ff"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_OFFLINE\\replay\\INCIDENCE.json",
+      "bytes": 333,
+      "sha256": "d8de515980bc037ac2dce3c278328b6e4efe0e2f72e4565109fd81d5f24d3319"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_OFFLINE\\replay\\INTERFACE_QA.json",
+      "bytes": 487,
+      "sha256": "4e60adad15963ef6c6d73d803232848deefe4b0e3e8992e739a43d912c6a4fa8"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_OFFLINE\\replay\\JOINED_QA.json",
+      "bytes": 549,
+      "sha256": "2273628aeaf15d458efc3596720ebecfab3de64ae40326fdaa7a7f775ca776a7"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_OFFLINE\\replay\\PHYSICAL_QA.json",
+      "bytes": 237,
+      "sha256": "f43641c6a3847622c48e1ee0ee4c3f0e59ffd08fdc40a437e785dacbf75d843e"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_OFFLINE\\replay\\PRESERVATION.json",
+      "bytes": 267,
+      "sha256": "de3d575ccf5a6f8b9a956d6b72da95861979ab0f7ce60aad532f68f12941d0ac"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_OFFLINE\\replay\\SURFACES.json",
+      "bytes": 661,
+      "sha256": "35d78718eb9df3e2982e4feb806ac994bcd0ba530854f0dfe8e939ecc8e6b887"
+    },
+    {
+      "path": "outputs\\PERF10_SPHERE_OFFLINE\\replay\\WINDING.json",
+      "bytes": 445,
+      "sha256": "4887b82cf9e2393d1108b37945168e267a405e70680533cef3f6658376de1c2e"
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "passed": true,
+  "scope": "Fixed fixtures and configured host/environment only; original source evidence authentication is distinct from fresh semantic replay",
+  "rows": [
+    {
+      "fixture": "sphere",
+      "carrier": "adaptive",
+      "runtime_commit": "d14d7592d35e36914e2c5d3fcaa6f664843d0a96",
+      "runtime_identity": "3bdd14455b74a67e6fa1405efc945956f69bcb03925283ee1d6481b9815b82a8",
+      "runtime_files": 1885,
+      "acceptance_profile": {
+        "identity": "ca030e3a0e4a752a82150e1fd42db7b3d89db0a7a65a1455bc7be9e94dd48d10",
+        "version": "V35DirectProducerAcceptance/1"
+      },
+      "environment_profile": {
+        "version": "V35IsolatedBrotliRuntime/1",
+        "identity": "8af07c5da63c633829c1eff8bb6e973b9632e2e22f00a7ed82245a49d57a3f0d"
+      },
+      "production_root": "f6d6105a3e8e4ac88e2badbb5c4c5d49eedb7cd895d2ad69a2b0ec4b9462ef62",
+      "producer_checks": 12,
+      "offline_semantic_replays": 12,
+      "physical_arrays_exact": 5,
+      "plan_arrays_exact": 8,
+      "native_prefix_exact": true,
+      "source_payload_exact": true,
+      "authenticated_source_segments": 6400,
+      "independent_source_recomputed_segments_at_final_prepare": 0,
+      "production_input_files_unchanged": 375,
+      "offline_fresh_source_authority": false
+    },
+    {
+      "fixture": "blend",
+      "carrier": "adaptive",
+      "runtime_commit": "d14d7592d35e36914e2c5d3fcaa6f664843d0a96",
+      "runtime_identity": "3bdd14455b74a67e6fa1405efc945956f69bcb03925283ee1d6481b9815b82a8",
+      "runtime_files": 1885,
+      "acceptance_profile": {
+        "identity": "ca030e3a0e4a752a82150e1fd42db7b3d89db0a7a65a1455bc7be9e94dd48d10",
+        "version": "V35DirectProducerAcceptance/1"
+      },
+      "environment_profile": {
+        "version": "V35IsolatedBrotliRuntime/1",
+        "identity": "8af07c5da63c633829c1eff8bb6e973b9632e2e22f00a7ed82245a49d57a3f0d"
+      },
+      "production_root": "509d3c008757ccd19f94a242b87e0cb370a63a812bd793e6f6bc824e9f1ab650",
+      "producer_checks": 12,
+      "offline_semantic_replays": 12,
+      "physical_arrays_exact": 5,
+      "plan_arrays_exact": 8,
+      "native_prefix_exact": true,
+      "source_payload_exact": true,
+      "authenticated_source_segments": 23295,
+      "independent_source_recomputed_segments_at_final_prepare": 0,
+      "production_input_files_unchanged": 549,
+      "offline_fresh_source_authority": false
+    },
+    {
+      "fixture": "passage",
+      "carrier": "nodal",
+      "runtime_commit": "d14d7592d35e36914e2c5d3fcaa6f664843d0a96",
+      "runtime_identity": "3bdd14455b74a67e6fa1405efc945956f69bcb03925283ee1d6481b9815b82a8",
+      "runtime_files": 1885,
+      "acceptance_profile": {
+        "identity": "ca030e3a0e4a752a82150e1fd42db7b3d89db0a7a65a1455bc7be9e94dd48d10",
+        "version": "V35DirectProducerAcceptance/1"
+      },
+      "environment_profile": {
+        "version": "V35IsolatedBrotliRuntime/1",
+        "identity": "8af07c5da63c633829c1eff8bb6e973b9632e2e22f00a7ed82245a49d57a3f0d"
+      },
+      "production_root": "037d247e36813e9841f42dad6a9acfbee4dc086b73c541609ae3dacda988f815",
+      "producer_checks": 12,
+      "offline_semantic_replays": 12,
+      "physical_arrays_exact": 5,
+      "plan_arrays_exact": 8,
+      "native_prefix_exact": true,
+      "source_payload_exact": true,
+      "authenticated_source_segments": 149330,
+      "independent_source_recomputed_segments_at_final_prepare": 0,
+      "production_input_files_unchanged": 373,
+      "offline_fresh_source_authority": false
+    }
+  ]
+}

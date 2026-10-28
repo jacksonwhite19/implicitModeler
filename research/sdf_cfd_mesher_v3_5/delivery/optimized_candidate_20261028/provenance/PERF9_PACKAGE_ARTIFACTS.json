@@ -1,0 +1,108 @@
+{
+  "schema": "V35Perf9AuthenticatedPackageArtifacts/1",
+  "passed": true,
+  "rows": [
+    {
+      "version": "1.0.9-2build6",
+      "package": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF9_PACKAGE_PROVENANCE\\libbrotli1_1.0.9-2build6_amd64.deb",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/b/brotli/libbrotli1_1.0.9-2build6_amd64.deb",
+      "sha256": "8e6aa2dfd44df287b9fb227862f3b6062ec074dd39a247874edfe12e1dcc3841",
+      "bytes": 315164,
+      "signed_stanza": {
+        "Package": "libbrotli1",
+        "Source": "brotli",
+        "Architecture": "amd64",
+        "Version": "1.0.9-2build6",
+        "Filename": "pool/main/b/brotli/libbrotli1_1.0.9-2build6_amd64.deb",
+        "Size": "315164",
+        "SHA256": "8e6aa2dfd44df287b9fb227862f3b6062ec074dd39a247874edfe12e1dcc3841",
+        "Depends": "libc6 (>= 2.29)"
+      },
+      "extracted": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF9_PACKAGE_PROVENANCE\\old",
+      "extraction_command": [
+        "wsl",
+        "-d",
+        "Ubuntu-22.04",
+        "--",
+        "dpkg-deb",
+        "--extract",
+        "/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/outputs/PERF9_PACKAGE_PROVENANCE/libbrotli1_1.0.9-2build6_amd64.deb",
+        "/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/outputs/PERF9_PACKAGE_PROVENANCE/old"
+      ],
+      "package_scripts_executed": false,
+      "libraries": [
+        {
+          "path": "libbrotlicommon.so.1.0.9",
+          "bytes": 137560,
+          "sha256": "abf86ae9362dbb413c740a55b194c74adb09a7bd92d8fbd96a293c797a4a6d08",
+          "installed_sha256": "617035f98d836e37ccaefdd5fe56b45ef4f5e10460c5b4f68c2d488e5a62766f"
+        },
+        {
+          "path": "libbrotlidec.so.1.0.9",
+          "bytes": 51512,
+          "sha256": "db9dbda709a46c3ae124433f47c4db71167db8aaba4eafdfd99c8a3a14584463",
+          "installed_sha256": "b877956d7814d95fb37473002f46a43fe7f09bebb48a41312c329c65631622b5"
+        },
+        {
+          "path": "libbrotlienc.so.1.0.9",
+          "bytes": 587944,
+          "sha256": "b88bfc462f83859a0324e2035f10bfd277e6073bb211b8ca29d95d2a5be8290d",
+          "installed_sha256": "180da53c45df8a1a4bc1d2ad1439bd15d8e74a49b01820d63423342e971a74c3"
+        }
+      ]
+    },
+    {
+      "version": "1.0.9-2ubuntu0.1",
+      "package": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF9_PACKAGE_PROVENANCE\\libbrotli1_1.0.9-2ubuntu0.1_amd64.deb",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/b/brotli/libbrotli1_1.0.9-2ubuntu0.1_amd64.deb",
+      "sha256": "908295e77a65219a62114c3c79690a3c99712274d1317c3ba47ffa2f8ea52ca5",
+      "bytes": 315370,
+      "signed_stanza": {
+        "Package": "libbrotli1",
+        "Source": "brotli",
+        "Architecture": "amd64",
+        "Version": "1.0.9-2ubuntu0.1",
+        "Filename": "pool/main/b/brotli/libbrotli1_1.0.9-2ubuntu0.1_amd64.deb",
+        "Size": "315370",
+        "SHA256": "908295e77a65219a62114c3c79690a3c99712274d1317c3ba47ffa2f8ea52ca5",
+        "Depends": "libc6 (>= 2.29)"
+      },
+      "extracted": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF9_PACKAGE_PROVENANCE\\current",
+      "extraction_command": [
+        "wsl",
+        "-d",
+        "Ubuntu-22.04",
+        "--",
+        "dpkg-deb",
+        "--extract",
+        "/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/outputs/PERF9_PACKAGE_PROVENANCE/libbrotli1_1.0.9-2ubuntu0.1_amd64.deb",
+        "/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/outputs/PERF9_PACKAGE_PROVENANCE/current"
+      ],
+      "package_scripts_executed": false,
+      "libraries": [
+        {
+          "path": "libbrotlicommon.so.1.0.9",
+          "bytes": 137560,
+          "sha256": "617035f98d836e37ccaefdd5fe56b45ef4f5e10460c5b4f68c2d488e5a62766f",
+          "installed_sha256": "617035f98d836e37ccaefdd5fe56b45ef4f5e10460c5b4f68c2d488e5a62766f"
+        },
+        {
+          "path": "libbrotlidec.so.1.0.9",
+          "bytes": 51512,
+          "sha256": "b877956d7814d95fb37473002f46a43fe7f09bebb48a41312c329c65631622b5",
+          "installed_sha256": "b877956d7814d95fb37473002f46a43fe7f09bebb48a41312c329c65631622b5"
+        },
+        {
+          "path": "libbrotlienc.so.1.0.9",
+          "bytes": 587944,
+          "sha256": "180da53c45df8a1a4bc1d2ad1439bd15d8e74a49b01820d63423342e971a74c3",
+          "installed_sha256": "180da53c45df8a1a4bc1d2ad1439bd15d8e74a49b01820d63423342e971a74c3"
+        }
+      ]
+    }
+  ],
+  "installed_files_equal_current_authenticated_archive": true,
+  "old_expected_bytes_reproduced": true,
+  "shared_environment_modified": false,
+  "libraries_loaded": false
+}

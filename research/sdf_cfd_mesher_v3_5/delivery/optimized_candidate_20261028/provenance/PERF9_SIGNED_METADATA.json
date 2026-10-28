@@ -1,0 +1,92 @@
+{
+  "schema": "V35Perf9SignedUbuntuMetadata/1",
+  "passed": true,
+  "repositories": [
+    {
+      "release": "/var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_jammy_InRelease",
+      "release_sha256": "c14060cd8c6d625874dfcb9523a35a395bf4865c28b6b6a82569ef326fe92dc6",
+      "signature_stdout": "[GNUPG:] NEWSIG\n[GNUPG:] KEY_CONSIDERED F6ECB3762474EDA9D21B7022871920D1991BC93C 0\n[GNUPG:] SIG_ID HrKrdZjGCBwk+Qp/9/ZuVELIzaQ 2022-04-21 1650561399\n[GNUPG:] GOODSIG 871920D1991BC93C Ubuntu Archive Automatic Signing Key (2018) <ftpmaster@ubuntu.com>\n[GNUPG:] VALIDSIG F6ECB3762474EDA9D21B7022871920D1991BC93C 2022-04-21 1650561399 0 4 0 1 10 01 F6ECB3762474EDA9D21B7022871920D1991BC93C\n[GNUPG:] VERIFICATION_COMPLIANCE_MODE 23\n",
+      "signature_stderr": "gpgv: Signature made Thu Apr 21 12:16:39 2022 CDT\ngpgv:                using RSA key 871920D1991BC93C\ngpgv: Good signature from \"Ubuntu Archive Automatic Signing Key (2018) <ftpmaster@ubuntu.com>\"\n",
+      "signature_verified": true,
+      "dates": [
+        "Suite: jammy",
+        "Codename: jammy",
+        "Date: Thu, 21 Apr 2022 17:16:08 UTC"
+      ],
+      "index": "/var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_jammy_main_binary-amd64_Packages",
+      "index_sha256": "12ce0797a6ed39a1fee1321985976c6b78872a8fe4c7ef2fb712f2364c9839a3",
+      "index_bytes": 6779186,
+      "index_matches_signed_release": true,
+      "packages": [
+        {
+          "Package": "libbrotli1",
+          "Source": "brotli",
+          "Architecture": "amd64",
+          "Version": "1.0.9-2build6",
+          "Filename": "pool/main/b/brotli/libbrotli1_1.0.9-2build6_amd64.deb",
+          "Size": "315164",
+          "SHA256": "8e6aa2dfd44df287b9fb227862f3b6062ec074dd39a247874edfe12e1dcc3841",
+          "Depends": "libc6 (>= 2.29)"
+        }
+      ]
+    },
+    {
+      "release": "/var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_jammy-updates_InRelease",
+      "release_sha256": "c1829b5b474104f5300c5f81edecff59fec7f07b6c4f7e3ae04d74471c30bb52",
+      "signature_stdout": "[GNUPG:] NEWSIG\n[GNUPG:] KEY_CONSIDERED F6ECB3762474EDA9D21B7022871920D1991BC93C 0\n[GNUPG:] SIG_ID DhCT7tTm83rvrSA4JF0nVhkW0zY 2026-10-28 1793164724\n[GNUPG:] GOODSIG 871920D1991BC93C Ubuntu Archive Automatic Signing Key (2018) <ftpmaster@ubuntu.com>\n[GNUPG:] VALIDSIG F6ECB3762474EDA9D21B7022871920D1991BC93C 2026-10-28 1793164724 0 4 0 1 10 01 F6ECB3762474EDA9D21B7022871920D1991BC93C\n[GNUPG:] VERIFICATION_COMPLIANCE_MODE 23\n",
+      "signature_stderr": "gpgv: Signature made Wed Oct 28 00:18:44 2026 CDT\ngpgv:                using RSA key F6ECB3762474EDA9D21B7022871920D1991BC93C\ngpgv: Good signature from \"Ubuntu Archive Automatic Signing Key (2018) <ftpmaster@ubuntu.com>\"\n",
+      "signature_verified": true,
+      "dates": [
+        "Suite: jammy-updates",
+        "Codename: jammy",
+        "Date: Wed, 28 Oct 2026  5:16:19 UTC"
+      ],
+      "index": "/var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_jammy-updates_main_binary-amd64_Packages",
+      "index_sha256": "b84f311a7c1d0020fc67d547c09b91fa7cbccaad23ce2499190e83425a8ee71f",
+      "index_bytes": 22256016,
+      "index_matches_signed_release": true,
+      "packages": [
+        {
+          "Package": "libbrotli1",
+          "Source": "brotli",
+          "Architecture": "amd64",
+          "Version": "1.0.9-2ubuntu0.1",
+          "Filename": "pool/main/b/brotli/libbrotli1_1.0.9-2ubuntu0.1_amd64.deb",
+          "Size": "315370",
+          "SHA256": "908295e77a65219a62114c3c79690a3c99712274d1317c3ba47ffa2f8ea52ca5",
+          "Depends": "libc6 (>= 2.29)"
+        }
+      ]
+    },
+    {
+      "release": "/var/lib/apt/lists/security.ubuntu.com_ubuntu_dists_jammy-security_InRelease",
+      "release_sha256": "179f31e97ab2b9d90cdee40bcfe43be791227114942dee065bdb470b2423af8e",
+      "signature_stdout": "[GNUPG:] NEWSIG\n[GNUPG:] KEY_CONSIDERED F6ECB3762474EDA9D21B7022871920D1991BC93C 0\n[GNUPG:] SIG_ID EkBxE6ZvJstihmcVdPGcG0vagXk 2026-10-27 1793123503\n[GNUPG:] GOODSIG 871920D1991BC93C Ubuntu Archive Automatic Signing Key (2018) <ftpmaster@ubuntu.com>\n[GNUPG:] VALIDSIG F6ECB3762474EDA9D21B7022871920D1991BC93C 2026-10-27 1793123503 0 4 0 1 10 01 F6ECB3762474EDA9D21B7022871920D1991BC93C\n[GNUPG:] VERIFICATION_COMPLIANCE_MODE 23\n",
+      "signature_stderr": "gpgv: Signature made Tue Oct 27 12:51:43 2026 CDT\ngpgv:                using RSA key F6ECB3762474EDA9D21B7022871920D1991BC93C\ngpgv: Good signature from \"Ubuntu Archive Automatic Signing Key (2018) <ftpmaster@ubuntu.com>\"\n",
+      "signature_verified": true,
+      "dates": [
+        "Suite: jammy-security",
+        "Codename: jammy",
+        "Date: Tue, 27 Oct 2026 17:49:21 UTC"
+      ],
+      "index": "/var/lib/apt/lists/security.ubuntu.com_ubuntu_dists_jammy-security_main_binary-amd64_Packages",
+      "index_sha256": "1a498ead49dbfa35f4913194715b8a4c7b87b954f526b046f315fccbf488e4a6",
+      "index_bytes": 20700810,
+      "index_matches_signed_release": true,
+      "packages": [
+        {
+          "Package": "libbrotli1",
+          "Source": "brotli",
+          "Architecture": "amd64",
+          "Version": "1.0.9-2ubuntu0.1",
+          "Filename": "pool/main/b/brotli/libbrotli1_1.0.9-2ubuntu0.1_amd64.deb",
+          "Size": "315370",
+          "SHA256": "908295e77a65219a62114c3c79690a3c99712274d1317c3ba47ffa2f8ea52ca5",
+          "Depends": "libc6 (>= 2.29)"
+        }
+      ]
+    }
+  ],
+  "keyring_sha256": "1a4dd63e5c76728960a2edddae22e2e0fc53df8e8b87806deb971030ac704eb0",
+  "keyring_package": "ubuntu-keyring 2021.03.26 all"
+}

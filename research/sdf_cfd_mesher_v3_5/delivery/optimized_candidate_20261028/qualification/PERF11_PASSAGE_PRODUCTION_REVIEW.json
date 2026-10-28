@@ -1,0 +1,774 @@
+{
+  "schema": "PERF11IndependentPassageProductionReview/1",
+  "passed": true,
+  "blockers": [],
+  "classification": "PASS_CLOSED_PASSAGE_PRODUCTION_EXACT_BASELINE_EQUIVALENCE_OFFLINE_PENDING",
+  "trusted_root": "037d247e36813e9841f42dad6a9acfbee4dc086b73c541609ae3dacda988f815",
+  "runtime_identity": "3bdd14455b74a67e6fa1405efc945956f69bcb03925283ee1d6481b9815b82a8",
+  "checks": {
+    "current_source_files_rehashed": 1885,
+    "source_custody_closed_unchanged": true,
+    "manifest_files_rehashed": 126,
+    "completion_closure_handoff_finalizer_bound": true,
+    "producer_receipts": 12,
+    "serialized_array_descriptors_match": true,
+    "exact_five_physical_and_eight_plan_payloads": true,
+    "exact_MESH_SEALED_JOINED_and_noop_conditioning_archives": true,
+    "native_raw_payloads_literal_byte_equal": 88,
+    "canonical_ordered_metadata_exact": true,
+    "shape_QA_exact_baseline": true,
+    "source_native_sixfile_anchor_and_metric_INITIAL_binding": true,
+    "surface_authority_request_trajectory_file_bindings": true,
+    "reviewed_named_comparer_upstream_fullledger_semantics_pass": true,
+    "native_export_file_hashes_valid": true,
+    "native_fidelity_and_Mesh_OK": true,
+    "checkMesh_warnings": [],
+    "effective_external_preflight_files": 1916,
+    "late_runtime_receipts": 4
+  },
+  "population": {
+    "points": 207705,
+    "prisms": 298660,
+    "tetrahedra": 247804,
+    "cells": 546464,
+    "compressed_vertices": 0,
+    "nominal_total_um": 180.862,
+    "conditioning": "AlreadyAboveFloor",
+    "conditioning_native_calls": 0,
+    "shared_apex_changed_vertices": [
+      207427,
+      207565
+    ],
+    "protected_coordinate_count": 181034,
+    "connectivity_unchanged": true
+  },
+  "shared_apex_stars": [
+    {
+      "vertex": 207427,
+      "incident_cells": 8,
+      "cell_ids": [
+        5085090,
+        5095379,
+        5095426,
+        5132076,
+        5179672,
+        5179711,
+        5191928,
+        5283899
+      ],
+      "before_hex": [
+        "-0x1.736e1f64b320ep-9",
+        "0x1.8221fae37ba84p-10",
+        "0x1.2c84581a6ec29p-11"
+      ],
+      "after_hex": [
+        "-0x1.73b8f6889e164p-9",
+        "0x1.8201d2af841b6p-10",
+        "0x1.2c5f917a01ab1p-11"
+      ],
+      "displacement_m": 2.2977053665821368e-06,
+      "source_batch_summary": {
+        "affected_cells": 8,
+        "affected_faces": 20,
+        "exact_nonpositive_cells": 0,
+        "maximum_aspect": 5.054035948306412,
+        "maximum_skewness": 0.5356373597034322,
+        "minimum_determinant": 0.10586316454656483,
+        "minimum_symmetric_volume_ratio": 0.05067459621331991,
+        "minimum_weight": 0.06616037111732324
+      }
+    },
+    {
+      "vertex": 207565,
+      "incident_cells": 8,
+      "cell_ids": [
+        5077467,
+        5077487,
+        5077514,
+        5077517,
+        5240054,
+        5248930,
+        5262989,
+        5283932
+      ],
+      "before_hex": [
+        "-0x1.7d5374227dc9cp-9",
+        "0x1.45287fe4f17c3p-11",
+        "0x1.4bcd17ff1e8ffp-10"
+      ],
+      "after_hex": [
+        "-0x1.7d88a668d177ep-9",
+        "0x1.453d898266657p-11",
+        "0x1.4ba7e9d67fac9p-10"
+      ],
+      "displacement_m": 1.686693085253412e-06,
+      "source_batch_summary": {
+        "affected_cells": 8,
+        "affected_faces": 20,
+        "exact_nonpositive_cells": 0,
+        "maximum_aspect": 6.059187765404614,
+        "maximum_skewness": 0.5099268649931018,
+        "minimum_determinant": 0.08263598923881553,
+        "minimum_symmetric_volume_ratio": 0.04699771911901435,
+        "minimum_weight": 0.062134067190269864
+      }
+    }
+  ],
+  "shape": {
+    "all_bulk_tetrahedra": {
+      "count": 247804,
+      "minimum": 0.2716482611054878,
+      "required_minimum": 0.25,
+      "mandatory_passed": true,
+      "percentage_status": "TARGETS_MET"
+    },
+    "interface_tetrahedra": {
+      "count": 59732,
+      "minimum": 0.32041083317825586,
+      "required_minimum": 0.25,
+      "mandatory_passed": true,
+      "percentage_status": "TARGET_NOT_MET"
+    },
+    "preserved_cap_triangles": {
+      "count": 59732,
+      "minimum": 0.3304947841289329,
+      "required_minimum": 0.3,
+      "mandatory_passed": true,
+      "percentage_status": "TARGET_NOT_MET"
+    }
+  },
+  "source": {
+    "full149330_payload_equal_baseline": true,
+    "proof_identity": "977451d585354ed8ccd6044d9dcdff586270ca828b13adc921ddea95bc3dff2f",
+    "first_height_checks": 29866,
+    "finalprepare_authenticated_segments": 149330,
+    "finalprepare_independent_recomputed_segments": 0,
+    "scope": "Current files authenticated by completion and parent full-layer identity; baseline raw source locally pinned. Original producer collision/source evaluation still executes."
+  },
+  "timing": {
+    "current_seconds": 4637.077760900371,
+    "archived_seconds": 6124.915444999933,
+    "difference_seconds": 1487.8376840995625,
+    "difference_minutes": 24.797294734992708,
+    "percent_difference": 24.291562838049575,
+    "preparation_current_seconds": 2643.7786240004934,
+    "preparation_archived_seconds": 4067.3022712999955,
+    "prospective_current_seconds": 448.2314105001278,
+    "prospective_archived_seconds": 1806.0229515000246,
+    "planner_current_seconds": 1378.7278884998523,
+    "planner_archived_seconds": 1416.1191270002164,
+    "direct_current_seconds": 1948.988703600131,
+    "direct_archived_seconds": 2015.2353429999202,
+    "scope": "Descriptive single current versus archived run, not causal/stable/repeated speedup. Six root preparation stages only; no addition of earlier component savings or nested timers."
+  },
+  "resource_observations": {
+    "external_Windows_tree_peak_bytes": 9372995584,
+    "logical_output_bytes": 3843721391,
+    "external_stop_reason": null
+  },
+  "next_gate": "Approve at most ONE separate pinned passage offline audit with trusted root above and exact3bdd verifier. No launch by reviewer.",
+  "limitations": [
+    "Production audit remains not_run until separately reviewed offline replay. No general-shape, CFD, continuous whole-source/fluid, hard200um surface, global exact-Q, release or clean-machine qualification.",
+    "Existing nonblocking percentage misses remain; shared-apex classification UNQUALIFIED, untouched rows sourcefloat only.",
+    "Raw bindings and saved producer predicates reviewed; no new quality/exact-volume/native collision or geometry/source predicates executed. Full upstream normalization/ledger semantic comparison relies on reviewed external comparator PASS; selected file/metric/request links independently verified here.",
+    "No unretained ephemeral token preimage reconstructed or historical authority transferred. New explicit source/environment profiles authenticate each own run.",
+    "Timing difference exceeds20minutes in this single pair only; stable causal savings or per-component attribution not established."
+  ],
+  "evidence_pins": [
+    {
+      "path": "outputs\\PERF11_PREFLIGHT_REVIEW.json",
+      "bytes": 9370,
+      "sha256": "58ebb5dea979653df72ec1f9830cde6b679ea8edee0c3dcf809a0c19d570a344"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_PRODUCTION_RUN.json",
+      "bytes": 2274,
+      "sha256": "f6329aef2b24236241f24ad7feb69990adaa24633f8dc1659abde832955eed1a"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_PRODUCTION_COMPARISON.json",
+      "bytes": 6500350,
+      "sha256": "86ae45694bd78c9ea62afe145e2ac3e8ccf4fcf72615c17984dcae7ea7e8c216"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\VERIFICATION.json",
+      "bytes": 9531,
+      "sha256": "037d247e36813e9841f42dad6a9acfbee4dc086b73c541609ae3dacda988f815"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\CASE.json",
+      "bytes": 4773,
+      "sha256": "7c3cac46edd97d14352828264820b2ec94107186d76ea1aed8cc47b570f60729"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\RESULT.json",
+      "bytes": 8145526,
+      "sha256": "81821456faa9714762e69565d1b7f67b544170d6463481f5a0cf75401d86aa94"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\closure\\SOURCES.json",
+      "bytes": 348573,
+      "sha256": "675befc2ffa18f873aa0c6ad6631b6f28cef283dfc0cfff5b06126fb7bc8a205"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\closure\\SUPERVISOR.json",
+      "bytes": 5127,
+      "sha256": "ea9952953e7c2785c0f9b9c826f702f15ae15f446069feff8af54349181c20c8"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\background\\RESULT.json",
+      "bytes": 6134041,
+      "sha256": "524a96551d90253622a7576563506b8467ba61ddfc474ee4a2d25da6da3c0e5a"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\background\\MANIFEST.json",
+      "bytes": 14112,
+      "sha256": "1c512df7dd6c8d4dec2614ff70e26b6063ee4eaaeef945bc5634138c3a41227d"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\background\\FINALIZATION.json",
+      "bytes": 9594,
+      "sha256": "69e918a2bed40ce363e8771433f893b59adacbc5b055d156e615af1956bf87ca"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\background\\JOINED_RECONSTRUCTION.json",
+      "bytes": 252603540,
+      "sha256": "882af26ea08c111c9384e8bca193881ccff1dc06b90dbe03d9534cfdcde73a04"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\background\\SHARED_APEX_REPAIR.json",
+      "bytes": 9618,
+      "sha256": "7abdd6b0c86022cb5be48281ffc7fbf021d6193f8bce24e8d069889daff308ff"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\background\\conditioning\\CONDITIONING.json",
+      "bytes": 2789,
+      "sha256": "bb20bf00ef2dd3cb752cf567cf3193a9c7f65dbba996fce35f9771c804874700"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\background\\export\\EXPORT_RESULT.json",
+      "bytes": 7246,
+      "sha256": "4d4e8f8f58783958974d8f12fa84b3658c9926134f62dd1de69e70dcbe5626aa"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\background\\export\\checkMesh.stdout",
+      "bytes": 4386,
+      "sha256": "4252dd7234b271d437f1700e45c44ff30bdd830f559e287169355e3d6f8decb9"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\SEALED_PLAN.npz",
+      "bytes": 9318948,
+      "sha256": "496329b9b943c6b0fb2d47702758f6845e6a443f4cd0d80cde26550093bbe176"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\MESH.npz",
+      "bytes": 28673118,
+      "sha256": "c19e2228e94a71ebff9769289690c2453feb00b315d198b44680a67d52f7c2b0"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\shell\\SOURCE_EVALUATION.json",
+      "bytes": 328,
+      "sha256": "3cfae05e0098cb9c954e3f4b01634651758daa5496afb656acb209fdc81df256"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\shell\\SOURCE_SEGMENTS.json",
+      "bytes": 207046416,
+      "sha256": "51ed76e10dd49924c758990fae824c33537b84a99cb8ba7b27dfb0cb44e3b33a"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\upstream\\surface\\A\\fresh\\SURFACE_AUTHORITY.json",
+      "bytes": 2469,
+      "sha256": "15c2db89368b8690d71033c0e6051a63e04645a6e9eb9615915096a6ff84f4f8"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\upstream\\surface\\A\\fresh\\WRITTEN_METRIC_POLICY.json",
+      "bytes": 1578,
+      "sha256": "16da3e710c2ef3bd94d77708c2c0f7acac2d865b0127a2dcf67085ee89ab8daa"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\upstream\\surface\\A\\fresh\\mmgs.json",
+      "bytes": 965,
+      "sha256": "ca71c334a3be89d594258225ec45b252261c3053a9b089cc35bf71f3f2ebf52d"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\first\\REQUEST.json",
+      "bytes": 1127,
+      "sha256": "52dd55179cf4a5b027da8908e2080e49c07585f9fd52ac034b8d956af147963a"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\first\\source\\ADMISSION.json",
+      "bytes": 4085,
+      "sha256": "ca7e16f313dfdc05faa36161f2ef4de05ed5682719de95cd3409a29ed4259f25"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\first\\source\\TRAJECTORY.json",
+      "bytes": 5610,
+      "sha256": "4ed23179b484816b5a0c1e647c959ec8c207fb5f290c7af06f888068526589a3"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\first\\source\\SOURCE_SEGMENTS.checkpoint.json",
+      "bytes": 270,
+      "sha256": "a1b6a3ed773ce070f64448b1216a8c584713a620550a5dea32c7b8fc273d48be"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\background\\farfield\\RUNTIME_POST.json",
+      "bytes": 4410,
+      "sha256": "004de382cd79f1bcbeecf7b636041b0cee2f82df16a140ada6b1c3a835090235"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\background\\farfield\\RUNTIME_PRE.json",
+      "bytes": 4410,
+      "sha256": "632056d597c3db5ae231040c41cd51a3f09ffe4fa99faf215642496d6412fb4e"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\background\\native\\RUNTIME_POST.json",
+      "bytes": 4410,
+      "sha256": "cebc70b559801e90cd26fc6be5f91e64cfb74c5bbd3970c59700ada6f52f261e"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\background\\native\\RUNTIME_PRE.json",
+      "bytes": 4410,
+      "sha256": "632056d597c3db5ae231040c41cd51a3f09ffe4fa99faf215642496d6412fb4e"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_2\\cell_ancestor.i32",
+      "bytes": 477856,
+      "sha256": "3cbb92c3329debe82c67cf6efeec6f54d1a711d72826422a44894be96c0d4c15"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_2\\cell_aspect_ratios.f64",
+      "bytes": 955712,
+      "sha256": "ddb57f77f7d75f6e62505c30b0de929fa71f17bb356c1bcc8e385973fdec77f2"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_2\\cell_centres.f64",
+      "bytes": 2867136,
+      "sha256": "804d3b7de2466d049f69022f39ac69a8b9a03b1d2acf8ce8466f824d20232949"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_2\\cell_determinants.f64",
+      "bytes": 955712,
+      "sha256": "3b991f9339a8aea0fb6d301540254c9308f4d96cbe6568121d5cc3891e0cf09c"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_2\\cell_level.i32",
+      "bytes": 477856,
+      "sha256": "373a80e178d8c939000988dc55ace3ef1841f71c893fa3b52cdbddff70416d04"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_2\\cell_offsets.u64",
+      "bytes": 955720,
+      "sha256": "2f100ae9d77d31e1e1492462ac08f9e6e57989642bd73360e8d8fcaed7aa269a"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_2\\cell_openness.f64",
+      "bytes": 955712,
+      "sha256": "12bf8a738d01781aa7bd3788df52aafe2f80f305228551e86c771fee3e29ab81"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_2\\cell_points.i32",
+      "bytes": 2867136,
+      "sha256": "2d8c31fdfaf8824377d0cc0819b8fabc46b12302b92a814621c17869844737ca"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_2\\cell_volumes.f64",
+      "bytes": 955712,
+      "sha256": "f2e061ee4014f59e9d44209d1c38b5ac1fe6736adc48f5108694d1507fba3dd9"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_2\\face_areas.f64",
+      "bytes": 8601408,
+      "sha256": "afb1589c6deabeffbaa89eff77ce920daed4fdcfe4be196e51d60fb8e42a2450"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_2\\face_centres.f64",
+      "bytes": 8601408,
+      "sha256": "2e9565ce55f4ca951b9104713cfdca0c3e4b622c97d2631cb2f2c41ed48fb42e"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_2\\face_offsets.u64",
+      "bytes": 2867144,
+      "sha256": "30c9cc63fe1c1a677f52167abfd64906f7b881a7bde3f65a4336dc65b0478f7e"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_2\\face_points.i32",
+      "bytes": 5017488,
+      "sha256": "0c642813a66d324d648a1372766622774619bb8c6dedaf0d6e9122a2e0d84752"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_2\\face_skewness.f64",
+      "bytes": 2867136,
+      "sha256": "5b698b44fc32d80cd0d41fac490be307a544f4715d537cfc68c07125aa2e04b1"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_2\\face_volume_ratios.f64",
+      "bytes": 1911424,
+      "sha256": "27831450db453095ad52d051a3802444f22801a27d8d57584fbbbbf8b11e5d39"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_2\\face_weights.f64",
+      "bytes": 1911424,
+      "sha256": "433f6f681712b4e0cc07c41d4dbf9b1c0ad2c1b1ed9f6a133b7270db98035522"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_2\\internal_mask.u8",
+      "bytes": 358392,
+      "sha256": "ab11df1065b589eec330fae02fcfc53b8244533ab359d5f63885d92b20a0645e"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_2\\neighbour.i32",
+      "bytes": 955712,
+      "sha256": "9bb63e668ba0f745bf0cfb10e08cca01a540cadc5bdb3b36de60cf31fe387293"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_2\\owner.i32",
+      "bytes": 1433568,
+      "sha256": "56cd181c7007f5b27ada51072c6269704776536e61c480fc54c0e8dc350cf216"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_2\\point_ancestor.i32",
+      "bytes": 358392,
+      "sha256": "0aba8bdfedc33761c5d3a70260c4c9dff7f7ec5d0b1082c6c2091db29b1a4ab1"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_2\\point_level.i32",
+      "bytes": 358392,
+      "sha256": "f829942e139066d910704bc6b06666d8c28d85d981cdaaa3ad40b65260e1a040"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_2\\points.f64",
+      "bytes": 2150352,
+      "sha256": "9899c9ccf696c66bed1044ec343dbce432efa12ae1c53b55aa2af4313705ab32"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_3\\cell_ancestor.i32",
+      "bytes": 716784,
+      "sha256": "5cad40e8285684346a78ee1e09cce6340dc9d9d644edd255382cc71b250f57cb"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_3\\cell_aspect_ratios.f64",
+      "bytes": 1433568,
+      "sha256": "bde6a403a3706428b503f704d916ade699f4582c6726f166770b1adcbc0b5669"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_3\\cell_centres.f64",
+      "bytes": 4300704,
+      "sha256": "22b32874f13fbe4462e01d3351e3fd59b6664cab0c9b86f7bcc2a498c9b15ffb"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_3\\cell_determinants.f64",
+      "bytes": 1433568,
+      "sha256": "5beb4a822e68aec13ee860884ebcc635e83049f37add200d30f4de4ced0a96f5"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_3\\cell_level.i32",
+      "bytes": 716784,
+      "sha256": "66f66b0655340193b1cd01502f617cc45db36f77af494a88c066a1911092019d"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_3\\cell_offsets.u64",
+      "bytes": 1433576,
+      "sha256": "0ef9b4ff6b466e65172a317ace300c24bbb3cdd0dbd609ee098ebe1116c887b1"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_3\\cell_openness.f64",
+      "bytes": 1433568,
+      "sha256": "70c80b8d3e2f487477a7186ccf29c287b6c9db1719bad7623872a8b78ec335f3"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_3\\cell_points.i32",
+      "bytes": 4300704,
+      "sha256": "7b8e327f56ef659b9ca87de97d19d66facbd4b0f72cc0d0fcefecabb4f7fcd27"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_3\\cell_volumes.f64",
+      "bytes": 1433568,
+      "sha256": "656ee47b1f90082ef1b8c266be20d29c9f8e852caa31f7943c587030e31bf1d3"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_3\\face_areas.f64",
+      "bytes": 12185328,
+      "sha256": "dd193436c9214df9d8a18556bc707225af3a1221bf3d24c19229bad177f5b77e"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_3\\face_centres.f64",
+      "bytes": 12185328,
+      "sha256": "24441bca0cd1412eb778d51a328bdb838e409cc8be9ec7dda3f0f9d2b0843f8b"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_3\\face_offsets.u64",
+      "bytes": 4061784,
+      "sha256": "fa187f765971d68b92442da6866ad2e0448dcedabcf3989d8cdd5a1319057052"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_3\\face_points.i32",
+      "bytes": 7167840,
+      "sha256": "ccb9cdc6b23e35992556815a352fec076fd88a3543e70b51ac9eb1bec827c7da"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_3\\face_skewness.f64",
+      "bytes": 4061776,
+      "sha256": "8a37d51dfcdbbda57d0fbe3d538d8f083d6d73c7aeee0d19fc5aca1b20e22adb"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_3\\face_volume_ratios.f64",
+      "bytes": 3106064,
+      "sha256": "0c5ab901084500e31cdc163239fdde57a0f202198c55b856bf52b1641e3dd585"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_3\\face_weights.f64",
+      "bytes": 3106064,
+      "sha256": "35a96cc9c519775d3f7b34baa61603aa119b24a8ce994fd9e9319904bb3e82db"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_3\\internal_mask.u8",
+      "bytes": 507722,
+      "sha256": "9f03d0022c94a2eb09bfa39b62fd4efe47ec592a1587ccf787c4a0691754da95"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_3\\neighbour.i32",
+      "bytes": 1553032,
+      "sha256": "227529797903c4f2efbafc2f9a5d0eee55b81fa09a1a63d5983db010dafff945"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_3\\owner.i32",
+      "bytes": 2030888,
+      "sha256": "5398a83b7c2af76a49c1bad28b519d65a7a381de149ddcc91c17e58e34ddffc1"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_3\\point_ancestor.i32",
+      "bytes": 477856,
+      "sha256": "788a96a03b4c6af6303f1be0c1c416af3015214a63f33f77f6fb580ad50bd761"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_3\\point_level.i32",
+      "bytes": 477856,
+      "sha256": "8e32fca64c92f9b3297b1fb06f86644a2234f90b90f2d444f76576c25290b17c"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_3\\points.f64",
+      "bytes": 2867136,
+      "sha256": "eb17bc119893f419aa9e3007d47962d2386b3165e3504e04351ffd47cb84d3ad"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_4\\cell_ancestor.i32",
+      "bytes": 955712,
+      "sha256": "92565ffe651b59f4e1bfa67fba32363d76fce2ed9eefb06e5737fd1efa43b0c6"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_4\\cell_aspect_ratios.f64",
+      "bytes": 1911424,
+      "sha256": "d13b1367ba24e2212bcf2634f0b0ad7b304a05e74fa1688f9b635ae2806463d6"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_4\\cell_centres.f64",
+      "bytes": 5734272,
+      "sha256": "56cf10d8e2ea702d5d2cc05b9e4af2b4e603701ea948b7fcd8bfd04d898537a7"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_4\\cell_determinants.f64",
+      "bytes": 1911424,
+      "sha256": "86bd56be756d2970986db6e39358e1c470447c6712ebf1603c20c7d657c540c3"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_4\\cell_level.i32",
+      "bytes": 955712,
+      "sha256": "1a41a8e8bb52fa9623c14cdc2092a127ffbce29129249924928d8060649f735d"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_4\\cell_offsets.u64",
+      "bytes": 1911432,
+      "sha256": "1cac3e20ee0b1caa05e39b40a09b9695f329d1423b8bfdf9240f392ada2a5216"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_4\\cell_openness.f64",
+      "bytes": 1911424,
+      "sha256": "9b02193c5a412def7db3bbb64c956d1ec022e2999402d55ec0c58243d0a9a813"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_4\\cell_points.i32",
+      "bytes": 5734272,
+      "sha256": "ae94900316c0be1cedb4c4afea7b0a8a65d88e69c247d58a4466190302503b0e"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_4\\cell_volumes.f64",
+      "bytes": 1911424,
+      "sha256": "ce0f065f25c5100ff90523c2343ae5acdec4d22810ac30b37bea37d552af66ca"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_4\\face_areas.f64",
+      "bytes": 15769248,
+      "sha256": "d2309b94bffab87ae8e97a02ec1e86ea8b439bfcae2a4c4c9d5b51b8b5d5abf4"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_4\\face_centres.f64",
+      "bytes": 15769248,
+      "sha256": "d7880f8e2f5e29450e05c057620d3045d37d5d0422f4e0282d5d474446522b4f"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_4\\face_offsets.u64",
+      "bytes": 5256424,
+      "sha256": "455f6a20652bbd8d1b15700bbef6ae021f8389cb03ee78541bf57425b44ffcf6"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_4\\face_points.i32",
+      "bytes": 9318192,
+      "sha256": "4cdfe577039b61fbea296d64bacb57f96c1758569a129f7c543b28f08572439c"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_4\\face_skewness.f64",
+      "bytes": 5256416,
+      "sha256": "84a70adfaeae2a9b4abc806d1e96259064b134d4bec801ca4486fbe0625e2662"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_4\\face_volume_ratios.f64",
+      "bytes": 4300704,
+      "sha256": "0f8e61c1fbea0236c77add7878cd69c13fe5b0eb70ce75a369e6d3469d705cf3"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_4\\face_weights.f64",
+      "bytes": 4300704,
+      "sha256": "c817f65bd9a2483ed08034a5ae036c21ce9bbfc5a23036d16f823a29cff6b325"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_4\\internal_mask.u8",
+      "bytes": 657052,
+      "sha256": "d3274d49e043837bfac99a8654ef12d5bc8454b60a3d29ac01d77626351c1814"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_4\\neighbour.i32",
+      "bytes": 2150352,
+      "sha256": "4af6acb09907d58633f43af2bb12c1636d84e4075c86c7a7d43eeb7aacadfe1f"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_4\\owner.i32",
+      "bytes": 2628208,
+      "sha256": "23da73e4649d3ca05aab6e07be554da930d9cde97f1630ef49d54edf65e0c5c6"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_4\\point_ancestor.i32",
+      "bytes": 597320,
+      "sha256": "6aec54a860108c7f48c658beeb60f151a09cee64e76a62acaf24d1b2f472698c"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_4\\point_level.i32",
+      "bytes": 597320,
+      "sha256": "bb810285c43422171a777081ae22e795626a22fe5301c31e59bd2811102e2c67"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_4\\points.f64",
+      "bytes": 3583920,
+      "sha256": "e95fe7004c1f15d51f917f03d1f5c834c61b58029fde224a0648bd0e48176c66"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_5\\cell_ancestor.i32",
+      "bytes": 1194640,
+      "sha256": "62564a0fa30c50f11a8b72eed030fbb83997b1db5e6ec1f501295e1346f4e8eb"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_5\\cell_aspect_ratios.f64",
+      "bytes": 2389280,
+      "sha256": "d044a1a7d0f1b0715c94e9ca5142e93643ed9fda041cba69b4b08d32c4194200"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_5\\cell_centres.f64",
+      "bytes": 7167840,
+      "sha256": "395dd3c2432bccabbfc2e79aa76dcb0693ddaa80aa42734f085790663b25141b"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_5\\cell_determinants.f64",
+      "bytes": 2389280,
+      "sha256": "3babe9f91ea4401dc5793a0d87b514a700722fcff4f91bef827a500f81697280"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_5\\cell_level.i32",
+      "bytes": 1194640,
+      "sha256": "26164b4628a5419534876ab7e2a2cd8ac93b5b440147f2d757155edd33957ae8"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_5\\cell_offsets.u64",
+      "bytes": 2389288,
+      "sha256": "01adb96f9de3545d4e4b62ebc9406fe8a2201b602f793a93eefea6b0e31a439b"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_5\\cell_openness.f64",
+      "bytes": 2389280,
+      "sha256": "bb4a9afbbb5c76bfd84fc347e4038aa34c24f7db2ba974baffeb4212da08cc80"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_5\\cell_points.i32",
+      "bytes": 7167840,
+      "sha256": "a55932b57011a106f99ee4ebbb34e296361bd3fe02d843d3638cff3b22099864"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_5\\cell_volumes.f64",
+      "bytes": 2389280,
+      "sha256": "2e47f6f10783b7d4968ba9649423f3059371dc42dfc41161c7d650cd5f3b0b9e"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_5\\face_areas.f64",
+      "bytes": 19353168,
+      "sha256": "2cfb4951eaf131a77ff13181ab8971c801b35978ae43b4729a471f6d4eb2d815"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_5\\face_centres.f64",
+      "bytes": 19353168,
+      "sha256": "4ac57d740b01bfda8787cb3541c18549bd18aa64841efd0eee2ed579c541c7a9"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_5\\face_offsets.u64",
+      "bytes": 6451064,
+      "sha256": "8bf13422330d5174dee6e000a77fae7b62a734f45e1e5be20505bbbfe4dd3c0f"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_5\\face_points.i32",
+      "bytes": 11468544,
+      "sha256": "7d345565cfee41f910f8c7413adde5f37cd80c7765d7f1a54dadd6a3cf038122"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_5\\face_skewness.f64",
+      "bytes": 6451056,
+      "sha256": "455db0569d87b16f53bdcf8bc73c63e10db74f0c5fa14d5297d60ec3d16c7244"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_5\\face_volume_ratios.f64",
+      "bytes": 5495344,
+      "sha256": "cb6d234f6a2b9b0a084b4026425582cf5c690ef7f867395966f4ac92e689f349"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_5\\face_weights.f64",
+      "bytes": 5495344,
+      "sha256": "a9d3dc1e8ff1769756e89a0bc79f99a2b1c306e43fa6e81dd792c5bcabd3d295"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_5\\internal_mask.u8",
+      "bytes": 806382,
+      "sha256": "81a1aeb4010e303da182575480473c80b4758876b222ff4e4ff6e9a5ae793e32"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_5\\neighbour.i32",
+      "bytes": 2747672,
+      "sha256": "d6ea3c21388172a9c4d0fd349c50be38a0d5b107fb709408f2dda6d88c425ea0"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_5\\owner.i32",
+      "bytes": 3225528,
+      "sha256": "7f17b39bb23a456c470b9a13523adace4f2c26052d342bdcf590977f4575e356"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_5\\point_ancestor.i32",
+      "bytes": 716784,
+      "sha256": "3519953cc805cb2f8443ee961342a8306b4ce24684703b7f7d5933d356ddcc86"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_5\\point_level.i32",
+      "bytes": 716784,
+      "sha256": "9b8306aa57251063954956bddd89abb06dd837ec72c308105e9b70c18c125763"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\native\\postProcessing\\stagedLayer\\prefix_5\\points.f64",
+      "bytes": 4300704,
+      "sha256": "b714d526c58841b5996005a7e2f7ae0def3a6d22e42c378d5122465cf516bd11"
+    }
+  ]
+}

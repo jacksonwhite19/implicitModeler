@@ -1,0 +1,239 @@
+{
+  "schema": "PERF11IndependentPassageOfflineReview/1",
+  "passed": true,
+  "blockers": [],
+  "classification": "PASS_CLOSED_SEPARATE_PASSAGE_OFFLINE_REPLAY_NO_NEW_RUN_AUTHORIZATION",
+  "trusted_root": "037d247e36813e9841f42dad6a9acfbee4dc086b73c541609ae3dacda988f815",
+  "verifier_identity": "3bdd14455b74a67e6fa1405efc945956f69bcb03925283ee1d6481b9815b82a8",
+  "checks": {
+    "attempt": 1,
+    "exit_code": 0,
+    "external_stop_reason": null,
+    "proof_receipts_independently_hash_and_identity_checked": 12,
+    "full_semantic_replay_passed": true,
+    "original_production_inventory_independently_rehashed_files": 373,
+    "production_input_unchanged": true,
+    "current_source_files_independently_rehashed": 1885,
+    "closed_verifier_custody_unchanged": true,
+    "filling_payload_literal_bytes_equal_original": true,
+    "shape_populations_reported_recomputed": true,
+    "production_audit_still_not_run": true,
+    "no_new_scope_files": true
+  },
+  "population": {
+    "points": 207705,
+    "prisms": 298660,
+    "tetrahedra": 247804,
+    "cells": 546464,
+    "all_faces_checked": 1273960
+  },
+  "shared_apex_replay": {
+    "committed_vertices": [
+      207427,
+      207565
+    ],
+    "affected_tets_union": 16,
+    "execution_scope": "In-process direct_repair_custody.verify->_moves. Rebuild complete actual star/owner/movement domain; before/after bits; batch and scalar QA; exact signed star-volume sum; exact binary shape labels and minima; strict weight improvement; complete changed inventory and finalcoordinate identity. No optimization/search.",
+    "separate_individual_move_replay_files_saved": false,
+    "persisted_evidence": "Original hash-bound full committed records plus successful mandatory replay chain/AUDIT_RESULT; reviewed exact source performs checks before return.",
+    "native_changed_vs_all_recertification": false,
+    "conditioning_outcome": "AlreadyAboveFloor",
+    "conditioning_local_edits": 0
+  },
+  "source": {
+    "authenticated_original_segments": 149330,
+    "fresh_source_authority": false,
+    "independent_offline_source_recomputation": false,
+    "scope": "Original full source evidence authenticated from production root; no new live grant."
+  },
+  "collision_scope": "Global stored native classifications read back with fresh complete pair coverage. This passage has zero conditioning/cavity commits and no local native changed-versus-all recertification; shared-apex replay uses the checks stated above.",
+  "resource_observations": {
+    "external_wall_seconds": 1036.1075397999957,
+    "audit_seconds": 1035.719000000041,
+    "joined_replay_seconds": 896.7017562002875,
+    "Windows_tree_peak_bytes": 3574554624,
+    "logical_output_bytes": 281591606,
+    "wall_limit_seconds": 43200,
+    "Windows_RSS_limit_bytes": 17179869184,
+    "Linux_AS_per_process_bytes": 17179869184,
+    "output_limit_bytes": 16000000000
+  },
+  "reporting_correction": {
+    "initial_inaccurate_generic_scope_preserved": true,
+    "only_comparison_counts_scope_plus_correction_metadata_changed": true,
+    "reporter_only_string_change_independently_reversed_to_original_review_hash": true,
+    "corrected_reporter_sha256": "562ebc8143befc12f03db313988d619f8bacd3176e4e83a1d6b26cf236400d59",
+    "raw_runtime_audit_and_results_unchanged": true,
+    "new_runs": 0
+  },
+  "next_gate": "No new run authorized. Final report/three-case matrix/preservation/synthesis review remains; callback is parent responsibility.",
+  "limitations": [
+    "No separate per-move replay result files are retained; genuine two-move replay follows the reviewed mandatory source path and successful result, not an invented per-star archive.",
+    "Global collision classifications are retained, not all native predicates recomputed. No native conversion/checkMesh, source/geometry generation, remeshing, proposal selection or optimizer search rerun.",
+    "Generation/construction/live_parent fields in retained JOINED result are original provenance, not fresh offline authority or generation.",
+    "Shared-apex classification remains UNQUALIFIED and untouched rows sourcefloat only; no global exact-Q, continuous whole-source/fluid, CFD/general-shape/hard200um/release/clean-machine qualification.",
+    "Reviewer independently checked saved12receipt canonical identities/hashes,373productionfile hashes and1885current source hashes in prior bounded raw pass this turn, then verified reporting-only correction. No imports/runtime execution/tests/native/geometry predicates/launch or protected modifications."
+  ],
+  "evidence_pins": [
+    {
+      "path": "outputs\\PERF11_PREFLIGHT_REVIEW.json",
+      "bytes": 9370,
+      "sha256": "58ebb5dea979653df72ec1f9830cde6b679ea8edee0c3dcf809a0c19d570a344"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_PRODUCTION_REVIEW.json",
+      "bytes": 41513,
+      "sha256": "5e6fb94bef71c470d93f8d0c169417a941e5b409e77bb1009470a6926650f2b9"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_OFFLINE_RUN.json",
+      "bytes": 1590,
+      "sha256": "8369eac629d551a4f9e461aa7686cf4b4116b04c4698b3513709580f96a46907"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_OFFLINE_COMPARISON.json",
+      "bytes": 4166,
+      "sha256": "6754ebd9e6cb1fe243a194ba87833932a1ff7906a11c2266064337635bd632ee"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_OFFLINE_COMPARISON_INITIAL_SCOPE.json",
+      "bytes": 3476,
+      "sha256": "5a6956370406e2845680b53b03ce52a3de1b1a4488a69e9a33604f386243887a"
+    },
+    {
+      "path": "outputs\\PERF11_OFFLINE_SCOPE_CORRECTION.json",
+      "bytes": 597,
+      "sha256": "629555c81e065e643a07d843d18f7705c91bac7272d388b511fc8611268cccda"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_OFFLINE_INPUT_INVENTORY.json",
+      "bytes": 60164,
+      "sha256": "2608ef03fb5c9177e1b252b73ae8a913f87bb07b0271dc24d9c484f16ba18216"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_OFFLINE.stdout",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_OFFLINE.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_OFFLINE\\AUDIT_RESULT.json",
+      "bytes": 1657,
+      "sha256": "446ad009ff29f0c716535246c38f591aa37ffa4eb18d23a89f82167c3614067e"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_OFFLINE\\VERIFIER_SOURCES.json",
+      "bytes": 348573,
+      "sha256": "675befc2ffa18f873aa0c6ad6631b6f28cef283dfc0cfff5b06126fb7bc8a205"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_OFFLINE\\replay\\JOINED_PROOF_RESULT.json",
+      "bytes": 3592,
+      "sha256": "7c104b4128a6d3272e58ceee68e0026377a6bfd5ee1e79f81720a54e8e67b436"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\VERIFICATION.json",
+      "bytes": 9531,
+      "sha256": "037d247e36813e9841f42dad6a9acfbee4dc086b73c541609ae3dacda988f815"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\background\\SHARED_APEX_REPAIR.json",
+      "bytes": 9618,
+      "sha256": "7abdd6b0c86022cb5be48281ffc7fbf021d6193f8bce24e8d069889daff308ff"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf11_passage_production_01\\background\\conditioning\\CONDITIONING.json",
+      "bytes": 2789,
+      "sha256": "bb20bf00ef2dd3cb752cf567cf3193a9c7f65dbba996fce35f9771c804874700"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\direct_readback.py",
+      "bytes": 5807,
+      "sha256": "b24e1738d30e1980ccdf68482b730b480588d7d8cc434b3786143a96370c3bab"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\background_conditioning.py",
+      "bytes": 16328,
+      "sha256": "ca12191ceeb2c5c2c004ae73bd6c7ed6835a75b6229f74528623c6a1852a1683"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\v4\\tools\\finite_research\\direct_readback.py",
+      "bytes": 7937,
+      "sha256": "c4effdd7673801a3f4f7751a8171b0478ba6f4a1c1381eac048b49067b6eb8ff"
+    },
+    {
+      "path": "work\\perf9\\research\\sdf_cfd_mesher_v3_5\\standalone\\v4\\tools\\finite_research\\direct_repair_custody.py",
+      "bytes": 9109,
+      "sha256": "91e20f06c39ac75a758c6dd53b3e3a18995fcf0894025b0651a7f101d21b696f"
+    },
+    {
+      "path": "work\\perf11_offline_close.py",
+      "bytes": 4674,
+      "sha256": "562ebc8143befc12f03db313988d619f8bacd3176e4e83a1d6b26cf236400d59"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_OFFLINE\\replay\\BOUNDARY_COLLISION.json",
+      "bytes": 767,
+      "sha256": "5376db86ee448d103d730080a97a8ed0bf20f3d5d0b5ad9e27df83d856dd7bf6"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_OFFLINE\\replay\\COLLISION.json",
+      "bytes": 802,
+      "sha256": "ae3f26e4d3a790145828553af967bf341e8216c5762be6d86575a764d3021a1d"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_OFFLINE\\replay\\DOMAIN.json",
+      "bytes": 387,
+      "sha256": "2dfeb1514eba9f24e836f2bdd2f268209d62db36181d7b5059c395c697b03725"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_OFFLINE\\replay\\ENCLOSURE.json",
+      "bytes": 5872792,
+      "sha256": "b08480ae94804413e7ae73169fc3ab40d22ed297185c42a44c217aff02f7785d"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_OFFLINE\\replay\\FILLING.json",
+      "bytes": 275360039,
+      "sha256": "4a65086c8ae1830a5e41117f6f09303dbe671b27e0111513f9291000d7f17803"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_OFFLINE\\replay\\INCIDENCE.json",
+      "bytes": 335,
+      "sha256": "231a2976551db39d48dd9d21a73e42f4dcde79d6008dde0f818cc9a5c6a96744"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_OFFLINE\\replay\\INTERFACE_QA.json",
+      "bytes": 487,
+      "sha256": "bd21d20642f7b26c6a2580f84c6dea33e46c49af133199a4929925b9a8acf6ac"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_OFFLINE\\replay\\JOINED_QA.json",
+      "bytes": 553,
+      "sha256": "660e128b73da4fdcb19cc2383d213cf6578a1c0a2ee3956adbc1164b63801f75"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_OFFLINE\\replay\\PHYSICAL_QA.json",
+      "bytes": 238,
+      "sha256": "b7f9d5d4ed7e846052ddb2bc5c6746ca3df094b287071d3a480a39da5a492e0b"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_OFFLINE\\replay\\PRESERVATION.json",
+      "bytes": 267,
+      "sha256": "b944539ca73938ef7c418e1846967f2d10913c5d17815fc193d51a6487ee568c"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_OFFLINE\\replay\\SURFACES.json",
+      "bytes": 669,
+      "sha256": "7a092648591d52239ee17e0d194647f532c94bbace115da0cb1c22ae5d4cbc35"
+    },
+    {
+      "path": "outputs\\PERF11_PASSAGE_OFFLINE\\replay\\WINDING.json",
+      "bytes": 448,
+      "sha256": "358f20c8a808b5cb14aa0d0f1aa48e93ecbb05ab994a15dc84e33daf85558dea"
+    }
+  ]
+}
