@@ -13,7 +13,8 @@ CONTRACT=dict(version=PROFILE,workflow='complete_v3_prisms_v4_direct',
     construction_and_quality='UNCHANGED',native_export_fidelity='MANDATORY',
     artifact_binding='GUARDED_PRODUCER_SERIALIZED_NATIVE',source_resource_closure='MANDATORY',
     separate_semantic_replay='NOT_RUN',legacy_cold_required_acceptance=False,
-    source_assurance='ORIGINAL_RUN_ONLY',continuous_sdf_fluid='NOT_PERFORMED',CFD_qualified=False)
+    source_assurance='ORIGINAL_RUN_ONLY',
+    source_segments='V35LiveFinalSourcePopulation/1:production_same_run_authentication_or_recompute;audit_recompute',continuous_sdf_fluid='NOT_PERFORMED',CFD_qualified=False)
 
 def profile():
     from finite_research.direct_fill_contract import contract_identity,VERSION
@@ -51,7 +52,7 @@ def execution_record(choice,proof):
     rows['native_export']=dict(status='recomputed',scope='Actual conversion, exact correspondence and checkMesh')
     rows['artifact_binding']=dict(status='derived',scope='Checked-state equality and held serialized/native roots')
     rows['separate_semantic_replay']=dict(status='not_run' if choice['mode']=='production' else 'recomputed',
-        reason='Explicit production profile omits only separate full semantic replay' if choice['mode']=='production' else 'Mandatory cold audit')
+        reason='Explicit production profile omits separate full semantic replay; source segments permit same-run final-population authentication under V35LiveFinalSourcePopulation/1' if choice['mode']=='production' else 'Mandatory cold audit; source segments recomputed')
     return dict(selection=choice,checks=rows)
 
 def production_result(value,descriptor=None):

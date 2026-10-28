@@ -87,27 +87,32 @@ class SourceSegmentRefusal(ValueError):
     def __init__(self,detail):
         super().__init__('V35CollisionSourceSegmentRefusal');self.detail=detail
 
-def segment_guard(source,h1):
+def _segment_population(source,h1,x,retain=False):
+    rows=[];proofs=[]
+    for k in range(1,len(x)):
+        try:proof=source.qualify_segments(x[k-1],x[k],first_height_m=h1 if k==1 else None)
+        except ValueError as error:
+            from sdf_cfd_mesher_v4.sdf.regional import UnresolvedRegion
+            diagnostic=getattr(error,'_outward_segment_diagnostic',{})
+            reason=diagnostic.get('attempt',{}).get('reason')
+            known_height=(type(error) is ValueError and error.args in (
+                ('UniqueSourceWallNormalUnresolved',),('TrueSourceFullNormalHeightUnresolved',)))
+            known_progress=(type(error) is UnresolvedRegion and error.args==('SourceOutwardSegmentUnresolved',)
+                and reason in ('endpoint_positive_unresolved','depth_exhausted_progress_unresolved'))
+            if not (known_height or known_progress):raise
+            # Mutation/authentication remains fatal even when a geometric
+            # predicate failed. Proof resource exhaustion is not recoverable.
+            source.verify()
+            raise SourceSegmentRefusal(dict(layer=k,type=type(error).__name__,args=list(error.args),diagnostic=diagnostic)) from error
+        if proof.get('passed') is not True:raise SourceSegmentRefusal(dict(layer=k,reason='SourceReturnedFalse'))
+        rows.append(dict(layer=k,passed=True,segments=len(x[k])))
+        if retain:proofs.append(proof)
+    return dict(rows=rows,scope='Existing source progress/height predicates; no pair separation or distance bound'),proofs
+
+def segment_guard(source,h1,*,handoff=None):
     def check(x):
-        rows=[]
-        for k in range(1,len(x)):
-            try:proof=source.qualify_segments(x[k-1],x[k],first_height_m=h1 if k==1 else None)
-            except ValueError as error:
-                from sdf_cfd_mesher_v4.sdf.regional import UnresolvedRegion
-                diagnostic=getattr(error,'_outward_segment_diagnostic',{})
-                reason=diagnostic.get('attempt',{}).get('reason')
-                known_height=(type(error) is ValueError and error.args in (
-                    ('UniqueSourceWallNormalUnresolved',),('TrueSourceFullNormalHeightUnresolved',)))
-                known_progress=(type(error) is UnresolvedRegion and error.args==('SourceOutwardSegmentUnresolved',)
-                    and reason in ('endpoint_positive_unresolved','depth_exhausted_progress_unresolved'))
-                if not (known_height or known_progress):raise
-                # Mutation/authentication remains fatal even when a geometric
-                # predicate failed. Proof resource exhaustion is not recoverable.
-                source.verify()
-                raise SourceSegmentRefusal(dict(layer=k,type=type(error).__name__,args=list(error.args),diagnostic=diagnostic)) from error
-            if proof.get('passed') is not True:raise SourceSegmentRefusal(dict(layer=k,reason='SourceReturnedFalse'))
-            rows.append(dict(layer=k,passed=True,segments=len(x[k])))
-        return dict(rows=rows,scope='Existing source progress/height predicates; no pair separation or distance bound')
+        if handoff is not None:return handoff.qualify(source,h1,x)
+        return _segment_population(source,h1,x)[0]
     return check
 
 def update_plan(planner,state,plan,h,collision):
@@ -180,8 +185,9 @@ def feedback_family(planner,state,h,ledger,forecast):
             if ledger.columns()!=columns:break
         else:return
 
-def construct(planner,state,h,folder,*,policy=Policy(),source_guard=None,source_capabilities=None,expected_baseline=None,candidate_guard=None):
-    """Return a proposal only. Final V4 prepare remains independent/mandatory."""
+def construct(planner,state,h,folder,*,policy=Policy(),source_guard=None,source_capabilities=None,expected_baseline=None,candidate_guard=None,source_handoff=None):
+    """Return a proposal only. Final prepare authenticates source and all gates."""
+    if source_handoff is not None:source_handoff.discard("new_collision_construction")
     folder=Path(folder);folder.mkdir(parents=True,exist_ok=False);tick=time.perf_counter()
     h=np.asarray(h,dtype='<f8').copy();base_x=state.positions(h).copy();n=len(state.wall)
     semantic=dict(request=planner.request.nominal.tolist(),source=source_capabilities)
@@ -262,12 +268,19 @@ def construct(planner,state,h,folder,*,policy=Policy(),source_guard=None,source_
             t=time.perf_counter();final=exact_check(p,faces,range(len(faces)))
             row.update(final_full_seconds=time.perf_counter()-t,final_full_pairs=final['required_pairs'],final_full_failures=len(final['failures']))
             ledger.add(final,p,key)
-            if not final['passed']:row['outcome']='IndependentFullCollisionRefusal';checkpoint();continue
+            if not final['passed']:
+                if source_handoff is not None:source_handoff.discard('independent_collision_refusal')
+                row['outcome']='IndependentFullCollisionRefusal';checkpoint();continue
             row['outcome']='CollisionCorrected';result_h=q;outcome='CollisionCorrected';checkpoint();break
     if current_binding()!=binding:raise ValueError('CollisionStateChanged')
+    handoff_accepted=False
+    if source_handoff is not None:
+        if outcome in ('BaselineCollisionFree','CollisionCorrected'):handoff_accepted=source_handoff.accept(state.positions(result_h))
+        else:source_handoff.discard('construction_refused')
     report=dict(schema='V35CollisionConstruction/1',outcome=outcome,baseline_exact_seconds=baseline_seconds,
         proposal_collision_passed=outcome in ('BaselineCollisionFree','CollisionCorrected'),
-        mesh_accepted=False,source_global_proof='pending_independent_V4_prepare',
+        mesh_accepted=False,source_global_proof='pending_final_V4_prepare_source_validation',
+        source_handoff=dict(version='V35LiveFinalSourcePopulation/1',accepted_final_population=handoff_accepted),
         input_identity=binding,baseline_proposal=digest(h),final_proposal=digest(result_h),
         policy=asdict(policy),compression_start_layer=max(3,planner.request.layers-1),
         source_capabilities=source_capabilities or dict(live_source=False,clearance_bound=None),

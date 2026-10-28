@@ -529,3 +529,5 @@ class ProtectedQueries:
     def source_coverage(self,triangles_m,*,position_limit_m,maximum_depth,maximum_boxes):
         return self._run(source_coverage,triangles_m,position_limit_m=position_limit_m,
                          maximum_depth=maximum_depth,maximum_boxes=maximum_boxes)
+
+_STANDARD_OUTWARD_SEGMENT=ProtectedQueries.outward_segment

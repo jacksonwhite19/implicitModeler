@@ -22,7 +22,7 @@ class PrismShellGeometry:
         self.check()
         return None  # Existing V4 generic finite-transition construction.
 
-def prepare(initial,owner,folder):
+def prepare(initial,owner,folder,*,source_handoff=None,verification_mode='audit'):
     """Call while the surface/source lifetime and native-file guards are held."""
     import generalize_local_remesh as g
     from accepted_trajectory_contract import _planned_quality
@@ -39,12 +39,21 @@ def prepare(initial,owner,folder):
     if initial.high.tobytes()!=positions[1].tobytes() or initial.x.tobytes()!=positions[0].tobytes():raise ValueError('V35FirstFrontMismatch')
     # Exact source-normal height and source progress on every actual segment.
     # No later path coefficient is mislabeled as a source-normal height.
-    proofs=[]
-    for k in range(1,N+1):
-        print('shell.source_segments',k,N,flush=True)
-        proof=initial.source.qualify_segments(positions[k-1],positions[k],first_height_m=initial.h1 if k==1 else None)
-        if proof.get('passed') is not True:raise ValueError('V35SourceSegmentRefusal',k)
-        proofs.append(proof)
+    from source_handoff import consume,VERSION
+    if verification_mode not in ('audit','production'):raise ValueError('UnknownSourceHandoffMode')
+    proofs=consume(source_handoff,initial.source,initial.h1,positions,verification_mode)
+    reused=proofs is not None
+    if not reused:
+        proofs=[]
+        for k in range(1,N+1):
+            print('shell.source_segments',k,N,flush=True)
+            proof=initial.source.qualify_segments(positions[k-1],positions[k],first_height_m=initial.h1 if k==1 else None)
+            if proof.get('passed') is not True:raise ValueError('V35SourceSegmentRefusal',k)
+            proofs.append(proof)
+    g.save(folder/'SOURCE_EVALUATION.json',dict(schema=VERSION,mode=verification_mode,
+        method='live_final_population_authenticated' if reused else 'recomputed',
+        independent_source_recomputation=not reused,layers=N,segments=N*len(initial.x),
+        scope='Source progress and H1 only; independent face coverage and all quality/volume/degree gates remain mandatory'))
     g.save(folder/'SOURCE_SEGMENTS.json',dict(passed=True,layers=proofs,scope='Existing source-segment predicates; source surface retains its declared assurance'))
     points,cells,outer,owners,checked=_planned_quality(positions[0],initial.tri,positions,completed_front=True)
     g.save(folder/'RAW_QUALITY.json',checked)

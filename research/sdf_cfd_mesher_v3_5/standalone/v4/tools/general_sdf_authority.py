@@ -1186,3 +1186,9 @@ _STANDARD_EXACT_NORMAL=GeneralSdfAuthority.exact_normal
 _STANDARD_NUMERICAL_SAMPLES=GeneralSdfAuthority.numerical_surface_samples
 
 _STANDARD_NUMERICAL_NORMAL=GeneralSdfAuthority._numerical_normal
+
+# Defining-owner sentinels: a consumer imported later cannot bless an earlier
+# custom qualifier as stock for live whole-population source handoff.
+_STANDARD_SEGMENT_HANDOFF_METHODS=tuple((name,getattr(GeneralSdfAuthority,name)) for name in
+    ('qualify_segments','_qualify_segments','stock_prism_queries','query_scope',
+     'prism_query_scope','verified_operation','verify'))

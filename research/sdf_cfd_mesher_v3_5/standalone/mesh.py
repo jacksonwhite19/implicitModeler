@@ -188,43 +188,45 @@ def execute(args):
                 with provider.source.prism_query_scope(),provider.source.verified_operation('trajectory'):
                     return AcceptedTrajectoryOwner.from_inputs(provider.source,provider.x,provider.high,provider.tri,provider.refs['face_refs'],schedule,parent='V35CompleteHorizonBeforeConstruction',surface=provider.wall_authority['surface_identity'],request=req,case_identity=identity(settings))
             nominal_owner=owner_for(request.nominal);mark(stage,t)
-            stage='v3_complete_plan';t=time.perf_counter()
-            planner=Planner(request)
-            plan=plan_and_capture(planner,nominal_owner.state,out,face_refs=provider.refs['face_refs'],
-                provenance=dict(case_sha256=hashlib.sha256(case.read_bytes()).hexdigest(),
-                    source_identity=provider.wall_authority['surface_identity']))
-            from collision_policy import construct as collision_construct,Policy,update_plan,segment_guard
-            source_capabilities=dict(live_source=True,geometry=provider.source.geometry_identity,
-                assurance=provider.wall_authority['assurance'],clearance_bound=None,
-                field_is_exact_distance=False,segment_predicates='unchanged_source_qualify_segments')
-            proposal,collision=collision_construct(planner,nominal_owner.state,plan['schedule'],out/'collision',
-                policy=Policy(args.collision_max_candidates,args.collision_max_seconds),
-                source_guard=segment_guard(provider.source,provider.h1),
-                source_capabilities=source_capabilities)
-            if not collision['proposal_collision_passed']:raise ValueError('V35CollisionConstructionRefusal:'+collision['outcome'])
-            plan=update_plan(planner,nominal_owner.state,plan,proposal,collision)
-            if direct:
-                # Start from the existing complete collision-valid schedule,
-                # exactly as in retained proposal validation. No native cells
-                # or V4 admission occur before the final cap/global checks.
-                from cap_planning import select as select_cap,cap_report
-                cap_proposal,cap_plan=select_cap(planner,nominal_owner.state,proposal,out/'cap_plan')
-                if not cap_plan['numerical_proposal_passed']:raise ValueError('V35CapPlanningRefusal:'+cap_plan['outcome'])
-                if not np.array_equal(cap_proposal,proposal):
-                    proposal,cap_collision=collision_construct(planner,nominal_owner.state,cap_proposal,out/'cap_collision',
-                        policy=Policy(args.collision_max_candidates,args.collision_max_seconds),
-                        source_guard=segment_guard(provider.source,provider.h1),source_capabilities=source_capabilities,
-                        candidate_guard=lambda q:cap_report(nominal_owner.state,q)['passed'])
-                    if not cap_collision['proposal_collision_passed']:raise ValueError('V35CapCollisionConstructionRefusal:'+cap_collision['outcome'])
-                    plan=update_plan(planner,nominal_owner.state,plan,proposal,cap_collision)
-                if not cap_report(nominal_owner.state,proposal)['passed']:raise ValueError('V35CollisionCapContractRefusal')
-                plan['cap_planning']=cap_plan
-            nominal_owner.state.save(out/'collision_plan',proposal)
-            owner=owner_for(plan['schedule'])
-            if owner.positions().tobytes()!=plan['positions'].tobytes():raise ValueError('V3V4PlannedArithmeticMismatch')
-            owner.state.save(out/'plan',plan['schedule']);mark(stage,t)
-            stage='v4_prospective_shell_checks';t=time.perf_counter()
-            prepared=prepare(provider,owner,out/'shell');mark(stage,t)
+            from source_handoff import live_handoff
+            with live_handoff(provider.source,provider.h1,verification['mode']) as handoff:
+                stage='v3_complete_plan';t=time.perf_counter()
+                planner=Planner(request)
+                plan=plan_and_capture(planner,nominal_owner.state,out,face_refs=provider.refs['face_refs'],
+                    provenance=dict(case_sha256=hashlib.sha256(case.read_bytes()).hexdigest(),
+                        source_identity=provider.wall_authority['surface_identity']))
+                from collision_policy import construct as collision_construct,Policy,update_plan,segment_guard
+                source_capabilities=dict(live_source=True,geometry=provider.source.geometry_identity,
+                    assurance=provider.wall_authority['assurance'],clearance_bound=None,
+                    field_is_exact_distance=False,segment_predicates='unchanged_source_qualify_segments')
+                proposal,collision=collision_construct(planner,nominal_owner.state,plan['schedule'],out/'collision',
+                    policy=Policy(args.collision_max_candidates,args.collision_max_seconds),
+                    source_guard=segment_guard(provider.source,provider.h1,handoff=handoff),
+                    source_capabilities=source_capabilities,source_handoff=handoff)
+                if not collision['proposal_collision_passed']:raise ValueError('V35CollisionConstructionRefusal:'+collision['outcome'])
+                plan=update_plan(planner,nominal_owner.state,plan,proposal,collision)
+                if direct:
+                    # Start from the existing complete collision-valid schedule,
+                    # exactly as in retained proposal validation. No native cells
+                    # or V4 admission occur before the final cap/global checks.
+                    from cap_planning import select as select_cap,cap_report
+                    cap_proposal,cap_plan=select_cap(planner,nominal_owner.state,proposal,out/'cap_plan')
+                    if not cap_plan['numerical_proposal_passed']:raise ValueError('V35CapPlanningRefusal:'+cap_plan['outcome'])
+                    if not np.array_equal(cap_proposal,proposal):
+                        proposal,cap_collision=collision_construct(planner,nominal_owner.state,cap_proposal,out/'cap_collision',
+                            policy=Policy(args.collision_max_candidates,args.collision_max_seconds),
+                            source_guard=segment_guard(provider.source,provider.h1,handoff=handoff),source_capabilities=source_capabilities,source_handoff=handoff,
+                            candidate_guard=lambda q:cap_report(nominal_owner.state,q)['passed'])
+                        if not cap_collision['proposal_collision_passed']:raise ValueError('V35CapCollisionConstructionRefusal:'+cap_collision['outcome'])
+                        plan=update_plan(planner,nominal_owner.state,plan,proposal,cap_collision)
+                    if not cap_report(nominal_owner.state,proposal)['passed']:raise ValueError('V35CollisionCapContractRefusal')
+                    plan['cap_planning']=cap_plan
+                nominal_owner.state.save(out/'collision_plan',proposal)
+                owner=owner_for(plan['schedule'])
+                if owner.positions().tobytes()!=plan['positions'].tobytes():raise ValueError('V3V4PlannedArithmeticMismatch')
+                owner.state.save(out/'plan',plan['schedule']);mark(stage,t)
+                stage='v4_prospective_shell_checks';t=time.perf_counter()
+                prepared=prepare(provider,owner,out/'shell',source_handoff=handoff,verification_mode=verification['mode']);mark(stage,t)
             plan['source_global_proof']='passed_before_native_construction'
             save(out/'PRISM_PLAN.json',{k:v for k,v in plan.items() if k not in ('positions','delta','schedule')})
             stage='v3_native_construction';t=time.perf_counter()
