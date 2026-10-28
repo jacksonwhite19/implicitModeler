@@ -11,12 +11,43 @@ from sdf_cfd_mesher_v4.common.authority import file_hash
 from pathlib import Path
 
 
+def _cold_native_inputs(points,faces):
+    """Compatibility gate only; unsupported callers retain the old certifier."""
+    return (type(points) is np.ndarray and points.dtype==np.dtype('float64') and
+        points.ndim==2 and points.shape[1]==3 and points.flags.c_contiguous and
+        np.isfinite(points).all() and type(faces) is tuple and bool(faces) and
+        all(type(f) is tuple and len(f) in (3,4) and
+            all(type(v) is int and 0<=v<len(points) for v in f) and
+            len(set(f))==len(f) for f in faces))
+
+
 def certify(points,faces,state,before):
     engine=g.s.cert.certify
-    if state['authority'].get('certificate_filter'):
+    filtered=state['authority'].get('certificate_filter')
+    if filtered:
+        import native_mixed_face_certificate as native_filter
         from native_mixed_face_certificate import certify as engine,SOURCE
         if state['authority']['certificate_filter']!=file_hash(SOURCE):raise ValueError('ChangedCertificateFilter')
-    if before is None:return engine(points,faces,range(len(faces)))
+    if before is None:
+        if (filtered and engine is native_filter._STANDARD_CERTIFY and type(faces) is list):
+            polygons=tuple(faces)
+            if _cold_native_inputs(points,polygons):
+                # Retain the original binary/source/arithmetic constructor gate
+                # and its refusal type before selecting the batch orchestration.
+                native_filter.Filter()
+                from optimized_mixed_certificate import certify as complete
+                from sdf_cfd_mesher_v4.common.authority import frozen
+                # Same-call immutable operands, no saved proof or cross-call state.
+                metadata=(points.shape,points.dtype.str,points.strides)
+                private=frozen(points,'<f8')
+                result=complete(private,polygons,range(len(polygons)),workers=4,calculate_digest=True)
+                if ((points.shape,points.dtype.str,points.strides)!=metadata or
+                        points.tobytes()!=private.tobytes() or tuple(faces)!=polygons):
+                    raise ValueError('ChangedColdCertificateInputs')
+                # Keep the original scientific receipt schema and legacy digest.
+                result.pop('optimization')
+                return result
+        return engine(points,faces,range(len(faces)))
     if before['authority']['certificate']!=file_hash(Path(g.s.cert.__file__)):
         raise ValueError('ChangedCertificateImplementation')
     if any(before['authority'].get(k)!=state['authority'].get(k) for k in ('certificate','certificate_filter')):

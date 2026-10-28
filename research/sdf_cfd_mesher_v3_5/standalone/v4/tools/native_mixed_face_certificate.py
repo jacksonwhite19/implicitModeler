@@ -62,3 +62,6 @@ def certify(points,faces,active,*,workers=4):
     return dict(passed=not bad,required_pairs=len(rows),methods=methods,
         failures=bad,proofs=rows,proof_hash=proof_hash,
         coverage='All AABB-overlapping unique-face pairs touching changed geometry; qualified interval hull filter with unchanged exact polygon fallback')
+
+# Defining-owner binding: custom certifiers keep their original dispatch.
+_STANDARD_CERTIFY=certify

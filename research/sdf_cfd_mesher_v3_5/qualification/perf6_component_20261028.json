@@ -1,0 +1,30 @@
+{
+  "classification": "COMPONENT_VALIDATED_FULL_PIPELINE_PENDING",
+  "review_sha256": "9ad3e38f856bc129d3f5f9beb697ca81f93f8ed2286ad30773ee26be65607288",
+  "reviewed_source_pins": [
+    {
+      "path": "work\\perf4\\research\\sdf_cfd_mesher_v3_5\\standalone\\v4\\tools\\native_mixed_face_certificate.py",
+      "bytes": 4082,
+      "sha256": "d7422fa81b335e03c022de7756e50c0742109f29d8b5360b3149a15c5d066969"
+    },
+    {
+      "path": "work\\perf4\\research\\sdf_cfd_mesher_v3_5\\standalone\\v4\\tools\\reuse_mixed_certificate.py",
+      "bytes": 7241,
+      "sha256": "1e135bb75766d93e60b9b175bf839f4619dc292114761b3b034391e52bbbfebd"
+    },
+    {
+      "path": "work\\perf4\\research\\sdf_cfd_mesher_v3_5\\standalone\\tests\\test_cold_certificate.py",
+      "bytes": 8875,
+      "sha256": "af399a543fff851a44417f9189695ca3a8fdb1fdd6c3d9250976ce9b54e21550"
+    }
+  ],
+  "passage_reference_median_seconds": 146.9279510998167,
+  "passage_adapter_median_seconds": 28.805052800104022,
+  "focused_tests": 12,
+  "all_15_trial_summaries_and_ordered_streams_exact": true,
+  "workers": 4,
+  "native_code_or_binary_changes": false,
+  "full_pipeline_or_release_qualification": false,
+  "evidence_report": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF6_REPORT.md",
+  "report_sha256": "36254611cbcb9e03442e3457c1db19e2f0d011011ec18216f064b4df993211d5"
+}
