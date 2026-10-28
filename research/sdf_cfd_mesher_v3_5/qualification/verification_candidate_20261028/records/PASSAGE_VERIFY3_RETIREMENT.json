@@ -1,0 +1,135 @@
+{
+  "passed": true,
+  "owned_linux_scopes": [
+    {
+      "mode": "audit",
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_audit_01\\native\\contractDirect.linux_scope.json",
+      "pid": 1517120,
+      "start_ticks": 119470842,
+      "original_leader_alive": false,
+      "group_members": []
+    },
+    {
+      "mode": "audit",
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_audit_01\\native\\contractStaged.linux_scope.json",
+      "pid": 1517886,
+      "start_ticks": 119471137,
+      "original_leader_alive": false,
+      "group_members": []
+    },
+    {
+      "mode": "audit",
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_audit_01\\background\\export\\checkMesh.linux_scope.json",
+      "pid": 1522087,
+      "start_ticks": 119659558,
+      "original_leader_alive": false,
+      "group_members": []
+    },
+    {
+      "mode": "audit",
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_audit_01\\background\\export\\gmshToFoam.linux_scope.json",
+      "pid": 1520551,
+      "start_ticks": 119658648,
+      "original_leader_alive": false,
+      "group_members": []
+    },
+    {
+      "mode": "audit",
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_audit_01\\background\\farfield\\v4_direct_farfield.linux_scope.json",
+      "pid": 1518723,
+      "start_ticks": 119498219,
+      "original_leader_alive": false,
+      "group_members": []
+    },
+    {
+      "mode": "audit",
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_audit_01\\background\\native\\v4_direct_candidate.linux_scope.json",
+      "pid": 1519662,
+      "start_ticks": 119507198,
+      "original_leader_alive": false,
+      "group_members": []
+    },
+    {
+      "mode": "audit",
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_audit_01\\background\\export\\openfoam_case\\contractAudit.linux_scope.json",
+      "pid": 1521319,
+      "start_ticks": 119659191,
+      "original_leader_alive": false,
+      "group_members": []
+    },
+    {
+      "mode": "production",
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_production_01\\native\\contractDirect.linux_scope.json",
+      "pid": 1522978,
+      "start_ticks": 120375863,
+      "original_leader_alive": false,
+      "group_members": []
+    },
+    {
+      "mode": "production",
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_production_01\\native\\contractStaged.linux_scope.json",
+      "pid": 1523742,
+      "start_ticks": 120376167,
+      "original_leader_alive": false,
+      "group_members": []
+    },
+    {
+      "mode": "production",
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_production_01\\background\\export\\checkMesh.linux_scope.json",
+      "pid": 1527944,
+      "start_ticks": 120570534,
+      "original_leader_alive": false,
+      "group_members": []
+    },
+    {
+      "mode": "production",
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_production_01\\background\\export\\gmshToFoam.linux_scope.json",
+      "pid": 1526412,
+      "start_ticks": 120569657,
+      "original_leader_alive": false,
+      "group_members": []
+    },
+    {
+      "mode": "production",
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_production_01\\background\\farfield\\v4_direct_farfield.linux_scope.json",
+      "pid": 1524580,
+      "start_ticks": 120404492,
+      "original_leader_alive": false,
+      "group_members": []
+    },
+    {
+      "mode": "production",
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_production_01\\background\\native\\v4_direct_candidate.linux_scope.json",
+      "pid": 1525517,
+      "start_ticks": 120413803,
+      "original_leader_alive": false,
+      "group_members": []
+    },
+    {
+      "mode": "production",
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_production_01\\background\\export\\openfoam_case\\contractAudit.linux_scope.json",
+      "pid": 1527180,
+      "start_ticks": 120570196,
+      "original_leader_alive": false,
+      "group_members": []
+    }
+  ],
+  "windows": [
+    {
+      "mode": "audit",
+      "pid": 32828,
+      "original_process_alive": false
+    },
+    {
+      "mode": "production",
+      "pid": 37056,
+      "original_process_alive": false
+    },
+    {
+      "mode": "offline",
+      "pid": 45844,
+      "original_process_alive": false
+    }
+  ],
+  "scope": "Read-only exact owned PID/start-time and process-group retirement check; no signals or new scientific work"
+}

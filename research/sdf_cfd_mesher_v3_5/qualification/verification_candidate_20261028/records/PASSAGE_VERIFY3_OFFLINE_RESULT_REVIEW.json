@@ -1,0 +1,437 @@
+{
+  "schema": "V35PassageV3OfflineComponentResultReview/1",
+  "passed": true,
+  "classification": "PASS_CLOSED_SEPARATE_OFFLINE_COMPONENT_REPLAY",
+  "blockers": [],
+  "scope": "Independent static saved raw receipt/hash/inventory checks only; no project/comparator imports or execution, predicates, native commands, queries, optimization, remeshing or new live grants.",
+  "checks": {
+    "closed_attempt1_exit0": true,
+    "actual_offline_root_verifier": true,
+    "trusted_production_root": true,
+    "production_still_audit_not_run": true,
+    "actual_offline_acceptance": true,
+    "no_new_source_search_remesh": true,
+    "verifier_closed": true,
+    "source_inventory_identity": true,
+    "actual_twelve_and_repairs": true,
+    "twelve_population": true,
+    "proof:boundary_collision": true,
+    "proof:collision": true,
+    "proof:domain": true,
+    "proof:enclosure": true,
+    "proof:filling": true,
+    "proof:incidence": true,
+    "proof:interface_qa": true,
+    "proof:joined_qa": true,
+    "proof:physical_qa": true,
+    "proof:preservation": true,
+    "proof:surfaces": true,
+    "proof:winding": true,
+    "same_geometry_identity": true,
+    "filling_exact_saved_equality": true,
+    "exact_positive_filling": true,
+    "stored_exact_cell_signs": true,
+    "stored_degree_one": true,
+    "producer_replay_exact:interface_qa": true,
+    "producer_replay_exact:joined_qa": true,
+    "producer_replay_exact:physical_qa": true,
+    "producer_replay_exact:collision": true,
+    "producer_replay_exact:boundary_collision": true,
+    "interface_actual_neighbours": true,
+    "global_joined_QA": true,
+    "all372_input_files_unchanged": true,
+    "no_new_native_scopes": true,
+    "no_conditioning_transactions": true,
+    "actual_v3_comparison": true,
+    "stored_two_commits": true,
+    "matrix_three_closed:sphere": true,
+    "matrix_three_closed:blend": true,
+    "source_replay_pin:offline_audit.py": true,
+    "source_replay_pin:direct_readback.py": true,
+    "source_replay_pin:background_conditioning.py": true,
+    "source_replay_pin:v4/tools/finite_research/direct_readback.py": true,
+    "source_replay_pin:v4/tools/finite_research/direct_repair_custody.py": true,
+    "source_replay_pin:v4/tools/finite_research/direct_shared_apex.py": true
+  },
+  "raw_offline_receipt": {
+    "CFD_qualified": false,
+    "fresh_source_authority": false,
+    "passed": true,
+    "producer_source_identity": "8e428c2a5e7bee83dc71c70660c40cbd1452f08ad99674ed5e4755456768c518",
+    "remeshed": false,
+    "replay": {
+      "CFD_qualified": false,
+      "actual_shape_populations_recomputed": true,
+      "all_twelve_semantically_replayed": true,
+      "conditioning_replayed": true,
+      "geometry_identity": "f3801110ee2cad1abbca025ef56cc10ae11ad4de8ee4bd4ac0c70d4ee84b02d5",
+      "manifest_sha256": "0d15888281c75373db34d94973158d5c0dced2bf7fee80610e3251b186a21578",
+      "passed": true,
+      "points": 207705,
+      "prisms": 298660,
+      "proofs": 12,
+      "repair_replayed": true,
+      "schema": "V35ProductionEvidenceSemanticReplay/1",
+      "tetrahedra": 247804
+    },
+    "schema": "V35RetainedDirectAudit/1",
+    "search_rerun": false,
+    "seconds": 1029.1089999997057,
+    "source_bundle_root": "9e25eb2085cba8092f2d347ec8fa18682e0e5ab47dcadba2b40327cc9d037340",
+    "status": "audit_passed",
+    "verifier_identity": "8e428c2a5e7bee83dc71c70660c40cbd1452f08ad99674ed5e4755456768c518"
+  },
+  "actual_twelve_proof_pins": {
+    "boundary_collision": {
+      "identity": "80f74f30c88884a308b44762c4fd1274bf44887b4bc45ba9339494ed1e51029e",
+      "sha256": "2dc5d37ee19249250a8efd23b850f9f7bdad612c83382e14c2f2fcac0256ce53"
+    },
+    "collision": {
+      "identity": "613a94109bbed2b05b5fa67cc921e561c4bc4fdd77bae052e8340b9bda44f00c",
+      "sha256": "0e487b1b26aab614900fccc5eaee979956628f0d92980111bf81dc0268103236"
+    },
+    "domain": {
+      "identity": "3149da37741e2e97423a92d426d8cd9af1429a56f31d030330614e7f91a26587",
+      "sha256": "ab89e3347cf06d85c7842f9d427823a3ddcf4b1cbad7858575ad57c0691cfad8"
+    },
+    "enclosure": {
+      "identity": "f7ed4ccca85e36c40fa17a0a9222e4b2ee86b1e80e2bde2fcbe4fd4fd186c837",
+      "sha256": "232983ec8bea8311cc49cd6c2b8cbffb409015081d360fb47f23b68b3f872666"
+    },
+    "filling": {
+      "identity": "ffe73d53adf9b466e9d2efeef9b63e7af136f21decb3420125e87990eb30ddb2",
+      "sha256": "3d04844ba91fc0e55d7f55d30fc0462b1b9e7046714e41f156730751469e3c21"
+    },
+    "incidence": {
+      "identity": "26059c278811e3660051048e705e1890efa12a552e56e7a3f39de61e5e0f9714",
+      "sha256": "a1c199087b926e335d55e6c7a1548b060dd338972a00f41c61dbf08fe63a7596"
+    },
+    "interface_qa": {
+      "identity": "fb512b63139e3c4d467ca65ba7f21b5aa8ba61d905a4a4ec981774f73afabd70",
+      "sha256": "4579912412d34c8b57d0fdaa6ee616d03fbc1ab82f6533e075df5d85d7609e90"
+    },
+    "joined_qa": {
+      "identity": "e08c0db100e7407899109092c602baa66ac8430c06ae634dea531b1d157109a6",
+      "sha256": "cc437f5d3c22ed7800ad16fd63a5fb1b4fa7051e7380ea3b577c6c341fe193cd"
+    },
+    "physical_qa": {
+      "identity": "702c80545c93e146ffe7043e284e5347698f2fad814d3ff35b3af65aa3e1e6ee",
+      "sha256": "7189511531963c8bf49b84dd803d5b5a2c55d4669c8e38e48c5973a899bda34c"
+    },
+    "preservation": {
+      "identity": "fabb74fe787adf259fc491c9e950738a921928b6ce0f920623ea0762302f3ebd",
+      "sha256": "0eb0cd57d7a14cc5aa59689b3134a9feee0b0ffed98ab8880f8f9608b8b1ae88"
+    },
+    "surfaces": {
+      "identity": "ea0a48ddf6e87674dfddbc276796d3f2fcad3214aac056716aa13669e93f191d",
+      "sha256": "b7ea5d7d3b482cf0a608d85a491876ae2060026bb2c5e4f287d958b389a8d8a5"
+    },
+    "winding": {
+      "identity": "43314255bbcc1eaf0ce6f3e98686fee8aeebf0e66b739694a30d7660837bed2e",
+      "sha256": "494a4abaaf54aa12581f4ebafb6ebead3f325967a95df8c201ea4d0a39e72684"
+    }
+  },
+  "interface_QA": {
+    "faces": 59732,
+    "failure_count": 0,
+    "failures": [],
+    "geometry_identity": "f3801110ee2cad1abbca025ef56cc10ae11ad4de8ee4bd4ac0c70d4ee84b02d5",
+    "maximum_nonorthogonality": 37.302082789779654,
+    "maximum_skewness": 1.026045478115849,
+    "minimum_symmetric_volume_ratio": 0.0428561553573599,
+    "minimum_weight": 0.05687894314413293,
+    "nonorthogonality_role": "descriptive_only",
+    "passed": true,
+    "scientific_acceptance": false,
+    "wall_contract": "StoredFluidBoundaryWall/1"
+  },
+  "joined_QA_summary": {
+    "affected_cells": 546464,
+    "affected_faces": 1210556,
+    "exact_nonpositive_cells": 0,
+    "maximum_aspect": 17.33734311168157,
+    "maximum_skewness": 1.026045478115849,
+    "minimum_determinant": 0.0043650528510814695,
+    "minimum_symmetric_volume_ratio": 0.0428561553573599,
+    "minimum_weight": 0.05687894314413293
+  },
+  "physical_QA": {
+    "faces": 63404,
+    "failures": [],
+    "geometry_identity": "f3801110ee2cad1abbca025ef56cc10ae11ad4de8ee4bd4ac0c70d4ee84b02d5",
+    "maximum_skewness": 0.6710868434810637,
+    "passed": true,
+    "wall_contract": "StoredFluidBoundaryWall/1"
+  },
+  "filling": {
+    "cell_volume": "414143764273630280944875233569353857156444421290935150283/102844034832575377634685573909834406561420991602098741459288064",
+    "boundary_volume": "414143764273630280944875233569353857156444421290935150283/102844034832575377634685573909834406561420991602098741459288064",
+    "exact_volume_balance": true,
+    "positive_cells": true,
+    "interior_degree": {
+      "passed": true,
+      "unresolved": [],
+      "witnesses": 546464,
+      "all_values_one": true
+    }
+  },
+  "stored_repair_records": [
+    {
+      "after_m": [
+        -0.002836017698708714,
+        0.0014725003092089634,
+        0.000572916628926409
+      ],
+      "before_m": [
+        -0.002833787281224304,
+        0.0014729794864895293,
+        0.0005731906306246692
+      ],
+      "bulk_mixed_classification_counts": [
+        247804,
+        247469,
+        226785
+      ],
+      "checked_faces": 20,
+      "displacement_m": 2.2977053665821368e-06,
+      "evaluations": 250,
+      "exact_star_volume_conserved": true,
+      "fixed_opposite_faces": 8,
+      "halo_cells": 16,
+      "incident_tet_ids": [
+        5085090,
+        5095379,
+        5095426,
+        5132076,
+        5179672,
+        5179711,
+        5191928,
+        5283899
+      ],
+      "incident_tets": 8,
+      "interface_mixed_classification_counts": [
+        59732,
+        59600,
+        45571
+      ],
+      "radius_m": 4.294471269401572e-06,
+      "source_batch_summary": {
+        "affected_cells": 8,
+        "affected_faces": 20,
+        "exact_nonpositive_cells": 0,
+        "maximum_aspect": 5.054035948306412,
+        "maximum_skewness": 0.5356373597034322,
+        "minimum_determinant": 0.10586316454656483,
+        "minimum_symmetric_volume_ratio": 0.05067459621331991,
+        "minimum_weight": 0.06616037111732324
+      },
+      "source_scalar_passed": true,
+      "status": "COMMITTED",
+      "study_per_star_count_nonregression": true,
+      "trials": [
+        {
+          "iterations": 9,
+          "message": "Optimization terminated successfully",
+          "stage": 1,
+          "status": 0,
+          "success": true
+        },
+        {
+          "iterations": 20,
+          "message": "Optimization terminated successfully",
+          "stage": 2,
+          "status": 0,
+          "success": true
+        }
+      ],
+      "vertex": 207427
+    },
+    {
+      "after_m": [
+        -0.0029108718048602147,
+        0.0006203467931300094,
+        0.0012651668999976043
+      ],
+      "before_m": [
+        -0.002909286429026615,
+        0.0006201900511022474,
+        0.0012657209297502468
+      ],
+      "bulk_mixed_classification_counts": [
+        247804,
+        247469,
+        226786
+      ],
+      "checked_faces": 20,
+      "displacement_m": 1.686693085253412e-06,
+      "evaluations": 258,
+      "exact_star_volume_conserved": true,
+      "fixed_opposite_faces": 8,
+      "halo_cells": 16,
+      "incident_tet_ids": [
+        5077467,
+        5077487,
+        5077514,
+        5077517,
+        5240054,
+        5248930,
+        5262989,
+        5283932
+      ],
+      "incident_tets": 8,
+      "interface_mixed_classification_counts": [
+        59732,
+        59600,
+        45572
+      ],
+      "radius_m": 4.2276279575229815e-06,
+      "source_batch_summary": {
+        "affected_cells": 8,
+        "affected_faces": 20,
+        "exact_nonpositive_cells": 0,
+        "maximum_aspect": 6.059187765404614,
+        "maximum_skewness": 0.5099268649931018,
+        "minimum_determinant": 0.08263598923881553,
+        "minimum_symmetric_volume_ratio": 0.04699771911901435,
+        "minimum_weight": 0.062134067190269864
+      },
+      "source_scalar_passed": true,
+      "status": "COMMITTED",
+      "study_per_star_count_nonregression": true,
+      "trials": [
+        {
+          "iterations": 10,
+          "message": "Optimization terminated successfully",
+          "stage": 1,
+          "status": 0,
+          "success": true
+        },
+        {
+          "iterations": 20,
+          "message": "Optimization terminated successfully",
+          "stage": 2,
+          "status": 0,
+          "success": true
+        }
+      ],
+      "vertex": 207565
+    }
+  ],
+  "apex_replay_interpretation": [
+    "Actual offline receipt states repair_replayed=true; unchanged source direct_repair_custody.verify reconstructs original native+conditioned points then _moves replays the two stored moves. It does not rerun selection/SLSQP.",
+    "Each committed star checks actual incidence/owner cycles/halo/radius, exact before bytes/displacement, fresh batch AND scalar actual-neighbour QA, Fraction exact star-volume equality, exact binary-coordinate shape labels and source-float mandatory floor, strict local minimum-weight improvement; final changed/protected inventory and coordinate hash bind reconstructed result.",
+    "There is no separate per-star offline diagnostic file. Per-star gate execution is supported by actual successful replay receipt plus source-closed unchanged required call path, and saved committed records whose batch summaries/exact-volume flags are compared by that path. Reviewer did not re-evaluate these predicates.",
+    "Offline global collision classification matches retained producer evidence with fresh independent coverage; quality/shape/filling and local repair predicates are actual replay work. Zero owned native subprocess receipts does not mean zero in-process predicate work.",
+    "Conditioning replay follows the actual AlreadyAboveFloor no-op path: no cavity/vertex transactions/native proposer calls. Conversion/checkMesh are not rerun by offline audit."
+  ],
+  "production_inventory": {
+    "files": 372,
+    "complete_hash_and_size_mapping_unchanged": true,
+    "source_identity": "8e428c2a5e7bee83dc71c70660c40cbd1452f08ad99674ed5e4755456768c518"
+  },
+  "operational": {
+    "external_seconds": 1029.5494609000161,
+    "audit_result_seconds": 1029.1089999997057,
+    "joined_replay_seconds": 892.9301038002595,
+    "stage_seconds": {
+      "boundary_collision": 3.1596531998366117,
+      "collision": 309.9998547001742,
+      "domain": 0.0353880999609828,
+      "enclosure": 12.360030800104141,
+      "filling": 357.3618159000762,
+      "incidence": 24.496078800410032,
+      "interface_qa": 18.05833370005712,
+      "joined_qa": 23.474775800015777,
+      "physical_qa": 13.139605999924242,
+      "preservation": 9.0012326836586e-07,
+      "surfaces": 2.3816895000636578,
+      "winding": 9.716690200380981
+    },
+    "external_peak_windows_tree_rss_bytes": 3573026816,
+    "output_logical_bytes": 281588964,
+    "new_owned_native_scope_receipts": 0
+  },
+  "cumulative_three_case_matrix": {
+    "sphere": {
+      "audit": "passed",
+      "production": "production_accepted",
+      "separate_offline": "audit_passed",
+      "prisms": 12780,
+      "tetrahedra": 40448,
+      "points": 14798,
+      "production_seconds": 436.5744423996657,
+      "offline_seconds": 87.8106174999848,
+      "physical_arrays_equal_frozen": true,
+      "construction_path": "Conditioning no-op; no shared-apex moves."
+    },
+    "blend": {
+      "audit": "passed",
+      "production": "production_accepted",
+      "separate_offline": "audit_passed",
+      "prisms": 46570,
+      "tetrahedra": 72871,
+      "points": 38868,
+      "production_seconds": 2637.3637366001494,
+      "offline_seconds": 229.90300730010495,
+      "physical_arrays_equal_frozen": true,
+      "construction_path": "One existing-vertex3to2 and one constrained cavity31to54 with4insertions; no shared-apex moves."
+    },
+    "passage": {
+      "audit": "audit_accepted; original external V1 token comparison failed",
+      "production": "production_accepted; external V2 scratch comparison failed; explicit V3 external comparison passed",
+      "separate_offline": "audit_passed",
+      "prisms": 298660,
+      "tetrahedra": 247804,
+      "points": 207705,
+      "physical_arrays_equal_frozen": true,
+      "construction_path": "Conditioning no-op; two stored shared-apex moves, no connectivity change.",
+      "production_seconds": 6124.915444999933,
+      "offline_seconds": 1029.5494609000161
+    }
+  },
+  "matrix_primary_receipt_pins": {
+    "sphere": {
+      "audit": "014348c78ce05f7b0eef5e69b68296831184430d166e60b2ea84b220a8e3da61",
+      "production": "b269dbde6860862f5618851de8641364d287ab068ec6c717a080a70e96a7c8a8",
+      "offline": "35398fc2e8a174690f1addd2dd86647dbb64d8e220220a9e4df91cfdc320a84e"
+    },
+    "blend": {
+      "audit": "80c18cc465d3dedbba36c3d3736301ebc8f5060eff1f291077660aa48e15452e",
+      "production": "bf22f13acf845c099f301bd42c5af8d71181249c526f742b39791798f0084e2a",
+      "offline": "4e3f8eadb050b0afca728ddcad781e5b8719859ecb4fc04bfb6ee0b5cf48e322"
+    }
+  },
+  "source_pins": {
+    "offline_audit.py": "2911b4fc5ebbbe4288b546d8e7def98b6a545b930f8e51e577c74c68c28174b6",
+    "direct_readback.py": "b24e1738d30e1980ccdf68482b730b480588d7d8cc434b3786143a96370c3bab",
+    "background_conditioning.py": "ca12191ceeb2c5c2c004ae73bd6c7ed6835a75b6229f74528623c6a1852a1683",
+    "v4/tools/finite_research/direct_readback.py": "c4effdd7673801a3f4f7751a8171b0478ba6f4a1c1381eac048b49067b6eb8ff",
+    "v4/tools/finite_research/direct_repair_custody.py": "91e20f06c39ac75a758c6dd53b3e3a18995fcf0894025b0651a7f101d21b696f",
+    "v4/tools/finite_research/direct_shared_apex.py": "83c1880398c572b5ffe758d4c048847f07b29c7c5f46f7e42a671ad1ce4accc4"
+  },
+  "external_artifact_pins": {
+    "outputs/PASSAGE_VERIFY1_OFFLINE_RUN.json": "c6a82f9c6115877dcde9746708ed9c89687a7c2315b8fbcd280b3e98cf42004f",
+    "outputs/PASSAGE_VERIFY1_OFFLINE_INPUT_INVENTORY.json": "ee0f55be58e6e1092798c120e48c10cbc3e6d48649ae8668e9c831c2e77972e9",
+    "outputs/PASSAGE_VERIFY3_OFFLINE_COMPARISON.json": "8bc4aa426c97f75fd553a765757ae246e62c3e88aeab66ee92c82fd4c6152648",
+    "outputs/PASSAGE_VERIFY3_PRODUCTION_COMPARISON.json": "e03fe57bef13186e7829270637ce6e5ebc1eaa2edc82afb7d870df3fd9cdb51b",
+    "outputs/PASSAGE_VERIFY2_PRODUCTION_STOP_COMPONENT_REVIEW.json": "1046baed1dd319c0dbfd5526c83375f802d343ff67178d895852ea4ff4bc37d3",
+    "outputs/PASSAGE_VERIFY1_APEX_COMPARISON_PLAN.json": "af2d496fb398272a7853ad1b2640bb0f10b976697d6656aecb9cbc13e10e8b8b",
+    "outputs/PASSAGE_VERIFY1_AUDIT_COMPARISON.json": "e317230d394b1a2bf2ebcf173c994598601258dcf729fc3b5e3a46f74d2a83f1",
+    "outputs/PASSAGE_VERIFY2_PRODUCTION_COMPARISON.json": "7a5ac334be5c58ae31370a9e91e356944fc1bc46c0641db9e3080295150c999a"
+  },
+  "raw_artifact_pins": {
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_offline_01\\AUDIT_RESULT.json": "aee0363fa52a8f7c9397c52bb02c9a55d3d480ed252c1da16b87cb3909297300",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_offline_01\\VERIFIER_SOURCES.json": "f1513e54ad3ea707acd60efb12cfaf51f53cd92ebd9990d062ac81e49b6113a2",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_offline_01\\replay\\JOINED_PROOF_RESULT.json": "b289e8fc9eed00ebb483cb3fb0592a9544e42af5c6b1ae36d7cee28d2848015c",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_production_01\\VERIFICATION.json": "9e25eb2085cba8092f2d347ec8fa18682e0e5ab47dcadba2b40327cc9d037340",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_production_01\\background\\SHARED_APEX_REPAIR.json": "ce26476b78ce64254e92d68db385bf415a693fbaf67767495d08145bdc2d4344",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_production_01\\background\\conditioning\\CONDITIONING.json": "10e96a3bf4692e0a0327d72813228db2de498a2e18479c4ec07040b29d21c7c9"
+  },
+  "limitations": [
+    "Production remains production_accepted/audit_not_run in its unchanged producer bundle; separate offline output records audit_passed. Do not rewrite production receipt to claim an in-run cold audit.",
+    "Original V1/V2 external failures remain failed and preserved; separately authorized V3 read-only comparison passed under explicit scientific-input binding and narrow scratch normalization.",
+    "Repair retains UNQUALIFIED classification and no global exact-Q population claim. Engineering proof contract passed; no CFD/continuous geometry/hard200um/unseen-shape qualification.",
+    "Sphere/blend/passage form a three-case retained qualification matrix only; robustness proposal remains NOT RUN.",
+    "One audit/production/offline sequence per case; no repeated/general performance claim. All nested stage times must not be summed as independent durations."
+  ]
+}

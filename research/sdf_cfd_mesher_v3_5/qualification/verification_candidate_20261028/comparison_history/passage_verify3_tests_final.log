@@ -1,0 +1,34 @@
+test_apex_star_record_tampering (__main__.ContractTests.test_apex_star_record_tampering) ... ok
+test_array_tampering (__main__.ContractTests.test_array_tampering) ... ok
+test_baseline_closure_tampering (__main__.ContractTests.test_baseline_closure_tampering) ... ok
+test_case_profile_strict (__main__.ContractTests.test_case_profile_strict) ... ok
+test_coherent_native_ancestry_permutation (__main__.ContractTests.test_coherent_native_ancestry_permutation) ... ok
+test_coherent_upstream_replacement (__main__.ContractTests.test_coherent_upstream_replacement) ... ok
+test_comparison_lifetime (__main__.ContractTests.test_comparison_lifetime) ... ok
+test_completion_closure_tampering (__main__.ContractTests.test_completion_closure_tampering) ... ok
+test_duplicate_json (__main__.ContractTests.test_duplicate_json) ... ok
+test_expected_roots (__main__.ContractTests.test_expected_roots) ... ok
+test_named_measurements_only (__main__.ContractTests.test_named_measurements_only) ... ok
+test_native_boundary_duplicate (__main__.ContractTests.test_native_boundary_duplicate) ... ok
+test_native_metadata_tampering (__main__.ContractTests.test_native_metadata_tampering) ... ok
+test_native_neighbour_tampering (__main__.ContractTests.test_native_neighbour_tampering) ... ok
+test_native_owner_tampering (__main__.ContractTests.test_native_owner_tampering) ... ok
+test_nested_quality_identity_preserved (__main__.ContractTests.test_nested_quality_identity_preserved) ... ok
+test_parent_chain_tampering (__main__.ContractTests.test_parent_chain_tampering) ... ok
+test_provenance_tampering (__main__.ContractTests.test_provenance_tampering) ... ok
+test_raw_population_and_length (__main__.ContractTests.test_raw_population_and_length) ... ok
+test_saved_pair (__main__.ContractTests.test_saved_pair) ... ok
+test_shell_current_source_policy (__main__.ContractTests.test_shell_current_source_policy) ... ok
+test_source_mapping (__main__.ContractTests.test_source_mapping) ... ok
+test_trajectory_tampering (__main__.ContractTests.test_trajectory_tampering) ... ok
+test_independently_pinned_files (__main__.NativeInputTests.test_independently_pinned_files) ... ok
+test_metric_decoder_tampering (__main__.NativeInputTests.test_metric_decoder_tampering) ... ok
+test_native_receipt_and_dependency_tampering (__main__.NativeInputTests.test_native_receipt_and_dependency_tampering) ... ok
+test_scratch_diff_identical_science (__main__.NativeInputTests.test_scratch_diff_identical_science) ... ok
+test_scratch_type_and_scope (__main__.NativeInputTests.test_scratch_type_and_scope) ... ok
+test_written_metric_policy (__main__.NativeInputTests.test_written_metric_policy) ... ok
+
+----------------------------------------------------------------------
+Ran 29 tests in 70.674s
+
+OK

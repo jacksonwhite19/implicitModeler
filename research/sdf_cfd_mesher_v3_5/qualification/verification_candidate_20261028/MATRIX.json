@@ -1,0 +1,41 @@
+[
+  {
+    "fixture": "Sphere",
+    "carrier": "adaptive",
+    "points": 14798,
+    "prisms": 12780,
+    "tetrahedra": 40448,
+    "seconds": {
+      "audit": 524.4859392996877,
+      "production": 436.5744423996657,
+      "offline": 87.8106174999848
+    },
+    "unchanged_production_files": 374
+  },
+  {
+    "fixture": "Thick blend",
+    "carrier": "adaptive",
+    "points": 38868,
+    "prisms": 46570,
+    "tetrahedra": 72871,
+    "seconds": {
+      "audit": 2850.049144699704,
+      "production": 2637.3637366001494,
+      "offline": 229.90300730010495
+    },
+    "unchanged_production_files": 548
+  },
+  {
+    "fixture": "Passage",
+    "carrier": "nodal",
+    "points": 207705,
+    "prisms": 298660,
+    "tetrahedra": 247804,
+    "seconds": {
+      "audit": 6998.994109699968,
+      "production": 6124.915444999933,
+      "offline": 1029.5494609000161
+    },
+    "unchanged_production_files": 372
+  }
+]

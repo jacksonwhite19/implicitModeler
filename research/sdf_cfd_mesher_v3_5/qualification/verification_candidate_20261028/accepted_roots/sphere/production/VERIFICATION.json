@@ -1,0 +1,183 @@
+{
+  "acceptance_profile": {
+    "identity": "56370ef77a4525ef2209cbdd62df8da7091cd3805238daf0c952e4df444c8d7b",
+    "version": "V35DirectProducerAcceptance/1"
+  },
+  "acceptance_status": "production_accepted",
+  "artifact_fidelity_passed": true,
+  "assurance": "Producer engineering checks and finalization only; separate audit not_run; no CFD or fresh offline source authority",
+  "audit": "not_run",
+  "closure_files": {
+    "closure/SOURCES.json": "f1513e54ad3ea707acd60efb12cfaf51f53cd92ebd9990d062ac81e49b6113a2",
+    "closure/SUPERVISOR.json": "acc683ebc1f60ecfba200d0b937a3e87808692782e0330c60943372c79f1d662"
+  },
+  "closure_records": {
+    "source": {
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\run_logs\\d2745b7f4574.SOURCES.json",
+      "sha256": "f1513e54ad3ea707acd60efb12cfaf51f53cd92ebd9990d062ac81e49b6113a2"
+    },
+    "supervisor": {
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\run_logs\\d2745b7f4574.json",
+      "sha256": "acc683ebc1f60ecfba200d0b937a3e87808692782e0330c60943372c79f1d662"
+    }
+  },
+  "completion_files": {
+    "CASE.json": "3228c801cb16d70a395fab894def3c813402b5b023ab9543a2e5d2f6ec303b96",
+    "RESULT.json": "a39632abf1fabedbd207fd4badf143cf66313234c229d4f5fa50d56c056d5e42",
+    "background/RESULT.json": "aa2dea1ccef655db02334756421de76f92f174f32a039f01e018f3a7b8a303b8"
+  },
+  "execution_record": {
+    "checks": {
+      "artifact_binding": {
+        "scope": "Checked-state equality and held serialized/native roots",
+        "status": "derived"
+      },
+      "boundary_collision": {
+        "geometry_identity": "1ecef1a0a2eb3f28855e4cb20083980dd2cc987ee4a7e1ba07d1cc0c3c7d4b4e",
+        "receipt": {
+          "identity": "045856d6844ad97d17d7b76ee0b2b8074def804d368a9be5aa9b7838c7f1c07e",
+          "sha256": "578b9c52a861ba3f6ace194fe91368f8ebfab13b9eaf018f854e392f93ab4e8b"
+        },
+        "scope": "Native classifications and fresh coverage; persisted certified witnesses read back in producer",
+        "status": "recomputed"
+      },
+      "collision": {
+        "geometry_identity": "1ecef1a0a2eb3f28855e4cb20083980dd2cc987ee4a7e1ba07d1cc0c3c7d4b4e",
+        "receipt": {
+          "identity": "05dc55babe68de7ebad68b947a579ba50179d4428dcdd1ca71b483ec2faa37eb",
+          "sha256": "db15058a8de4d702cc69567e54e56c0515f92c43e1a9532358a7f6749ccb9671"
+        },
+        "scope": "Native classifications and fresh coverage; persisted certified witnesses read back in producer",
+        "status": "recomputed"
+      },
+      "domain": {
+        "geometry_identity": "1ecef1a0a2eb3f28855e4cb20083980dd2cc987ee4a7e1ba07d1cc0c3c7d4b4e",
+        "receipt": {
+          "identity": "7acebfc72c9aa2ceb34f1958b7029e4f6b6163f9f5b16b16980dbb313cf8ebf9",
+          "sha256": "2569fbde4f991d210d2e10ca21ecc76f5b75a08af275d4ca504cd219edcf5fde"
+        },
+        "status": "recomputed"
+      },
+      "enclosure": {
+        "geometry_identity": "1ecef1a0a2eb3f28855e4cb20083980dd2cc987ee4a7e1ba07d1cc0c3c7d4b4e",
+        "receipt": {
+          "identity": "e0b336c9026cd2435f7879240e59cc3c42c21d6665210204c7e7df5ef4708320",
+          "sha256": "98c0244b36f264d4c670bc7c9224bbdd645794a5be4dc257c56450dc34b1a8b5"
+        },
+        "status": "recomputed"
+      },
+      "filling": {
+        "geometry_identity": "1ecef1a0a2eb3f28855e4cb20083980dd2cc987ee4a7e1ba07d1cc0c3c7d4b4e",
+        "receipt": {
+          "identity": "f534832e6ed2cea9903cd7de2cd0fd6a290664fd73972a1117430c2e2f39fc41",
+          "sha256": "80efcf1883afa8b19527b7e5e5b59c110918749ede94fb32fa834222253ae442"
+        },
+        "status": "recomputed"
+      },
+      "incidence": {
+        "geometry_identity": "1ecef1a0a2eb3f28855e4cb20083980dd2cc987ee4a7e1ba07d1cc0c3c7d4b4e",
+        "receipt": {
+          "identity": "d15b63ed8a64c4f024ef345aa07e01b08e943fe08272742d13e0438e46d0bea5",
+          "sha256": "71a5e8642fb18827d8594cb2e9b402fd358808b091957d56f898cc99753427e4"
+        },
+        "status": "recomputed"
+      },
+      "interface_qa": {
+        "geometry_identity": "1ecef1a0a2eb3f28855e4cb20083980dd2cc987ee4a7e1ba07d1cc0c3c7d4b4e",
+        "receipt": {
+          "identity": "f6117d8f9b1fcf7d2fbd15143f2f942e921d62ff8e92e650ba34dd14f0b63f46",
+          "sha256": "b9e78618ca86a4ac732aa9d80bca1b3a1164130a2de1a2649120ba7611dd5d5e"
+        },
+        "status": "recomputed"
+      },
+      "joined_qa": {
+        "geometry_identity": "1ecef1a0a2eb3f28855e4cb20083980dd2cc987ee4a7e1ba07d1cc0c3c7d4b4e",
+        "receipt": {
+          "identity": "f6a823aa59c07c58fcf8fbcd6a200f85d3bf1c48fb98aeab5446701c2fe70b2c",
+          "sha256": "0b0a75061761fe7ecc40340aabef45862e5ea3c2d52f9e716068cff3ad5e5386"
+        },
+        "status": "recomputed"
+      },
+      "native_export": {
+        "scope": "Actual conversion, exact correspondence and checkMesh",
+        "status": "recomputed"
+      },
+      "physical_qa": {
+        "geometry_identity": "1ecef1a0a2eb3f28855e4cb20083980dd2cc987ee4a7e1ba07d1cc0c3c7d4b4e",
+        "receipt": {
+          "identity": "bf38d7a11f49e1cd427e6c15f5f9bf4910c0f34d897b5d469be0916ba19c6832",
+          "sha256": "6eb65cc49ef314755197108a5287788bf12b1a59d67321a198798278c71052d9"
+        },
+        "status": "recomputed"
+      },
+      "preservation": {
+        "geometry_identity": "1ecef1a0a2eb3f28855e4cb20083980dd2cc987ee4a7e1ba07d1cc0c3c7d4b4e",
+        "receipt": {
+          "identity": "b12d33f13b036a27009ace9eaf2fd3cda916f1e494dc3c2c4d924dd1fb4c8f8c",
+          "sha256": "13c0081a4681085a1fe885b5577dbfd0d14e101fcbadfbfebc506813f793131e"
+        },
+        "scope": "Earlier within-run inherited join result, bound at checkpoint",
+        "status": "reused_with_binding"
+      },
+      "separate_semantic_replay": {
+        "reason": "Explicit production profile omits only separate full semantic replay",
+        "status": "not_run"
+      },
+      "surfaces": {
+        "geometry_identity": "1ecef1a0a2eb3f28855e4cb20083980dd2cc987ee4a7e1ba07d1cc0c3c7d4b4e",
+        "receipt": {
+          "identity": "cb77d139f0133c52f88223af1e30338b4b0821a4184b58f403089c337c7a509e",
+          "sha256": "c7ca04fde12f73c511dff2021d717694eacfc598883fde3d9de1a3b0fb86bded"
+        },
+        "status": "recomputed"
+      },
+      "winding": {
+        "geometry_identity": "1ecef1a0a2eb3f28855e4cb20083980dd2cc987ee4a7e1ba07d1cc0c3c7d4b4e",
+        "receipt": {
+          "identity": "3a206e4da55cb4ffe5f850a1ad559f5caa049cbb147fb3880e26c42be1cf3fb7",
+          "sha256": "6ce34cbb2957a997d7eaf9123ff68abe1e710cd3fd67317941e119f71e5ccc60"
+        },
+        "status": "recomputed"
+      }
+    },
+    "selection": {
+      "background_identity": "11c1b1a36125a20707239a581bdaffca6a7b87bf694b2d1c22cf2d5eaba64260",
+      "effective": "production",
+      "mode": "production",
+      "origin": "explicit_cli",
+      "profile": {
+        "identity": "56370ef77a4525ef2209cbdd62df8da7091cd3805238daf0c952e4df444c8d7b",
+        "version": "V35DirectProducerAcceptance/1"
+      },
+      "requested": "production",
+      "schema": "V35VerificationSelection/1",
+      "stop_after": "complete"
+    }
+  },
+  "finalization": {
+    "acceptance_profile": {
+      "identity": "56370ef77a4525ef2209cbdd62df8da7091cd3805238daf0c952e4df444c8d7b",
+      "version": "V35DirectProducerAcceptance/1"
+    },
+    "finalization_sha256": "b29205a287113fc7ca97e7f2749564f658d2a5f506696e21f358f14e2495495f",
+    "geometry_identity": "1ecef1a0a2eb3f28855e4cb20083980dd2cc987ee4a7e1ba07d1cc0c3c7d4b4e",
+    "manifest_sha256": "1cad78e5fa24594420e21122547947bbf37875e92dcbd92addeb4c2afa088943",
+    "schema": "V35ProductionArtifactFinalization/1",
+    "verification_policy": "production"
+  },
+  "geometry_complete": true,
+  "handoff_sha256": "440ca42a8abbc4c9d69cadafe925bc2a7b84e25e32c47e01b30dbdd6994bb746",
+  "independent_audit_status": "not_run",
+  "independent_semantic_replay": "not_run",
+  "producer_artifact_binding": "passed",
+  "producer_checks_passed": true,
+  "producer_implementation_identity": "8e428c2a5e7bee83dc71c70660c40cbd1452f08ad99674ed5e4755456768c518",
+  "production_bypass": false,
+  "schema": "V35ProductionVerificationManifest/1",
+  "source_custody": "closed_passed",
+  "source_identity": "8e428c2a5e7bee83dc71c70660c40cbd1452f08ad99674ed5e4755456768c518",
+  "status": "production_accepted",
+  "supervisor_stop_reason": null,
+  "verification_policy": "production",
+  "worker_exit_code": 0
+}

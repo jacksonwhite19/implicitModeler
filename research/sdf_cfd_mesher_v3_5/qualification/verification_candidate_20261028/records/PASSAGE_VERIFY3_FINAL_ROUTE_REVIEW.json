@@ -1,0 +1,116 @@
+{
+  "schema": "PassageVerify3FinalRouteReview/1",
+  "passed": true,
+  "classification": "PASS_CLOSED_FIXED_FIXTURE_VERIFICATION_ROUTE",
+  "blockers": [],
+  "comparison_sha256": "8bc4aa426c97f75fd553a765757ae246e62c3e88aeab66ee92c82fd4c6152648",
+  "verification_sha256": "9e25eb2085cba8092f2d347ec8fa18682e0e5ab47dcadba2b40327cc9d037340",
+  "evidencepins": {
+    "outputs/PASSAGE_VERIFY1_PREFLIGHT.json": "a25380f5e1362fb24a890590c1df8e32bf75577c4995f0657f87ce5ef86d5228",
+    "outputs/PASSAGE_VERIFY1_SOURCE_BEHAVIOR.json": "813aff724992b71bfcebc2dc3260084bf56a584eaf533c6f75378ab694636454",
+    "outputs/PASSAGE_VERIFY1_AUDIT_RUN.json": "373bff1d75c472c598709bc6e6dd853627e6d076d4c389901da560c79e1125d5",
+    "outputs/PASSAGE_VERIFY1_PRODUCTION_RUN.json": "74ac843740ab3d021cb6396abd3acecfd8031e172a7b2fd704b0d0895ade31f1",
+    "outputs/PASSAGE_VERIFY1_OFFLINE_RUN.json": "c6a82f9c6115877dcde9746708ed9c89687a7c2315b8fbcd280b3e98cf42004f",
+    "outputs/PASSAGE_VERIFY1_OFFLINE_INPUT_INVENTORY.json": "ee0f55be58e6e1092798c120e48c10cbc3e6d48649ae8668e9c831c2e77972e9",
+    "outputs/PASSAGE_VERIFY1_AUDIT_COMPARISON.json": "e317230d394b1a2bf2ebcf173c994598601258dcf729fc3b5e3a46f74d2a83f1",
+    "outputs/PASSAGE_VERIFY2_AUDIT_COMPARISON.json": "baaed2628b51a88364b6a47de0a5da128b04bcd115dd0a41eb743442e52de518",
+    "outputs/PASSAGE_VERIFY2_PRODUCTION_COMPARISON.json": "7a5ac334be5c58ae31370a9e91e356944fc1bc46c0641db9e3080295150c999a",
+    "outputs/PASSAGE_VERIFY3_PRODUCTION_COMPARISON.json": "e03fe57bef13186e7829270637ce6e5ebc1eaa2edc82afb7d870df3fd9cdb51b",
+    "outputs/PASSAGE_VERIFY3_PRODUCTION_RESULT_REVIEW.json": "b58f58b04269ac97ec34a95c85b5f41a31109c7a1d97109e992dfbb6416f7994",
+    "outputs/PASSAGE_VERIFY3_OFFLINE_COMPARISON.json": "8bc4aa426c97f75fd553a765757ae246e62c3e88aeab66ee92c82fd4c6152648",
+    "outputs/PASSAGE_VERIFY3_IMPLEMENTATION_REVIEW_V2.json": "5d7382c008a1462d241c676e51eedca1cc906b10dab892cfc391b91891cf7d93",
+    "outputs/PASSAGE_VERIFY3_RETIREMENT.json": "8aa5485f28aac7cb7ebb96a9e84979ae26a04e2d1994e0031bbaea28998d233f",
+    "outputs/PASSAGE_VERIFY3_PRESERVATION.json": "311021081c453a5023899c3fdf2d6298b870e46894e3502415c95ae4dc6e22e0",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_production_01\\VERIFICATION.json": "9e25eb2085cba8092f2d347ec8fa18682e0e5ab47dcadba2b40327cc9d037340",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_offline_01\\AUDIT_RESULT.json": "aee0363fa52a8f7c9397c52bb02c9a55d3d480ed252c1da16b87cb3909297300",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_offline_01\\VERIFIER_SOURCES.json": "f1513e54ad3ea707acd60efb12cfaf51f53cd92ebd9990d062ac81e49b6113a2",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_offline_01\\replay\\JOINED_PROOF_RESULT.json": "b289e8fc9eed00ebb483cb3fb0592a9544e42af5c6b1ae36d7cee28d2848015c",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_offline_01\\replay\\BOUNDARY_COLLISION.json": "2dc5d37ee19249250a8efd23b850f9f7bdad612c83382e14c2f2fcac0256ce53",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_offline_01\\replay\\COLLISION.json": "0e487b1b26aab614900fccc5eaee979956628f0d92980111bf81dc0268103236",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_offline_01\\replay\\DOMAIN.json": "ab89e3347cf06d85c7842f9d427823a3ddcf4b1cbad7858575ad57c0691cfad8",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_offline_01\\replay\\ENCLOSURE.json": "232983ec8bea8311cc49cd6c2b8cbffb409015081d360fb47f23b68b3f872666",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_offline_01\\replay\\FILLING.json": "3d04844ba91fc0e55d7f55d30fc0462b1b9e7046714e41f156730751469e3c21",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_offline_01\\replay\\INCIDENCE.json": "a1c199087b926e335d55e6c7a1548b060dd338972a00f41c61dbf08fe63a7596",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_offline_01\\replay\\INTERFACE_QA.json": "4579912412d34c8b57d0fdaa6ee616d03fbc1ab82f6533e075df5d85d7609e90",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_offline_01\\replay\\JOINED_QA.json": "cc437f5d3c22ed7800ad16fd63a5fb1b4fa7051e7380ea3b577c6c341fe193cd",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_offline_01\\replay\\PHYSICAL_QA.json": "7189511531963c8bf49b84dd803d5b5a2c55d4669c8e38e48c5973a899bda34c",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_offline_01\\replay\\PRESERVATION.json": "0eb0cd57d7a14cc5aa59689b3134a9feee0b0ffed98ab8880f8f9608b8b1ae88",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_offline_01\\replay\\SURFACES.json": "b7ea5d7d3b482cf0a608d85a491876ae2060026bb2c5e4f287d958b389a8d8a5",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_offline_01\\replay\\WINDING.json": "494a4abaaf54aa12581f4ebafb6ebead3f325967a95df8c201ea4d0a39e72684"
+  },
+  "sourcepins": {
+    "work/passage_verify3_auth.py": "906d9b3909c7e8dcf51f0dcd619216280ea2a88eeeea1b33320ee273b45c3872",
+    "work/passage_verify3_compare.py": "f65ed2469ad2950f5c292f6060eabe72aa3235a09f0054810ae16fb8bda95a67",
+    "work/passage_verify3_offline_run.py": "9dea55d6553d75cecc7a2f2e5d391739cfdba6ba1a0fac45ac7c6706636ae0af",
+    "work/passage_verify3_offline_close.py": "600614a226d27d82849e56786f6d034711fbd6ec92bc164e5485a2bb4acffbda",
+    "work/test_passage_verify3_auth.py": "b49db30e9e9a8607aaf1b3afb2ae2f2943ce5741e0657aa998814c732d05f676",
+    "work/passage_verify3_tests_final.log": "e3af2cc97d58df94bd0174e6e79fda1f4f7d5f4202ce2137cbb9677a7c2da7b4"
+  },
+  "facts": {
+    "offline_attempt": 1,
+    "offline_exit_code": 0,
+    "offline_wall_seconds": 1029.5494609000161,
+    "production_input_files_independently_rehashed": 372,
+    "whole_population_sizes_and_hashes_unchanged": true,
+    "actual_replay_receipts_independently_hash_identity_checked": 12,
+    "current_verifier_files_independently_hashed_against_closed_record": 1873,
+    "verifier_identity": "8e428c2a5e7bee83dc71c70660c40cbd1452f08ad99674ed5e4755456768c518",
+    "production_acceptance": "production_accepted",
+    "production_audit": "not_run",
+    "separate_offline_status": "audit_passed",
+    "fresh_source_authority": false,
+    "retired_linux_owned_scopes": 14,
+    "retired_windows_run_processes": 3,
+    "matrix": {
+      "SPHERE_VERIFY1": {
+        "wall_seconds": {
+          "audit": 524.4859392996877,
+          "production": 436.5744423996657,
+          "offline": 87.8106174999848
+        },
+        "production_plus_offline_seconds": 524.3850598996505
+      },
+      "BLEND_VERIFY1": {
+        "wall_seconds": {
+          "audit": 2850.049144699704,
+          "production": 2637.3637366001494,
+          "offline": 229.90300730010495
+        },
+        "production_plus_offline_seconds": 2867.2667439002544
+      },
+      "PASSAGE_VERIFY1": {
+        "wall_seconds": {
+          "audit": 6998.994109699968,
+          "production": 6124.915444999933,
+          "offline": 1029.5494609000161
+        },
+        "production_plus_offline_seconds": 7154.464905899949
+      }
+    }
+  },
+  "assessment": [
+    "ONE original reserved offline closed and replayed all12 obligations through supported retained semantics, including actual repair/conditioning route, source closure and exact trusted production root.",
+    "Every current production file independently rehashed against372-file prelaunch inventory; no additions/removals/size/hash changes. All12 actual proof receipt hashes+canonical identities checked and FILLING exactly matches producer evidence.",
+    "Current1873 verifier files matched closed source custody hashes. No native subprocess scope created offline. Stored generation/construction invocation fields are retained producer provenance, not new replay construction calls.",
+    "V3 production comparison and independent result/implementation pin linkage match; original V1 audit and V2 production refusal byte roots remain unchanged false. No normal reruns or runtime changes inferred.",
+    "Prior sphere/blend and current passage closed audit/production/offline records all have attempt1/exit0/closed and same8e runtime identity. All cumulative comparison statuses pass using correct V2audit/V3production+offline passage names.",
+    "Source-backed offline limitations retained: retained classifications plus fresh coverage/predicates, actual in-process native work possible, no new live acceptance/source grant/remesh/search/native conversion/checkMesh.",
+    "Passage combined7154.464906s exceeds audit6998.994110s; observations are single sequential sequences, no causal/repeatable performance or whole-finalizer cost claim.",
+    "Preservation and retirement receipts support frozen1866files in both copies,78 unrelated hashes and14Linux/3Windows retirement.",
+    "Report builder previously reviewed statically; actual report has not yet been generated or approved by this route review."
+  ],
+  "limits": [
+    "Qualification is bounded to three accepted fixed fixture/carrier/settings on configured host; no arbitrary geometry/carrier/settings, portability, continuous-fluid, global exact-Q or CFD/yplus accuracy qualification.",
+    "Producer acceptance and separate retained audit are distinct; offline does not rewrite production auditnot_run.",
+    "Own stored roots authenticate retained evidence; no ephemeral token reconstruction or authority transfer. Exact historical scratch3byte contributor remains unretained.",
+    "All scientific limits/quality distribution misses and blend compression/nonorthogonality must remain visible in actual report.",
+    "No promotion/package replacement/push/new campaign is approved. Final generated report/docdiff and docs-only closure require independent review.",
+    "Reviewer used saved source/JSON/hash data only; no runtime imports/comparator/test/scientific/native/source-query execution."
+  ],
+  "execution": {
+    "read_only": true,
+    "scientific_execution": false,
+    "report_generated": false,
+    "source_edits": false
+  }
+}

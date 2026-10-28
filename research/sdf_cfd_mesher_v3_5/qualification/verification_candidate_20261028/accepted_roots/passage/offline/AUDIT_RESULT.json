@@ -1,0 +1,28 @@
+{
+  "CFD_qualified": false,
+  "fresh_source_authority": false,
+  "passed": true,
+  "producer_source_identity": "8e428c2a5e7bee83dc71c70660c40cbd1452f08ad99674ed5e4755456768c518",
+  "remeshed": false,
+  "replay": {
+    "CFD_qualified": false,
+    "actual_shape_populations_recomputed": true,
+    "all_twelve_semantically_replayed": true,
+    "conditioning_replayed": true,
+    "geometry_identity": "f3801110ee2cad1abbca025ef56cc10ae11ad4de8ee4bd4ac0c70d4ee84b02d5",
+    "manifest_sha256": "0d15888281c75373db34d94973158d5c0dced2bf7fee80610e3251b186a21578",
+    "passed": true,
+    "points": 207705,
+    "prisms": 298660,
+    "proofs": 12,
+    "repair_replayed": true,
+    "schema": "V35ProductionEvidenceSemanticReplay/1",
+    "tetrahedra": 247804
+  },
+  "schema": "V35RetainedDirectAudit/1",
+  "search_rerun": false,
+  "seconds": 1029.1089999997057,
+  "source_bundle_root": "9e25eb2085cba8092f2d347ec8fa18682e0e5ab47dcadba2b40327cc9d037340",
+  "status": "audit_passed",
+  "verifier_identity": "8e428c2a5e7bee83dc71c70660c40cbd1452f08ad99674ed5e4755456768c518"
+}

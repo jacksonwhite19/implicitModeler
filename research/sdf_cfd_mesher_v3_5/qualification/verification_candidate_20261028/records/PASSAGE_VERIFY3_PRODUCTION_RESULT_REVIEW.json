@@ -1,0 +1,68 @@
+{
+  "schema": "PassageVerify3ProductionResultReview/1",
+  "passed": true,
+  "blockers": [],
+  "comparison_sha256": "e03fe57bef13186e7829270637ce6e5ebc1eaa2edc82afb7d870df3fd9cdb51b",
+  "verification_sha256": "9e25eb2085cba8092f2d347ec8fa18682e0e5ab47dcadba2b40327cc9d037340",
+  "reviewed_implementation_sha256": "5d7382c008a1462d241c676e51eedca1cc906b10dab892cfc391b91891cf7d93",
+  "evidencepins": {
+    "outputs\\PASSAGE_VERIFY3_PRODUCTION_COMPARISON.json": "e03fe57bef13186e7829270637ce6e5ebc1eaa2edc82afb7d870df3fd9cdb51b",
+    "outputs\\PASSAGE_VERIFY3_PRODUCTION_COMPARISON_ATTEMPT.json": "48042224e848f80597a6c3ca3c2c9c15b52bd1884e4eb6bb4285ae3b530a35a6",
+    "outputs\\PASSAGE_VERIFY3_IMPLEMENTATION_REVIEW_V2.json": "5d7382c008a1462d241c676e51eedca1cc906b10dab892cfc391b91891cf7d93",
+    "outputs\\PASSAGE_VERIFY3_COMPONENT_IMPLEMENTATION_REVIEW_V2.json": "dc0abc5939672e5c7653819045a5b695108b1773effbbb98e658a77de3211cc7",
+    "outputs\\PASSAGE_VERIFY3_NATIVE_INPUT_BINDING_PLAN_REVIEW.json": "d70e31cd39f24af291e3a7cc099b4c869037542a7b5ce63882d1e28e987bc2dc",
+    "outputs\\PASSAGE_VERIFY3_SEMANTIC_INVENTORY_REVIEW.json": "6616ac7613c4fca86e64628d86d16be90b12f72e7df8474feaa7458ff388dc5b",
+    "outputs\\PASSAGE_VERIFY2_PRODUCTION_STOP_COMPONENT_REVIEW.json": "1046baed1dd319c0dbfd5526c83375f802d343ff67178d895852ea4ff4bc37d3",
+    "outputs\\PASSAGE_VERIFY2_PRODUCTION_COMPARISON.json": "7a5ac334be5c58ae31370a9e91e356944fc1bc46c0641db9e3080295150c999a",
+    "outputs\\PASSAGE_VERIFY1_AUDIT_COMPARISON.json": "e317230d394b1a2bf2ebcf173c994598601258dcf729fc3b5e3a46f74d2a83f1",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_production_01\\VERIFICATION.json": "9e25eb2085cba8092f2d347ec8fa18682e0e5ab47dcadba2b40327cc9d037340",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_production_01\\RESULT.json": "19fb7828d4861f3f49c7302a2b0f4f0b44d8b366c9dcc66fb48fb9d0020e0697",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_production_01\\background\\MANIFEST.json": "0d15888281c75373db34d94973158d5c0dced2bf7fee80610e3251b186a21578",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\run_logs\\b8b17fa5fd09.SOURCES.json": "f1513e54ad3ea707acd60efb12cfaf51f53cd92ebd9990d062ac81e49b6113a2",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\run_logs\\b8b17fa5fd09.json": "19e8bec447f488a3c01442106a8ade2cee19ecf0beed65781a63d40ed9c32cb0",
+    "work\\passage_verify3_auth.py": "906d9b3909c7e8dcf51f0dcd619216280ea2a88eeeea1b33320ee273b45c3872",
+    "work\\passage_verify3_compare.py": "f65ed2469ad2950f5c292f6060eabe72aa3235a09f0054810ae16fb8bda95a67",
+    "work\\passage_verify3_tests_final.log": "e3af2cc97d58df94bd0174e6e79fda1f4f7d5f4202ce2137cbb9677a7c2da7b4"
+  },
+  "scope": "Actual single V3 retained production comparison prerequisite review only; no original audit/production rerun and no offline acceptance claimed.",
+  "facts": {
+    "actual_comparison_attempt": 1,
+    "actual_comparison_exit_code": 0,
+    "scientific_surface_files_pinned": 6,
+    "native_raw_payloads_exact_audit_frozen": 88,
+    "complete_arrays": 5,
+    "plan_arrays": 8,
+    "producer_receipts": 12,
+    "actual_moved_vertices": [
+      207427,
+      207565
+    ],
+    "protected_coordinate_rows_unchanged": 181034,
+    "connectivity_unchanged": true,
+    "full_two_star_records_exact": true,
+    "written_metric_policy_exact_except_own_authenticated_CASE_identity": true,
+    "scratch_storage_aggregate": {
+      "production": 9321048,
+      "audit": 9321051,
+      "frozen": 9321051
+    },
+    "source_runtime": "8e428c2a5e7bee83dc71c70660c40cbd1452f08ad99674ed5e4755456768c518",
+    "source_files": 1873,
+    "counts": {
+      "points": 207705,
+      "prisms": 298660,
+      "tets": 247804
+    },
+    "warnings": [],
+    "production_acceptance": "production_accepted",
+    "production_audit": "not_run",
+    "offline_started": false
+  },
+  "qualification": "V3 narrow external correction successfully compares unchanged stored production/audit/frozen evidence. Scientific inputs/physical/star/policy gates retained; previous V1 and V2 failure artifacts remain failed and immutable. Releases only the authorized ONE offline attempt subject to its reviewed wrapper gates.",
+  "limits": [
+    "Scratch aggregate is all direct files at native launch, not metric.bin bytes. Exact contributors to historical three-byte delta not retained; no invented attribution.",
+    "29 focused tests observed in one final suite70.674s from saved log; reviewer ran no tests/comparer/predicates/source queries/imports/native/meshing.",
+    "Own trusted saved roots authenticate provenance; ephemeral token preimage not reconstructed and no live authority transferred.",
+    "One fixed configured-host passage comparison; no arbitrary-shape or statistical speedup claim; actual offline outcome remains pending."
+  ]
+}

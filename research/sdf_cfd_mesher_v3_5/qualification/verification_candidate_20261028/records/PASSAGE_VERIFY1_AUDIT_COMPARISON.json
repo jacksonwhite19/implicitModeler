@@ -1,0 +1,76 @@
+{
+  "mode": "audit",
+  "passed": false,
+  "run": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_audit_01",
+  "baseline": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_nodal5_complete_01",
+  "frozen_arrays": {
+    "points": {
+      "dtype": "<f8",
+      "shape": [
+        207705,
+        3
+      ],
+      "sha256": "6c479004c720da74bcd9adfb25d13dd81c7a769c1f3f60f3edd5949da6255a91",
+      "dtype_equal": true,
+      "shape_equal": true,
+      "byte_equal": true
+    },
+    "prisms": {
+      "dtype": "<i8",
+      "shape": [
+        298660,
+        6
+      ],
+      "sha256": "86838cc2f42bac53ba13f712a21df626afb59819ed709c70567f0128c759ead6",
+      "dtype_equal": true,
+      "shape_equal": true,
+      "byte_equal": true
+    },
+    "tetrahedra": {
+      "dtype": "<i8",
+      "shape": [
+        247804,
+        4
+      ],
+      "sha256": "68fb97d47239bf295a35fbe500095759dd7b95ce7b7ec62a293e746a91bc06db",
+      "dtype_equal": true,
+      "shape_equal": true,
+      "byte_equal": true
+    },
+    "wall": {
+      "dtype": "<i8",
+      "shape": [
+        59732,
+        3
+      ],
+      "sha256": "d5a0099deb972ef1be47096c7612d6d97bf0619132b66ba60568c7185add0475",
+      "dtype_equal": true,
+      "shape_equal": true,
+      "byte_equal": true
+    },
+    "farfield": {
+      "dtype": "<i8",
+      "shape": [
+        3672,
+        3
+      ],
+      "sha256": "8b528400500a8e909d99c7e65653abcb0720c18808370a36a07fcd16fea91aef",
+      "dtype_equal": true,
+      "shape_equal": true,
+      "byte_equal": true
+    }
+  },
+  "frozen_plan_arrays": {
+    "delta.npy": true,
+    "faces.npy": true,
+    "first_front.npy": true,
+    "increments.npy": true,
+    "later_vectors.npy": true,
+    "positions.npy": true,
+    "source_normals.npy": true,
+    "wall.npy": true
+  },
+  "error": "AssertionError('SubstantiveConditioningStateDiffers')",
+  "traceback": "Traceback (most recent call last):\n  File \"C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\passage_verify1_compare.py\", line 146, in <module>\n    report['apex_state_vs_frozen']=apex_state(folder,baseline)\n                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\passage_verify1_compare.py\", line 60, in apex_state\n    assert conditioning[0]==conditioning[1],'SubstantiveConditioningStateDiffers'\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: SubstantiveConditioningStateDiffers\n",
+  "production_and_offline_must_not_start": true
+}

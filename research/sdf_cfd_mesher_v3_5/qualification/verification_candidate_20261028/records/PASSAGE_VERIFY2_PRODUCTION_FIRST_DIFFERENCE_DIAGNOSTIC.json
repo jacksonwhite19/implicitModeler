@@ -1,0 +1,94 @@
+{
+  "schema": "PassageVerify2ProductionFirstDifferenceDiagnostic/1",
+  "comparison_passed": false,
+  "comparison_sha256": "7a5ac334be5c58ae31370a9e91e356944fc1bc46c0641db9e3080295150c999a",
+  "accepted_production_verification_sha256": "9e25eb2085cba8092f2d347ec8fa18682e0e5ab47dcadba2b40327cc9d037340",
+  "normalized_generation_differences": [
+    {
+      "path": "/timing/mmgs/measured_input_bytes",
+      "production": 9321048,
+      "audit": 9321051,
+      "frozen": 9321051
+    }
+  ],
+  "source": {
+    "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\v4\\tools\\historical_capsule_surface.py",
+    "sha256": "b3111eca6283187acad317b4fa04d98616413528d9ff84c83137cbac295057af",
+    "meaning": "sum p.stat().st_size for every current direct file in native stage scratch directory; used with free disk bytes before native launch. Not justthemetric.bin native scientific input."
+  },
+  "actual_surface_files": {
+    "metric.bin": {
+      "production": {
+        "sha256": "29e50b25b1f800de5b714b74fd87b4ce964fcf2cf071dde38b65439a736b383b",
+        "bytes": 4132292
+      },
+      "audit": {
+        "sha256": "29e50b25b1f800de5b714b74fd87b4ce964fcf2cf071dde38b65439a736b383b",
+        "bytes": 4132292
+      },
+      "frozen": {
+        "sha256": "29e50b25b1f800de5b714b74fd87b4ce964fcf2cf071dde38b65439a736b383b",
+        "bytes": 4132292
+      }
+    },
+    "SURFACE.npz": {
+      "production": {
+        "sha256": "505b02f69aa21d240e76d2d98300bc980336c6d7096dd336504b466a1c17f81d",
+        "bytes": 2400488
+      },
+      "audit": {
+        "sha256": "505b02f69aa21d240e76d2d98300bc980336c6d7096dd336504b466a1c17f81d",
+        "bytes": 2400488
+      },
+      "frozen": {
+        "sha256": "505b02f69aa21d240e76d2d98300bc980336c6d7096dd336504b466a1c17f81d",
+        "bytes": 2400488
+      }
+    },
+    "QUALITY.npz": {
+      "production": {
+        "sha256": "32f76a41934969101702fa8d09e86a4031f0c20a1c45bc20eded4eb7fc0c2f5a",
+        "bytes": 8921257
+      },
+      "audit": {
+        "sha256": "32f76a41934969101702fa8d09e86a4031f0c20a1c45bc20eded4eb7fc0c2f5a",
+        "bytes": 8921257
+      },
+      "frozen": {
+        "sha256": "32f76a41934969101702fa8d09e86a4031f0c20a1c45bc20eded4eb7fc0c2f5a",
+        "bytes": 8921257
+      }
+    },
+    "REFERENCES.npz": {
+      "production": {
+        "sha256": "64a4503ca2d5e668835cb4092c7126f5f9dcbfd7e26191b63ccd4864fce831e9",
+        "bytes": 1361
+      },
+      "audit": {
+        "sha256": "64a4503ca2d5e668835cb4092c7126f5f9dcbfd7e26191b63ccd4864fce831e9",
+        "bytes": 1361
+      },
+      "frozen": {
+        "sha256": "64a4503ca2d5e668835cb4092c7126f5f9dcbfd7e26191b63ccd4864fce831e9",
+        "bytes": 1361
+      }
+    },
+    "raw.mesh": {
+      "production": {
+        "sha256": "68a115c386369ebe3fed82ddf3c0bbd2d259bc43ee84cfdb10d6b17b2dd1ad54",
+        "bytes": 3044447
+      },
+      "audit": {
+        "sha256": "68a115c386369ebe3fed82ddf3c0bbd2d259bc43ee84cfdb10d6b17b2dd1ad54",
+        "bytes": 3044447
+      },
+      "frozen": {
+        "sha256": "68a115c386369ebe3fed82ddf3c0bbd2d259bc43ee84cfdb10d6b17b2dd1ad54",
+        "bytes": 3044447
+      }
+    }
+  },
+  "offline_started": false,
+  "limit": "Read-only diagnosis only. FailedV2gate remains failed; no normalizationchange or rerun; no offline acceptance.",
+  "recorded_utc": "2026-10-28T06:42:51.280783+00:00"
+}

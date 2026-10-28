@@ -1,0 +1,332 @@
+{
+  "schema": "V35PassageV3NativeInputBindingPlanReview/1",
+  "classification": "PASS_BOUNDED_PURE_IO_DESIGN_WITH_NAMED_PREMISES",
+  "blockers": [],
+  "scope": "Read-only source plus static binary decoding/hash/array comparisons. No project imports/native execution, geometry/source queries, meshing, complete comparator or tests. This is a binding design, not an executed V3 comparison or new scientific acceptance.",
+  "independent_anchor": {
+    "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PASSAGE_VERIFY2_PRODUCTION_STOP_COMPONENT_REVIEW.json",
+    "sha256": "1046baed1dd319c0dbfd5526c83375f802d343ff67178d895852ea4ff4bc37d3",
+    "rule": "Require this exact pre-existing STOP review digest before accepting expected file pins from surface_input_output_pins. Never derive expected pins from arbitrarily current files or overwrite original V1/V2 failed receipts.",
+    "scientific_file_pins": {
+      "metric.bin": {
+        "sha256": "29e50b25b1f800de5b714b74fd87b4ce964fcf2cf071dde38b65439a736b383b",
+        "bytes": 4132292
+      },
+      "raw.mesh": {
+        "sha256": "68a115c386369ebe3fed82ddf3c0bbd2d259bc43ee84cfdb10d6b17b2dd1ad54",
+        "bytes": 3044447
+      },
+      "SURFACE.npz": {
+        "sha256": "505b02f69aa21d240e76d2d98300bc980336c6d7096dd336504b466a1c17f81d",
+        "bytes": 2400488
+      },
+      "QUALITY.npz": {
+        "sha256": "32f76a41934969101702fa8d09e86a4031f0c20a1c45bc20eded4eb7fc0c2f5a",
+        "bytes": 8921257
+      },
+      "REFERENCES.npz": {
+        "sha256": "64a4503ca2d5e668835cb4092c7126f5f9dcbfd7e26191b63ccd4864fce831e9",
+        "bytes": 1361
+      },
+      "INITIAL.npz": {
+        "sha256": "06c9a02646f6b4caecad51554a17eed1881acde3270bbc154fb5109010211a8f",
+        "bytes": 1059024
+      }
+    }
+  },
+  "observed": {
+    "audit": {
+      "root": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_audit_01",
+      "native_header": [
+        37566,
+        75132,
+        0
+      ],
+      "metric_sha256": "29e50b25b1f800de5b714b74fd87b4ce964fcf2cf071dde38b65439a736b383b",
+      "exact_size_bytes": 4132292,
+      "logical_fields": {
+        "xyz": {
+          "dtype": "<f8",
+          "shape": [
+            37566,
+            3
+          ],
+          "sha256": "49b79020c9dac89113453fedc0a4de8ce47aa021bd1a86605b51c5fb7edd9aed"
+        },
+        "ref": {
+          "dtype": "<i4",
+          "shape": [
+            37566
+          ],
+          "sha256": "f14cf2106cd6797d1a59132253ef252037540c317aef61b299f8b04ba0797342"
+        },
+        "corner": {
+          "dtype": "|u1",
+          "shape": [
+            37566
+          ],
+          "sha256": "c8a1d5798dc06be07389a7477ae64838581a8ae5f7675291a22090a484fe5618"
+        },
+        "required": {
+          "dtype": "|u1",
+          "shape": [
+            37566
+          ],
+          "sha256": "c8a1d5798dc06be07389a7477ae64838581a8ae5f7675291a22090a484fe5618"
+        },
+        "metric6": {
+          "dtype": "<f8",
+          "shape": [
+            37566,
+            6
+          ],
+          "sha256": "981f0de3bbcf09a6a8154bbd79fdb1bb4f68d2a05e68923841f2f80f6e6b7df9"
+        }
+      },
+      "triangle_records_sha256": "ac02727e3a79528145a228eb80db805674922d805bb4508c7daa8b40acd3afcc",
+      "INITIAL_coordinate_and_triangle_bits_bound": true,
+      "vertex_refs": [
+        1
+      ],
+      "corner_flags": [
+        0
+      ],
+      "required_flags": [
+        0
+      ],
+      "triangle_refs": [
+        1
+      ],
+      "metric_entries_finite": true,
+      "measured_scratch_bytes": 9321051
+    },
+    "production": {
+      "root": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_production_01",
+      "native_header": [
+        37566,
+        75132,
+        0
+      ],
+      "metric_sha256": "29e50b25b1f800de5b714b74fd87b4ce964fcf2cf071dde38b65439a736b383b",
+      "exact_size_bytes": 4132292,
+      "logical_fields": {
+        "xyz": {
+          "dtype": "<f8",
+          "shape": [
+            37566,
+            3
+          ],
+          "sha256": "49b79020c9dac89113453fedc0a4de8ce47aa021bd1a86605b51c5fb7edd9aed"
+        },
+        "ref": {
+          "dtype": "<i4",
+          "shape": [
+            37566
+          ],
+          "sha256": "f14cf2106cd6797d1a59132253ef252037540c317aef61b299f8b04ba0797342"
+        },
+        "corner": {
+          "dtype": "|u1",
+          "shape": [
+            37566
+          ],
+          "sha256": "c8a1d5798dc06be07389a7477ae64838581a8ae5f7675291a22090a484fe5618"
+        },
+        "required": {
+          "dtype": "|u1",
+          "shape": [
+            37566
+          ],
+          "sha256": "c8a1d5798dc06be07389a7477ae64838581a8ae5f7675291a22090a484fe5618"
+        },
+        "metric6": {
+          "dtype": "<f8",
+          "shape": [
+            37566,
+            6
+          ],
+          "sha256": "981f0de3bbcf09a6a8154bbd79fdb1bb4f68d2a05e68923841f2f80f6e6b7df9"
+        }
+      },
+      "triangle_records_sha256": "ac02727e3a79528145a228eb80db805674922d805bb4508c7daa8b40acd3afcc",
+      "INITIAL_coordinate_and_triangle_bits_bound": true,
+      "vertex_refs": [
+        1
+      ],
+      "corner_flags": [
+        0
+      ],
+      "required_flags": [
+        0
+      ],
+      "triangle_refs": [
+        1
+      ],
+      "metric_entries_finite": true,
+      "measured_scratch_bytes": 9321048
+    },
+    "frozen": {
+      "root": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_nodal5_complete_01",
+      "native_header": [
+        37566,
+        75132,
+        0
+      ],
+      "metric_sha256": "29e50b25b1f800de5b714b74fd87b4ce964fcf2cf071dde38b65439a736b383b",
+      "exact_size_bytes": 4132292,
+      "logical_fields": {
+        "xyz": {
+          "dtype": "<f8",
+          "shape": [
+            37566,
+            3
+          ],
+          "sha256": "49b79020c9dac89113453fedc0a4de8ce47aa021bd1a86605b51c5fb7edd9aed"
+        },
+        "ref": {
+          "dtype": "<i4",
+          "shape": [
+            37566
+          ],
+          "sha256": "f14cf2106cd6797d1a59132253ef252037540c317aef61b299f8b04ba0797342"
+        },
+        "corner": {
+          "dtype": "|u1",
+          "shape": [
+            37566
+          ],
+          "sha256": "c8a1d5798dc06be07389a7477ae64838581a8ae5f7675291a22090a484fe5618"
+        },
+        "required": {
+          "dtype": "|u1",
+          "shape": [
+            37566
+          ],
+          "sha256": "c8a1d5798dc06be07389a7477ae64838581a8ae5f7675291a22090a484fe5618"
+        },
+        "metric6": {
+          "dtype": "<f8",
+          "shape": [
+            37566,
+            6
+          ],
+          "sha256": "981f0de3bbcf09a6a8154bbd79fdb1bb4f68d2a05e68923841f2f80f6e6b7df9"
+        }
+      },
+      "triangle_records_sha256": "ac02727e3a79528145a228eb80db805674922d805bb4508c7daa8b40acd3afcc",
+      "INITIAL_coordinate_and_triangle_bits_bound": true,
+      "vertex_refs": [
+        1
+      ],
+      "corner_flags": [
+        0
+      ],
+      "required_flags": [
+        0
+      ],
+      "triangle_refs": [
+        1
+      ],
+      "metric_entries_finite": true,
+      "measured_scratch_bytes": 9321051
+    }
+  },
+  "binary_format": {
+    "magic_hex": "56334d4d47310000",
+    "header": "8-byte exact magic followed by3 little-endian uint64 counts nv,nt,ne; total32bytes.",
+    "vertex_record": "Packed little-endian <ddd i BB dddddd,78bytes, no native struct alignment. Offsets xyz0..23/ref24..27/corner28/required29/metric30..77.",
+    "metric_order": [
+      "M00",
+      "M01",
+      "M02",
+      "M11",
+      "M12",
+      "M22"
+    ],
+    "triangle_record": "<iiii,16bytes: three ONE-based vertex indices, then persistent sheet ref.",
+    "edge_record": "<iiiBB,14bytes: two ONE-based vertex indices, persistent curve ref, ridge byte, required byte.",
+    "required_length": "32+78*nv+16*nt+14*ne, checked before allocations, reject truncation/trailing bytes and count overflow.",
+    "actual_inventory": {
+      "nv": 37566,
+      "nt": 75132,
+      "ne": 0,
+      "bytes": 4132292,
+      "vertex_ref": 1,
+      "face_ref": 1,
+      "corner": 0,
+      "required": 0
+    },
+    "INITIAL_schema": {
+      "coordinates": "<f8[37566,3]",
+      "triangles": "<i8[75132,3]"
+    },
+    "INITIAL_binding": "For explicit nodal/current retained case carrier disabled/NotRun: decoded vertex xyz must byte-equal INITIAL.coordinates; decoded face indices minus1 cast<i8 must byte-equal INITIAL.triangles. General adaptive carriers may change geometry, so this is not a universal INITIAL->metric equality rule.",
+    "raw_mesh": "Text Medit MeshVersionFormatted2,Dimension3; Vertices29866 and Triangles59732, references separate. This is MMGS output before canonicalization/source projection; do not equate raw.mesh point coordinates directly to final SURFACE.npz."
+  },
+  "source_chain": [
+    "surface_execution.write_surface_contract:36-51 -> coupled general_sdf_binding.write_contract:188-193 -> GeneralSdfAuthority.write_contract:959-1038 -> copied runtime generic_v3mmg1_provider.write_contract:50-202. The owned provider serializes tensors and persistent reference flags with struct.pack at158-178.",
+    "general_sdf_authority write path preserves exact source/composition inventory and computes metrics/shape proposals before the stock writer. PureIO cannot independently rederive those tensors from CASE; it can prove reuse of the independently pinned accepted metric input and consistency of saved construction metadata.",
+    "surface_execution:132-142 verifies owned runtime, adapter/library qualification hashes, then invokes env LD_LIBRARY_PATH=<owned lib> <owned runner> <metric.bin> <raw.mesh>. Complete input bytes and actual binary/library identities are the native method binding.",
+    "historical_capsule_surface.run_native:45-60 computes sum(stat.size for EVERY direct file in scratch folder) before launch, uses it with free disk bytes, and records measured_input_bytes. It is an operational storage aggregate, not scientific metric size/count."
+  ],
+  "sizing_controls_binding": [
+    "Keep selected physical CASE/surface requirements/manual prism/shape controls and WRITTEN_METRIC_POLICY semantic fields strict; observed tensor entries are serialized native scientific input, not recomputed here.",
+    "Bind GEN configuration/configuration_identity/sizing policy, explicit nodal mode and metric connection identities to own authenticated surface/CASE chain. Do not drop metric_response_factor, normal limit/fraction, feature references, tensor components or shape-conditioning reserves as operational measurements.",
+    "Require independently expected complete metric.bin SHA256, INITIAL.npz and raw.mesh pins from exact STOP review across production/audit/frozen. Check declared MMGS stdout input/output inventories and successful exit against decoded/input and saved output counts without running MMGS.",
+    "Require actual owned adapter SHA0771ae4562c74dc7c0edf7ab4e713ad01c886900546407232f8c04d9b08cd55f and library SHAf77899f67895d1053d958bae7bbab4e8562397144a379f3835e16f10454c9834 match both owned runtime manifest/dependency qualification and actual bytes, tied to closed source custody."
+  ],
+  "normalization_scope": {
+    "allowed_new_leaf": "GENERATION.timing.mmgs.measured_input_bytes ONLY; require finite nonnegative integer, retain actual value and label scratch aggregate. Each whole original receipt remains own-run hash authenticated.",
+    "actual_values": {
+      "production": 9321048,
+      "audit": 9321051,
+      "frozen": 9321051
+    },
+    "not_deducible": "Exact prelaunch per-file contributors to3-byte delta were not captured; PROGRESS later overwrites. No claim which file(s) changed size.",
+    "preserve": [
+      "native input/output counts",
+      "complete metric payload and references",
+      "exit_code",
+      "timeout_seconds",
+      "runner/library identities",
+      "native semantic command operands after explicitly allowed path relocation",
+      "CASE sizing and source identities",
+      "all quality/shape/schedule/source query counters",
+      "all native prism88 payload requirements and complete apex/protected-coordinate checks"
+    ]
+  },
+  "negative_test_plan": [
+    "Change one metric tensor/coordinate/ref/flag byte while preserving length and rehashing a local sidecar: independent STOP pin must refuse.",
+    "Alter both metric xyz and INITIAL coordinate coherently: independent expected file pins must still refuse.",
+    "Change nv/nt/ne, magic, index range, partial vertex record, trailing byte or triangle incidence/reference: strict decoder or independent pin must refuse; no native call.",
+    "Substitute runner/library or wrong qualified dependency hash: own native implementation authentication must refuse.",
+    "Break metric/INITIAL/raw.mesh expected receipt digest or tamper STOP review/pin map: trusted independent anchor refusal.",
+    "Change policy/threshold/metric_response_factor or semantic native command operand alongside same scratch aggregate: strict semantics must refuse.",
+    "Only named aggregate value may differ while every scientific/file/receipt/method premise holds; negative noninteger/negative/bool/nan aggregate must refuse.",
+    "Preserve V1 and V2 failed receipts and immutable input file inventories; retain all prior own-parent/native/apex tamper controls."
+  ],
+  "source_pins": {
+    "v4/runtime/surface/generic_v3mmg1_provider.py": "e93dca0e563dc715f5c69d4142766ad7c9b98666ceb5837b1b740c686e8e8cd8",
+    "v4/tools/general_sdf_authority.py": "d2842b6aaf1c44e8cfdee9967b1db55db498c330dd7ea63724b44ea1cf03e3fc",
+    "v4/tools/general_sdf_binding.py": "84e657a72b4648835ae89de94900f35e80ba3d921e10740792c8b2de5c0f782a",
+    "v4/tools/surface_execution.py": "8c581bf40e147b0a0571f538449ead68feaeaa0770f9907b8f532f66f7050fbe",
+    "v4/tools/historical_capsule_surface.py": "b3111eca6283187acad317b4fa04d98616413528d9ff84c83137cbac295057af",
+    "v4/tools/owned_runtime.py": "022eb5d2225578137bcdf5717af1bfe044e2520a0a57d6795c4827f8d1612dd4",
+    "v4/runtime/MMGS_DEPENDENCY_QUALIFICATION.json": "c557ffdab7672db4201ff5957b04f27128509b38da04a760c9447187aa561876",
+    "v4/runtime/MANIFEST.json": "5626db7a9bdf4185a357d17e5b3d97bafdee1264786f1d8215e4bb33645040e3",
+    "v4/runtime/RELEASE.json": "36fa0c19bd983bfc3fd9004f43cda5e3569f67f4a6d7ea60ee9a2ff69557c8cb",
+    "v4/runtime/bin/mmgs_metric_contract_runner": "0771ae4562c74dc7c0edf7ab4e713ad01c886900546407232f8c04d9b08cd55f",
+    "v4/runtime/lib/libmmgs.so.5.8.0": "f77899f67895d1053d958bae7bbab4e8562397144a379f3835e16f10454c9834"
+  },
+  "reader_source_reference": {
+    "path": "C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3\\adaptive_surface_architecture\\src\\mmgs_metric_contract_runner.cpp",
+    "sha256": "a8c07deb94b93318ddd3cf10ce72e89c90e7e46adced19f760123041dd373f6d",
+    "status": "Original current source inspected as format reference only, not asserted exact source of owned pinned adapter. It prints diagnostic_nomove/metric_solution_saved fields absent from retained actual runner stdout; no new default/compiled-parameter claims may rely solely on this file.",
+    "lines": "13-25 record fields;31-76 input reader;85-122 API serialization;123-136 parameters are source-reference observations, not newly authenticated binary defaults."
+  },
+  "remaining_limits": [
+    "Metric tensors are bound by exact prior accepted-file identity, not regenerated source queries or a continuous/interior tensor-field proof.",
+    "raw.mesh is native output and scientific evidence; scratch aggregate is storage bookkeeping. Neither is a new source authority.",
+    "Design approval does not turn prior failed comparison into PASS or launch offline; one separately gated authorized V3 comparison must produce its own result."
+  ]
+}

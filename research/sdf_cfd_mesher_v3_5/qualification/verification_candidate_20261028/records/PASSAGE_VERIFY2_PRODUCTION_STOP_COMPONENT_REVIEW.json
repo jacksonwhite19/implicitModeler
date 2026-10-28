@@ -1,0 +1,1317 @@
+{
+  "schema": "V35PassageProductionStoppedComponentReview/1",
+  "classification": "PRODUCTION_ACCEPTED_EXTERNAL_COMPARISON_FAILED_STOP_PRESERVED",
+  "blockers": [
+    "External V2 production comparison failed and remains failed; offline was not started. Additional static physical equality does not replace the failed gate."
+  ],
+  "review_scope": "Independent saved array/hash/integer metadata reduction only; no runtime/comparator imports or reexecution, no QA/geometry/source/native predicates, no live grants or scientific retry.",
+  "checks": {
+    "fieldset:MESH.npz": true,
+    "three_way_payload:MESH.npz:points": true,
+    "three_way_payload:MESH.npz:cell_vertices": true,
+    "three_way_payload:MESH.npz:cell_ids": true,
+    "three_way_payload:MESH.npz:source_columns": true,
+    "three_way_payload:MESH.npz:layers": true,
+    "three_way_payload:MESH.npz:outer": true,
+    "three_way_payload:MESH.npz:wall": true,
+    "fieldset:native/SEALED_PLAN.npz": true,
+    "three_way_payload:native/SEALED_PLAN.npz:positions": true,
+    "three_way_payload:native/SEALED_PLAN.npz:faces": true,
+    "three_way_payload:native/SEALED_PLAN.npz:delta": true,
+    "fieldset:background/JOINED_EVIDENCE.npz": true,
+    "three_way_payload:background/JOINED_EVIDENCE.npz:points": true,
+    "three_way_payload:background/JOINED_EVIDENCE.npz:background_tets": true,
+    "three_way_payload:background/JOINED_EVIDENCE.npz:farfield": true,
+    "three_way_payload:background/JOINED_EVIDENCE.npz:prisms": true,
+    "three_way_payload:background/JOINED_EVIDENCE.npz:prism_ids": true,
+    "three_way_payload:background/JOINED_EVIDENCE.npz:tetrahedron_ids": true,
+    "three_way_payload:background/JOINED_EVIDENCE.npz:wall": true,
+    "three_way_payload:background/JOINED_EVIDENCE.npz:cap": true,
+    "fieldset:background/COMPLETE_MESH.npz": true,
+    "three_way_payload:background/COMPLETE_MESH.npz:points": true,
+    "three_way_payload:background/COMPLETE_MESH.npz:prisms": true,
+    "three_way_payload:background/COMPLETE_MESH.npz:tetrahedra": true,
+    "three_way_payload:background/COMPLETE_MESH.npz:wall": true,
+    "three_way_payload:background/COMPLETE_MESH.npz:farfield": true,
+    "fieldset:background/conditioning/INPUT.npz": true,
+    "three_way_payload:background/conditioning/INPUT.npz:points": true,
+    "three_way_payload:background/conditioning/INPUT.npz:tetrahedra": true,
+    "three_way_payload:background/conditioning/INPUT.npz:cell_ids": true,
+    "fieldset:background/conditioning/CONDITIONED.npz": true,
+    "three_way_payload:background/conditioning/CONDITIONED.npz:points": true,
+    "three_way_payload:background/conditioning/CONDITIONED.npz:tetrahedra": true,
+    "three_way_payload:background/conditioning/CONDITIONED.npz:cell_ids": true,
+    "fieldset:background/native/generated/NETGEN.npz": true,
+    "three_way_payload:background/native/generated/NETGEN.npz:points": true,
+    "three_way_payload:background/native/generated/NETGEN.npz:tets": true,
+    "plan:delta.npy": true,
+    "plan:faces.npy": true,
+    "plan:first_front.npy": true,
+    "plan:increments.npy": true,
+    "plan:later_vectors.npy": true,
+    "plan:positions.npy": true,
+    "plan:source_normals.npy": true,
+    "plan:wall.npy": true,
+    "raw_population:2": true,
+    "raw_exact:2/cell_ancestor.i32": true,
+    "raw_exact:2/cell_aspect_ratios.f64": true,
+    "raw_exact:2/cell_centres.f64": true,
+    "raw_exact:2/cell_determinants.f64": true,
+    "raw_exact:2/cell_level.i32": true,
+    "raw_exact:2/cell_offsets.u64": true,
+    "raw_exact:2/cell_openness.f64": true,
+    "raw_exact:2/cell_points.i32": true,
+    "raw_exact:2/cell_volumes.f64": true,
+    "raw_exact:2/face_areas.f64": true,
+    "raw_exact:2/face_centres.f64": true,
+    "raw_exact:2/face_offsets.u64": true,
+    "raw_exact:2/face_points.i32": true,
+    "raw_exact:2/face_skewness.f64": true,
+    "raw_exact:2/face_volume_ratios.f64": true,
+    "raw_exact:2/face_weights.f64": true,
+    "raw_exact:2/internal_mask.u8": true,
+    "raw_exact:2/neighbour.i32": true,
+    "raw_exact:2/owner.i32": true,
+    "raw_exact:2/point_ancestor.i32": true,
+    "raw_exact:2/point_level.i32": true,
+    "raw_exact:2/points.f64": true,
+    "raw_population:3": true,
+    "raw_exact:3/cell_ancestor.i32": true,
+    "raw_exact:3/cell_aspect_ratios.f64": true,
+    "raw_exact:3/cell_centres.f64": true,
+    "raw_exact:3/cell_determinants.f64": true,
+    "raw_exact:3/cell_level.i32": true,
+    "raw_exact:3/cell_offsets.u64": true,
+    "raw_exact:3/cell_openness.f64": true,
+    "raw_exact:3/cell_points.i32": true,
+    "raw_exact:3/cell_volumes.f64": true,
+    "raw_exact:3/face_areas.f64": true,
+    "raw_exact:3/face_centres.f64": true,
+    "raw_exact:3/face_offsets.u64": true,
+    "raw_exact:3/face_points.i32": true,
+    "raw_exact:3/face_skewness.f64": true,
+    "raw_exact:3/face_volume_ratios.f64": true,
+    "raw_exact:3/face_weights.f64": true,
+    "raw_exact:3/internal_mask.u8": true,
+    "raw_exact:3/neighbour.i32": true,
+    "raw_exact:3/owner.i32": true,
+    "raw_exact:3/point_ancestor.i32": true,
+    "raw_exact:3/point_level.i32": true,
+    "raw_exact:3/points.f64": true,
+    "raw_population:4": true,
+    "raw_exact:4/cell_ancestor.i32": true,
+    "raw_exact:4/cell_aspect_ratios.f64": true,
+    "raw_exact:4/cell_centres.f64": true,
+    "raw_exact:4/cell_determinants.f64": true,
+    "raw_exact:4/cell_level.i32": true,
+    "raw_exact:4/cell_offsets.u64": true,
+    "raw_exact:4/cell_openness.f64": true,
+    "raw_exact:4/cell_points.i32": true,
+    "raw_exact:4/cell_volumes.f64": true,
+    "raw_exact:4/face_areas.f64": true,
+    "raw_exact:4/face_centres.f64": true,
+    "raw_exact:4/face_offsets.u64": true,
+    "raw_exact:4/face_points.i32": true,
+    "raw_exact:4/face_skewness.f64": true,
+    "raw_exact:4/face_volume_ratios.f64": true,
+    "raw_exact:4/face_weights.f64": true,
+    "raw_exact:4/internal_mask.u8": true,
+    "raw_exact:4/neighbour.i32": true,
+    "raw_exact:4/owner.i32": true,
+    "raw_exact:4/point_ancestor.i32": true,
+    "raw_exact:4/point_level.i32": true,
+    "raw_exact:4/points.f64": true,
+    "raw_population:5": true,
+    "raw_exact:5/cell_ancestor.i32": true,
+    "raw_exact:5/cell_aspect_ratios.f64": true,
+    "raw_exact:5/cell_centres.f64": true,
+    "raw_exact:5/cell_determinants.f64": true,
+    "raw_exact:5/cell_level.i32": true,
+    "raw_exact:5/cell_offsets.u64": true,
+    "raw_exact:5/cell_openness.f64": true,
+    "raw_exact:5/cell_points.i32": true,
+    "raw_exact:5/cell_volumes.f64": true,
+    "raw_exact:5/face_areas.f64": true,
+    "raw_exact:5/face_centres.f64": true,
+    "raw_exact:5/face_offsets.u64": true,
+    "raw_exact:5/face_points.i32": true,
+    "raw_exact:5/face_skewness.f64": true,
+    "raw_exact:5/face_volume_ratios.f64": true,
+    "raw_exact:5/face_weights.f64": true,
+    "raw_exact:5/internal_mask.u8": true,
+    "raw_exact:5/neighbour.i32": true,
+    "raw_exact:5/owner.i32": true,
+    "raw_exact:5/point_ancestor.i32": true,
+    "raw_exact:5/point_level.i32": true,
+    "raw_exact:5/points.f64": true,
+    "full_two_records": true,
+    "own_conditioning_hash:C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_production_01": true,
+    "own_conditioning_hash:C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_audit_01": true,
+    "own_conditioning_hash:C:\\Users\\Jackson\\Desktop\\02_Projects\\09b_Implicit_CAD_claude\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_nodal5_complete_01": true,
+    "two_changed": true,
+    "protected181034": true,
+    "connectivity_ids_unchanged": true,
+    "actual_native_prefix": true,
+    "actual_prism_ids": true,
+    "full546464_metadata": true,
+    "star_members:207427": true,
+    "before_after_bits:207427": true,
+    "star_actual_owners:207427": true,
+    "star_members:207565": true,
+    "before_after_bits:207565": true,
+    "star_actual_owners:207565": true,
+    "surface_exact:metric.bin": true,
+    "surface_exact:raw.mesh": true,
+    "surface_exact:SURFACE.npz": true,
+    "surface_exact:QUALITY.npz": true,
+    "surface_exact:REFERENCES.npz": true,
+    "surface_exact:INITIAL.npz": true,
+    "reported_counter_values": true,
+    "production_trusted_verification": true,
+    "production_schema": true,
+    "source_closed": true,
+    "operational_closed": true,
+    "completion:CASE.json": true,
+    "completion:RESULT.json": true,
+    "completion:background/RESULT.json": true,
+    "closure:source": true,
+    "closure:supervisor": true,
+    "manifest": true,
+    "manifest:CAP_COMPATIBILITY.json": true,
+    "manifest:COMPLETE_MESH.npz": true,
+    "manifest:EVIDENCE_HANDOFF.json": true,
+    "manifest:FINALIZATION.json": true,
+    "manifest:JOINED_EVIDENCE.npz": true,
+    "manifest:JOINED_INCIDENCE.json": true,
+    "manifest:JOINED_RECONSTRUCTION.json": true,
+    "manifest:PARENT.json": true,
+    "manifest:PARENT_EXPECTATIONS.json": true,
+    "manifest:POLICY.json": true,
+    "manifest:PROVISIONAL.json": true,
+    "manifest:SHAPE_COUNTS.json": true,
+    "manifest:SHARED_APEX_REPAIR.json": true,
+    "manifest:audit/BOUNDARY_COLLISION.json": true,
+    "manifest:audit/COLLISION.json": true,
+    "manifest:audit/DOMAIN.json": true,
+    "manifest:audit/ENCLOSURE.json": true,
+    "manifest:audit/FILLING.json": true,
+    "manifest:audit/INCIDENCE.json": true,
+    "manifest:audit/INTERFACE_QA.json": true,
+    "manifest:audit/JOINED_PROOF_RESULT.json": true,
+    "manifest:audit/JOINED_QA.json": true,
+    "manifest:audit/PHYSICAL_QA.json": true,
+    "manifest:audit/PRESERVATION.json": true,
+    "manifest:audit/SURFACES.json": true,
+    "manifest:audit/WINDING.json": true,
+    "manifest:audit/boundary_collision_witnesses/20a613640afa83a4c45746ca40ee6c002057034c58fd0d567fdf93bbc354f30f.npy": true,
+    "manifest:audit/boundary_collision_witnesses/9a452d8471c5899ba08cd4251f6151d0039d46791cc0782d1c236fce6f9b40bf.json": true,
+    "manifest:audit/boundary_collision_witnesses/FACE_POPULATION.npz": true,
+    "manifest:audit/boundary_collision_witnesses/WITNESSES.json": true,
+    "manifest:audit/boundary_collision_witnesses/da1f26442dab9a03472ef85e34bc159dc4ada992b0e8cbeb6ac60c6084d8809b.npy": true,
+    "manifest:audit/boundary_collision_witnesses/fd335640e8d181a93ea2f45d5dcce49260e8f5e789718af754ba0149f2d7a4ca.json": true,
+    "manifest:audit/collision_witnesses/18ccb1c7b7dcd61ad9ae1930c51a579ab7e29f18c88b636a9ac30ed4d0fff2d9.npy": true,
+    "manifest:audit/collision_witnesses/197aeed017e2ca8e553b3852b86e5b9e264b3746e247468fc21227f1b870e9c5.json": true,
+    "manifest:audit/collision_witnesses/4c3160feeb44100cfc1d1f00b6b86c6818e96623492cf992b183077d15e53e2b.npy": true,
+    "manifest:audit/collision_witnesses/FACE_POPULATION.npz": true,
+    "manifest:audit/collision_witnesses/WITNESSES.json": true,
+    "manifest:audit/collision_witnesses/bb9974fdba3c276fad6bb34a37506c5fc94befeac005736aedce9a5fac35351b.json": true,
+    "manifest:conditioning/CONDITIONED.npz": true,
+    "manifest:conditioning/CONDITIONING.json": true,
+    "manifest:conditioning/INPUT.npz": true,
+    "manifest:export/EXPORT_RESULT.json": true,
+    "manifest:export/OPENFOAM_MAPPING.npz": true,
+    "manifest:export/checkMesh.json": true,
+    "manifest:export/checkMesh.launch.sh": true,
+    "manifest:export/checkMesh.linux_scope.json": true,
+    "manifest:export/checkMesh.stderr": true,
+    "manifest:export/checkMesh.stdout": true,
+    "manifest:export/complete_transfer.msh": true,
+    "manifest:export/foundation_audit/cell_aspect_ratios.f64": true,
+    "manifest:export/foundation_audit/cell_centres.f64": true,
+    "manifest:export/foundation_audit/cell_determinants.f64": true,
+    "manifest:export/foundation_audit/cell_offsets.u64": true,
+    "manifest:export/foundation_audit/cell_openness.f64": true,
+    "manifest:export/foundation_audit/cell_points.i32": true,
+    "manifest:export/foundation_audit/cell_volumes.f64": true,
+    "manifest:export/foundation_audit/face_areas.f64": true,
+    "manifest:export/foundation_audit/face_centres.f64": true,
+    "manifest:export/foundation_audit/face_offsets.u64": true,
+    "manifest:export/foundation_audit/face_points.i32": true,
+    "manifest:export/foundation_audit/face_skewness.f64": true,
+    "manifest:export/foundation_audit/face_volume_ratios.f64": true,
+    "manifest:export/foundation_audit/face_weights.f64": true,
+    "manifest:export/foundation_audit/internal_mask.u8": true,
+    "manifest:export/foundation_audit/neighbour.i32": true,
+    "manifest:export/foundation_audit/owner.i32": true,
+    "manifest:export/foundation_audit/points.f64": true,
+    "manifest:export/gmshToFoam.json": true,
+    "manifest:export/gmshToFoam.launch.sh": true,
+    "manifest:export/gmshToFoam.linux_scope.json": true,
+    "manifest:export/gmshToFoam.stderr": true,
+    "manifest:export/gmshToFoam.stdout": true,
+    "manifest:export/openfoam_case/constant/polyMesh/boundary": true,
+    "manifest:export/openfoam_case/constant/polyMesh/cellZones": true,
+    "manifest:export/openfoam_case/constant/polyMesh/faces": true,
+    "manifest:export/openfoam_case/constant/polyMesh/neighbour": true,
+    "manifest:export/openfoam_case/constant/polyMesh/owner": true,
+    "manifest:export/openfoam_case/constant/polyMesh/points": true,
+    "manifest:export/openfoam_case/constant/polyMesh/sets/fluid": true,
+    "manifest:export/openfoam_case/contractAudit.json": true,
+    "manifest:export/openfoam_case/contractAudit.launch.sh": true,
+    "manifest:export/openfoam_case/contractAudit.linux_scope.json": true,
+    "manifest:export/openfoam_case/contractAudit.stderr": true,
+    "manifest:export/openfoam_case/contractAudit.stdout": true,
+    "manifest:export/openfoam_case/system/controlDict": true,
+    "manifest:farfield/CAP.npz": true,
+    "manifest:farfield/INPUT.json": true,
+    "manifest:farfield/OUTER.npz": true,
+    "manifest:farfield/RESULT.json": true,
+    "manifest:farfield/RUNTIME_POST.json": true,
+    "manifest:farfield/RUNTIME_PRE.json": true,
+    "manifest:farfield/v4_direct_farfield.json": true,
+    "manifest:farfield/v4_direct_farfield.launch.sh": true,
+    "manifest:farfield/v4_direct_farfield.linux_scope.json": true,
+    "manifest:farfield/v4_direct_farfield.stderr": true,
+    "manifest:farfield/v4_direct_farfield.stdout": true,
+    "manifest:native/ALGORITHM_EXECUTION.json": true,
+    "manifest:native/ALGORITHM_TRACE.json": true,
+    "manifest:native/BOUNDARY_AFTER.json": true,
+    "manifest:native/BOUNDARY_AFTER_GMSH.json": true,
+    "manifest:native/BOUNDARY_AFTER_NETGEN.json": true,
+    "manifest:native/BOUNDARY_BEFORE.json": true,
+    "manifest:native/BOUNDARY_DIFFERENCE.json": true,
+    "manifest:native/CAP.npz": true,
+    "manifest:native/GENERATION_CAPTURE.json": true,
+    "manifest:native/GENERATION_ENTERED.json": true,
+    "manifest:native/INPUT.json": true,
+    "manifest:native/OPTIMIZER_RESULT.json": true,
+    "manifest:native/OUTER.npz": true,
+    "manifest:native/RESULT.json": true,
+    "manifest:native/RUNTIME_POST.json": true,
+    "manifest:native/RUNTIME_PRE.json": true,
+    "manifest:native/generated/CORE.npz": true,
+    "manifest:native/generated/FINAL_CORE_OWNERS.npy": true,
+    "manifest:native/generated/GMSH.npz": true,
+    "manifest:native/generated/METHOD.json": true,
+    "manifest:native/generated/NETGEN.npz": true,
+    "manifest:native/generated/OPTIMIZATION.json": true,
+    "manifest:native/generated/OUTER.npz": true,
+    "manifest:native/generated/PRECONDITIONED.msh": true,
+    "manifest:native/generated/STAGE_SHAPE.json": true,
+    "manifest:native/v4_direct_candidate.json": true,
+    "manifest:native/v4_direct_candidate.launch.sh": true,
+    "manifest:native/v4_direct_candidate.linux_scope.json": true,
+    "manifest:native/v4_direct_candidate.stderr": true,
+    "manifest:native/v4_direct_candidate.stdout": true,
+    "no_cold_readback": true,
+    "no_offline": true,
+    "all298660_prism_metadata_rows": true
+  },
+  "archive_payloads": {
+    "MESH.npz": {
+      "points": {
+        "dtype": "<f8",
+        "shape": [
+          179196,
+          3
+        ],
+        "sha256": "846f9f6f88ed67fc9ab395633f597cf57c2bd57e7c57ddd5cd0eb07ef23446f1"
+      },
+      "cell_vertices": {
+        "dtype": "<i8",
+        "shape": [
+          298660,
+          6
+        ],
+        "sha256": "86838cc2f42bac53ba13f712a21df626afb59819ed709c70567f0128c759ead6"
+      },
+      "cell_ids": {
+        "dtype": "<i8",
+        "shape": [
+          298660
+        ],
+        "sha256": "3312f3f02aed58cd24f71abba3dc00d459d91942be1a22a6133c152d31c4f5ce"
+      },
+      "source_columns": {
+        "dtype": "<i8",
+        "shape": [
+          298660
+        ],
+        "sha256": "0f2354df962096ffda1beff8399102ca2a2570581f0acc341536835a94b1b1c0"
+      },
+      "layers": {
+        "dtype": "<i8",
+        "shape": [
+          298660
+        ],
+        "sha256": "af181ee1e49a1ff17dc95ef2a8f3618cc2daa125c0d6cb6469f679f3197e7151"
+      },
+      "outer": {
+        "dtype": "<i8",
+        "shape": [
+          59732,
+          3
+        ],
+        "sha256": "560a6214b2ce6fc4eb55428e6bdb8d2fc76e5aa65aecf95ee34b87a109a46f93"
+      },
+      "wall": {
+        "dtype": "<i8",
+        "shape": [
+          59732,
+          3
+        ],
+        "sha256": "d5a0099deb972ef1be47096c7612d6d97bf0619132b66ba60568c7185add0475"
+      }
+    },
+    "native/SEALED_PLAN.npz": {
+      "positions": {
+        "dtype": "<f8",
+        "shape": [
+          6,
+          29866,
+          3
+        ],
+        "sha256": "846f9f6f88ed67fc9ab395633f597cf57c2bd57e7c57ddd5cd0eb07ef23446f1"
+      },
+      "faces": {
+        "dtype": "<i8",
+        "shape": [
+          59732,
+          3
+        ],
+        "sha256": "6c0e091b73cb690dbb0414ed8204ac047d345f58a812f3da936fad03a0332d67"
+      },
+      "delta": {
+        "dtype": "<f8",
+        "shape": [
+          5,
+          29866,
+          3
+        ],
+        "sha256": "052ef973e7bed3f912d40ff21c0797a5d88abb9657a850f87003eed562091909"
+      }
+    },
+    "background/JOINED_EVIDENCE.npz": {
+      "points": {
+        "dtype": "<f8",
+        "shape": [
+          207705,
+          3
+        ],
+        "sha256": "6c479004c720da74bcd9adfb25d13dd81c7a769c1f3f60f3edd5949da6255a91"
+      },
+      "background_tets": {
+        "dtype": "<i8",
+        "shape": [
+          247804,
+          4
+        ],
+        "sha256": "68fb97d47239bf295a35fbe500095759dd7b95ce7b7ec62a293e746a91bc06db"
+      },
+      "farfield": {
+        "dtype": "<i8",
+        "shape": [
+          3672,
+          3
+        ],
+        "sha256": "8b528400500a8e909d99c7e65653abcb0720c18808370a36a07fcd16fea91aef"
+      },
+      "prisms": {
+        "dtype": "<i8",
+        "shape": [
+          298660,
+          6
+        ],
+        "sha256": "86838cc2f42bac53ba13f712a21df626afb59819ed709c70567f0128c759ead6"
+      },
+      "prism_ids": {
+        "dtype": "<i8",
+        "shape": [
+          298660
+        ],
+        "sha256": "3312f3f02aed58cd24f71abba3dc00d459d91942be1a22a6133c152d31c4f5ce"
+      },
+      "tetrahedron_ids": {
+        "dtype": "<i8",
+        "shape": [
+          247804
+        ],
+        "sha256": "84a8a7830a7da12d888ec21a076aee1cad35561810c7358bc98178f357e5179a"
+      },
+      "wall": {
+        "dtype": "<i8",
+        "shape": [
+          59732,
+          3
+        ],
+        "sha256": "d5a0099deb972ef1be47096c7612d6d97bf0619132b66ba60568c7185add0475"
+      },
+      "cap": {
+        "dtype": "<i8",
+        "shape": [
+          59732,
+          3
+        ],
+        "sha256": "560a6214b2ce6fc4eb55428e6bdb8d2fc76e5aa65aecf95ee34b87a109a46f93"
+      }
+    },
+    "background/COMPLETE_MESH.npz": {
+      "points": {
+        "dtype": "<f8",
+        "shape": [
+          207705,
+          3
+        ],
+        "sha256": "6c479004c720da74bcd9adfb25d13dd81c7a769c1f3f60f3edd5949da6255a91"
+      },
+      "prisms": {
+        "dtype": "<i8",
+        "shape": [
+          298660,
+          6
+        ],
+        "sha256": "86838cc2f42bac53ba13f712a21df626afb59819ed709c70567f0128c759ead6"
+      },
+      "tetrahedra": {
+        "dtype": "<i8",
+        "shape": [
+          247804,
+          4
+        ],
+        "sha256": "68fb97d47239bf295a35fbe500095759dd7b95ce7b7ec62a293e746a91bc06db"
+      },
+      "wall": {
+        "dtype": "<i8",
+        "shape": [
+          59732,
+          3
+        ],
+        "sha256": "d5a0099deb972ef1be47096c7612d6d97bf0619132b66ba60568c7185add0475"
+      },
+      "farfield": {
+        "dtype": "<i8",
+        "shape": [
+          3672,
+          3
+        ],
+        "sha256": "8b528400500a8e909d99c7e65653abcb0720c18808370a36a07fcd16fea91aef"
+      }
+    },
+    "background/conditioning/INPUT.npz": {
+      "points": {
+        "dtype": "<f8",
+        "shape": [
+          207705,
+          3
+        ],
+        "sha256": "c5f8a91518e4527d998aa1bd5c900be5c0b85511339e57b9fe4d354230a5b380"
+      },
+      "tetrahedra": {
+        "dtype": "<i8",
+        "shape": [
+          247804,
+          4
+        ],
+        "sha256": "68fb97d47239bf295a35fbe500095759dd7b95ce7b7ec62a293e746a91bc06db"
+      },
+      "cell_ids": {
+        "dtype": "<i8",
+        "shape": [
+          247804
+        ],
+        "sha256": "84a8a7830a7da12d888ec21a076aee1cad35561810c7358bc98178f357e5179a"
+      }
+    },
+    "background/conditioning/CONDITIONED.npz": {
+      "points": {
+        "dtype": "<f8",
+        "shape": [
+          207705,
+          3
+        ],
+        "sha256": "c5f8a91518e4527d998aa1bd5c900be5c0b85511339e57b9fe4d354230a5b380"
+      },
+      "tetrahedra": {
+        "dtype": "<i8",
+        "shape": [
+          247804,
+          4
+        ],
+        "sha256": "68fb97d47239bf295a35fbe500095759dd7b95ce7b7ec62a293e746a91bc06db"
+      },
+      "cell_ids": {
+        "dtype": "<i8",
+        "shape": [
+          247804
+        ],
+        "sha256": "84a8a7830a7da12d888ec21a076aee1cad35561810c7358bc98178f357e5179a"
+      }
+    },
+    "background/native/generated/NETGEN.npz": {
+      "points": {
+        "dtype": "<f8",
+        "shape": [
+          58375,
+          3
+        ],
+        "sha256": "37d07a9d9758e30a53f5e7913f06c075100878f2499af5b81b29971168076035"
+      },
+      "tets": {
+        "dtype": "<i8",
+        "shape": [
+          247804,
+          4
+        ],
+        "sha256": "c2c647dfa40e205ddcb8987689efa5714a34dc063e7ce094257b1a244904996e"
+      }
+    }
+  },
+  "native_dump_files_three_way_exact": 88,
+  "native_dump_pins": {
+    "prefix_2/cell_ancestor.i32": {
+      "sha256": "3cbb92c3329debe82c67cf6efeec6f54d1a711d72826422a44894be96c0d4c15",
+      "bytes": 477856,
+      "dtype": "<i4"
+    },
+    "prefix_2/cell_aspect_ratios.f64": {
+      "sha256": "ddb57f77f7d75f6e62505c30b0de929fa71f17bb356c1bcc8e385973fdec77f2",
+      "bytes": 955712,
+      "dtype": "<f8"
+    },
+    "prefix_2/cell_centres.f64": {
+      "sha256": "804d3b7de2466d049f69022f39ac69a8b9a03b1d2acf8ce8466f824d20232949",
+      "bytes": 2867136,
+      "dtype": "<f8"
+    },
+    "prefix_2/cell_determinants.f64": {
+      "sha256": "3b991f9339a8aea0fb6d301540254c9308f4d96cbe6568121d5cc3891e0cf09c",
+      "bytes": 955712,
+      "dtype": "<f8"
+    },
+    "prefix_2/cell_level.i32": {
+      "sha256": "373a80e178d8c939000988dc55ace3ef1841f71c893fa3b52cdbddff70416d04",
+      "bytes": 477856,
+      "dtype": "<i4"
+    },
+    "prefix_2/cell_offsets.u64": {
+      "sha256": "2f100ae9d77d31e1e1492462ac08f9e6e57989642bd73360e8d8fcaed7aa269a",
+      "bytes": 955720,
+      "dtype": "<u8"
+    },
+    "prefix_2/cell_openness.f64": {
+      "sha256": "12bf8a738d01781aa7bd3788df52aafe2f80f305228551e86c771fee3e29ab81",
+      "bytes": 955712,
+      "dtype": "<f8"
+    },
+    "prefix_2/cell_points.i32": {
+      "sha256": "2d8c31fdfaf8824377d0cc0819b8fabc46b12302b92a814621c17869844737ca",
+      "bytes": 2867136,
+      "dtype": "<i4"
+    },
+    "prefix_2/cell_volumes.f64": {
+      "sha256": "f2e061ee4014f59e9d44209d1c38b5ac1fe6736adc48f5108694d1507fba3dd9",
+      "bytes": 955712,
+      "dtype": "<f8"
+    },
+    "prefix_2/face_areas.f64": {
+      "sha256": "afb1589c6deabeffbaa89eff77ce920daed4fdcfe4be196e51d60fb8e42a2450",
+      "bytes": 8601408,
+      "dtype": "<f8"
+    },
+    "prefix_2/face_centres.f64": {
+      "sha256": "2e9565ce55f4ca951b9104713cfdca0c3e4b622c97d2631cb2f2c41ed48fb42e",
+      "bytes": 8601408,
+      "dtype": "<f8"
+    },
+    "prefix_2/face_offsets.u64": {
+      "sha256": "30c9cc63fe1c1a677f52167abfd64906f7b881a7bde3f65a4336dc65b0478f7e",
+      "bytes": 2867144,
+      "dtype": "<u8"
+    },
+    "prefix_2/face_points.i32": {
+      "sha256": "0c642813a66d324d648a1372766622774619bb8c6dedaf0d6e9122a2e0d84752",
+      "bytes": 5017488,
+      "dtype": "<i4"
+    },
+    "prefix_2/face_skewness.f64": {
+      "sha256": "5b698b44fc32d80cd0d41fac490be307a544f4715d537cfc68c07125aa2e04b1",
+      "bytes": 2867136,
+      "dtype": "<f8"
+    },
+    "prefix_2/face_volume_ratios.f64": {
+      "sha256": "27831450db453095ad52d051a3802444f22801a27d8d57584fbbbbf8b11e5d39",
+      "bytes": 1911424,
+      "dtype": "<f8"
+    },
+    "prefix_2/face_weights.f64": {
+      "sha256": "433f6f681712b4e0cc07c41d4dbf9b1c0ad2c1b1ed9f6a133b7270db98035522",
+      "bytes": 1911424,
+      "dtype": "<f8"
+    },
+    "prefix_2/internal_mask.u8": {
+      "sha256": "ab11df1065b589eec330fae02fcfc53b8244533ab359d5f63885d92b20a0645e",
+      "bytes": 358392,
+      "dtype": "|u1"
+    },
+    "prefix_2/neighbour.i32": {
+      "sha256": "9bb63e668ba0f745bf0cfb10e08cca01a540cadc5bdb3b36de60cf31fe387293",
+      "bytes": 955712,
+      "dtype": "<i4"
+    },
+    "prefix_2/owner.i32": {
+      "sha256": "56cd181c7007f5b27ada51072c6269704776536e61c480fc54c0e8dc350cf216",
+      "bytes": 1433568,
+      "dtype": "<i4"
+    },
+    "prefix_2/point_ancestor.i32": {
+      "sha256": "0aba8bdfedc33761c5d3a70260c4c9dff7f7ec5d0b1082c6c2091db29b1a4ab1",
+      "bytes": 358392,
+      "dtype": "<i4"
+    },
+    "prefix_2/point_level.i32": {
+      "sha256": "f829942e139066d910704bc6b06666d8c28d85d981cdaaa3ad40b65260e1a040",
+      "bytes": 358392,
+      "dtype": "<i4"
+    },
+    "prefix_2/points.f64": {
+      "sha256": "9899c9ccf696c66bed1044ec343dbce432efa12ae1c53b55aa2af4313705ab32",
+      "bytes": 2150352,
+      "dtype": "<f8"
+    },
+    "prefix_3/cell_ancestor.i32": {
+      "sha256": "5cad40e8285684346a78ee1e09cce6340dc9d9d644edd255382cc71b250f57cb",
+      "bytes": 716784,
+      "dtype": "<i4"
+    },
+    "prefix_3/cell_aspect_ratios.f64": {
+      "sha256": "bde6a403a3706428b503f704d916ade699f4582c6726f166770b1adcbc0b5669",
+      "bytes": 1433568,
+      "dtype": "<f8"
+    },
+    "prefix_3/cell_centres.f64": {
+      "sha256": "22b32874f13fbe4462e01d3351e3fd59b6664cab0c9b86f7bcc2a498c9b15ffb",
+      "bytes": 4300704,
+      "dtype": "<f8"
+    },
+    "prefix_3/cell_determinants.f64": {
+      "sha256": "5beb4a822e68aec13ee860884ebcc635e83049f37add200d30f4de4ced0a96f5",
+      "bytes": 1433568,
+      "dtype": "<f8"
+    },
+    "prefix_3/cell_level.i32": {
+      "sha256": "66f66b0655340193b1cd01502f617cc45db36f77af494a88c066a1911092019d",
+      "bytes": 716784,
+      "dtype": "<i4"
+    },
+    "prefix_3/cell_offsets.u64": {
+      "sha256": "0ef9b4ff6b466e65172a317ace300c24bbb3cdd0dbd609ee098ebe1116c887b1",
+      "bytes": 1433576,
+      "dtype": "<u8"
+    },
+    "prefix_3/cell_openness.f64": {
+      "sha256": "70c80b8d3e2f487477a7186ccf29c287b6c9db1719bad7623872a8b78ec335f3",
+      "bytes": 1433568,
+      "dtype": "<f8"
+    },
+    "prefix_3/cell_points.i32": {
+      "sha256": "7b8e327f56ef659b9ca87de97d19d66facbd4b0f72cc0d0fcefecabb4f7fcd27",
+      "bytes": 4300704,
+      "dtype": "<i4"
+    },
+    "prefix_3/cell_volumes.f64": {
+      "sha256": "656ee47b1f90082ef1b8c266be20d29c9f8e852caa31f7943c587030e31bf1d3",
+      "bytes": 1433568,
+      "dtype": "<f8"
+    },
+    "prefix_3/face_areas.f64": {
+      "sha256": "dd193436c9214df9d8a18556bc707225af3a1221bf3d24c19229bad177f5b77e",
+      "bytes": 12185328,
+      "dtype": "<f8"
+    },
+    "prefix_3/face_centres.f64": {
+      "sha256": "24441bca0cd1412eb778d51a328bdb838e409cc8be9ec7dda3f0f9d2b0843f8b",
+      "bytes": 12185328,
+      "dtype": "<f8"
+    },
+    "prefix_3/face_offsets.u64": {
+      "sha256": "fa187f765971d68b92442da6866ad2e0448dcedabcf3989d8cdd5a1319057052",
+      "bytes": 4061784,
+      "dtype": "<u8"
+    },
+    "prefix_3/face_points.i32": {
+      "sha256": "ccb9cdc6b23e35992556815a352fec076fd88a3543e70b51ac9eb1bec827c7da",
+      "bytes": 7167840,
+      "dtype": "<i4"
+    },
+    "prefix_3/face_skewness.f64": {
+      "sha256": "8a37d51dfcdbbda57d0fbe3d538d8f083d6d73c7aeee0d19fc5aca1b20e22adb",
+      "bytes": 4061776,
+      "dtype": "<f8"
+    },
+    "prefix_3/face_volume_ratios.f64": {
+      "sha256": "0c5ab901084500e31cdc163239fdde57a0f202198c55b856bf52b1641e3dd585",
+      "bytes": 3106064,
+      "dtype": "<f8"
+    },
+    "prefix_3/face_weights.f64": {
+      "sha256": "35a96cc9c519775d3f7b34baa61603aa119b24a8ce994fd9e9319904bb3e82db",
+      "bytes": 3106064,
+      "dtype": "<f8"
+    },
+    "prefix_3/internal_mask.u8": {
+      "sha256": "9f03d0022c94a2eb09bfa39b62fd4efe47ec592a1587ccf787c4a0691754da95",
+      "bytes": 507722,
+      "dtype": "|u1"
+    },
+    "prefix_3/neighbour.i32": {
+      "sha256": "227529797903c4f2efbafc2f9a5d0eee55b81fa09a1a63d5983db010dafff945",
+      "bytes": 1553032,
+      "dtype": "<i4"
+    },
+    "prefix_3/owner.i32": {
+      "sha256": "5398a83b7c2af76a49c1bad28b519d65a7a381de149ddcc91c17e58e34ddffc1",
+      "bytes": 2030888,
+      "dtype": "<i4"
+    },
+    "prefix_3/point_ancestor.i32": {
+      "sha256": "788a96a03b4c6af6303f1be0c1c416af3015214a63f33f77f6fb580ad50bd761",
+      "bytes": 477856,
+      "dtype": "<i4"
+    },
+    "prefix_3/point_level.i32": {
+      "sha256": "8e32fca64c92f9b3297b1fb06f86644a2234f90b90f2d444f76576c25290b17c",
+      "bytes": 477856,
+      "dtype": "<i4"
+    },
+    "prefix_3/points.f64": {
+      "sha256": "eb17bc119893f419aa9e3007d47962d2386b3165e3504e04351ffd47cb84d3ad",
+      "bytes": 2867136,
+      "dtype": "<f8"
+    },
+    "prefix_4/cell_ancestor.i32": {
+      "sha256": "92565ffe651b59f4e1bfa67fba32363d76fce2ed9eefb06e5737fd1efa43b0c6",
+      "bytes": 955712,
+      "dtype": "<i4"
+    },
+    "prefix_4/cell_aspect_ratios.f64": {
+      "sha256": "d13b1367ba24e2212bcf2634f0b0ad7b304a05e74fa1688f9b635ae2806463d6",
+      "bytes": 1911424,
+      "dtype": "<f8"
+    },
+    "prefix_4/cell_centres.f64": {
+      "sha256": "56cf10d8e2ea702d5d2cc05b9e4af2b4e603701ea948b7fcd8bfd04d898537a7",
+      "bytes": 5734272,
+      "dtype": "<f8"
+    },
+    "prefix_4/cell_determinants.f64": {
+      "sha256": "86bd56be756d2970986db6e39358e1c470447c6712ebf1603c20c7d657c540c3",
+      "bytes": 1911424,
+      "dtype": "<f8"
+    },
+    "prefix_4/cell_level.i32": {
+      "sha256": "1a41a8e8bb52fa9623c14cdc2092a127ffbce29129249924928d8060649f735d",
+      "bytes": 955712,
+      "dtype": "<i4"
+    },
+    "prefix_4/cell_offsets.u64": {
+      "sha256": "1cac3e20ee0b1caa05e39b40a09b9695f329d1423b8bfdf9240f392ada2a5216",
+      "bytes": 1911432,
+      "dtype": "<u8"
+    },
+    "prefix_4/cell_openness.f64": {
+      "sha256": "9b02193c5a412def7db3bbb64c956d1ec022e2999402d55ec0c58243d0a9a813",
+      "bytes": 1911424,
+      "dtype": "<f8"
+    },
+    "prefix_4/cell_points.i32": {
+      "sha256": "ae94900316c0be1cedb4c4afea7b0a8a65d88e69c247d58a4466190302503b0e",
+      "bytes": 5734272,
+      "dtype": "<i4"
+    },
+    "prefix_4/cell_volumes.f64": {
+      "sha256": "ce0f065f25c5100ff90523c2343ae5acdec4d22810ac30b37bea37d552af66ca",
+      "bytes": 1911424,
+      "dtype": "<f8"
+    },
+    "prefix_4/face_areas.f64": {
+      "sha256": "d2309b94bffab87ae8e97a02ec1e86ea8b439bfcae2a4c4c9d5b51b8b5d5abf4",
+      "bytes": 15769248,
+      "dtype": "<f8"
+    },
+    "prefix_4/face_centres.f64": {
+      "sha256": "d7880f8e2f5e29450e05c057620d3045d37d5d0422f4e0282d5d474446522b4f",
+      "bytes": 15769248,
+      "dtype": "<f8"
+    },
+    "prefix_4/face_offsets.u64": {
+      "sha256": "455f6a20652bbd8d1b15700bbef6ae021f8389cb03ee78541bf57425b44ffcf6",
+      "bytes": 5256424,
+      "dtype": "<u8"
+    },
+    "prefix_4/face_points.i32": {
+      "sha256": "4cdfe577039b61fbea296d64bacb57f96c1758569a129f7c543b28f08572439c",
+      "bytes": 9318192,
+      "dtype": "<i4"
+    },
+    "prefix_4/face_skewness.f64": {
+      "sha256": "84a70adfaeae2a9b4abc806d1e96259064b134d4bec801ca4486fbe0625e2662",
+      "bytes": 5256416,
+      "dtype": "<f8"
+    },
+    "prefix_4/face_volume_ratios.f64": {
+      "sha256": "0f8e61c1fbea0236c77add7878cd69c13fe5b0eb70ce75a369e6d3469d705cf3",
+      "bytes": 4300704,
+      "dtype": "<f8"
+    },
+    "prefix_4/face_weights.f64": {
+      "sha256": "c817f65bd9a2483ed08034a5ae036c21ce9bbfc5a23036d16f823a29cff6b325",
+      "bytes": 4300704,
+      "dtype": "<f8"
+    },
+    "prefix_4/internal_mask.u8": {
+      "sha256": "d3274d49e043837bfac99a8654ef12d5bc8454b60a3d29ac01d77626351c1814",
+      "bytes": 657052,
+      "dtype": "|u1"
+    },
+    "prefix_4/neighbour.i32": {
+      "sha256": "4af6acb09907d58633f43af2bb12c1636d84e4075c86c7a7d43eeb7aacadfe1f",
+      "bytes": 2150352,
+      "dtype": "<i4"
+    },
+    "prefix_4/owner.i32": {
+      "sha256": "23da73e4649d3ca05aab6e07be554da930d9cde97f1630ef49d54edf65e0c5c6",
+      "bytes": 2628208,
+      "dtype": "<i4"
+    },
+    "prefix_4/point_ancestor.i32": {
+      "sha256": "6aec54a860108c7f48c658beeb60f151a09cee64e76a62acaf24d1b2f472698c",
+      "bytes": 597320,
+      "dtype": "<i4"
+    },
+    "prefix_4/point_level.i32": {
+      "sha256": "bb810285c43422171a777081ae22e795626a22fe5301c31e59bd2811102e2c67",
+      "bytes": 597320,
+      "dtype": "<i4"
+    },
+    "prefix_4/points.f64": {
+      "sha256": "e95fe7004c1f15d51f917f03d1f5c834c61b58029fde224a0648bd0e48176c66",
+      "bytes": 3583920,
+      "dtype": "<f8"
+    },
+    "prefix_5/cell_ancestor.i32": {
+      "sha256": "62564a0fa30c50f11a8b72eed030fbb83997b1db5e6ec1f501295e1346f4e8eb",
+      "bytes": 1194640,
+      "dtype": "<i4"
+    },
+    "prefix_5/cell_aspect_ratios.f64": {
+      "sha256": "d044a1a7d0f1b0715c94e9ca5142e93643ed9fda041cba69b4b08d32c4194200",
+      "bytes": 2389280,
+      "dtype": "<f8"
+    },
+    "prefix_5/cell_centres.f64": {
+      "sha256": "395dd3c2432bccabbfc2e79aa76dcb0693ddaa80aa42734f085790663b25141b",
+      "bytes": 7167840,
+      "dtype": "<f8"
+    },
+    "prefix_5/cell_determinants.f64": {
+      "sha256": "3babe9f91ea4401dc5793a0d87b514a700722fcff4f91bef827a500f81697280",
+      "bytes": 2389280,
+      "dtype": "<f8"
+    },
+    "prefix_5/cell_level.i32": {
+      "sha256": "26164b4628a5419534876ab7e2a2cd8ac93b5b440147f2d757155edd33957ae8",
+      "bytes": 1194640,
+      "dtype": "<i4"
+    },
+    "prefix_5/cell_offsets.u64": {
+      "sha256": "01adb96f9de3545d4e4b62ebc9406fe8a2201b602f793a93eefea6b0e31a439b",
+      "bytes": 2389288,
+      "dtype": "<u8"
+    },
+    "prefix_5/cell_openness.f64": {
+      "sha256": "bb4a9afbbb5c76bfd84fc347e4038aa34c24f7db2ba974baffeb4212da08cc80",
+      "bytes": 2389280,
+      "dtype": "<f8"
+    },
+    "prefix_5/cell_points.i32": {
+      "sha256": "a55932b57011a106f99ee4ebbb34e296361bd3fe02d843d3638cff3b22099864",
+      "bytes": 7167840,
+      "dtype": "<i4"
+    },
+    "prefix_5/cell_volumes.f64": {
+      "sha256": "2e47f6f10783b7d4968ba9649423f3059371dc42dfc41161c7d650cd5f3b0b9e",
+      "bytes": 2389280,
+      "dtype": "<f8"
+    },
+    "prefix_5/face_areas.f64": {
+      "sha256": "2cfb4951eaf131a77ff13181ab8971c801b35978ae43b4729a471f6d4eb2d815",
+      "bytes": 19353168,
+      "dtype": "<f8"
+    },
+    "prefix_5/face_centres.f64": {
+      "sha256": "4ac57d740b01bfda8787cb3541c18549bd18aa64841efd0eee2ed579c541c7a9",
+      "bytes": 19353168,
+      "dtype": "<f8"
+    },
+    "prefix_5/face_offsets.u64": {
+      "sha256": "8bf13422330d5174dee6e000a77fae7b62a734f45e1e5be20505bbbfe4dd3c0f",
+      "bytes": 6451064,
+      "dtype": "<u8"
+    },
+    "prefix_5/face_points.i32": {
+      "sha256": "7d345565cfee41f910f8c7413adde5f37cd80c7765d7f1a54dadd6a3cf038122",
+      "bytes": 11468544,
+      "dtype": "<i4"
+    },
+    "prefix_5/face_skewness.f64": {
+      "sha256": "455db0569d87b16f53bdcf8bc73c63e10db74f0c5fa14d5297d60ec3d16c7244",
+      "bytes": 6451056,
+      "dtype": "<f8"
+    },
+    "prefix_5/face_volume_ratios.f64": {
+      "sha256": "cb6d234f6a2b9b0a084b4026425582cf5c690ef7f867395966f4ac92e689f349",
+      "bytes": 5495344,
+      "dtype": "<f8"
+    },
+    "prefix_5/face_weights.f64": {
+      "sha256": "a9d3dc1e8ff1769756e89a0bc79f99a2b1c306e43fa6e81dd792c5bcabd3d295",
+      "bytes": 5495344,
+      "dtype": "<f8"
+    },
+    "prefix_5/internal_mask.u8": {
+      "sha256": "81a1aeb4010e303da182575480473c80b4758876b222ff4e4ff6e9a5ae793e32",
+      "bytes": 806382,
+      "dtype": "|u1"
+    },
+    "prefix_5/neighbour.i32": {
+      "sha256": "d6ea3c21388172a9c4d0fd349c50be38a0d5b107fb709408f2dda6d88c425ea0",
+      "bytes": 2747672,
+      "dtype": "<i4"
+    },
+    "prefix_5/owner.i32": {
+      "sha256": "7f17b39bb23a456c470b9a13523adace4f2c26052d342bdcf590977f4575e356",
+      "bytes": 3225528,
+      "dtype": "<i4"
+    },
+    "prefix_5/point_ancestor.i32": {
+      "sha256": "3519953cc805cb2f8443ee961342a8306b4ce24684703b7f7d5933d356ddcc86",
+      "bytes": 716784,
+      "dtype": "<i4"
+    },
+    "prefix_5/point_level.i32": {
+      "sha256": "9b8306aa57251063954956bddd89abb06dd837ec72c308105e9b70c18c125763",
+      "bytes": 716784,
+      "dtype": "<i4"
+    },
+    "prefix_5/points.f64": {
+      "sha256": "b714d526c58841b5996005a7e2f7ae0def3a6d22e42c378d5122465cf516bd11",
+      "bytes": 4300704,
+      "dtype": "<f8"
+    }
+  },
+  "canonical_metadata_hash": "d728ddc75c2b39154a4768012a156397be310c3f1c7ac5c2e337a475c233762b",
+  "stars": [
+    {
+      "record": {
+        "after_m": [
+          -0.002836017698708714,
+          0.0014725003092089634,
+          0.000572916628926409
+        ],
+        "before_m": [
+          -0.002833787281224304,
+          0.0014729794864895293,
+          0.0005731906306246692
+        ],
+        "bulk_mixed_classification_counts": [
+          247804,
+          247469,
+          226785
+        ],
+        "checked_faces": 20,
+        "displacement_m": 2.2977053665821368e-06,
+        "evaluations": 250,
+        "exact_star_volume_conserved": true,
+        "fixed_opposite_faces": 8,
+        "halo_cells": 16,
+        "incident_tet_ids": [
+          5085090,
+          5095379,
+          5095426,
+          5132076,
+          5179672,
+          5179711,
+          5191928,
+          5283899
+        ],
+        "incident_tets": 8,
+        "interface_mixed_classification_counts": [
+          59732,
+          59600,
+          45571
+        ],
+        "radius_m": 4.294471269401572e-06,
+        "source_batch_summary": {
+          "affected_cells": 8,
+          "affected_faces": 20,
+          "exact_nonpositive_cells": 0,
+          "maximum_aspect": 5.054035948306412,
+          "maximum_skewness": 0.5356373597034322,
+          "minimum_determinant": 0.10586316454656483,
+          "minimum_symmetric_volume_ratio": 0.05067459621331991,
+          "minimum_weight": 0.06616037111732324
+        },
+        "source_scalar_passed": true,
+        "status": "COMMITTED",
+        "study_per_star_count_nonregression": true,
+        "trials": [
+          {
+            "iterations": 9,
+            "message": "Optimization terminated successfully",
+            "stage": 1,
+            "status": 0,
+            "success": true
+          },
+          {
+            "iterations": 20,
+            "message": "Optimization terminated successfully",
+            "stage": 2,
+            "status": 0,
+            "success": true
+          }
+        ],
+        "vertex": 207427
+      },
+      "rows": [
+        25358,
+        35647,
+        35694,
+        72344,
+        119940,
+        119979,
+        132196,
+        224167
+      ],
+      "tet_ids": [
+        5085090,
+        5095379,
+        5095426,
+        5132076,
+        5179672,
+        5179711,
+        5191928,
+        5283899
+      ],
+      "actual_owner_hash": "2e1b76332ba377c0de95c72512a6b68dbcc99b97a8acbfcba5d6b515b0d5c84f",
+      "before_hex": [
+        "-0x1.736e1f64b320ep-9",
+        "0x1.8221fae37ba84p-10",
+        "0x1.2c84581a6ec29p-11"
+      ],
+      "after_hex": [
+        "-0x1.73b8f6889e164p-9",
+        "0x1.8201d2af841b6p-10",
+        "0x1.2c5f917a01ab1p-11"
+      ]
+    },
+    {
+      "record": {
+        "after_m": [
+          -0.0029108718048602147,
+          0.0006203467931300094,
+          0.0012651668999976043
+        ],
+        "before_m": [
+          -0.002909286429026615,
+          0.0006201900511022474,
+          0.0012657209297502468
+        ],
+        "bulk_mixed_classification_counts": [
+          247804,
+          247469,
+          226786
+        ],
+        "checked_faces": 20,
+        "displacement_m": 1.686693085253412e-06,
+        "evaluations": 258,
+        "exact_star_volume_conserved": true,
+        "fixed_opposite_faces": 8,
+        "halo_cells": 16,
+        "incident_tet_ids": [
+          5077467,
+          5077487,
+          5077514,
+          5077517,
+          5240054,
+          5248930,
+          5262989,
+          5283932
+        ],
+        "incident_tets": 8,
+        "interface_mixed_classification_counts": [
+          59732,
+          59600,
+          45572
+        ],
+        "radius_m": 4.2276279575229815e-06,
+        "source_batch_summary": {
+          "affected_cells": 8,
+          "affected_faces": 20,
+          "exact_nonpositive_cells": 0,
+          "maximum_aspect": 6.059187765404614,
+          "maximum_skewness": 0.5099268649931018,
+          "minimum_determinant": 0.08263598923881553,
+          "minimum_symmetric_volume_ratio": 0.04699771911901435,
+          "minimum_weight": 0.062134067190269864
+        },
+        "source_scalar_passed": true,
+        "status": "COMMITTED",
+        "study_per_star_count_nonregression": true,
+        "trials": [
+          {
+            "iterations": 10,
+            "message": "Optimization terminated successfully",
+            "stage": 1,
+            "status": 0,
+            "success": true
+          },
+          {
+            "iterations": 20,
+            "message": "Optimization terminated successfully",
+            "stage": 2,
+            "status": 0,
+            "success": true
+          }
+        ],
+        "vertex": 207565
+      },
+      "rows": [
+        17735,
+        17755,
+        17782,
+        17785,
+        180322,
+        189198,
+        203257,
+        224200
+      ],
+      "tet_ids": [
+        5077467,
+        5077487,
+        5077514,
+        5077517,
+        5240054,
+        5248930,
+        5262989,
+        5283932
+      ],
+      "actual_owner_hash": "38ddf4d252b63360845f7a0390035b44cfa5e6716157020f89b7f65cffe3670c",
+      "before_hex": [
+        "-0x1.7d5374227dc9cp-9",
+        "0x1.45287fe4f17c3p-11",
+        "0x1.4bcd17ff1e8ffp-10"
+      ],
+      "after_hex": [
+        "-0x1.7d88a668d177ep-9",
+        "0x1.453d898266657p-11",
+        "0x1.4ba7e9d67fac9p-10"
+      ]
+    }
+  ],
+  "surface_input_output_pins": {
+    "metric.bin": {
+      "sha256": "29e50b25b1f800de5b714b74fd87b4ce964fcf2cf071dde38b65439a736b383b",
+      "bytes": 4132292
+    },
+    "raw.mesh": {
+      "sha256": "68a115c386369ebe3fed82ddf3c0bbd2d259bc43ee84cfdb10d6b17b2dd1ad54",
+      "bytes": 3044447
+    },
+    "SURFACE.npz": {
+      "sha256": "505b02f69aa21d240e76d2d98300bc980336c6d7096dd336504b466a1c17f81d",
+      "bytes": 2400488
+    },
+    "QUALITY.npz": {
+      "sha256": "32f76a41934969101702fa8d09e86a4031f0c20a1c45bc20eded4eb7fc0c2f5a",
+      "bytes": 8921257
+    },
+    "REFERENCES.npz": {
+      "sha256": "64a4503ca2d5e668835cb4092c7126f5f9dcbfd7e26191b63ccd4864fce831e9",
+      "bytes": 1361
+    },
+    "INITIAL.npz": {
+      "sha256": "06c9a02646f6b4caecad51554a17eed1881acde3270bbc154fb5109010211a8f",
+      "bytes": 1059024
+    }
+  },
+  "mmgs_measured_input_bytes": {
+    "production": 9321048,
+    "audit": 9321051,
+    "frozen": 9321051,
+    "difference": -3
+  },
+  "interpretation": [
+    "historical_capsule_surface.run_native:45-60 sums sizes of EVERY direct file currently in stem.parent before launch and compares that aggregate against free disk space. It does not report the metric.bin size, nor a parsed scientific/native input count.",
+    "surface_execution:138-142 passes metric.bin and raw.mesh paths to the pinned MMGS runner; the actual complete metric.bin bytes match all three runs at4132292 bytes, SHA29e50b25b1f800de5b714b74fd87b4ce964fcf2cf071dde38b65439a736b383b. Complete raw.mesh, INITIAL, final surface, QUALITY and REFERENCES bytes also match.",
+    "The3-byte aggregate difference is operational scratch-file bookkeeping, not evidence of a scientific metric field change. The prelaunch per-file inventory was not retained and PROGRESS files are later overwritten, so this review cannot identify which exact scratch file(s) account for3 bytes or claim it reconstructed the prelaunch sum.",
+    "All88 native dumped files and every requested native/MESH/SEALED/JOINED/core/conditioning array match audit and frozen baseline exactly. Full canonical cell metadata and actual two apex stars match the independently captured baseline descriptor, with unchanged protected181034 coordinates and all connectivity/persistent IDs.",
+    "Production remains its genuine producer/fidelity accepted profile with audit not_run. Its actual twelve producer proof receipts/export are retained under its authenticated manifest; the interrupted external helper did not reach all later native/apex checks. This static diagnosis supplies additional evidence but does not claim the helper completed."
+  ],
+  "actual": {
+    "points": 207705,
+    "prisms": 298660,
+    "core": 247804,
+    "cells": 546464,
+    "moved_ids": [
+      207427,
+      207565
+    ],
+    "affected_tets": 16,
+    "protected_vertices": 181034,
+    "conditioning": {
+      "cavity_commits": 0,
+      "coordinate_identity": "c5f8a91518e4527d998aa1bd5c900be5c0b85511339e57b9fe4d354230a5b380",
+      "existing_vertex_commits": 0,
+      "final_bad_count": 0,
+      "initial_bad_count": 0,
+      "input_sha256": "2dc471ae70119672563713a35159966ae6b8f3d4bc94c40330cc2fbfda4d29da",
+      "method_identity": "f304264e3e13202b0e0c1e0fc4ab629316896968d22bc97fe5af87900d864b30",
+      "native_calls": 0,
+      "original_coordinate_identity": "c5f8a91518e4527d998aa1bd5c900be5c0b85511339e57b9fe4d354230a5b380",
+      "outcome": "AlreadyAboveFloor",
+      "output_sha256": "2dc471ae70119672563713a35159966ae6b8f3d4bc94c40330cc2fbfda4d29da",
+      "receipt_sha256": "10e96a3bf4692e0a0327d72813228db2de498a2e18479c4ec07040b29d21c7c9",
+      "timings": {
+        "initial_population": 22.04699999978766
+      }
+    },
+    "external_wall_seconds": 6124.915444999933,
+    "source_identity": "8e428c2a5e7bee83dc71c70660c40cbd1452f08ad99674ed5e4755456768c518"
+  },
+  "source_pins": {
+    "v4/tools/historical_capsule_surface.py": "b3111eca6283187acad317b4fa04d98616413528d9ff84c83137cbac295057af",
+    "v4/tools/surface_execution.py": "8c581bf40e147b0a0571f538449ead68feaeaa0770f9907b8f532f66f7050fbe"
+  },
+  "external_pins": {
+    "outputs/PASSAGE_VERIFY2_PRODUCTION_COMPARISON.json": "7a5ac334be5c58ae31370a9e91e356944fc1bc46c0641db9e3080295150c999a",
+    "outputs/PASSAGE_VERIFY2_PRODUCTION_FIRST_DIFFERENCE_DIAGNOSTIC.json": "f23aa6447af6cfc858666cc36ee76f4b682294487d2398df76bb2cac31e9a17b",
+    "work/passage_verify2_auth.py": "347e9e2072bce6ae1553f48c2d1f256cd7bd7b7b4aa9bbd30cfa797185d26bb9",
+    "work/passage_verify2_compare.py": "e45e6c39a95a0202d60fe25a7496031fa6765a9ffd6336236967fc4845e64050",
+    "outputs/PASSAGE_VERIFY1_PRODUCTION_RUN.json": "74ac843740ab3d021cb6396abd3acecfd8031e172a7b2fd704b0d0895ade31f1"
+  },
+  "closed_raw_pins": {
+    "VERIFICATION.json": "9e25eb2085cba8092f2d347ec8fa18682e0e5ab47dcadba2b40327cc9d037340",
+    "RESULT.json": "19fb7828d4861f3f49c7302a2b0f4f0b44d8b366c9dcc66fb48fb9d0020e0697",
+    "background/RESULT.json": "dcb63c88a3fbf548c13d50776eeca26f82b15a98e309ba64d98963b977ab5955",
+    "background/MANIFEST.json": "0d15888281c75373db34d94973158d5c0dced2bf7fee80610e3251b186a21578",
+    "background/SHARED_APEX_REPAIR.json": "ce26476b78ce64254e92d68db385bf415a693fbaf67767495d08145bdc2d4344",
+    "background/conditioning/CONDITIONING.json": "10e96a3bf4692e0a0327d72813228db2de498a2e18479c4ec07040b29d21c7c9",
+    "background/JOINED_RECONSTRUCTION.json": "5ee7e4e5a6c5a7970f91b8a4e43a9a4d986846d658353b6fb061286cb20fcdf7",
+    "upstream/surface/A/fresh/GENERATION.json": "50beb4070136c635675cca7fcf59b78f8e516c6bd6161d0e9bb5d0f7521b5d93"
+  },
+  "limits": [
+    "No offline audit or new external passing comparison exists for this production passage. Original failure preserved; no normalization change or further comparator run is authorized here.",
+    "No fresh QA/exact volume/collision/native predicates were executed by reviewer. Original engineering and UNQUALIFIED/global-exact-Q claim limits remain unchanged.",
+    "No continuous geometry, CFD, general-shape robustness or hard200um guarantee is established."
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "schema": "V35PassageV3ComponentImplementationReview/2",
+  "passed": true,
+  "classification": "PASS_FINAL_NARROW_NATIVE_INPUT_AND_WRITTEN_POLICY_SOURCE_TESTS",
+  "blockers": [],
+  "scope": "Static read-only implementation/source and closed focused log inspection. No project/comparator imports or execution, no actual V3 comparison/offline audit, no test/native/geometry/source query or scientific campaign by reviewer.",
+  "pins": {
+    "work/passage_verify3_auth.py": "906d9b3909c7e8dcf51f0dcd619216280ea2a88eeeea1b33320ee273b45c3872",
+    "work/passage_verify3_compare.py": "f65ed2469ad2950f5c292f6060eabe72aa3235a09f0054810ae16fb8bda95a67",
+    "work/test_passage_verify3_auth.py": "b49db30e9e9a8607aaf1b3afb2ae2f2943ce5741e0657aa998814c732d05f676",
+    "work/passage_verify3_tests_final.log": "e3af2cc97d58df94bd0174e6e79fda1f4f7d5f4202ce2137cbb9677a7c2da7b4",
+    "outputs/PASSAGE_VERIFY3_NATIVE_INPUT_BINDING_PLAN_REVIEW.json": "d70e31cd39f24af291e3a7cc099b4c869037542a7b5ce63882d1e28e987bc2dc",
+    "outputs/PASSAGE_VERIFY2_PRODUCTION_STOP_COMPONENT_REVIEW.json": "1046baed1dd319c0dbfd5526c83375f802d343ff67178d895852ea4ff4bc37d3",
+    "outputs/PASSAGE_VERIFY3_SEMANTIC_INVENTORY_REVIEW.json": "6616ac7613c4fca86e64628d86d16be90b12f72e7df8474feaa7458ff388dc5b"
+  },
+  "cleared_checks": [
+    {
+      "source": "work/passage_verify3_auth.py:175-186",
+      "finding": "Previous STOP_COMPONENT_REVIEW independent digest1046... is fixed, and history pins V1/V2 results/comparator sources plus semantic/native plans. Expected science hashes are not regenerated from arbitrary current files."
+    },
+    {
+      "source": "work/passage_verify3_auth.py:188-199",
+      "finding": "decode_metric validates exact8-byte magic, fixed retained-case count population37566/75132/0, exact packed byte length4132292, finite coordinate/tensor components, required flags/references, and one-based face-index bounds. Decoder is explicitly this retained case comparison, not a general mesher path."
+    },
+    {
+      "source": "work/passage_verify3_auth.py:201-230",
+      "finding": "Every metric/INITIAL/raw.mesh/SURFACE/QUALITY/REFERENCES container size+SHA must match independent STOP pins. Decoded xyz and face incidence bind exact INITIAL dtype/shape/bytes. Coherent metric and INITIAL replacements cannot establish new expected hashes."
+    },
+    {
+      "source": "work/passage_verify3_auth.py:217-229",
+      "finding": "mmgs.json exactly equals own authenticated GENERATION timing receipt; success/timeout120 and exact normalized native semantic argv enforced. Actual adapter/library bytes bind qualification and own authenticated IMPLEMENTATION binaries plus explicit fixed known hashes. Actual stdout exact inventory/method schema is checked without native execution."
+    },
+    {
+      "source": "work/passage_verify3_auth.py:142-155",
+      "finding": "Only timing.mmgs.measured_input_bytes added to enumerated normalization leaves. It requires exact int (reject bool/fractional), finite/nonnegative; scientific counts/policies/commands/timeout/source counters/quality remain strict. Original values stay sealed in own run receipts."
+    },
+    {
+      "source": "work/passage_verify3_auth.py:surface_provenance,authenticate_pair",
+      "finding": "Native input authentication runs before normalized GEN semantic equality. Existing physical/parent/provenance/native88/canonical IDs/apex/protected coordinate bindings remain and history anchors original failed comparisons unchanged."
+    }
+  ],
+  "test_receipt": {
+    "path": "work/passage_verify3_tests_final.log",
+    "methods": 29,
+    "seconds": 70.674,
+    "result": "OK",
+    "reviewer_execution": false,
+    "coverage": [
+      "retained audit/frozen authenticate_pair positive",
+      "production/audit identical scientific input despite scratch aggregate difference",
+      "scratch scalar type/scope controls",
+      "fixed independent native-file pins and coherent metric+INITIAL substitution rejection",
+      "metric magic/count/length/truncation/trailing/reference/flag negatives",
+      "native receipt/dependency/anchor tampering",
+      "prior native ancestry/owner/neighbour/boundary/apex/parent/root/closure/provenance/Windows input-custody controls",
+      "written policy own-CASE identity and unknown substantive field control"
+    ],
+    "limits": "File-pin alteration controls mock hash returns; decoder negatives modify actual byte buffers. No actual full V3 comparator result was executed or reviewed."
+  },
+  "advisories": [
+    {
+      "id": "SOURCE_BUILD_ATTRIBUTION",
+      "finding": "V3 correctly anchors actual owned adapter/library and observed stdout; it does not import or assert current original C++ source is exact build source. Continue this limit; no new compiled parameter/default claims."
+    }
+  ],
+  "disposition": "No component blocker to ONE separately gated authorized read-only V3 comparison of unchanged closed production/audit/frozen evidence. This final exact source/test snapshot supersedes the preserved28-test review for that gate; no actual comparison or offline/scientific result is implied.",
+  "remaining_limits": [
+    "No actual V3 comparison PASS exists in this review.",
+    "No new native invocation, live source grant, mesh-token preimage reconstruction or science policy/gate changes.",
+    "Scientific tensors are exact prior accepted input identity, not regenerated source evaluation or an independent continuous/interior metric-field proof.",
+    "Whole-run engineering/repair UNQUALIFIED/global exact-Q/CFD/hard200um limitations remain unchanged."
+  ],
+  "supersedes_for_dependent_gate": {
+    "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PASSAGE_VERIFY3_COMPONENT_IMPLEMENTATION_REVIEW.json",
+    "sha256": "2abfea3391349253542b4f3829524b620b777e46ac0b81faf6d5d3d0e35fe1f7",
+    "preserved_unchanged": true
+  },
+  "resolved_final_advisory": {
+    "id": "WRITTEN_POLICY_DIAGNOSTICS",
+    "source": "work/passage_verify3_auth.py:230-233",
+    "resolution": "surface_native_input reads complete WRITTEN_METRIC_POLICY; checks coupled_connection.source_identity==identity(full own CASE); replaces only that authenticated digest with a named marker; returns the entire remaining dictionary in native_input for strict cross-run equality. Unknown new substantive fields and every existing metric_response_factor/prism/shape reserve remain comparison-visible.",
+    "focused_control": "test_written_metric_policy rejects wrong own digest and verifies one-sided unknown scientific field changes the returned semantic result; saved-pair and production/audit native-input positives still pass."
+  }
+}

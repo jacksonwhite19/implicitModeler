@@ -1,0 +1,37 @@
+{
+  "assurance": "Existing audited engineering path only; no production selection, CFD, continuous geometry or global exact-Q claim",
+  "closure_records": {
+    "source": {
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\run_logs\\a2e6cff4670b.SOURCES.json",
+      "sha256": "f1513e54ad3ea707acd60efb12cfaf51f53cd92ebd9990d062ac81e49b6113a2"
+    },
+    "supervisor": {
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\run_logs\\a2e6cff4670b.json",
+      "sha256": "cdff421fea188ab724c1dbff1b17f957f90addbf7f10598a2bd3b2fb5fd60af1"
+    }
+  },
+  "completion_files": {
+    "CASE.json": "cdd39c79d3d5f1b1f0d36d0afd55c0360c53516ecf10840f35084fcaccd5659e",
+    "RESULT.json": "28c6bc8b5e1ec970f893482e9113edc2bda66713ff03a4527b393f13283fe97f",
+    "background/READBACK.json": "c70faa280ee446d45f823759a799cca1cc832113f678ad77b4a842945a18d74b",
+    "background/RESULT.json": "8adb0ab4a5bdd68b6948b127442c6153670778a981e883b2743e115a26293261"
+  },
+  "finalization": {
+    "finalization_sha256": "7263b6479eb0468fa3e2c2efafcf534cf559d674814e169fd8ad5720f5790250",
+    "geometry_identity": "45ca12f627826118fd42f8caab7f3d95aec07707e7bef0c5c25fdd38e22c8ef9",
+    "manifest_sha256": "596a38454cf6fb52aab40c2b67e70ee36e24f80be8651c014b411a35644f6307",
+    "schema": "V35AuditedArtifactFinalization/1",
+    "verification_policy": "audit"
+  },
+  "handoff_sha256": "e9e39fd0938dd95575da32fdd283e50bbee2d3bded3303a8ed5981cafd371f82",
+  "independent_semantic_replay": "passed",
+  "producer_artifact_binding": "passed",
+  "production_bypass": false,
+  "schema": "V35VerificationManifest/1",
+  "source_custody": "closed_passed",
+  "source_identity": "8e428c2a5e7bee83dc71c70660c40cbd1452f08ad99674ed5e4755456768c518",
+  "status": "audit_accepted",
+  "supervisor_stop_reason": null,
+  "verification_policy": "audit",
+  "worker_exit_code": 0
+}

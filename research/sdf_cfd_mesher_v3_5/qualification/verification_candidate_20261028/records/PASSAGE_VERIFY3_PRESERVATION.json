@@ -1,0 +1,29 @@
+{
+  "original": {
+    "checked_files": 1866,
+    "mismatches": []
+  },
+  "published": {
+    "checked_files": 1866,
+    "mismatches": []
+  },
+  "original_unrelated_hash_mismatches": [],
+  "original_unrelated_hashes_checked": 78,
+  "original_tracked_dirty_count": 97,
+  "original_additional_dirty_paths": [
+    "research/sdf_cfd_mesher_v3_5/.gitattributes",
+    "research/sdf_cfd_mesher_v3_5/CURRENT_TASK.md",
+    "research/sdf_cfd_mesher_v3_5/README.md",
+    "research/sdf_cfd_mesher_v3_5/qualification/consolidation_20261027/STATUS.md",
+    "research/sdf_cfd_mesher_v3_5/standalone/CONSOLIDATE1_REPORT.md",
+    "research/sdf_cfd_mesher_v3_5/standalone/INSTALL_FROZEN.md",
+    "research/sdf_cfd_mesher_v3_5/standalone/QUALIFICATION.md",
+    "research/sdf_cfd_mesher_v3_5/standalone/README.md"
+  ],
+  "original_missing_initial_dirty_paths": [],
+  "frozen_head": "eff955ed3670e67b7d134b83e69c37f52b387906",
+  "frozen_status": "",
+  "candidate_head": "a09d7688020721524fc68e4156ec233b5320166a",
+  "candidate_branch": "candidate/mesher-v3-5-finalizer-phase1a",
+  "passed": true
+}

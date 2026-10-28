@@ -1,0 +1,33 @@
+{
+  "mode": "offline",
+  "command": [
+    "C:\\Users\\Jackson\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+    "-B",
+    "offline_audit.py",
+    "--bundle",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\sphere_verify1_production_01",
+    "--expected-root",
+    "dd9c6d85c60288d3ffbcf1b69843d9766255b42f9272f446878185a029298c02",
+    "--verifier-identity",
+    "8e428c2a5e7bee83dc71c70660c40cbd1452f08ad99674ed5e4755456768c518",
+    "--output",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\sphere_verify1_offline_01",
+    "--timeout-seconds",
+    "10800"
+  ],
+  "output": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\sphere_verify1_offline_01",
+  "state": "closed",
+  "attempt": 1,
+  "started_utc": "2026-10-28T00:21:10.141885+00:00",
+  "runtime_identity": "8e428c2a5e7bee83dc71c70660c40cbd1452f08ad99674ed5e4755456768c518",
+  "pid": 42660,
+  "exit_code": 0,
+  "total_wall_seconds": 87.8106174999848,
+  "peak_sampled_external_windows_tree_rss_bytes": 471384064,
+  "rss_samples": 337,
+  "rss_scope": "Windows launched process tree including supervisor; excludes aggregate WSL Linux RSS",
+  "output_logical_bytes": 27373885,
+  "physical_allocation": "not_measured",
+  "finished_utc": "2026-10-28T00:22:37.954433+00:00",
+  "production_input_unchanged": true
+}

@@ -1,35 +1,44 @@
-> Verification qualification (2026-10-28): fixed sphere/adaptive, thick-blend/adaptive and passage/nodal passed actual audit/production/separate offline on unchanged runtime714b83dd/8e428. Production audit remains not_run; separate replay passes. See [closed report](../qualification/passage_verification_closed_20261028/REPORT.md). Prior comparator failures are preserved. No automatic promotion or new campaign. Frozen eff955ed historical table below is unchanged.
+# Mesher V3.5 verification candidate
 
-# Mesher V3.5 — frozen working candidate
+V3 complete-stack prisms connect to the existing V4 direct transition/background, followed by joined checks and OpenFOAM export. There is no separate transition band. This is a separate local verification candidate. The original frozen release is unchanged.
 
-Closed three-case consolidation. Scientific/runtime identity: **5e38fe034bb6f90fd23f5fee854293960e3ead35c289450ebe8d4f5a935f6666**, 1,866 protected files. This is the same build that passed the complete NODAL5 passage run. No runtime source, numerical gate or verification mode was changed for consolidation.
+Start with [installation](INSTALL_VERIFICATION.md), then the [tested commands and results](QUALIFICATION.md). Run commands from this directory. The archive includes built native components and their runtime/source closure. It excludes result bundles and caches.
 
-The path is **Rhai/SDF surface -> V3 complete-stack prisms -> existing V4 direct outer workflow -> joined acceptance/export/readback**. There is no separate transition band in this workflow.
+## Choose verification and carrier independently
 
-## Qualification matrix
+`--verification audit` is the default. It runs all twelve mandatory producer obligations, native export/fidelity checks, source/resource closure and the separate twelve-obligation semantic replay.
 
-| Fixture | Explicit carrier mode | Current frozen-build status | Cells / points |
-|---|---|---|---:|
-| Passage | nodal | Complete engineering pass, NODAL5 | 546,464 / 207,705 |
-| Sphere | adaptive | Complete pass; baseline-identical arrays | 53,228 / 14,798 |
-| Original thick blend | adaptive | Complete pass; baseline-identical arrays | 119,441 / 38,868 |
+`--verification production` is explicit and supports only `--stop-after complete` with the direct background policy in `fixtures/background_direct_v4.json`. It keeps all producer, construction, quality, export and closure checks. It omits only the separate full semantic replay, records `production_accepted` and `audit: not_run`, and retains evidence for later audit. It does not fall back after an audit failure. Unsupported partial/non-direct production requests fail with `ProductionRequiresCompleteDirectWorkflow`; invalid policies/modes fail validation. Parser support for another setting is not qualification of that setting.
 
-Modes are public generic CLI choices, declared in the commands. This matrix does not claim one shared default was tested for all three. There is no fixture-name dispatch or silent fallback.
+`--surface-carrier adaptive|nodal` controls construction, independently of verification. The carrier default is adaptive. The tested sphere and thick blend use adaptive; passage explicitly uses nodal. Do not infer that other carrier/geometry combinations are qualified.
 
-## Run and install
+Production saves the cost of the deferred replay. Running a separate offline audit later pays that cost again and can be slower overall than one audit-mode run. A later offline pass is a separate result; the original production receipt remains `audit: not_run`.
 
-Read [INSTALL_FROZEN.md](INSTALL_FROZEN.md) for the configured environment and [QUALIFICATION.md](QUALIFICATION.md) for the exact three commands and limits. Use a fresh output directory. The package is a runnable snapshot for the configured Windows/WSL host; it does not bundle operating systems or prove clean-machine portability.
+## Keep the evidence if you want a later audit
 
-`--surface-carrier adaptive|nodal` selects construction only. Omission retains the V3.5 **adaptive** default. Adaptive evaluates the optional construction carrier; nodal uses the existing carrier-optional V4 FastProd route and records carrier NotRun. Both require unchanged final surface and downstream acceptance. A refusal never triggers automatic fallback.
+After a successful production run, keep its entire output directory intact, including source/closure records, manifests, raw/native operands and nested background evidence. An exported OpenFOAM mesh alone is insufficient. Capture and preserve the trusted `VERIFICATION.json` hash immediately after successful production closure, outside the bundle. Do not establish a new trusted root by rehashing a bundle after an unexplained modification. Keep this compatible runtime too.
 
-`--surface-size` is nominal sizing. Requests for first height, row count and nominal growth must be read together with achieved thickness/compression. See [CONSOLIDATE1_REPORT.md](CONSOLIDATE1_REPORT.md).
+Example after the sphere production command in QUALIFICATION.md succeeds:
 
-## Known limits
+```powershell
+$bundle = (Resolve-Path 'results/sphere_verify1_production_01').Path
+$root = (Get-FileHash -LiteralPath (Join-Path $bundle 'VERIFICATION.json') -Algorithm SHA256).Hash.ToLowerInvariant()
+$verifier = (python -B offline_audit.py --print-verifier-identity).Trim()
+if ($LASTEXITCODE -ne 0) { throw 'Cannot identify verifier' }
+$expectedVerifier = (Get-Content -Raw '../RELEASE.json' | ConvertFrom-Json).runtime_identity
+if ($verifier -ne $expectedVerifier) { throw 'Incompatible verifier runtime' }
+@{ bundle=$bundle; expected_root=$root; verifier_identity=$verifier } | ConvertTo-Json | Set-Content -Encoding utf8 '../sphere-production-trust.json'
+```
 
-Surface size is a nominal target, not a hard maximum edge or final metric-ratio guarantee. Surface geometry is sampled numerical acceptance, with no whole-source completeness, continuous face accuracy, exact root/normal, native/real-target equivalence or determinism proof. Continuous SDF fluid clearance, CFD/solver/y-plus/flow accuracy and general-shape qualification are unclaimed. The parser supports settings beyond the tested rows, but those settings are not qualified by this matrix. Historical or closed FastProd authority is not reusable as fresh live authority.
+Run this only after `mesh.py` exits zero and its closed `VERIFICATION.json` says `acceptance_status: production_accepted`. The retained tested roots in the qualification records identify those original runs; a new run needs its own captured root. Keep the trust record in a safe location and use a new name for each run.
 
-Passage has all five nominal rows, total 180.862 um, no compression or growth reversals. Sphere likewise has no compression. The original thick-blend baseline uses local compression, with total thickness 58.5731–180.862 um and 2,429 scalar / 2,559 physical-path growth reversals; nominal growth 1.3 is not achieved everywhere. The current blend regression confirms those achieved values on the frozen build.
+Later, from this same runtime directory, load that preserved record and use a fresh, separate output path:
 
-DirectFillEngineering/1 requires bulk/interface tetrahedron minima 0.25 and cap triangle minimum 0.30, plus actual-neighbour QA and all other current gates. Cap/interface population percentage targets can remain nonblocking TARGET_NOT_MET. A complete engineering pass is not a claim that every quality distribution target is met. checkMesh -meshQuality was not run because no applicable approved dictionary exists. Clean-machine portability is not tested.
+```powershell
+$trust = Get-Content -Raw '../sphere-production-trust.json' | ConvertFrom-Json
+python -B offline_audit.py --bundle "$($trust.bundle)" --expected-root "$($trust.expected_root)" --verifier-identity "$($trust.verifier_identity)" --output 'audits/sphere_offline_01' --timeout-seconds 10800
+```
 
-The current source inventory and compact accepted evidence are in `../qualification/consolidation_20261027/`. Copied historical manifests and commands remain unchanged as pinned provenance; the current qualification matrix governs current claims. Results, caches and multi-GB evidence remain local and are excluded from the Git freeze. No performance optimization or new verification-policy control is included.
+The output must be fresh and outside the production bundle. Require exit zero, `AUDIT_RESULT.json` status `audit_passed`, all twelve replay obligations passed and closed verifier source custody. A wrong root, changed retained evidence, incompatible verifier or overlapping/existing output is refused. Offline replay does not remesh, repeat the optimizer search, create fresh geometry authority, rerun OpenFOAM conversion or rerun checkMesh. It does replay retained commits using the required numerical/native predicates; zero new subprocess scopes does not mean zero native work.
+
+Qualification is limited to the three fixed cases, settings and configured host. See QUALIFICATION.md for retained compression, warnings and scientific limits. [Detailed qualification](../qualification/verification_candidate_20261028/records/PASSAGE_VERIFY3_REPORT.md) and [compact evidence index](../qualification/verification_candidate_20261028/README.md) accompany the runtime. The archive CRC/member hashes and help smoke checks establish package integrity only. Clean-machine portability, arbitrary geometry, CFD accuracy and stable performance are not qualified.

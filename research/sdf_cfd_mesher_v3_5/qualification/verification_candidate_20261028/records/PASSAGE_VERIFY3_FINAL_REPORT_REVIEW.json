@@ -1,0 +1,79 @@
+{
+  "schema": "PassageVerify3FinalReportReview/1",
+  "passed": true,
+  "blockers": [],
+  "report_sha256": "8f443d821f017fdd16b2ad86b3e4a5d2aa67b9ec2e6bf3400a7db3b896c08511",
+  "docpins": {
+    "work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\CURRENT_TASK.md": "8a681cbe992f5ed91d832a324cd2d3c31d2f7c1a3dc3e188067f6934407b5ec2",
+    "work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\PHASE1B_CONTRACT.md": "6870e1b85faa1b5df405c9d6ad7cdf3ac96f6658dedb5a127a4fba3c89524fe5",
+    "work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\README.md": "8a681cbe992f5ed91d832a324cd2d3c31d2f7c1a3dc3e188067f6934407b5ec2",
+    "work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\qualification\\passage_verification_closed_20261028\\REPORT.md": "8f443d821f017fdd16b2ad86b3e4a5d2aa67b9ec2e6bf3400a7db3b896c08511",
+    "work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\qualification\\passage_verification_closed_20261028\\STATUS.json": "1ce9e6206723139cc8426a689ab48abe5404149af615a961af2af059093b6e69",
+    "work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\QUALIFICATION.md": "ce9d9011e674d3cfed3694720a9b02da583f443c7c62ea1bdaa4fe8e8a1be0ca",
+    "work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\README.md": "dafe948285816779fc834f0ed94fb897e58e44106f7a1c1d62922a651e02c596",
+    "work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\RUN_STATUS.md": "fb1f7e081af9779688b2f8be1650269b4e165f095c15c437183095c9af57e5dc"
+  },
+  "evidencepins": {
+    "outputs\\PASSAGE_VERIFY3_REPORT.md": "8f443d821f017fdd16b2ad86b3e4a5d2aa67b9ec2e6bf3400a7db3b896c08511",
+    "outputs\\PASSAGE_VERIFY3_FINAL_ROUTE_REVIEW.json": "9ef0ac6c65cd1cc3d9f0f19c7e04b57be68f1ea445eece4be5fc4a8e4e46e73a",
+    "outputs\\PASSAGE_VERIFY3_OFFLINE_RESULT_REVIEW.json": "35faaabd36a610c33f050bbb414a0ae6c134b8260932180e2d1c374d2f0d22e5",
+    "outputs\\PASSAGE_VERIFY3_PRODUCTION_RESULT_REVIEW.json": "b58f58b04269ac97ec34a95c85b5f41a31109c7a1d97109e992dfbb6416f7994",
+    "outputs\\PASSAGE_VERIFY1_OFFLINE_RUN.json": "c6a82f9c6115877dcde9746708ed9c89687a7c2315b8fbcd280b3e98cf42004f",
+    "outputs\\PASSAGE_VERIFY1_AUDIT_RUN.json": "373bff1d75c472c598709bc6e6dd853627e6d076d4c389901da560c79e1125d5",
+    "outputs\\PASSAGE_VERIFY1_PRODUCTION_RUN.json": "74ac843740ab3d021cb6396abd3acecfd8031e172a7b2fd704b0d0895ade31f1",
+    "outputs\\PASSAGE_VERIFY3_PRODUCTION_COMPARISON.json": "e03fe57bef13186e7829270637ce6e5ebc1eaa2edc82afb7d870df3fd9cdb51b",
+    "outputs\\PASSAGE_VERIFY3_OFFLINE_COMPARISON.json": "8bc4aa426c97f75fd553a765757ae246e62c3e88aeab66ee92c82fd4c6152648",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_production_01\\VERIFICATION.json": "9e25eb2085cba8092f2d347ec8fa18682e0e5ab47dcadba2b40327cc9d037340",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_offline_01\\AUDIT_RESULT.json": "aee0363fa52a8f7c9397c52bb02c9a55d3d480ed252c1da16b87cb3909297300",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_offline_01\\VERIFIER_SOURCES.json": "f1513e54ad3ea707acd60efb12cfaf51f53cd92ebd9990d062ac81e49b6113a2"
+  },
+  "reviewed_head": "a09d7688020721524fc68e4156ec233b5320166a",
+  "scope": "Final actual report/eight-document delta and closed saved evidence only; no new comparison/test/native/source/geometry/mesher execution or source/document edits.",
+  "checks": {
+    "exact_changed_population_8_docs": true,
+    "tracked_docs": 6,
+    "new_docs": 2,
+    "runtime_current_hashes_equal_closed_inventory": 1873,
+    "actual_report_copy_byte_equal": true,
+    "three_fixture_matrix_matches_raw_counts_and_wall_receipts": true,
+    "production_audit_not_run_and_offline_separate_pass": true,
+    "passage_production_bundle_unchanged_files": 372,
+    "V1_V2_failed_history_preserved": true,
+    "narrow_V3_storage_normalization_and_science_pins_explicit": true,
+    "no_automatic_promotion_or_new_campaign": true
+  },
+  "passage_facts": {
+    "points": 207705,
+    "prisms": 298660,
+    "tetrahedra": 247804,
+    "cells": 546464,
+    "moved_vertices": [
+      207427,
+      207565
+    ],
+    "move_micrometres": [
+      2.2977053665821368,
+      1.686693085253412
+    ],
+    "repair_classification": "UNQUALIFIED",
+    "warnings": [],
+    "shape_minima": {
+      "all_bulk_tetrahedra": 0.2716482611054878,
+      "interface_tetrahedra": 0.32041083317825586,
+      "preserved_cap_triangles": 0.3304947841289329
+    },
+    "wall_seconds": {
+      "audit": 6998.994109699968,
+      "production": 6124.915444999933,
+      "offline": 1029.5494609000161
+    },
+    "production_plus_offline_seconds": 7154.464905899949,
+    "production_less_audit_seconds": 874.078664700035
+  },
+  "advisories": [
+    "Full fixed three-fixture configured-host verification route only; arbitrary shape/carrier/settings, clean-machine, CFD/continuous geometry/global exact-Q/repeatable performance remain unqualified.",
+    "Offline retained replay and original production acceptance remain separate; no fresh source grant or native conversion/checkMesh replay claimed.",
+    "Whole finalizer cost not isolated; nested timings must not be summed; comparisons/reports/idle gaps excluded from CLI totals.",
+    "Docs-only commit can use exactly these eight pinned paths; no source/campaign/push/package promotion authorization inferred from this review."
+  ]
+}

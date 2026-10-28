@@ -1,0 +1,24 @@
+{
+  "scope": "Observed configured host metadata, not an installer or clean-machine qualification",
+  "windows_python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "windows_packages": {
+    "numpy": "1.26.4",
+    "scipy": "1.15.3",
+    "sympy": "1.14.0",
+    "casadi": "3.7.2",
+    "psutil": "7.2.2"
+  },
+  "wsl_distribution": "Ubuntu-22.04",
+  "openfoam": "/opt/openfoam13",
+  "bundled": "Owned runtime/source/native binaries and library closure; external OS/Python/OpenFOAM dependencies still required",
+  "linux_system_python": {
+    "python": "3.10.12 (main, Aug 31 2026, 10:18:17) [GCC 11.4.0]",
+    "packages": {
+      "numpy": "1.26.4",
+      "scipy": "1.8.0",
+      "sympy": "1.9",
+      "casadi": "not installed as system distribution",
+      "psutil": "not installed as system distribution"
+    }
+  }
+}

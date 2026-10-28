@@ -1,0 +1,310 @@
+{
+  "schema": "PassageVerify3SemanticInventoryReview/1",
+  "passed": true,
+  "classification": "PASS_BOUNDED_STATIC_INVENTORY_NOT_IMPLEMENTATION_OR_RESULT",
+  "blockers": [],
+  "pins": {
+    "work/passage_verify2_auth.py": "347e9e2072bce6ae1553f48c2d1f256cd7bd7b7b4aa9bbd30cfa797185d26bb9",
+    "work/passage_verify2_compare.py": "e45e6c39a95a0202d60fe25a7496031fa6765a9ffd6336236967fc4845e64050",
+    "work/phase1a/research/sdf_cfd_mesher_v3_5/standalone/v4/tools/historical_capsule_surface.py": "b3111eca6283187acad317b4fa04d98616413528d9ff84c83137cbac295057af",
+    "work/phase1a/research/sdf_cfd_mesher_v3_5/standalone/v4/tools/surface_execution.py": "8c581bf40e147b0a0571f538449ead68feaeaa0770f9907b8f532f66f7050fbe",
+    "work/phase1a/research/sdf_cfd_mesher_v3_5/standalone/v4/tools/general_sdf_binding.py": "84e657a72b4648835ae89de94900f35e80ba3d921e10740792c8b2de5c0f782a",
+    "work/phase1a/research/sdf_cfd_mesher_v3_5/standalone/v4/canonical_kernel/src/surface_seed.rs": "27862efe7cbfdeb2723701af0d4d520681f5dedb34b25b0f6f573148b279ca5e",
+    "work/phase1a/research/sdf_cfd_mesher_v3_5/standalone/v4/tools/audit_adaptive_surface.py": "0e1b3620657f3fd13f344fa7c79f693bc3b4600f2406b8e47991f774a0a1a942",
+    "work/phase1a/research/sdf_cfd_mesher_v3_5/standalone/v4/tools/general_sdf_authority.py": "d2842b6aaf1c44e8cfdee9967b1db55db498c330dd7ea63724b44ea1cf03e3fc",
+    "work/phase1a/research/sdf_cfd_mesher_v3_5/standalone/background_conditioning.py": "ca12191ceeb2c5c2c004ae73bd6c7ed6835a75b6229f74528623c6a1852a1683",
+    "work/phase1a/research/sdf_cfd_mesher_v3_5/standalone/native.py": "d9ba3eaa379dd0c92f1259a1a425395c3704a51e55906475b5bc5ebc8ecff8df",
+    "work/phase1a/research/sdf_cfd_mesher_v3_5/standalone/v4/tools/finite_research/direct_shared_apex.py": "83c1880398c572b5ffe758d4c048847f07b29c7c5f46f7e42a671ad1ce4accc4"
+  },
+  "scope": "Static existing V2 comparator/source and retained JSON field inventory only. No full comparator, predicate, runtime import, tests, source/native query or science execution. V3 implementation and new comparison require separate review.",
+  "operational_measurement_inventory": [
+    {
+      "record": "AUDIT",
+      "path": "seconds",
+      "category": "operational_measurement",
+      "source": "v4/tools/audit_adaptive_surface.py:50,302-304",
+      "rule": "Existing named finite nonnegative measurement normalization; original own record remains hash-authenticated."
+    },
+    {
+      "record": "AUDIT",
+      "path": "peak_rss_bytes",
+      "category": "operational_measurement",
+      "source": "v4/tools/audit_adaptive_surface.py:50,302-304",
+      "rule": "Existing named finite nonnegative measurement normalization; original own record remains hash-authenticated."
+    },
+    {
+      "record": "AUDIT",
+      "path": "retained_rss_bytes",
+      "category": "operational_measurement",
+      "source": "v4/tools/audit_adaptive_surface.py:50,302-304",
+      "rule": "Existing named finite nonnegative measurement normalization; original own record remains hash-authenticated."
+    },
+    {
+      "record": "AUDIT",
+      "path": "topology_seconds",
+      "category": "operational_measurement",
+      "source": "v4/tools/audit_adaptive_surface.py:50,302-304",
+      "rule": "Existing named finite nonnegative measurement normalization; original own record remains hash-authenticated."
+    },
+    {
+      "record": "AUDIT",
+      "path": "numerical_geometry.seconds",
+      "category": "operational_measurement",
+      "source": "v4/tools/general_sdf_authority.py:783-784,820",
+      "rule": "Existing named finite nonnegative measurement normalization; original own record remains hash-authenticated."
+    },
+    {
+      "record": "AUDIT",
+      "path": "numerical_geometry.batch_statistics.seconds",
+      "category": "operational_measurement",
+      "source": "v4/tools/general_sdf_authority.py:783-784,820",
+      "rule": "Existing named finite nonnegative measurement normalization; original own record remains hash-authenticated."
+    },
+    {
+      "record": "AUDIT",
+      "path": "self_intersection.timing.seconds",
+      "category": "operational_measurement",
+      "source": "v4/tools/historical_capsule_surface.py:45-60",
+      "rule": "Existing named finite nonnegative measurement normalization; original own record remains hash-authenticated."
+    },
+    {
+      "record": "AUDIT",
+      "path": "self_intersection.timing.free_before_bytes",
+      "category": "operational_measurement",
+      "source": "v4/tools/historical_capsule_surface.py:45-60",
+      "rule": "Existing named finite nonnegative measurement normalization; original own record remains hash-authenticated."
+    },
+    {
+      "record": "AUDIT",
+      "path": "self_intersection.timing.measured_input_bytes",
+      "category": "operational_measurement",
+      "source": "v4/tools/historical_capsule_surface.py:45-60",
+      "rule": "Existing named finite nonnegative measurement normalization; original own record remains hash-authenticated."
+    },
+    {
+      "record": "AUDIT",
+      "path": "self_intersection.timing.peak_rss_bytes",
+      "category": "operational_measurement",
+      "source": "v4/tools/historical_capsule_surface.py:45-60",
+      "rule": "Existing named finite nonnegative measurement normalization; original own record remains hash-authenticated."
+    },
+    {
+      "record": "GENERATION",
+      "path": "generation_seconds",
+      "category": "operational_measurement",
+      "source": "v4/tools/surface_execution.py:183-189",
+      "rule": "Existing named finite nonnegative measurement normalization; original own record remains hash-authenticated."
+    },
+    {
+      "record": "GENERATION",
+      "path": "peak_rss_bytes",
+      "category": "operational_measurement",
+      "source": "v4/tools/surface_execution.py:183-189",
+      "rule": "Existing named finite nonnegative measurement normalization; original own record remains hash-authenticated."
+    },
+    {
+      "record": "GENERATION",
+      "path": "retained_rss_bytes",
+      "category": "operational_measurement",
+      "source": "v4/tools/surface_execution.py:183-189",
+      "rule": "Existing named finite nonnegative measurement normalization; original own record remains hash-authenticated."
+    },
+    {
+      "record": "GENERATION",
+      "path": "timing.contract_seconds",
+      "category": "operational_measurement",
+      "source": "v4/tools/surface_execution.py:41-50",
+      "rule": "Existing named finite nonnegative measurement normalization; original own record remains hash-authenticated."
+    },
+    {
+      "record": "GENERATION",
+      "path": "timing.extraction.native.native_seconds",
+      "category": "operational_measurement",
+      "source": "v4/canonical_kernel/src/surface_seed.rs:139",
+      "rule": "Existing named finite nonnegative measurement normalization; original own record remains hash-authenticated."
+    },
+    {
+      "record": "GENERATION",
+      "path": "timing.extraction.point_identity.seconds",
+      "category": "operational_measurement",
+      "source": "v4/tools/general_sdf_binding.py:310-349",
+      "rule": "Existing named finite nonnegative measurement normalization; original own record remains hash-authenticated."
+    },
+    {
+      "record": "GENERATION",
+      "path": "timing.extraction.seed_orientation_seconds",
+      "category": "operational_measurement",
+      "source": "v4/tools/general_sdf_binding.py:310-349",
+      "rule": "Existing named finite nonnegative measurement normalization; original own record remains hash-authenticated."
+    },
+    {
+      "record": "GENERATION",
+      "path": "timing.extraction.seed_projection_seconds",
+      "category": "operational_measurement",
+      "source": "v4/tools/general_sdf_binding.py:310-349",
+      "rule": "Existing named finite nonnegative measurement normalization; original own record remains hash-authenticated."
+    },
+    {
+      "record": "GENERATION",
+      "path": "timing.final_projection_seconds",
+      "category": "operational_measurement",
+      "source": "v4/tools/surface_execution.py:97,155,165",
+      "rule": "Existing named finite nonnegative measurement normalization; original own record remains hash-authenticated."
+    },
+    {
+      "record": "GENERATION",
+      "path": "timing.final_sizing_seconds",
+      "category": "operational_measurement",
+      "source": "v4/tools/surface_execution.py:97,155,165",
+      "rule": "Existing named finite nonnegative measurement normalization; original own record remains hash-authenticated."
+    },
+    {
+      "record": "GENERATION",
+      "path": "timing.mmgs.free_before_bytes",
+      "category": "operational_measurement",
+      "source": "v4/tools/historical_capsule_surface.py:45-60",
+      "rule": "Existing named finite nonnegative measurement normalization; original own record remains hash-authenticated."
+    },
+    {
+      "record": "GENERATION",
+      "path": "timing.mmgs.peak_rss_bytes",
+      "category": "operational_measurement",
+      "source": "v4/tools/historical_capsule_surface.py:45-60",
+      "rule": "Existing named finite nonnegative measurement normalization; original own record remains hash-authenticated."
+    },
+    {
+      "record": "GENERATION",
+      "path": "timing.mmgs.seconds",
+      "category": "operational_measurement",
+      "source": "v4/tools/historical_capsule_surface.py:45-60",
+      "rule": "Existing named finite nonnegative measurement normalization; original own record remains hash-authenticated."
+    },
+    {
+      "record": "GENERATION",
+      "path": "timing.seed_orientation_check_seconds",
+      "category": "operational_measurement",
+      "source": "v4/tools/surface_execution.py:97,155,165",
+      "rule": "Existing named finite nonnegative measurement normalization; original own record remains hash-authenticated."
+    },
+    {
+      "record": "GENERATION",
+      "path": "timing.sizing_seconds",
+      "category": "operational_measurement",
+      "source": "v4/tools/surface_execution.py:41-50",
+      "rule": "Existing named finite nonnegative measurement normalization; original own record remains hash-authenticated."
+    },
+    {
+      "record": "GENERATION",
+      "path": "timing.mmgs.measured_input_bytes",
+      "category": "operational_measurement",
+      "source": "v4/tools/historical_capsule_surface.py:45-60",
+      "rule": "Only proposed V3 addition: sum direct scratch file sizes before launch, not metric data. Preserve own record hash and bind actual metric.bin/raw.mesh/scientific operands separately; reject invalid types/nonfinite/negative."
+    }
+  ],
+  "strict_latent_operational_fields": [
+    {
+      "record": "GENERATION",
+      "path": "timing.carrier_seconds",
+      "category": "operational_but_inactive_here",
+      "source": "v4/tools/surface_execution.py:99-127",
+      "values": {
+        "production": 0.0,
+        "audit": 0.0,
+        "frozen": 0.0
+      },
+      "disposition": "Keep strict in this narrow V3. No needed comparison relaxation for equal fixed zero/None. If generalized later, requires explicit versioned rule/source review."
+    },
+    {
+      "record": "GENERATION",
+      "path": "projection_seconds_all_queries",
+      "category": "operational_but_inactive_here",
+      "source": "v4/tools/surface_execution.py:186",
+      "values": {
+        "production": null,
+        "audit": null,
+        "frozen": null
+      },
+      "disposition": "Keep strict in this narrow V3. No needed comparison relaxation for equal fixed zero/None. If generalized later, requires explicit versioned rule/source review."
+    },
+    {
+      "record": "AUDIT",
+      "path": "source_coverage_seconds",
+      "category": "operational_but_inactive_here",
+      "source": "v4/tools/audit_adaptive_surface.py:201-209,246",
+      "values": {
+        "production": null,
+        "audit": null,
+        "frozen": null
+      },
+      "disposition": "Keep strict in this narrow V3. No needed comparison relaxation for equal fixed zero/None. If generalized later, requires explicit versioned rule/source review."
+    }
+  ],
+  "categories": [
+    {
+      "category": "scientific_inputs_and_configuration",
+      "fields": [
+        "physical CASE after validated exact mode extension",
+        "geometry/configuration/sizing/adaptation/coordinate/topology/residual identities",
+        "all surface thresholds, metric values, query counts, projections and MMGS operation counts",
+        "request, admission, source coverage/branch, ledger semantic rows and source-segment proofs",
+        "command options, exit codes, timeout_seconds, Linux memory bounds, deterministic seed grid storage/work estimates"
+      ],
+      "rule": "Keep exact; names under timing do not make counts/options/limits operational measurements. Mode labels validate per-run contract rather than equate producer acceptance with audit replay."
+    },
+    {
+      "category": "physical_outputs",
+      "fields": [
+        "all five COMPLETE and eight plan arrays with exact dtype/shape/bytes",
+        "MESH/SEALED/JOINED and conditioning/native core operands",
+        "native88 payloads, canonical metadata, IDs, ancestry, owner/neighbour/patch/cycles",
+        "requested/achieved schedules, shape populations, full QA and warnings",
+        "full apex committed records, binary before/after coordinates, protected vertices/connectivity"
+      ],
+      "rule": "Keep strict. No geometry/policy/owner/repair exclusions."
+    },
+    {
+      "category": "per_run_identity_and_relocation",
+      "fields": [
+        "CASE hash and parent.case_sha256",
+        "authority implementation/acceptance/surface identities and known provenance file hashes",
+        "request identity/bytehash/surface source bindings; admission branch path relocation",
+        "trajectory own roots/chain/checkpoint hashes with normalized semantic-row digest",
+        "parent.parent_prism_mesh own stored chain",
+        "QA top-level geometry_identity own proof binding",
+        "conditioning_receipt_sha256 own actual conditioning/direct receipt"
+      ],
+      "rule": "Existing V2 normalization only after own captured-root authentication and physical operands checks. No ephemeral preimage reconstruction or live authority transfer. Derived hashes vary because their authenticated preimages contain allowed provenance/measurements. Known loader pair validated; all other source bytes strict."
+    },
+    {
+      "category": "operational_metadata_not_crossrun_scientific_equality",
+      "fields": [
+        "recorded wrapper/worker/supervisor/stage clocks/RSS/output logical size",
+        "native first/later elapsed seconds and relocated launch command",
+        "CONDITIONING.seconds and current timings leaf clocks"
+      ],
+      "rule": "Retain and report; source backs clock/resource interpretation. Native command exclusion must not weaken native payload, exit, bound or source custody checks."
+    }
+  ],
+  "normalization_source_notes": [
+    "Selected verification extension is exact validated schema/mode/request/effective/origin/profile/background/stop_after; physical CASE remains equal.",
+    "Authority/request/admission/trajectory roots are reconstructed and own source operands hash-bound in surface_provenance/trajectory_provenance, rather than ignored as arbitrary identity strings.",
+    "Known path substitutions are restricted to package/run operands and exact package source path, preserving binary/source/options identities.",
+    "CONDITIONING timings currently originate solely from monotonic clock differences at initial_population/existing_vertices/constrained; exclusion is a whole map in V2. Do not introduce a generic drop-timings rule for new records or hide newly added keys.",
+    "Top-level QA geometry stamp removal preserves nested fields; native first/later command+seconds removal retains exit/bounds and physical fidelity.",
+    "Full apex report is strict apart from its authenticated per-run conditioning receipt hash; no embedded operational timer identified there."
+  ],
+  "unresolved_and_limits": [
+    "No other presently varying same-category field requires correction on the inspected fixed nodal records. This is bounded inventory, not a promise no future new field/fixture will refuse.",
+    "Three inactive operational leaves remain exact zero/None; they are potential wider-scope category mismatches, not reasons to broaden this correction.",
+    "Historical scratch per-file inventory absent; exact three-byte contributor remains unknown.",
+    "Unknown/new fields stay strict; named normalization must not erase whole timing dictionaries, deterministic byte estimates, resource limits, timeouts, exits or numerical work counters.",
+    "V1 audit failure and V2 production failure must remain byte-identical false; no normal rerun or automatic offline release follows from this review."
+  ],
+  "recommendation": "Proceed to narrow reviewed V3 implementation with only GENERATION.timing.mmgs.measured_input_bytes added to operational measurements, own record authentication and explicit actual scientific/native input binding. Keep all other existing strict rules. Then focused tamper controls and independent implementation review before one authorized new readonly reduction.",
+  "execution": {
+    "read_only": true,
+    "full_comparison_executed": false,
+    "tests_or_science": false,
+    "source_edits": false
+  }
+}

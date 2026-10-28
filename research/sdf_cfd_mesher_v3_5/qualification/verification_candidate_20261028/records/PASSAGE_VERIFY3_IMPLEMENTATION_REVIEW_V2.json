@@ -1,0 +1,73 @@
+{
+  "schema": "PassageVerify3ImplementationReview/2",
+  "passed": true,
+  "classification": "PASS_NARROW_EXTERNAL_COMPARATOR_AND_GATED_OFFLINE_SOURCE",
+  "blockers": [],
+  "sha256": {
+    "work/passage_verify3_auth.py": "906d9b3909c7e8dcf51f0dcd619216280ea2a88eeeea1b33320ee273b45c3872",
+    "work/passage_verify3_compare.py": "f65ed2469ad2950f5c292f6060eabe72aa3235a09f0054810ae16fb8bda95a67",
+    "work/passage_verify3_offline_run.py": "9dea55d6553d75cecc7a2f2e5d391739cfdba6ba1a0fac45ac7c6706636ae0af",
+    "work/passage_verify3_offline_close.py": "600614a226d27d82849e56786f6d034711fbd6ec92bc164e5485a2bb4acffbda",
+    "work/test_passage_verify3_auth.py": "b49db30e9e9a8607aaf1b3afb2ae2f2943ce5741e0657aa998814c732d05f676",
+    "work/passage_verify3_tests_final.log": "e3af2cc97d58df94bd0174e6e79fda1f4f7d5f4202ce2137cbb9677a7c2da7b4"
+  },
+  "anchors": {
+    "work/passage_verify2_auth.py": "347e9e2072bce6ae1553f48c2d1f256cd7bd7b7b4aa9bbd30cfa797185d26bb9",
+    "work/passage_verify2_compare.py": "e45e6c39a95a0202d60fe25a7496031fa6765a9ffd6336236967fc4845e64050",
+    "outputs/PASSAGE_VERIFY1_PRODUCTION_RUN.json": "74ac843740ab3d021cb6396abd3acecfd8031e172a7b2fd704b0d0895ade31f1",
+    "outputs/PASSAGE_VERIFY2_AUDIT_COMPARISON.json": "baaed2628b51a88364b6a47de0a5da128b04bcd115dd0a41eb743442e52de518",
+    "outputs/PASSAGE_VERIFY2_PRODUCTION_COMPARISON.json": "7a5ac334be5c58ae31370a9e91e356944fc1bc46c0641db9e3080295150c999a",
+    "outputs/PASSAGE_VERIFY3_SEMANTIC_INVENTORY_REVIEW.json": "6616ac7613c4fca86e64628d86d16be90b12f72e7df8474feaa7458ff388dc5b",
+    "outputs/PASSAGE_VERIFY3_NATIVE_INPUT_BINDING_PLAN_REVIEW.json": "d70e31cd39f24af291e3a7cc099b4c869037542a7b5ce63882d1e28e987bc2dc"
+  },
+  "scope": "Independent read-only source diff, static AST retention, evidence hash and recorded focused-test review. No actual V3 comparison or offline outcome is claimed.",
+  "verified": [
+    "Every previously existing helper function/class is AST-identical to V2 except measurements, surface_provenance and authenticate_pair; those changes add the single scratch leaf, fixed native input binding and immutable-history/production-root anchors. Existing own-chain/closure/source/trajectory/native ancestry guards remain intact.",
+    "V3 complete comparer retains V2 array/plan/native/QA/full apex/conditioning/protected-coordinate/receipt and paired accepted audit gates. Entry restricts to production retained-data reduction; output is new V3 artifact and original refusal files remain pinned.",
+    "Only added operational measurement normalization is GENERATION.timing.mmgs.measured_input_bytes, restricted to nonnegative integer (bool rejected). Deterministic counts, timeout/exit, policy/threshold/options, all other fields and inactive zero/None fields remain strict.",
+    "Fixed independently retained STOP anchor authenticates six exact scientific file byte/size pins. Strict V3MMG1 decoder validates fixed count/length, finite coordinates/tensors, references/flags/face index bounds; INITIAL coordinates/topology bind exact metric records. Metric tensor evidence is exact retained bytes, not source regeneration.",
+    "Raw mmgs receipt equals own hash-bound generation receipt; qualified fixed runner/library hashes and exact relocated command operands, exit0, timeout120 and actual diagnostic population/counts bind the accepted native method. No newly inferred binary defaults or native/source execution.",
+    "Fixed production VERIFICATION root9e25 and unchanged runtime8e428 remain enforced; frozen baseline and accepted audit own roots retain their distinct historical closure semantics.",
+    "Offline wrapper accepts only offline, refuses existing original output/RUN/inventory, requires actual new V3 passed comparison and independent review pinned to its exact comparison/root/implementation-review hashes, then rechecks reviewed controls and unchanged selected runtime before original offline CLI.",
+    "Offline uses original trusted production root, explicit verifier identity, fresh original isolated output and original deadline. Complete production hash/size inventory is captured before and compared after; closer requires unchanged inventory, clean verifier source closure, all12 actual replay receipts and own hashes/identities/filling equality.",
+    "Closer retains honest no-fresh-source-authority/no-remesh/no-search semantics and differentiates zero owned subprocess scopes from actual in-process native predicate replay.",
+    "Written metric policy is now read in full. coupled_connection.source_identity is required to equal own full CASE canonical identity before replacing only that derived per-run field. Every other policy field, including unknown fields and metric_response_factor, stays in exact native_input semantic equality. Source-backed by general_sdf_binding.py:188-194,437; surface_execution.py:45 writes this diagnostic. Fixed metric/scientific file byte pins are unchanged."
+  ],
+  "focused_tests": {
+    "record": "work/passage_verify3_tests_final.log",
+    "methods": 29,
+    "seconds": 70.674,
+    "all_passed": true,
+    "scope": "Full29-method suite, existing28 plus written policy wrong-own-case and one-sided unknown substantive-field rejection. Reviewer inspected closed log and source only.",
+    "reviewer_execution": false
+  },
+  "limits": [
+    "Source PASS releases only the separately authorized ONE new read-only V3 production reduction. No comparison result exists yet.",
+    "ONE original offline audit remains dependent on actual V3 comparison PASS plus independent result review. No audit/production mesh rerun, new shape, runtime/frozen edit or promotion is authorized by this review.",
+    "Offline launcher/closer reviewed statically; focused tests are comparator/authentication controls, not runtime scientific qualification or full wrapper process tests.",
+    "Windows first-party captured roots and configured filesystem custody are the scope, not an adversarial-host guarantee.",
+    "Exact three-byte scratch contributor remains unretained; no unique contributing file/counterfactual cause claim.",
+    "Retained metric byte identity is not continuous source-field reconstruction or new live source authority.",
+    "Existing whole CONDITIONING.timings exclusion is unchanged; unknown fields in other records remain strict and new scope needs separate review.",
+    "Original V1 and V2 failures remain failed. New V3 PASS, if achieved, must remain a separately versioned result.",
+    "WRITTEN_METRIC_POLICY is compared in full across own-CASE-normalized records; its inclusion adds diagnostic semantic coverage and does not independently prove continuous metric/source correctness. Exact metric bytes remain authenticated by the fixed prior independent anchor."
+  ],
+  "execution": {
+    "read_only": true,
+    "runtime_imports": false,
+    "tests_executed": false,
+    "full_comparison_executed": false,
+    "offline_executed": false,
+    "source_edits": false,
+    "written_file": "outputs/PASSAGE_VERIFY3_IMPLEMENTATION_REVIEW_V2.json"
+  },
+  "supersedes": {
+    "path": "outputs/PASSAGE_VERIFY3_IMPLEMENTATION_REVIEW.json",
+    "sha256": "abe1556d5a027f6d16dea3339237f94bde4d7235198c506383113470075bfe15",
+    "scope": "Earlier28-test snapshot preserved; this revision pins policy-completeness addition and gate filename update."
+  },
+  "policy_binding_sourcepins": {
+    "work/phase1a/research/sdf_cfd_mesher_v3_5/standalone/v4/tools/general_sdf_binding.py": "84e657a72b4648835ae89de94900f35e80ba3d921e10740792c8b2de5c0f782a",
+    "work/phase1a/research/sdf_cfd_mesher_v3_5/standalone/v4/tools/surface_execution.py": "8c581bf40e147b0a0571f538449ead68feaeaa0770f9907b8f532f66f7050fbe"
+  }
+}

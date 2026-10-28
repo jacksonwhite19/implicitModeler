@@ -1,0 +1,325 @@
+{
+  "scope": "Compact original records copied byte-for-byte; full multi-GB bundles are intentionally not distributed. Records do not grant live authority and this compact set cannot replace complete offline input bundles.",
+  "reviewed_source_commit": "0e5cd5af26fe069ee2696e7538e82f7e91dbb901",
+  "runtime_identity": "8e428c2a5e7bee83dc71c70660c40cbd1452f08ad99674ed5e4755456768c518",
+  "copied_files": [
+    {
+      "path": "records/PASSAGE_VERIFY3_REPORT.md",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PASSAGE_VERIFY3_REPORT.md",
+      "sha256": "8f443d821f017fdd16b2ad86b3e4a5d2aa67b9ec2e6bf3400a7db3b896c08511",
+      "bytes": 8735
+    },
+    {
+      "path": "records/PASSAGE_VERIFY3_COMPLETION.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PASSAGE_VERIFY3_COMPLETION.json",
+      "sha256": "22a6697b174debd8912f0018310ac8d7ed493aed3605ae38e58a405b1f07ccdf",
+      "bytes": 3983
+    },
+    {
+      "path": "records/PASSAGE_VERIFY3_SEMANTIC_INVENTORY_REVIEW.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PASSAGE_VERIFY3_SEMANTIC_INVENTORY_REVIEW.json",
+      "sha256": "6616ac7613c4fca86e64628d86d16be90b12f72e7df8474feaa7458ff388dc5b",
+      "bytes": 17643
+    },
+    {
+      "path": "records/PASSAGE_VERIFY3_NATIVE_INPUT_BINDING_PLAN_REVIEW.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PASSAGE_VERIFY3_NATIVE_INPUT_BINDING_PLAN_REVIEW.json",
+      "sha256": "d70e31cd39f24af291e3a7cc099b4c869037542a7b5ce63882d1e28e987bc2dc",
+      "bytes": 16365
+    },
+    {
+      "path": "records/PASSAGE_VERIFY3_IMPLEMENTATION_REVIEW_V2.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PASSAGE_VERIFY3_IMPLEMENTATION_REVIEW_V2.json",
+      "sha256": "5d7382c008a1462d241c676e51eedca1cc906b10dab892cfc391b91891cf7d93",
+      "bytes": 7759
+    },
+    {
+      "path": "records/PASSAGE_VERIFY3_COMPONENT_IMPLEMENTATION_REVIEW_V2.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PASSAGE_VERIFY3_COMPONENT_IMPLEMENTATION_REVIEW_V2.json",
+      "sha256": "dc0abc5939672e5c7653819045a5b695108b1773effbbb98e658a77de3211cc7",
+      "bytes": 6754
+    },
+    {
+      "path": "records/PASSAGE_VERIFY3_PRODUCTION_COMPARISON.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PASSAGE_VERIFY3_PRODUCTION_COMPARISON.json",
+      "sha256": "e03fe57bef13186e7829270637ce6e5ebc1eaa2edc82afb7d870df3fd9cdb51b",
+      "bytes": 6508009
+    },
+    {
+      "path": "records/PASSAGE_VERIFY3_PRODUCTION_RESULT_REVIEW.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PASSAGE_VERIFY3_PRODUCTION_RESULT_REVIEW.json",
+      "sha256": "b58f58b04269ac97ec34a95c85b5f41a31109c7a1d97109e992dfbb6416f7994",
+      "bytes": 5380
+    },
+    {
+      "path": "records/PASSAGE_VERIFY3_OFFLINE_COMPARISON.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PASSAGE_VERIFY3_OFFLINE_COMPARISON.json",
+      "sha256": "8bc4aa426c97f75fd553a765757ae246e62c3e88aeab66ee92c82fd4c6152648",
+      "bytes": 3043
+    },
+    {
+      "path": "records/PASSAGE_VERIFY3_OFFLINE_RESULT_REVIEW.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PASSAGE_VERIFY3_OFFLINE_RESULT_REVIEW.json",
+      "sha256": "35faaabd36a610c33f050bbb414a0ae6c134b8260932180e2d1c374d2f0d22e5",
+      "bytes": 20372
+    },
+    {
+      "path": "records/PASSAGE_VERIFY3_FINAL_ROUTE_REVIEW.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PASSAGE_VERIFY3_FINAL_ROUTE_REVIEW.json",
+      "sha256": "9ef0ac6c65cd1cc3d9f0f19c7e04b57be68f1ea445eece4be5fc4a8e4e46e73a",
+      "bytes": 11707
+    },
+    {
+      "path": "records/PASSAGE_VERIFY3_FINAL_REPORT_REVIEW.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PASSAGE_VERIFY3_FINAL_REPORT_REVIEW.json",
+      "sha256": "59c63967c36f1898550d9f72a6b51061111aa98ef3f68f02c0a6793e35205f7f",
+      "bytes": 5621
+    },
+    {
+      "path": "records/PASSAGE_VERIFY3_RETIREMENT.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PASSAGE_VERIFY3_RETIREMENT.json",
+      "sha256": "8aa5485f28aac7cb7ebb96a9e84979ae26a04e2d1994e0031bbaea28998d233f",
+      "bytes": 6143
+    },
+    {
+      "path": "records/PASSAGE_VERIFY3_PRESERVATION.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PASSAGE_VERIFY3_PRESERVATION.json",
+      "sha256": "311021081c453a5023899c3fdf2d6298b870e46894e3502415c95ae4dc6e22e0",
+      "bytes": 1104
+    },
+    {
+      "path": "records/PASSAGE_VERIFY1_PREFLIGHT.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PASSAGE_VERIFY1_PREFLIGHT.json",
+      "sha256": "a25380f5e1362fb24a890590c1df8e32bf75577c4995f0657f87ce5ef86d5228",
+      "bytes": 2063
+    },
+    {
+      "path": "records/PASSAGE_VERIFY1_SOURCE_BEHAVIOR.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PASSAGE_VERIFY1_SOURCE_BEHAVIOR.json",
+      "sha256": "813aff724992b71bfcebc2dc3260084bf56a584eaf533c6f75378ab694636454",
+      "bytes": 10198
+    },
+    {
+      "path": "records/PASSAGE_VERIFY1_AUDIT_COMPARISON.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PASSAGE_VERIFY1_AUDIT_COMPARISON.json",
+      "sha256": "e317230d394b1a2bf2ebcf173c994598601258dcf729fc3b5e3a46f74d2a83f1",
+      "bytes": 2798
+    },
+    {
+      "path": "records/PASSAGE_VERIFY2_AUDIT_COMPARISON.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PASSAGE_VERIFY2_AUDIT_COMPARISON.json",
+      "sha256": "baaed2628b51a88364b6a47de0a5da128b04bcd115dd0a41eb743442e52de518",
+      "bytes": 6497629
+    },
+    {
+      "path": "records/PASSAGE_VERIFY2_AUDIT_RESULT_REVIEW.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PASSAGE_VERIFY2_AUDIT_RESULT_REVIEW.json",
+      "sha256": "8ebb3dacb168ca8fdbbf57c7fd37a60f954a65176acf9ae266815074e192c3d5",
+      "bytes": 5201
+    },
+    {
+      "path": "records/PASSAGE_VERIFY2_PRODUCTION_COMPARISON.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PASSAGE_VERIFY2_PRODUCTION_COMPARISON.json",
+      "sha256": "7a5ac334be5c58ae31370a9e91e356944fc1bc46c0641db9e3080295150c999a",
+      "bytes": 3577
+    },
+    {
+      "path": "records/PASSAGE_VERIFY2_PRODUCTION_STOP_COMPONENT_REVIEW.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PASSAGE_VERIFY2_PRODUCTION_STOP_COMPONENT_REVIEW.json",
+      "sha256": "1046baed1dd319c0dbfd5526c83375f802d343ff67178d895852ea4ff4bc37d3",
+      "bytes": 50266
+    },
+    {
+      "path": "records/PASSAGE_VERIFY2_PRODUCTION_FIRST_DIFFERENCE_DIAGNOSTIC.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PASSAGE_VERIFY2_PRODUCTION_FIRST_DIFFERENCE_DIAGNOSTIC.json",
+      "sha256": "f23aa6447af6cfc858666cc36ee76f4b682294487d2398df76bb2cac31e9a17b",
+      "bytes": 3519
+    },
+    {
+      "path": "comparison_history/passage_verify1_compare.py",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\passage_verify1_compare.py",
+      "sha256": "1f4a1f7da23d9aa3fbd83bbc2b344ed005a03d31cb50a779a272c287db8348d1",
+      "bytes": 15068
+    },
+    {
+      "path": "comparison_history/passage_verify2_compare.py",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\passage_verify2_compare.py",
+      "sha256": "e45e6c39a95a0202d60fe25a7496031fa6765a9ffd6336236967fc4845e64050",
+      "bytes": 16315
+    },
+    {
+      "path": "comparison_history/passage_verify2_auth.py",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\passage_verify2_auth.py",
+      "sha256": "347e9e2072bce6ae1553f48c2d1f256cd7bd7b7b4aa9bbd30cfa797185d26bb9",
+      "bytes": 33023
+    },
+    {
+      "path": "comparison_history/passage_verify3_compare.py",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\passage_verify3_compare.py",
+      "sha256": "f65ed2469ad2950f5c292f6060eabe72aa3235a09f0054810ae16fb8bda95a67",
+      "bytes": 16906
+    },
+    {
+      "path": "comparison_history/passage_verify3_auth.py",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\passage_verify3_auth.py",
+      "sha256": "906d9b3909c7e8dcf51f0dcd619216280ea2a88eeeea1b33320ee273b45c3872",
+      "bytes": 38714
+    },
+    {
+      "path": "comparison_history/test_passage_verify3_auth.py",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\test_passage_verify3_auth.py",
+      "sha256": "b49db30e9e9a8607aaf1b3afb2ae2f2943ce5741e0657aa998814c732d05f676",
+      "bytes": 15851
+    },
+    {
+      "path": "comparison_history/passage_verify3_tests_final.log",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\passage_verify3_tests_final.log",
+      "sha256": "e3af2cc97d58df94bd0174e6e79fda1f4f7d5f4202ce2137cbb9677a7c2da7b4",
+      "bytes": 2788
+    },
+    {
+      "path": "records/SPHERE_VERIFY1_AUDIT_RUN.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\SPHERE_VERIFY1_AUDIT_RUN.json",
+      "sha256": "aee8721e0de9d707d747535b21d1029f407e8c63ee45cb6a40905943fc6592f5",
+      "bytes": 2196
+    },
+    {
+      "path": "accepted_roots/sphere/audit/VERIFICATION.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\sphere_verify1_audit_01\\VERIFICATION.json",
+      "sha256": "4de9700cb0dc66dec38eabb230a81ff795b7225601ba4ad6232e236e9b747e29",
+      "bytes": 2021
+    },
+    {
+      "path": "records/SPHERE_VERIFY1_AUDIT_COMPARISON.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\SPHERE_VERIFY1_AUDIT_COMPARISON.json",
+      "sha256": "014348c78ce05f7b0eef5e69b68296831184430d166e60b2ea84b220a8e3da61",
+      "bytes": 826310
+    },
+    {
+      "path": "records/SPHERE_VERIFY1_PRODUCTION_RUN.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\SPHERE_VERIFY1_PRODUCTION_RUN.json",
+      "sha256": "046983c48900c83e49ab65e04dd70b96805cdb4557539bb8b0330863e429dc79",
+      "bytes": 2216
+    },
+    {
+      "path": "accepted_roots/sphere/production/VERIFICATION.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\sphere_verify1_production_01\\VERIFICATION.json",
+      "sha256": "dd9c6d85c60288d3ffbcf1b69843d9766255b42f9272f446878185a029298c02",
+      "bytes": 8538
+    },
+    {
+      "path": "records/SPHERE_VERIFY1_PRODUCTION_COMPARISON.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\SPHERE_VERIFY1_PRODUCTION_COMPARISON.json",
+      "sha256": "b269dbde6860862f5618851de8641364d287ab068ec6c717a080a70e96a7c8a8",
+      "bytes": 827742
+    },
+    {
+      "path": "records/SPHERE_VERIFY1_OFFLINE_RUN.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\SPHERE_VERIFY1_OFFLINE_RUN.json",
+      "sha256": "9156f470cd63c619dc0d9fa7b0a9b681d0b871f8e8f626e1bc6e826ea237b5ea",
+      "bytes": 1651
+    },
+    {
+      "path": "accepted_roots/sphere/offline/AUDIT_RESULT.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\sphere_verify1_offline_01\\AUDIT_RESULT.json",
+      "sha256": "d4730106a5c04f5283a5e4a24abfcbfb1678b10e4c280deb7509ff87b680912b",
+      "bytes": 1058
+    },
+    {
+      "path": "records/SPHERE_VERIFY1_OFFLINE_COMPARISON.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\SPHERE_VERIFY1_OFFLINE_COMPARISON.json",
+      "sha256": "35398fc2e8a174690f1addd2dd86647dbb64d8e220220a9e4df91cfdc320a84e",
+      "bytes": 2785
+    },
+    {
+      "path": "records/BLEND_VERIFY1_AUDIT_RUN.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\BLEND_VERIFY1_AUDIT_RUN.json",
+      "sha256": "959c3e9af64066e19754b40502579d88eab94f7827e18cceb1f18114a9d657ba",
+      "bytes": 2206
+    },
+    {
+      "path": "accepted_roots/thick_blend/audit/VERIFICATION.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\blend_verify1_audit_01\\VERIFICATION.json",
+      "sha256": "914ea3b57eb918f0a4fb03918db285fced127fc6e45f66211dd92a0a00942369",
+      "bytes": 2021
+    },
+    {
+      "path": "records/BLEND_VERIFY1_AUDIT_COMPARISON.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\BLEND_VERIFY1_AUDIT_COMPARISON.json",
+      "sha256": "80c18cc465d3dedbba36c3d3736301ebc8f5060eff1f291077660aa48e15452e",
+      "bytes": 1635032
+    },
+    {
+      "path": "records/BLEND_VERIFY1_PRODUCTION_RUN.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\BLEND_VERIFY1_PRODUCTION_RUN.json",
+      "sha256": "5f89d6bfedeca3b06c517667325c1a364718029990c0d9516e8eed9315be27c0",
+      "bytes": 2227
+    },
+    {
+      "path": "accepted_roots/thick_blend/production/VERIFICATION.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\blend_verify1_production_01\\VERIFICATION.json",
+      "sha256": "c5d3a1ef0cc24afe0221bd27f0563e388f2a02512c6095bd9164ff4beb4a0632",
+      "bytes": 8538
+    },
+    {
+      "path": "records/BLEND_VERIFY1_PRODUCTION_COMPARISON.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\BLEND_VERIFY1_PRODUCTION_COMPARISON.json",
+      "sha256": "bf22f13acf845c099f301bd42c5af8d71181249c526f742b39791798f0084e2a",
+      "bytes": 1637587
+    },
+    {
+      "path": "records/BLEND_VERIFY1_OFFLINE_RUN.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\BLEND_VERIFY1_OFFLINE_RUN.json",
+      "sha256": "61da36aedf97c84022fbd8d4bd466b2740bf0f61d80949cd8c2e6c7a7afb36ef",
+      "bytes": 1650
+    },
+    {
+      "path": "accepted_roots/thick_blend/offline/AUDIT_RESULT.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\blend_verify1_offline_01\\AUDIT_RESULT.json",
+      "sha256": "e7b8cd30799e77f65c1c2f05f4a1f6223d15b2a366fb7dd15e2c55d503038def",
+      "bytes": 1059
+    },
+    {
+      "path": "records/BLEND_VERIFY1_OFFLINE_COMPARISON.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\BLEND_VERIFY1_OFFLINE_COMPARISON.json",
+      "sha256": "4e3f8eadb050b0afca728ddcad781e5b8719859ecb4fc04bfb6ee0b5cf48e322",
+      "bytes": 3051
+    },
+    {
+      "path": "records/PASSAGE_VERIFY1_AUDIT_RUN.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PASSAGE_VERIFY1_AUDIT_RUN.json",
+      "sha256": "373bff1d75c472c598709bc6e6dd853627e6d076d4c389901da560c79e1125d5",
+      "bytes": 2206
+    },
+    {
+      "path": "accepted_roots/passage/audit/VERIFICATION.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_audit_01\\VERIFICATION.json",
+      "sha256": "14f841e6c24075a06e4a62ec7038ba9c7dd92dfaab0565b1ba23137ed7963e9b",
+      "bytes": 2021
+    },
+    {
+      "path": "records/PASSAGE_VERIFY1_PRODUCTION_RUN.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PASSAGE_VERIFY1_PRODUCTION_RUN.json",
+      "sha256": "74ac843740ab3d021cb6396abd3acecfd8031e172a7b2fd704b0d0895ade31f1",
+      "bytes": 3694
+    },
+    {
+      "path": "accepted_roots/passage/production/VERIFICATION.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_production_01\\VERIFICATION.json",
+      "sha256": "9e25eb2085cba8092f2d347ec8fa18682e0e5ab47dcadba2b40327cc9d037340",
+      "bytes": 8538
+    },
+    {
+      "path": "records/PASSAGE_VERIFY1_OFFLINE_RUN.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PASSAGE_VERIFY1_OFFLINE_RUN.json",
+      "sha256": "c6a82f9c6115877dcde9746708ed9c89687a7c2315b8fbcd280b3e98cf42004f",
+      "bytes": 1659
+    },
+    {
+      "path": "accepted_roots/passage/offline/AUDIT_RESULT.json",
+      "original": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\phase1a\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\passage_verify1_offline_01\\AUDIT_RESULT.json",
+      "sha256": "aee0363fa52a8f7c9397c52bb02c9a55d3d480ed252c1da16b87cb3909297300",
+      "bytes": 1062
+    }
+  ]
+}
