@@ -17,7 +17,12 @@ def checked(path, *, exists=True):
             raise
         if stat.S_ISLNK(s.st_mode) or getattr(s,'st_file_attributes',0)&0x400:
             raise ValueError('CompactReparsePoint',str(p))
-    if path.resolve()!=path:raise ValueError('CompactPathRedirect')
+    resolved=path.resolve()
+    if resolved!=path:
+        try:
+            state=path.lstat();metadata=dict(exists=True,mode=state.st_mode,attributes=getattr(state,'st_file_attributes',0),identity=[state.st_dev,state.st_ino])
+        except FileNotFoundError:metadata=dict(exists=False)
+        raise ValueError('CompactPathRedirect',dict(operation='resolve',requested=str(path),resolved=str(resolved),metadata_after_comparison=metadata))
     return path
 
 

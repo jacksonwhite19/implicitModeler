@@ -1,7 +1,7 @@
 """Explicit new-run scratch ownership. Historical export has no cleanup API."""
 from pathlib import Path
 from contextlib import ExitStack
-import datetime,json,os,subprocess,sys,time,uuid,shutil,hashlib
+import datetime,json,os,subprocess,sys,time,uuid,shutil,hashlib,stat
 import psutil
 from compact_paths import checked,hold_parents,inventory,file_id,Handle,allowed_parent
 from compact_delivery import export,verify,sha,write,read,require
@@ -176,16 +176,49 @@ def resource_check(scratch,args,destination,deadline,rss=None):
 
 
 def live_bytes(root):
-    """Checkpoint rename races are ordinary; reparse redirects are refusals."""
-    total=0
-    for directory,dirs,files in os.walk(root,followlinks=False):
-        for name in list(dirs):
-            try:checked(Path(directory)/name)
-            except FileNotFoundError:dirs.remove(name)
-        for name in files:
-            try:total+=checked(Path(directory)/name).stat().st_size
-            except FileNotFoundError:pass
-    return total
+    """Sample task-owned metadata, never resolve a changing checkpoint leaf.
+
+    No file contents are read and no leaf link is followed. Directory checks
+    detect observed redirects/replacement, not arbitrary transient ancestor
+    swaps. This snapshot grants no publication or deletion authority. No
+    deny-delete handles are held: an outer observer must not block cleanup.
+    """
+    def metadata(path):
+        state=path.lstat()
+        if stat.S_ISLNK(state.st_mode) or getattr(state,'st_file_attributes',0)&0x400:
+            raise ValueError('CompactReparsePoint',dict(operation='monitor_lstat',requested=str(path),mode=state.st_mode,attributes=getattr(state,'st_file_attributes',0)))
+        return state
+    def directory(path):
+        state=metadata(path)
+        require(stat.S_ISDIR(state.st_mode),'CompactMonitorNotDirectory')
+        try:checked(path)
+        except ValueError as error:
+            if error.args and error.args[0]=='CompactPathRedirect':
+                # A directory removed during actual cleanup can acquire a
+                # transient NTFS final name too. Only verified absence turns
+                # this into FileNotFoundError; a present redirect still fails.
+                metadata(path)
+            raise
+        require(file_id(path)==(state.st_dev,state.st_ino),'CompactMonitorDirectoryChanged')
+        return state.st_dev,state.st_ino
+    def scan(path):
+        try:
+            identity=directory(path)
+            children=list(path.iterdir())
+        except FileNotFoundError:return 0
+        total=0
+        for child in children:
+            try:state=metadata(child)
+            except FileNotFoundError:continue
+            if stat.S_ISDIR(state.st_mode):total+=scan(child)
+            else:
+                require(stat.S_ISREG(state.st_mode),'CompactMonitorUnexpectedFileType')
+                total+=state.st_size
+        try:final=directory(path)
+        except FileNotFoundError:return total  # Conservative observed size.
+        require(final==identity,'CompactMonitorDirectoryChanged')
+        return total
+    return scan(Path(root))
 
 
 def child_arguments(argv,output):
