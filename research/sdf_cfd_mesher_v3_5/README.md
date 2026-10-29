@@ -1,5 +1,10 @@
 # Mesher V3.5 verification candidate
 
+PERF21 dispatch 3/5 ended with one failed live sphere lifecycle control, not a demonstrated scientific rejection. Reviewed candidate commit `0ce6ff9d`, runtime `0fd59826` / 1,894 files, passed 34 focused tests, two source reviews, current CASE/environment preflight and final sealed launch review. The normal production/four-worker/compact/immediate-audit/owned-cleanup CLI reached accepted surface (1,280 vertices / 2,556 triangles), then `resource_check -> live_bytes -> checked` raised `CompactPathRedirect`. The actual triggering path was not retained; a transient checkpoint rename remains a hypothesis. No completed prism/background mesh, accepted new root, audit, compact publication or cleanup occurred.
+
+The controller closed in 56.433996 s. Exact owned scratch is preserved (54 files, 2,720,869 logical B). Windows/native closure passed with none remaining; runtime 1,894 files and baseline 375 files remain exact. Sampled Windows tree RSS peak was 398,004,224 B; maximum sampled controller output 3,452,004 B. Automatic compact/audit/cleanup remains unqualified. No retry or historical deletion. Full evidence: task `outputs/PERF21_REPORT.md` and `PERF21_FAILED_CLOSURE.json`. Stop for advisor review after callback; next outgoing 4/5. Earlier milestone paragraphs below are historical.
+
+
 PERF19 adds explicit [compact solver delivery](standalone/COMPACT_DELIVERY.md) in a separate candidate. Full evidence stays the default. Retention, verification and source workers are independent. The new full CLI lifecycle remains unqualified by a live whole-mesh run. Earlier milestones below apply to their recorded identities.
 
 
