@@ -1,0 +1,58 @@
+{
+  "schema": "PERF18FinalResourceReview/1",
+  "passed": true,
+  "blockers": [],
+  "reviewed_utc": "2026-10-29T02:53:59.559865+00:00",
+  "verification_sha256": "ebfdd6661dfda408deb2446a88e8b543f6fd990af2a0feb9363be3aed4b39ee5",
+  "evidencepins": {
+    "outputs/PERF18_PASSAGE_OFFLINE_RUN.json": "603e56b3786a5a6ba9a1bc47c52262bde5ca73b2c7b8243cf511316320eff382",
+    "outputs/PERF18_PASSAGE_OFFLINE_COMPARISON.json": "07613b61477b721accaf59a064e53841f5da5948c446b302daeeea436eb15283",
+    "outputs/PERF18_PASSAGE_OFFLINE_WRAPPER_SOURCES.json": "cd666dfcc773f0b7224482379467923077cf545047e901941b852835b66557d5",
+    "outputs/PERF18_PASSAGE_OFFLINE_INPUT_INVENTORY.json": "2427fe3b5fa3f2026cb47e8a5170bf1bff29237c3f41a55983b7386adf7d3a39",
+    "outputs/PERF18_PRODUCTION_INPUT_INVENTORY.json": "2427fe3b5fa3f2026cb47e8a5170bf1bff29237c3f41a55983b7386adf7d3a39",
+    "outputs/PERF18_PRODUCTION_SEAL.json": "7a1c9a59905a317c95b88139785b1d40056fe7b1b6da1412eb6aee4cd0371d4e",
+    "outputs/PERF18_OFFLINE_SEAL.json": "5a7e5a9af3951da76e613b56ff2616851915683ec6c089789e6abb486f7e1d89",
+    "outputs/PERF18_OFFLINE_SEAL_REVIEW.json": "1f2a915d5e03d3cc646d7c47fdda8e724164a596f3363b225defe7ae58481096",
+    "outputs/PERF18_REPORT.md": "8d0e3304fb8ac5ef24ef89b26c0a2fc9f0821edd2a523451aff112b78f1eede5",
+    "outputs/PERF18_MEASUREMENTS.json": "bdf04c6be17b01442ff66517aacb68620b17dbf98d416e75f3327c8f2057e120",
+    "outputs/PERF18_THREE_CASE_WORKER_MATRIX.json": "c9cc5778b3def3bcf9afe7c2d1af1c74728bad7a7239602ec7b4eb284d762d1e",
+    "outputs/PERF18_RETAINED_ENGINEERING_LIMITS.json": "0b3bf7e3dc23a3ed3bc54a82b72a030add551434349253efb74c2b95a3d08210",
+    "outputs/PERF18_PASSAGE_PRODUCTION_RESOURCE_REVIEW.json": "de55a3c6a72c7d919eaa359ebacdf6002dd059e9e59c7517fb4128b842c55fd3",
+    "outputs/PERF18_PASSAGE_OFFLINE/AUDIT_RESULT.json": "6e316b1409f6e4d081d71231baa26f4c39e5034f763aeed288184812a236134b",
+    "outputs/PERF18_PASSAGE_OFFLINE/VERIFIER_SOURCES.json": "cd666dfcc773f0b7224482379467923077cf545047e901941b852835b66557d5",
+    "outputs/PERF18_PASSAGE_OFFLINE/replay/JOINED_PROOF_RESULT.json": "db9f6dfb6aa034fbab478f4798c56e9a3d4fe351c040842900d476744e596d93",
+    "work/perf14/research/sdf_cfd_mesher_v3_5/standalone/results/perf18_passage_production_01/VERIFICATION.json": "ebfdd6661dfda408deb2446a88e8b543f6fd990af2a0feb9363be3aed4b39ee5"
+  },
+  "matrix_comparison_sha256": {
+    "PERF16_SPHERE": "1469f2c8c592c0121afefb971d0588d6153d932c9979312ff7696a937e6bcc2e",
+    "PERF17_BLEND": "75cc0476f4622b0625314676fcc0c03403e68e521ade2646d1384c7ff15d731e",
+    "PERF18_PASSAGE": "442f078b40a0003fbceaf8d3067f5146034723428f7a5979605d44c1569e1970"
+  },
+  "runtime_identity": "6d0840f9b58a1fe8a67554f985efb878ad5899ae0e8c7aa9c4f4a2890d329b0e",
+  "runtime_files": 1889,
+  "current_selected_runtime_hashes_exact": true,
+  "all43_and430_seal_pins_exact": true,
+  "producer_files_unchanged_vs_immediate_and_preaudit_inventory": 373,
+  "offline_attempts": 1,
+  "offline_external_seconds": 1051.682273000013,
+  "offline_peak_sampled_windows_tree_rss_bytes": 3580448768,
+  "offline_logical_output_bytes": 281595227,
+  "owned_windows_pid_birth_pairs_absent": 1,
+  "new_linux_scopes": 0,
+  "assessment": [
+    "Actual offline closed exit0/no stop/error, all12 replay pass, verifier/wrapper custody closed/pass1889, original source evidence authenticated with no fresh source authority/remesh/search.",
+    "373producer files/population/hash/size equal immediate post-production and pre-audit inventories; root ebfdd666 unchanged. Both43/430seals exact.",
+    "One Windows birth independently absent. Linuxzero scopes/actions/unknown/remaining; no new native scope files. Bounds respected; declared logical output independently summed.",
+    "Passage apex replay retains complete star/owner-domain/batch-scalar QA/volume/labels/coordinate bits, no native changed-versus-all recertification; conditioning AlreadyAboveFloor/no cavity edits. No scope count is presented as zero predicate work.",
+    "Three-case matrix production/offline times, roots and unchanged-input counts agree with closed raw receipts. Passage delta833.7212028s/17.9794527percent and root-stage total852.8166608s/wrapper offset19.095458s independently recomputed. Planning reduction830.5522438s dominates observed reduction.",
+    "Report limits observations to fixed three configured-host cases, different serial/current profiles authenticated separately, serial default unchanged, no causal/stable speedup/CFD/arbitrary-shape claim. Consolidation recommendation and compact-retention proposal do not authorize implementation/deletion/package work."
+  ],
+  "limits": [
+    "Production immutable root still records separate audit not_run; this separate audit passed.",
+    "Report/measurements/matrix pending-final-review drafts are reviewed exact bytes; preserve before status-only finalization.",
+    "Original campaign dispatch4 and later advisor5/next1 status recovery concern existing attempt only; no restart or scientific retry.",
+    "Sampled Windows RSS, per-process Linux AS, logical output accounting and detached-WSL hard-controller-death limits persist.",
+    "Reviewer executed only file/hash/JSON/current PID reads; no candidate imports/tests/predicates/native or scientific runs/sealed-record mutations."
+  ],
+  "disposition": "PASS final offline/resource/source/report/matrix review. Supports consolidation of explicit4worker candidate for these three fixed configured-host cases with serial default; retention implementation remains separate proposal/authorization."
+}

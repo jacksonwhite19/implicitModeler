@@ -1,0 +1,124 @@
+{
+  "schema": "PERF18Measurements/1",
+  "status": "passed_fixed_passage_production_comparison_offline_and_final_reviews",
+  "runtime_identity": "6d0840f9b58a1fe8a67554f985efb878ad5899ae0e8c7aa9c4f4a2890d329b0e",
+  "runtime_files": 1889,
+  "serial_perf11": {
+    "external_seconds": 4637.077760900371,
+    "worker_seconds": 4627.6932002003305,
+    "root_stages": {
+      "surface": 132.8310639001429,
+      "first_front": 557.0209114002064,
+      "v3_complete_plan": 1378.7278884998523,
+      "v4_prospective_shell_checks": 448.2314105001278,
+      "v3_native_construction": 19.71773299993947,
+      "v4_shell_admission": 107.24961670022458,
+      "v4_direct_fill": 1948.988703600131
+    },
+    "direct_stages": {
+      "parent": 88.12574719963595,
+      "cap_compatibility": 35.98875589994714,
+      "farfield": 94.55664180032909,
+      "bulk": 254.5504302997142,
+      "bulk_conditioning": 126.37199980020523,
+      "repair": 49.15040390007198,
+      "joined_proofs": 1151.9459512000903,
+      "export": 146.3055483996868,
+      "production_finalization": 1.3271554000675678
+    }
+  },
+  "production": {
+    "external_seconds": 3803.3565580998547,
+    "supervisor_seconds": 3783.4315426000394,
+    "worker_seconds": 3774.545636900235,
+    "root_stages": {
+      "surface": 131.090477200225,
+      "first_front": 552.6750047998503,
+      "v3_complete_plan": 548.1756446999498,
+      "v4_prospective_shell_checks": 442.9162570000626,
+      "v3_native_construction": 19.537504199892282,
+      "v4_shell_admission": 105.2187922000885,
+      "v4_direct_fill": 1940.3369867000729
+    },
+    "direct_stages": {
+      "parent": 89.78453730000183,
+      "cap_compatibility": 35.15440410003066,
+      "farfield": 93.08072490012273,
+      "bulk": 251.3506640996784,
+      "bulk_conditioning": 121.60855100024492,
+      "repair": 49.00663929991424,
+      "joined_proofs": 1151.4895776002668,
+      "export": 146.8933789995499,
+      "production_finalization": 1.3220786000601947
+    },
+    "joined_predicates": {
+      "preservation": 6.998889148235321e-07,
+      "domain": 0.03503119992092252,
+      "incidence": 22.304742900189012,
+      "winding": 43.26450680010021,
+      "interface_qa": 18.66457840008661,
+      "joined_qa": 25.674850299954414,
+      "physical_qa": 13.234618999995291,
+      "surfaces": 6.529704399872571,
+      "boundary_collision": 6.241113199852407,
+      "enclosure": 12.286648100242019,
+      "collision": 469.14847589982674,
+      "filling": 372.69965100008994
+    },
+    "peak_sampled_windows_tree_rss_bytes": 9411538944,
+    "producer_logical_bytes": 3843729069,
+    "cumulative_root_new_logs_stdout_stderr_bytes": 3845852933,
+    "owned_windows_pid_birth_pairs": 63,
+    "linux_scopes": 7,
+    "actual_source_workers": 4,
+    "source_sequence": 1,
+    "source_segments": 149330,
+    "h1_checks": 29866,
+    "source_final_prepare_recomputation": 0
+  },
+  "offline": {
+    "external_total_wall_seconds": 1051.682273000013,
+    "audit_result_seconds": 1027.219000000041,
+    "joined_replay_seconds": 887.497975199949,
+    "proof_predicate_seconds": {
+      "boundary_collision": 3.1002807999029756,
+      "collision": 305.4943487001583,
+      "domain": 0.03481499990448356,
+      "enclosure": 11.975488800089806,
+      "filling": 357.9769644001499,
+      "incidence": 24.167696100194007,
+      "interface_qa": 17.938383700326085,
+      "joined_qa": 23.16573109989986,
+      "physical_qa": 12.995668900199234,
+      "preservation": 8.00006091594696e-07,
+      "surfaces": 2.381090300157666,
+      "winding": 9.796317100059241
+    },
+    "external_peak_windows_tree_rss_bytes": 3580448768,
+    "output_logical_bytes": 281595227,
+    "proof_receipt_count": 12,
+    "production_input_files": 373,
+    "production_input_unchanged": true,
+    "counts_scope": "No remeshing/search or new owned native subprocess scopes. Global retained collision classifications are reused with fresh coverage. Both actual shared-apex moves replay in process through complete star/owner-domain checks, batch and scalar QA, exact star-volume sums, binary labels/shape minima and before/final coordinate bits. No native changed-versus-all recertification is invoked. Conditioning is AlreadyAboveFloor with no local cavity edits; zero new scopes does not mean zero native predicate work. Native conversion/checkMesh are not rerun.",
+    "owned_windows_pid_birth_pairs": 1,
+    "linux_scopes": 0
+  },
+  "measurement_scope": "One correctness/large-workload observation per configuration. Archived serial timing is descriptive with different wrapper work, not stable or causal speedup. Source worker startup/evaluation/assembly/closure not separately persisted by unchanged normal CLI; do not invent counters or extrapolate sample2.18x.",
+  "observed_comparison": {
+    "seconds_saved": 833.721202800516,
+    "percent_shorter": 17.979452702527773,
+    "root_stage_seconds_saved": {
+      "surface": 1.7405866999179125,
+      "first_front": 4.345906600356102,
+      "v3_complete_plan": 830.5522437999025,
+      "v4_prospective_shell_checks": 5.3151535000652075,
+      "v3_native_construction": 0.180228800047189,
+      "v4_shell_admission": 2.0308245001360774,
+      "v4_direct_fill": 8.65171690005809
+    },
+    "external_minus_worker_seconds": 28.81092119961977,
+    "serial_external_minus_worker_seconds": 9.38456070004031,
+    "root_stage_seconds_saved_total": 852.8166608004831,
+    "non_root_and_wrapper_offset_seconds": 19.09545799996704
+  }
+}

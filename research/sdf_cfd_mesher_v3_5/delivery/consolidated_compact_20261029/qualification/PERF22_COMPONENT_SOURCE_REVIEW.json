@@ -1,0 +1,81 @@
+{
+  "schema": "PERF22IndependentMonitorComponentSourceReview/1",
+  "passed": true,
+  "source_go": true,
+  "launch_go": "Separate current CASE/environment/runtime preflight and launch seal remain required before the authorized single fresh sphere.",
+  "classification": "GO_NARROW_METADATA_MONITOR_FIX_AND_FOCUSED_COMPONENT_REGRESSION",
+  "blockers": [],
+  "base_commit": "f525eb0bff6a3f682ffe02feba93bcba52b8ace1",
+  "source_pins": {
+    "work/perf22/research/sdf_cfd_mesher_v3_5/standalone/compact_lifecycle.py": "95d2791e5cf625052731aa16c7ed532ebdbe52c27dab9092857e0378f4413e61",
+    "work/perf22/research/sdf_cfd_mesher_v3_5/standalone/compact_paths.py": "34b1fb40c670c515e47fb69dfc016eab35bc71ea8f1cfd6598bd08f724ca6327",
+    "work/perf22/research/sdf_cfd_mesher_v3_5/standalone/tests/test_compact_monitor.py": "10afaafc77d87b0aa2201bca5c04bd2c6af67938f270719bc68afc812e75b67a",
+    "work/perf22/research/sdf_cfd_mesher_v3_5/standalone/compact_delivery.py": "d6d6fb68b1b1c92e2bdd85f3e42aaf66163f003a64ec497d3ac0289ede295af8",
+    "work/perf22/research/sdf_cfd_mesher_v3_5/standalone/compact_native_close.py": "65cd9e44faef698d9c3d4c617e616fc9a87321ebd5ea3a3f737f1657987a3468",
+    "work/perf22/research/sdf_cfd_mesher_v3_5/standalone/mesh.py": "d6b5963cd4afca2f4d3273c3792cea38ed356d0f8cee3a5a927869d91a6a2665",
+    "work/perf22/research/sdf_cfd_mesher_v3_5/standalone/offline_audit.py": "5ce92e801d615a254abe153a062bb8912c32f918a034a2c24d275c52c3257c86",
+    "work/perf22/research/sdf_cfd_mesher_v3_5/standalone/artifact_finalization.py": "5b3b36d93ed0835c05ded46827450a4291bbdeef70800e7a1982bbd3ce8bfb31",
+    "work/perf22/research/sdf_cfd_mesher_v3_5/standalone/audit_completion.py": "00176a4e66ee56b93d49ebba59b55a426bc5b0ec3cf68b7ea62a7245d8ae1ba0",
+    "work/perf22/research/sdf_cfd_mesher_v3_5/standalone/source_evidence.py": "4f04b11943b8c1ae0e986c11da701f4e6053c30c0f92e85b272347edd40fdeba",
+    "work/perf22/research/sdf_cfd_mesher_v3_5/standalone/source_handoff.py": "84101a221da30bdd38304b615d9196a092e853c47777dd8e03b34f14750ff678",
+    "work/perf22/research/sdf_cfd_mesher_v3_5/standalone/source_parallel.py": "30c8b9710a7c68e93833d669101e84d3c0c034a900ead02bc0b5727a15983f0c",
+    "work/perf22/research/sdf_cfd_mesher_v3_5/standalone/source_process_owner.py": "b369f5906e2028b01cec8aac681d78142e6b0688d50184b489b09972252d7be7",
+    "work/perf22/research/sdf_cfd_mesher_v3_5/standalone/tests/test_compact_delivery.py": "dacc1254b8c675aa934e9add6a26f23e3de95a42c64ad77c28efbedc920a0dce"
+  },
+  "evidence_pins": {
+    "outputs/PERF22_FOCUSED_TESTS_V2.log": "09696f2bd57df201aa1a1224fd75a6752799f9d7d04d3089f3819b40124508ba",
+    "outputs/PERF22_PATH_DIAGNOSTIC.json": "aedb00cd542332449f855309698d65d8dec69405290bebb5c865319f0a062931",
+    "outputs/PERF22_PATH_DIAGNOSTIC_V2.json": "ddbe291d5bf4ad181981679fbcd8c4b6b2c7d37d91c087bdc21a98a108adac08",
+    "outputs/PERF22_PATH_MONITOR_ANALYSIS.json": "fb8edb09468c54d62f1210dc9d13b610b8eb3a0a5d7182187985d9fbf7643623"
+  },
+  "findings": [
+    {
+      "component": "leaf accounting",
+      "assessment": "Single path.lstat snapshot returns type/reparse attributes/size; no resolve on mutable leaf and no target content open. Reparse flag0x400 and S_ISLNK refuse before counting, including observed LX_SYMLINK. Nonregular unexpected object refuses. Vanished entries skip; unexpected permission/IO propagates."
+    },
+    {
+      "component": "directory accounting",
+      "assessment": "Root/each traversed directory gets no-follow metadata, existing strict checked ancestry and exact device/inode identity. Directory metadata is checked again at end and identity must remain; observed replacement/redirect refuses. If checked raises CompactPathRedirect, only a fresh metadata FileNotFound escapes as vanished; a present redirect/reparse/unexpected IO still refuses. Removed directory returns observed total conservatively; snapshot is not an atomic full-tree inventory."
+    },
+    {
+      "component": "cleanup coexistence",
+      "assessment": "No new deny-write/delete handles or content reads in the counter, so it does not pin directories against legitimate cleanup. Real directory removal overlaps monitor scans in focused test without removal errors."
+    },
+    {
+      "component": "authoritative boundaries",
+      "assessment": "All compact_lifecycle class/top-level function ASTs other than live_bytes are identical to prior tested candidate. Copy/export/finalizer/receipt/source/worker/native helper/mesher/offline code bytes are unchanged. Strict path checks in publication, source guards, receipt authorization and same-handle deletion remain independent. compact_paths.checked only adds comparison-time requested/resolved/state diagnostics; true redirects/reparse are not granted acceptance."
+    },
+    {
+      "component": "science/math",
+      "assessment": "No numerical operations, geometry/source predicates, optimizer policies, thresholds, source proof payloads or mesh acceptance paths change. Counter handles logical metadata only; its observations cannot issue source/live/publication/deletion authority."
+    }
+  ],
+  "test_evidence": {
+    "reviewer_executed": false,
+    "closed_V2": {
+      "tests": 42,
+      "seconds": 59.787,
+      "result": "OK",
+      "skips": 0,
+      "population": "8 new monitor tests plus34 existing compact lifecycle/storage controls"
+    },
+    "meaningful_controls": [
+      "Real concurrent checkpoint create/replace/unlink, >100 writer/sampler operations, no writer errors",
+      "Concurrent real nested directory cleanup overlaps scans with no locks blocking removal",
+      "Exact static recursive bytes/case forms and strict traversal boundary",
+      "Actual outside junction refuses both root/nested; target unchanged",
+      "Actual file symlink or unprivileged DrvFs LX_SYMLINK fallback refused by reparse attributes",
+      "Persistent IO and stable mocked directory redirect not ignored",
+      "Real payload exceeding output quota refuses",
+      "Inherited recursive native payload/root bindings, atomic publication, receipt, active/reparse/partial cleanup controls remain in34 passing component tests"
+    ],
+    "limitations": "Focused Windows operational fixtures, not formal arbitrary-adversary race freedom or a new complete mesh/lifecycle qualification. V1 skip history remains preserved; V2 real reparse fallback closes that coverage gap."
+  },
+  "known_limits": [
+    "A transient ancestor reparse swap can expose metadata before the before/after checks detect a stable change; the code explicitly discloses this preexisting path-based observation limit. No outside file contents, proofs or authorization are accepted by this metadata counter. Static/observed reparse fixtures are refused.",
+    "The counter remains sampled logical-size observation, not physical allocation, aggregate Linux RSS or exact atomic whole-run peak. New files can appear between samples, as before.",
+    "Unknown/unsupported races may still conservatively refuse. This does not prove PERF21 specific offending path, which was not recorded.",
+    "An actual new sphere run is still required to qualify the live changed lifecycle under separately reviewed input/environment gates. First actual failure stops; no retry or other case implicit."
+  ],
+  "scope": "Read-only source/Git/AST/text/hash and existing closed log inspection only. No project imports, tests/fixtures, geometry/native/scientific execution, mesh/comparer/census, source edits or cleanup by reviewer."
+}

@@ -1,0 +1,112 @@
+{
+  "schema": "PERF22ClosedCompactLifecycleComparison/1",
+  "passed": true,
+  "full_physical_array_comparison": "NOT_PERFORMED; operands intentionally removed by authorized cleanup",
+  "full_offline_replay_available": false,
+  "manifest_sha256": "3740e6ac3c7a842f2d924811717f48570cd2a99f26ac598094f8093a33d4b377",
+  "authorization_receipt": {
+    "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF22_LIVE\\solver.cleanup-authorization.json",
+    "sha256": "8608b4ef7bb1fabcc6a75daab9371d44ac03811d06c25e141dc55fe0939466d5"
+  },
+  "source_root": "3f0bfc167662bfd6c2bbd63ff96253e49507ad1819d1781bbb9ed57be9f9a13f",
+  "audit_receipt_sha256": "469efc2beee6211d95f8f5744130169c44a39fd465c412ae1ec58a5b52361a8b",
+  "counts": {
+    "points": 14798,
+    "prisms": 12780,
+    "tetrahedra": 40448
+  },
+  "solver_files": 7,
+  "solver_payload_bytes": 5370964,
+  "compact_logical_bytes": 5742092,
+  "precleanup_scratch_logical_bytes": 317584127,
+  "precleanup_scratch_files": 397,
+  "remaining_scratch_logical_bytes": 0,
+  "authorization_receipt_bytes": 13880,
+  "external_sidecar_bytes": 3189,
+  "precleanup_scratch_plus_compact_closed_bytes": 323326219,
+  "full_physical_array_equality_claimed": false,
+  "solver_bytes_and_retained_semantics_exact": true,
+  "source_execution": {
+    "case_sha256": "6931944f9a173e21501b238fdd7ab906294b8d2fea0f10a85c169850381319de",
+    "contained_active_processes": 0,
+    "effective_workers": 4,
+    "geometry": "03621d1c7199b1004d998a2b3958d2243167b57dbf306f08f14864008154517d",
+    "height_hex": "0x1.4f8b588e368f1p-16",
+    "positions_sha256": "f3a0e0197f9e71cea1d62821ccc5b993218540635bed8a1eb6c70f1502e66f48",
+    "positions_shape": [
+      6,
+      1280,
+      3
+    ],
+    "proof_identity": "6f1f24b2a9d2ad7a0217379ec6aaa356c84fa14d978e5c9aa706a4e14df5bfa4",
+    "reason": "eligible_production_population",
+    "refusal_diagnostics": [],
+    "requested_workers": 4,
+    "runtime_files": 1895,
+    "runtime_identity": "efb724a6a70273999f3e36e5873269984781de99b5eb7f306278f4001bf4d3ac",
+    "schema": "V35OwnedLocalSourceExecution/1",
+    "semantic_context_sha256": "cf23cdb9b2359f2566946189e9188328327e3ccc56b9cce8d911cf030b4b7003",
+    "sequence": 1,
+    "session": "322d219e11774c619a9369854ee8d5eb",
+    "source_assurance": "owned_current_local_execution; not an independent H1 certificate",
+    "speculation": "all shards resolve current layer before earliest original index refusal",
+    "state": "closed",
+    "transcript_sha256": "6930d9409afbaf4819a114872335f1d91231b02568d722c2c0679477550117df",
+    "workers": [
+      {
+        "case_sha256": "6931944f9a173e21501b238fdd7ab906294b8d2fea0f10a85c169850381319de",
+        "files": 1895,
+        "passed": true,
+        "runtime": "efb724a6a70273999f3e36e5873269984781de99b5eb7f306278f4001bf4d3ac",
+        "session": "322d219e11774c619a9369854ee8d5eb",
+        "state": "closed",
+        "worker": 0
+      },
+      {
+        "case_sha256": "6931944f9a173e21501b238fdd7ab906294b8d2fea0f10a85c169850381319de",
+        "files": 1895,
+        "passed": true,
+        "runtime": "efb724a6a70273999f3e36e5873269984781de99b5eb7f306278f4001bf4d3ac",
+        "session": "322d219e11774c619a9369854ee8d5eb",
+        "state": "closed",
+        "worker": 1
+      },
+      {
+        "case_sha256": "6931944f9a173e21501b238fdd7ab906294b8d2fea0f10a85c169850381319de",
+        "files": 1895,
+        "passed": true,
+        "runtime": "efb724a6a70273999f3e36e5873269984781de99b5eb7f306278f4001bf4d3ac",
+        "session": "322d219e11774c619a9369854ee8d5eb",
+        "state": "closed",
+        "worker": 2
+      },
+      {
+        "case_sha256": "6931944f9a173e21501b238fdd7ab906294b8d2fea0f10a85c169850381319de",
+        "files": 1895,
+        "passed": true,
+        "runtime": "efb724a6a70273999f3e36e5873269984781de99b5eb7f306278f4001bf4d3ac",
+        "session": "322d219e11774c619a9369854ee8d5eb",
+        "state": "closed",
+        "worker": 3
+      }
+    ]
+  },
+  "semantic_context_provenance": {
+    "current": "cf23cdb9b2359f2566946189e9188328327e3ccc56b9cce8d911cf030b4b7003",
+    "baseline": "07b48aaadfbff04385e219096246987c649882b71427005de2bdc57c8f2983f5",
+    "raw_equality_claimed": false,
+    "reason": "Absolute evaluator paths change on relocation; own-run authenticated context/runtime chain and four byte-equal evaluator modules retained"
+  },
+  "actual_audit_before_cleanup": true,
+  "actual_cleanup_complete": true,
+  "baseline_files_unchanged": 375,
+  "preserved_previous_failure": {
+    "root": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF21_LIVE\\.v35-compact-scratch-447866c1e37d40ccaca11b22e9aee0b9",
+    "files": 54,
+    "logical_bytes": 2720869,
+    "old_runtime_files": 1894,
+    "unchanged": true
+  },
+  "post_cleanup_linux_census_passed": true,
+  "scope": "Retained outcome/roots/checks, exact recursive solver bytes and baseline compact semantic fields; no deleted producer/replay proof rerun"
+}

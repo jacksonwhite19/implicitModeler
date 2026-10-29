@@ -1,0 +1,152 @@
+{
+  "schema": "PERF19CompactMeasurements/1",
+  "passed": true,
+  "cases": [
+    {
+      "schema": "PERF19AcceptedExportControl/1",
+      "passed": true,
+      "case": "sphere",
+      "source": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\perf14\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf16_sphere_production_01",
+      "source_root": "dc015a8b482e90896fc7e83bc3e5163728a1404185430421a4e42abdd60b4e7b",
+      "review": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF16_FINAL_RESOURCE_REVIEW.json",
+      "review_sha256": "c0a671d76ffeda789cf27a11c087677685ec373fac913ab039f4f700b417b0ce",
+      "audit_root": "4db92642721b608faa34188da48a6df78cc273f2f2d60164670d20aaf508b69b",
+      "output": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF19_SPHERE_COMPACT_V2",
+      "delivery": {
+        "status": "solver_delivery_complete",
+        "output": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF19_SPHERE_COMPACT_V2",
+        "manifest_sha256": "83540d613fcb87df0c63140dc9df2fb82cd354708612da77592e472a998c1b88",
+        "retained_logical_bytes": 5741276,
+        "source_modified": false,
+        "full_offline_replay_available": false
+      },
+      "source_files": 375,
+      "source_inventory_unchanged": true,
+      "source_inventory_sha256": "9d220e61381f27f0d00eea7f4402de8ef94c77b7befbf2e4f99af8f465dc542d",
+      "recursive_solver_files": 7,
+      "solver_bytes": 5370964,
+      "full_logical_bytes": 290195930,
+      "compact_logical_bytes": 5741276,
+      "metadata_logical_bytes": 370312,
+      "full_plus_compact_closed_logical_bytes": 295937206,
+      "compact_fraction_of_full": 0.019784136876075414,
+      "seconds": 3.126618499867618,
+      "new_meshing_invocations": 0,
+      "historical_deletion": false,
+      "full_offline_replay_available": false,
+      "consumer_identity": "1680be25183adaf72e916b1084aa33303dbe30cf440f0dd7ab75e54b67ed5e98",
+      "consumer_files": 1894,
+      "original_sampled_production_output_including_logs_bytes": 292325711,
+      "original_production_receipt": {
+        "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF16_SPHERE_PRODUCTION_RUN.json",
+        "sha256": "f6aecf6aaa4b474fd83a5001a401604de75e8d76a7696456892502ae956babf7"
+      },
+      "export_control_receipt": {
+        "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF19_SPHERE_EXPORT_CONTROL_V2.json",
+        "sha256": "b7d93d3b13193fe7f64dc17493ac514f4b2a84dffa16dcd09b2fa8110736ec74"
+      }
+    },
+    {
+      "schema": "PERF19AcceptedExportControl/1",
+      "passed": true,
+      "case": "blend",
+      "source": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\perf14\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf17_blend_production_01",
+      "source_root": "91677d01f1190769340b1314163552fa6d8688730146d41584194b605821edad",
+      "review": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF17_FINAL_RESOURCE_REVIEW.json",
+      "review_sha256": "b28d2d32f9a765a9de31db9d397096a72651137eb781e7d65721d49a1f90abae",
+      "audit_root": "2867924176588a384e545a796ba1ca62435ec11da11af5bc5961e80baf77cfea",
+      "output": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF19_BLEND_COMPACT_V2",
+      "delivery": {
+        "status": "solver_delivery_complete",
+        "output": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF19_BLEND_COMPACT_V2",
+        "manifest_sha256": "bee77a8db459043a6c437954460a32e743123ef94674a2d07575b84ace1ee3d9",
+        "retained_logical_bytes": 13760742,
+        "source_modified": false,
+        "full_offline_replay_available": false
+      },
+      "source_files": 549,
+      "source_inventory_unchanged": true,
+      "source_inventory_sha256": "838bd69bead409a126da3bbaf7cedc341d6622a4b92744bb034c4c1f368c48b7",
+      "recursive_solver_files": 7,
+      "solver_bytes": 13389825,
+      "full_logical_bytes": 845472146,
+      "compact_logical_bytes": 13760742,
+      "metadata_logical_bytes": 370917,
+      "full_plus_compact_closed_logical_bytes": 859232888,
+      "compact_fraction_of_full": 0.016275807624299903,
+      "seconds": 4.50007149996236,
+      "new_meshing_invocations": 0,
+      "historical_deletion": false,
+      "full_offline_replay_available": false,
+      "consumer_identity": "1680be25183adaf72e916b1084aa33303dbe30cf440f0dd7ab75e54b67ed5e98",
+      "consumer_files": 1894,
+      "original_sampled_production_output_including_logs_bytes": 847613927,
+      "original_production_receipt": {
+        "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF17_BLEND_PRODUCTION_RUN.json",
+        "sha256": "fe3807f9efd116c56ab484d3eb6914972c2cb2e870cf706007b672e18de43865"
+      },
+      "export_control_receipt": {
+        "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF19_BLEND_EXPORT_CONTROL_V2.json",
+        "sha256": "e965f2dd6f7eb7e5bce1fb78e4fb45fa11f75bf454a05bd94def619aa8444769"
+      }
+    },
+    {
+      "schema": "PERF19AcceptedExportControl/1",
+      "passed": true,
+      "case": "passage",
+      "source": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\perf14\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf18_passage_production_01",
+      "source_root": "ebfdd6661dfda408deb2446a88e8b543f6fd990af2a0feb9363be3aed4b39ee5",
+      "review": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF18_FINAL_RESOURCE_REVIEW.json",
+      "review_sha256": "0475cd74a80401284136e807e3e61849c38c104ba475eb7ba34edbb1b841778a",
+      "audit_root": "6e316b1409f6e4d081d71231baa26f4c39e5034f763aeed288184812a236134b",
+      "output": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF19_PASSAGE_COMPACT_V2",
+      "delivery": {
+        "status": "solver_delivery_complete",
+        "output": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF19_PASSAGE_COMPACT_V2",
+        "manifest_sha256": "fe59da44d71d0ae3732541224a5c10551dae9460528986e6d220971d60610f2f",
+        "retained_logical_bytes": 71724797,
+        "source_modified": false,
+        "full_offline_replay_available": false
+      },
+      "source_files": 373,
+      "source_inventory_unchanged": true,
+      "source_inventory_sha256": "2427fe3b5fa3f2026cb47e8a5170bf1bff29237c3f41a55983b7386adf7d3a39",
+      "recursive_solver_files": 7,
+      "solver_bytes": 71347385,
+      "full_logical_bytes": 3843729069,
+      "compact_logical_bytes": 71724797,
+      "metadata_logical_bytes": 377412,
+      "full_plus_compact_closed_logical_bytes": 3915453866,
+      "compact_fraction_of_full": 0.018660211402116385,
+      "seconds": 8.179491899907589,
+      "new_meshing_invocations": 0,
+      "historical_deletion": false,
+      "full_offline_replay_available": false,
+      "consumer_identity": "1680be25183adaf72e916b1084aa33303dbe30cf440f0dd7ab75e54b67ed5e98",
+      "consumer_files": 1894,
+      "original_sampled_production_output_including_logs_bytes": 3845852933,
+      "original_production_receipt": {
+        "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF18_PASSAGE_PRODUCTION_RUN.json",
+        "sha256": "14121d5a3f8bcc6744ead72800290f3243e38f552a5fca9df8133655e04e8ac4"
+      },
+      "export_control_receipt": {
+        "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF19_PASSAGE_EXPORT_CONTROL_V2.json",
+        "sha256": "7aedfcb4a46ecab60eb593b98a540bfcde3fbe879cef0568188d992d070a24e7"
+      }
+    }
+  ],
+  "consumer_identity": "1680be25183adaf72e916b1084aa33303dbe30cf440f0dd7ab75e54b67ed5e98",
+  "consumer_files": 1894,
+  "all_1297_original_files_unchanged": true,
+  "full_logical_bytes": 4979397145,
+  "compact_logical_bytes": 91226815,
+  "full_new_cli_lifecycle_qualified": false,
+  "new_mesh_campaigns": 0,
+  "full_replays": 0,
+  "historical_deletions": 0,
+  "limits": [
+    "Logical sizes only; no physical allocation, RAM savings or measured new-lifecycle staging peak.",
+    "Original sampled output maxima include logs and belong to original production; full plus compact closed bytes measure coexistence, not whole-run peak.",
+    "Compact omits complete replay evidence; originals remain immutable. Existing numerical limits and solver setup requirements remain."
+  ]
+}

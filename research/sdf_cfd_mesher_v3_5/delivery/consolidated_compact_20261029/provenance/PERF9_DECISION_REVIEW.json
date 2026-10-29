@@ -1,0 +1,130 @@
+{
+  "schema": "PERF9IsolatedRestorationPlanReview/1",
+  "passed": true,
+  "blockers_to_isolated_setup": [],
+  "decision": "PREFER_TWO_EXACT_ORIGINAL_LIBRARIES_IN_SEPARATE_VERSIONED_CANDIDATE;SETUP_ONLY_THEN_SOURCE_AND_CONTROL_REVIEW_BEFORE_TINY_SMOKE",
+  "scope": "Read-only data/hash/source proposal review. No library load, native/scientific predicate, mesh/test/smoke, install/downgrade, runtime mutation or download by reviewer.",
+  "artifact_checks": [
+    {
+      "version": "1.0.9-2build6",
+      "package_size_sha_signed_stanza_exact": true,
+      "all_three_extracted_brotli_binaries_independently_hashed": true,
+      "decoder_common_old_required_or_new_observed_exact": true
+    },
+    {
+      "version": "1.0.9-2ubuntu0.1",
+      "package_size_sha_signed_stanza_exact": true,
+      "all_three_extracted_brotli_binaries_independently_hashed": true,
+      "decoder_common_old_required_or_new_observed_exact": true
+    }
+  ],
+  "provenance": "Signed-index/package receipt previously reviewed; now independently hashed actual two Debian archives and all six extracted binary payloads against exact signed sizes/SHA and requiredold/observednew hashes. Exact old required binaries are obtainable; no hash repin is necessary for proposed restoration.",
+  "cause_and_scope": "Current authenticated update archive reproduces installed changed binaries; logs show unattended upgrade. This closes package-byte explanation, not universal semantic equivalence or current environment qualification. Changelog decoder security update is real within authenticated package; leave shared system updated.",
+  "dependency_evidence": "Captured full pinned libgmsh4.15 DT_NEEDED and ldd graph supports gmsh->libXft->freetype->brotlidec->common (also fontconfig path). Python executable direct dependencies alone were incomplete. No scientific irrelevance inference follows from font route.",
+  "minimal_setup": {
+    "candidate": "Fresh work/perf9 from530f4a6d, preserve perf4/failedrun/publishedold manifests. Two regular SONAME-named exact old decoder/common files only; no symlink or system mutation, encoder/transitive copies or install scripts.",
+    "profile": "V35IsolatedBrotliRuntime/1 exact allowlist mapping two original absolute paths to candidate local paths with SAME old digests, explicit immutable historicalbase manifest identity/new effective profile. No fallback acceptance of changed system hashes.",
+    "loader": "Safe quoted candidate child-only LD_LIBRARY_PATH prefix before fresh exec/import. Parent/global environment and system loader configuration untouched. Inherited LD_PRELOAD/conflicts must be detected/refused, not bypassed.",
+    "identity": "Strict system-path1916audit must still report exactly2knownmismatches. Effective audit verifies original1914system pins plus2local exactoldpins; canonical-path/role collisions and unknown profile reject. Keep late RuntimeIdentity and all module/ldd checks.",
+    "maps": "Require both decoder/common mappings at exact candidate paths afteractual Gmsh import, and reject foreign/deleted or extra/unpinned Brotli paths/roles rather than copying dependencies ad hoc. Deduplicate mapping segments by canonical file but retain metadata. Correct filename/env string alone is insufficient.",
+    "preflight": "Generic complete effective-byte/loader preflight while candidate source/binaries held BEFORE geometryworker; persist failures and never launch on missing/changed/profile/identity error. Late gate remains for drift."
+  },
+  "focused_controls_before_smoke": [
+    "Restored binary tamper/missing; unrelated externalpin tamper; wrongbase/profile/unknownversion/pathescape/duplicatealiases; changed inherited environment/preload/foreignprocess mappings",
+    "Exact only2relocation allowlist, no extra dependencies or encoder substitution; stock1916systemaudit remains false and effective1916audittrue",
+    "Early rejection verified before geometry/native worker launch, with held expected source/binary pins and no catch/retry bypass",
+    "Safe command quoting/space paths and zero global/package environment change"
+  ],
+  "tiny_smoke_boundary": "Only AFTER implementation/source/control review: verify complete runtime+actualmappings; Gmshinitialize/addonepoint/synchronize/finalize, pre/postchecks. Zero meshgeneration/optimizer/search/shape/campaign or promotion. New candidate/fullpipeline remains unqualified. No smoke code has been inspected or preapproved as implemented yet.",
+  "stop_conditions": [
+    "Any extra dependency change, unexpectedmaps/alias/identity, baseline manifest mutation or need to expand loader graph stops this construction for decision.",
+    "If isolated approach cannot pass strict checks narrowly, separately propose authenticated current-version closure with explicit2hashchanges and fresh qualification; never silently repin."
+  ],
+  "limitations": [
+    "47unreadable processmaps in earlier snapshot still prevent global no-users/no-old-mapping claim; sharedsystem is deliberately untouched.",
+    "Exact old scientific bytes do not mean old decoder is appropriate for arbitrary untrusted compression input; tiny smoke uses controlled inputs, no current security/portability/generalgeometry claim.",
+    "No sphere/blend/offline/passage/fullmesh attempt in this milestone, PERF8failure preserved, no push/packagepromotion."
+  ],
+  "pins": [
+    {
+      "path": "outputs\\PERF9_DECISION_PROPOSAL.md",
+      "bytes": 3953,
+      "sha256": "f57b5acfce0f963c76b174414ef0366cf6729ba25e2ee9ef2646baf1d1ae3af6"
+    },
+    {
+      "path": "outputs\\PERF9_PACKAGE_ARTIFACTS.json",
+      "bytes": 4929,
+      "sha256": "99aaa6f5737cf6ddb1a54f1ec0056f1428d9c31f560df0d66434a1448a9285f3"
+    },
+    {
+      "path": "outputs\\PERF9_SIGNED_METADATA.json",
+      "bytes": 5630,
+      "sha256": "b1d26dd8ba9514d1e1f1cb79cdfb6fedf041ef93e0a6373970e5a9b3df6d9fb2"
+    },
+    {
+      "path": "outputs\\PERF9_DEPENDENCY_CHAIN.json",
+      "bytes": 10765,
+      "sha256": "5e83fc5e4f2375509c049a144c1fca57086f899cea2fc3b1933732c6a54288c6"
+    },
+    {
+      "path": "outputs\\PERF9_PROVENANCE.json",
+      "bytes": 54805,
+      "sha256": "31dbeea782c72f62b96e47e36b2d2b3a5defa4f5bf13935c11ff9dfe5c86e862"
+    },
+    {
+      "path": "outputs\\PERF9_PROVENANCE_REVIEW.json",
+      "bytes": 6276,
+      "sha256": "2358dc5351752fd34eb2efdbf034c111cf91024e881de5c1c83e4aa94e4e084c"
+    },
+    {
+      "path": "outputs\\PERF8_FINAL_REVIEW.json",
+      "bytes": 13678,
+      "sha256": "03f6df67044b64b0a0d964109bff983710a7a6d236ec89dec055a5589633080e"
+    },
+    {
+      "path": "outputs\\PERF9_PACKAGE_PROVENANCE\\libbrotli1_1.0.9-2build6_amd64.deb",
+      "bytes": 315164,
+      "sha256": "8e6aa2dfd44df287b9fb227862f3b6062ec074dd39a247874edfe12e1dcc3841"
+    },
+    {
+      "path": "outputs\\PERF9_PACKAGE_PROVENANCE\\old\\usr\\lib\\x86_64-linux-gnu\\libbrotlicommon.so.1.0.9",
+      "bytes": 137560,
+      "sha256": "abf86ae9362dbb413c740a55b194c74adb09a7bd92d8fbd96a293c797a4a6d08"
+    },
+    {
+      "path": "outputs\\PERF9_PACKAGE_PROVENANCE\\old\\usr\\lib\\x86_64-linux-gnu\\libbrotlidec.so.1.0.9",
+      "bytes": 51512,
+      "sha256": "db9dbda709a46c3ae124433f47c4db71167db8aaba4eafdfd99c8a3a14584463"
+    },
+    {
+      "path": "outputs\\PERF9_PACKAGE_PROVENANCE\\old\\usr\\lib\\x86_64-linux-gnu\\libbrotlienc.so.1.0.9",
+      "bytes": 587944,
+      "sha256": "b88bfc462f83859a0324e2035f10bfd277e6073bb211b8ca29d95d2a5be8290d"
+    },
+    {
+      "path": "outputs\\PERF9_PACKAGE_PROVENANCE\\libbrotli1_1.0.9-2ubuntu0.1_amd64.deb",
+      "bytes": 315370,
+      "sha256": "908295e77a65219a62114c3c79690a3c99712274d1317c3ba47ffa2f8ea52ca5"
+    },
+    {
+      "path": "outputs\\PERF9_PACKAGE_PROVENANCE\\current\\usr\\lib\\x86_64-linux-gnu\\libbrotlicommon.so.1.0.9",
+      "bytes": 137560,
+      "sha256": "617035f98d836e37ccaefdd5fe56b45ef4f5e10460c5b4f68c2d488e5a62766f"
+    },
+    {
+      "path": "outputs\\PERF9_PACKAGE_PROVENANCE\\current\\usr\\lib\\x86_64-linux-gnu\\libbrotlidec.so.1.0.9",
+      "bytes": 51512,
+      "sha256": "b877956d7814d95fb37473002f46a43fe7f09bebb48a41312c329c65631622b5"
+    },
+    {
+      "path": "outputs\\PERF9_PACKAGE_PROVENANCE\\current\\usr\\lib\\x86_64-linux-gnu\\libbrotlienc.so.1.0.9",
+      "bytes": 587944,
+      "sha256": "180da53c45df8a1a4bc1d2ad1439bd15d8e74a49b01820d63423342e971a74c3"
+    },
+    {
+      "path": "outputs\\PERF9_PACKAGE_PROVENANCE\\current\\usr\\share\\doc\\libbrotli1\\changelog.Debian.gz",
+      "bytes": 1022,
+      "sha256": "5686989fc72ecdf7f517a128193266120dc60c876c130d55b139f3379ed97b0d"
+    }
+  ]
+}

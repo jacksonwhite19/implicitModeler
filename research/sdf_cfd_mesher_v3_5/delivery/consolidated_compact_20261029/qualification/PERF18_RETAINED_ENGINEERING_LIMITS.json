@@ -1,0 +1,218 @@
+{
+  "schema": "PERF18RetainedEngineeringLimits/1",
+  "passed": true,
+  "shape": {
+    "interface_tetrahedra": {
+      "passed": false,
+      "count": 59732,
+      "minimum": 0.32041083317825586,
+      "required_minimum": 0.25,
+      "minimum_passed": true,
+      "population_targets": [
+        {
+          "fraction": 0.99,
+          "minimum": 0.4,
+          "required_count": 59135,
+          "actual_count": 59600,
+          "actual_fraction": 0.9977901292439564,
+          "passed": true
+        },
+        {
+          "fraction": 0.9,
+          "minimum": 0.6,
+          "required_count": 53759,
+          "actual_count": 45572,
+          "actual_fraction": 0.7629411370789526,
+          "passed": false
+        }
+      ],
+      "quantiles": [
+        0,
+        0.01,
+        0.1,
+        0.5,
+        0.9,
+        1
+      ],
+      "diagnostic_quantile_values": [
+        0.32041083317825586,
+        0.4401729012952186,
+        0.5364401805310749,
+        0.6932447764561802,
+        0.8616398813605853,
+        0.9978238792394675
+      ],
+      "contract_version": "DirectFillEngineering/1",
+      "contract_identity": "0ca4092aff4f177c7742bfe1d0a5d1575b7a353298992c8b3245c433d1a2aa4a",
+      "minimum_role": "MANDATORY",
+      "percentage_role": "NONBLOCKING_ENGINEERING_DIAGNOSTIC",
+      "population_targets_blocking": false,
+      "mandatory_passed": true,
+      "percentage_targets_met": false,
+      "percentage_status": "TARGET_NOT_MET",
+      "minimum_actual_count": 59732,
+      "population_identity": "467064a6c189cb36ae45b477d5270d8b89b97073028690553db592870b4e349a",
+      "points_identity": "6c479004c720da74bcd9adfb25d13dd81c7a769c1f3f60f3edd5949da6255a91",
+      "targets_identity": "75763b4442a0724d5fa2225b297fbd5169cb849d89f969b229faa9977cd7eceb"
+    },
+    "all_bulk_tetrahedra": {
+      "passed": true,
+      "count": 247804,
+      "minimum": 0.2716482611054878,
+      "required_minimum": 0.25,
+      "minimum_passed": true,
+      "population_targets": [
+        {
+          "fraction": 0.99,
+          "minimum": 0.4,
+          "required_count": 245326,
+          "actual_count": 247469,
+          "actual_fraction": 0.9986481251311521,
+          "passed": true
+        },
+        {
+          "fraction": 0.9,
+          "minimum": 0.6,
+          "required_count": 223024,
+          "actual_count": 226786,
+          "actual_fraction": 0.915182967183742,
+          "passed": true
+        }
+      ],
+      "quantiles": [
+        0,
+        0.01,
+        0.1,
+        0.5,
+        0.9,
+        1
+      ],
+      "diagnostic_quantile_values": [
+        0.2716482611054878,
+        0.46992939844241205,
+        0.616191591721477,
+        0.8452460691916143,
+        0.9430758780485913,
+        0.9997564091185752
+      ],
+      "contract_version": "DirectFillEngineering/1",
+      "contract_identity": "0ca4092aff4f177c7742bfe1d0a5d1575b7a353298992c8b3245c433d1a2aa4a",
+      "minimum_role": "MANDATORY",
+      "percentage_role": "NONBLOCKING_ENGINEERING_DIAGNOSTIC",
+      "population_targets_blocking": false,
+      "mandatory_passed": true,
+      "percentage_targets_met": true,
+      "percentage_status": "TARGETS_MET",
+      "minimum_actual_count": 247804,
+      "population_identity": "68fb97d47239bf295a35fbe500095759dd7b95ce7b7ec62a293e746a91bc06db",
+      "points_identity": "6c479004c720da74bcd9adfb25d13dd81c7a769c1f3f60f3edd5949da6255a91",
+      "targets_identity": "75763b4442a0724d5fa2225b297fbd5169cb849d89f969b229faa9977cd7eceb"
+    },
+    "preserved_cap_triangles": {
+      "passed": false,
+      "count": 59732,
+      "minimum": 0.3304947841289329,
+      "required_minimum": 0.3,
+      "minimum_passed": true,
+      "population_targets": [
+        {
+          "fraction": 0.99,
+          "minimum": 0.6,
+          "required_count": 59135,
+          "actual_count": 55374,
+          "actual_fraction": 0.927040782160316,
+          "passed": false
+        },
+        {
+          "fraction": 0.9,
+          "minimum": 0.8,
+          "required_count": 53759,
+          "actual_count": 31930,
+          "actual_fraction": 0.5345543427308646,
+          "passed": false
+        }
+      ],
+      "quantiles": [
+        0,
+        0.01,
+        0.1,
+        0.5,
+        0.9,
+        1
+      ],
+      "diagnostic_quantile_values": [
+        0.3304947841289329,
+        0.49402688495928765,
+        0.6237606696918367,
+        0.8148158881697662,
+        0.9756660227600084,
+        0.9999977356298362
+      ],
+      "contract_version": "DirectFillEngineering/1",
+      "contract_identity": "0ca4092aff4f177c7742bfe1d0a5d1575b7a353298992c8b3245c433d1a2aa4a",
+      "minimum_role": "MANDATORY",
+      "percentage_role": "NONBLOCKING_ENGINEERING_DIAGNOSTIC",
+      "population_targets_blocking": false,
+      "mandatory_passed": true,
+      "percentage_targets_met": false,
+      "percentage_status": "TARGET_NOT_MET",
+      "minimum_actual_count": 59732,
+      "population_identity": "560a6214b2ce6fc4eb55428e6bdb8d2fc76e5aa65aecf95ee34b87a109a46f93",
+      "points_identity": "6c479004c720da74bcd9adfb25d13dd81c7a769c1f3f60f3edd5949da6255a91",
+      "targets_identity": "953e753c9e2f5a24abc6a0478d5c518bee21d30ccc8415cec488e048cd34338b"
+    }
+  },
+  "cap_population": {
+    "contract_identity": "0ca4092aff4f177c7742bfe1d0a5d1575b7a353298992c8b3245c433d1a2aa4a",
+    "contract_version": "DirectFillEngineering/1",
+    "count": 59732,
+    "diagnostic_quantile_values": [
+      0.3304947841289329,
+      0.49402688495928765,
+      0.6237606696918367,
+      0.8148158881697662,
+      0.9756660227600084,
+      0.9999977356298362
+    ],
+    "mandatory_passed": true,
+    "minimum": 0.3304947841289329,
+    "minimum_passed": true,
+    "minimum_role": "MANDATORY",
+    "passed": false,
+    "percentage_role": "NONBLOCKING_ENGINEERING_DIAGNOSTIC",
+    "percentage_status": "TARGET_NOT_MET",
+    "percentage_targets_met": false,
+    "population_targets": [
+      {
+        "actual_count": 55374,
+        "actual_fraction": 0.927040782160316,
+        "fraction": 0.99,
+        "minimum": 0.6,
+        "passed": false,
+        "required_count": 59135
+      },
+      {
+        "actual_count": 31930,
+        "actual_fraction": 0.5345543427308646,
+        "fraction": 0.9,
+        "minimum": 0.8,
+        "passed": false,
+        "required_count": 53759
+      }
+    ],
+    "population_targets_blocking": false,
+    "quantiles": [
+      0,
+      0.01,
+      0.1,
+      0.5,
+      0.9,
+      1
+    ],
+    "required_minimum": 0.3
+  },
+  "warnings": [],
+  "native_mesh_quality": "NOT_RUN_NO_APPLICABLE_APPROVED_DICTIONARY",
+  "solver_qualified": false,
+  "arbitrary_geometry_qualified": false
+}

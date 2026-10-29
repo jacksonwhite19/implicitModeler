@@ -1,0 +1,79 @@
+{
+  "schema": "PERF22MilestoneCompletion/1",
+  "milestone_complete": true,
+  "live_workflow_passed": true,
+  "disposition": "PASS_ONE_FIXED_SPHERE_CONFIGURED_HOST_STOP_FOR_ADVISOR",
+  "dispatch_counter": "4/5",
+  "next_outgoing": "5/5",
+  "callbacks_increment": false,
+  "tested_commit": "86a749af6aba1ed936d3e68213b473b985e6faa8",
+  "docs_commit": "a7fd3c1955026ea0371f0e0e92ca609065a06406",
+  "runtime_identity": "efb724a6a70273999f3e36e5873269984781de99b5eb7f306278f4001bf4d3ac",
+  "runtime_files": 1895,
+  "summary": "One normal sphere passed production, immediate audit, compact delivery and owned cleanup. Seven recursive solver files exactly match accepted sphere. Previous failure and historical baselines remain unchanged.",
+  "counts": {
+    "points": 14798,
+    "prisms": 12780,
+    "tetrahedra": 40448
+  },
+  "compact_logical_bytes": 5742092,
+  "precleanup_scratch_logical_bytes": 317584127,
+  "remaining_scratch_logical_bytes": 0,
+  "total_controller_seconds": 537.2562740999274,
+  "peak_sampled_windows_tree_rss_bytes": 1015422976,
+  "maximum_sampled_controller_output_bytes": 325817242,
+  "full_offline_replay_available": false,
+  "full_physical_array_comparison_after_cleanup": false,
+  "evidence": {
+    "PERF22_REPORT.md": {
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF22_REPORT.md",
+      "sha256": "636809780d891178f14586dae3c8762ca0cb496dff4b780ffdc1d4f9aca8381f"
+    },
+    "PERF22_CLOSED_COMPARISON.json": {
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF22_CLOSED_COMPARISON.json",
+      "sha256": "d98532ae56dd19787a38277c8ea53bda51fa26d01f3ff4321027abb8a7da9429"
+    },
+    "PERF22_FINAL_COMPONENT_REVIEW.json": {
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF22_FINAL_COMPONENT_REVIEW.json",
+      "sha256": "2e842d6880189c87fc18367b4f1fccebbb2e23582eb9eca22248adf957285c0d"
+    },
+    "PERF22_FINAL_RESOURCE_REVIEW.json": {
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF22_FINAL_RESOURCE_REVIEW.json",
+      "sha256": "ee67ce7b87b970329b8ef3d6e2d1f097e1af890f639c36c73b584a8579e1f441"
+    },
+    "PERF22_LIFECYCLE_RUN.json": {
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF22_LIFECYCLE_RUN.json",
+      "sha256": "83ccd5afa48154eed346e05e807e2ed0cd756e943937ae26f44ce65eb6816bfb"
+    },
+    "PERF22_LAUNCH_SEAL.json": {
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF22_LAUNCH_SEAL.json",
+      "sha256": "18dc80c99e2b97a22ea9a575d6290f445957c44845068da743eb8ed8de0fa4e9"
+    },
+    "PERF22_LAUNCH_SEAL_REVIEW.json": {
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF22_LAUNCH_SEAL_REVIEW.json",
+      "sha256": "c748665ff70dd9a4def3717b8cd8f9f4c2b1aff70faa64de82ce96a58111bd7e"
+    },
+    "PERF22_POST_CLEANUP_LINUX.json": {
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF22_POST_CLEANUP_LINUX.json",
+      "sha256": "33fce759a3e066d3f3e79ff237741645225b51e1ca5e7b838111a857e997589e"
+    },
+    "PERF22_FOCUSED_TESTS_V2.log": {
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF22_FOCUSED_TESTS_V2.log",
+      "sha256": "09696f2bd57df201aa1a1224fd75a6752799f9d7d04d3089f3819b40124508ba"
+    },
+    "PERF22_LIVE/solver.retention.json": {
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF22_LIVE\\solver.retention.json",
+      "sha256": "71c6b81bf5ade5b9216d780115d13790e826813675b59c5f4bc4dbe6901707a0"
+    },
+    "PERF22_LIVE/solver.cleanup-authorization.json": {
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF22_LIVE\\solver.cleanup-authorization.json",
+      "sha256": "8608b4ef7bb1fabcc6a75daab9371d44ac03811d06c25e141dc55fe0939466d5"
+    }
+  },
+  "attempts_this_dispatch": 1,
+  "no_retry": true,
+  "no_historical_deletion": true,
+  "no_push_package_promotion_automation": true,
+  "advisor_thread": "01a178e6-57cb-7a30-a31d-fa56ca8e2681",
+  "callback_required_before_final": true
+}

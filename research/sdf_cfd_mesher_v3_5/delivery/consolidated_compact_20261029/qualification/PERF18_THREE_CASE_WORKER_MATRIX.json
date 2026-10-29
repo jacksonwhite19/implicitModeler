@@ -1,0 +1,123 @@
+{
+  "schema": "PERF18ThreeCaseWorkerMatrix/1",
+  "status": "all_three_fixed_cases_production_exact_comparison_offline_and_final_review_passed",
+  "runtime_identity": "6d0840f9b58a1fe8a67554f985efb878ad5899ae0e8c7aa9c4f4a2890d329b0e",
+  "serial_default": true,
+  "cases": [
+    {
+      "case": "sphere",
+      "production_passed": true,
+      "offline_passed": true,
+      "actual_workers": 4,
+      "sequence": 1,
+      "source_segments": 6400,
+      "points": 14798,
+      "prisms": 12780,
+      "tetrahedra": 40448,
+      "compression": 0,
+      "warnings": [],
+      "production_seconds": 439.8792129000649,
+      "serial_production_seconds": 430.81234179995954,
+      "offline_seconds": 93.11820499971509,
+      "producer_files_unchanged": 375,
+      "root": "dc015a8b482e90896fc7e83bc3e5163728a1404185430421a4e42abdd60b4e7b",
+      "comparison_receipt": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF16_SPHERE_PRODUCTION_COMPARISON.json",
+      "observed_seconds_saved": -9.066871100105345,
+      "observed_percent_shorter": -2.1045987360119303,
+      "current_runtime": "6d0840f9b58a1fe8a67554f985efb878ad5899ae0e8c7aa9c4f4a2890d329b0e",
+      "serial_runtime": "3bdd14455b74a67e6fa1405efc945956f69bcb03925283ee1d6481b9815b82a8",
+      "current_profile": {
+        "identity": "70323422ec34b7c47e5f401605125ee71ad00bd60dbf0206d39fa8242cff222a",
+        "version": "V35DirectProducerAcceptance/1"
+      },
+      "serial_profile": {
+        "identity": "ca030e3a0e4a752a82150e1fd42db7b3d89db0a7a65a1455bc7be9e94dd48d10",
+        "version": "V35DirectProducerAcceptance/1"
+      },
+      "case_differences": [
+        "/verification/profile/identity"
+      ],
+      "serial_source_workers": 1,
+      "serial_reference_root": "f6d6105a3e8e4ac88e2badbb5c4c5d49eedb7cd895d2ad69a2b0ec4b9462ef62",
+      "production_observed_ratio_serial_over_parallel": 0.9793878163954858
+    },
+    {
+      "case": "blend",
+      "production_passed": true,
+      "offline_passed": true,
+      "actual_workers": 4,
+      "sequence": 3,
+      "source_segments": 23295,
+      "points": 38868,
+      "prisms": 46570,
+      "tetrahedra": 72871,
+      "compression": 1663,
+      "warnings": [
+        "*Number of severely non-orthogonal (> 70 degrees) faces: 41."
+      ],
+      "production_seconds": 2522.189624699764,
+      "serial_production_seconds": 2595.0690786996856,
+      "offline_seconds": 238.4663335001096,
+      "producer_files_unchanged": 549,
+      "root": "91677d01f1190769340b1314163552fa6d8688730146d41584194b605821edad",
+      "comparison_receipt": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF17_BLEND_PRODUCTION_COMPARISON.json",
+      "observed_seconds_saved": 72.87945399992168,
+      "observed_percent_shorter": 2.808382042625219,
+      "current_runtime": "6d0840f9b58a1fe8a67554f985efb878ad5899ae0e8c7aa9c4f4a2890d329b0e",
+      "serial_runtime": "3bdd14455b74a67e6fa1405efc945956f69bcb03925283ee1d6481b9815b82a8",
+      "current_profile": {
+        "identity": "70323422ec34b7c47e5f401605125ee71ad00bd60dbf0206d39fa8242cff222a",
+        "version": "V35DirectProducerAcceptance/1"
+      },
+      "serial_profile": {
+        "identity": "ca030e3a0e4a752a82150e1fd42db7b3d89db0a7a65a1455bc7be9e94dd48d10",
+        "version": "V35DirectProducerAcceptance/1"
+      },
+      "case_differences": [
+        "/verification/profile/identity"
+      ],
+      "serial_source_workers": 1,
+      "serial_reference_root": "509d3c008757ccd19f94a242b87e0cb370a63a812bd793e6f6bc824e9f1ab650",
+      "production_observed_ratio_serial_over_parallel": 1.0288953111559156
+    },
+    {
+      "case": "passage",
+      "production_passed": true,
+      "offline_passed": true,
+      "actual_workers": 4,
+      "sequence": 1,
+      "source_segments": 149330,
+      "points": 207705,
+      "prisms": 298660,
+      "tetrahedra": 247804,
+      "compression": 0,
+      "warnings": [],
+      "production_seconds": 3803.3565580998547,
+      "serial_production_seconds": 4637.077760900371,
+      "observed_seconds_saved": 833.721202800516,
+      "observed_percent_shorter": 17.979452702527773,
+      "offline_seconds": 1051.682273000013,
+      "producer_files_unchanged": 373,
+      "root": "ebfdd6661dfda408deb2446a88e8b543f6fd990af2a0feb9363be3aed4b39ee5",
+      "comparison_receipt": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF18_PASSAGE_PRODUCTION_COMPARISON.json",
+      "current_runtime": "6d0840f9b58a1fe8a67554f985efb878ad5899ae0e8c7aa9c4f4a2890d329b0e",
+      "serial_runtime": "3bdd14455b74a67e6fa1405efc945956f69bcb03925283ee1d6481b9815b82a8",
+      "current_profile": {
+        "identity": "70323422ec34b7c47e5f401605125ee71ad00bd60dbf0206d39fa8242cff222a",
+        "version": "V35DirectProducerAcceptance/1"
+      },
+      "serial_profile": {
+        "identity": "ca030e3a0e4a752a82150e1fd42db7b3d89db0a7a65a1455bc7be9e94dd48d10",
+        "version": "V35DirectProducerAcceptance/1"
+      },
+      "case_differences": [
+        "/verification/profile/identity"
+      ],
+      "serial_source_workers": 1,
+      "serial_reference_root": "037d247e36813e9841f42dad6a9acfbee4dc086b73c541609ae3dacda988f815",
+      "production_observed_ratio_serial_over_parallel": 1.2192066902128789
+    }
+  ],
+  "timing_scope": "Single archived serial and fresh parallel observation per fixed case; different wrapper work, no stable or causal speedup claim.",
+  "disposition": "GO consolidate explicit parallel-source candidate for three fixed configured-host cases, serial default unchanged. Recommend separately reviewed compact-retention implementation proposal next; do not start storage or packaging here."
+}

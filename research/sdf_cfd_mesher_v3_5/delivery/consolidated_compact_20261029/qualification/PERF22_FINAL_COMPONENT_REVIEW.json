@@ -1,0 +1,101 @@
+{
+  "schema": "PERF22IndependentFinalComponentReview/1",
+  "passed": true,
+  "blockers": [],
+  "classification": "PASS_FIXED_SPHERE_NORMAL_COMPACT_PRODUCTION_IMMEDIATE_AUDIT_OWNED_CLEANUP",
+  "source_commit": "86a749af6aba1ed936d3e68213b473b985e6faa8",
+  "runtime_identity": "efb724a6a70273999f3e36e5873269984781de99b5eb7f306278f4001bf4d3ac",
+  "runtime_files": 1895,
+  "checks": [
+    "Exact 14-file compact population, sizes and manifest digests independently verified.",
+    "All seven recursive solver files byte-identical to accepted baseline; counts, requested/achieved layers, shape and mesh-quality summaries exact. Substantive conditioning/repair/assurance fields equal.",
+    "Twelve producer completion pins and actual immediate-audit all-twelve replay summary reconcile. Canonical copied audit digest matches precleanup authorization; producer/background-manifest/audit/compact roots reconcile.",
+    "Four ordered closed source workers bind session, CASE, runtime and proof. Baseline source positions/proof/H1/source geometry equality verified; metadata-sensitive context and joined identity remain own-run bindings.",
+    "All 1895 current runtime files match consumer and both clean source-custody inventories. Actual producer supervisor and wrapper exit zero without stop/monitor errors. Current Git commit clean and launch seal pins unchanged.",
+    "Cleanup sidecar reports complete; exact owned scratch root absent. Precleanup Windows/native census and postcleanup seven-group receipt pass, with no reviewer census execution.",
+    "All 375 accepted baseline files and 54 preserved PERF21 failure files remain byte exact."
+  ],
+  "solver_files": {
+    "boundary": {
+      "bytes": 987,
+      "sha256": "41fd0e9d3306f37ad1f534e87e1c0b6c918e16f4510ef20070fba1eab425b553"
+    },
+    "cellZones": {
+      "bytes": 308999,
+      "sha256": "5c436450c3f9ccc3fd774882a29f1c208809d5e7400685967296bc2d7acd527c"
+    },
+    "faces": {
+      "bytes": 2346869,
+      "sha256": "397efdadb459acc9df6ba1e50405bb16f74241a38d2de02340ebb1cb90adeaaa"
+    },
+    "neighbour": {
+      "bytes": 635128,
+      "sha256": "5dfecff19bb697f0be0a6f1699d34e7f7f87c5f2644877274b96b3555c761155"
+    },
+    "owner": {
+      "bytes": 665028,
+      "sha256": "54e555f538f2ca43270c8083a92e6b2a388e25469c9742286e8d06b44f456f92"
+    },
+    "points": {
+      "bytes": 1051776,
+      "sha256": "1a154ecca4a56357ba732b8eadf556a70f9b2b69117553628ead1454e164e1e9"
+    },
+    "sets/fluid": {
+      "bytes": 362177,
+      "sha256": "495c33f69e1382b5c01739dab4a5503cd934248b6ae225eba1541bb5cf1a8173"
+    }
+  },
+  "counts": {
+    "points": 14798,
+    "prisms": 12780,
+    "tetrahedra": 40448
+  },
+  "source_root": "3f0bfc167662bfd6c2bbd63ff96253e49507ad1819d1781bbb9ed57be9f9a13f",
+  "audit_receipt_sha256": "469efc2beee6211d95f8f5744130169c44a39fd465c412ae1ec58a5b52361a8b",
+  "measurements": {
+    "compact_logical_bytes": 5742092,
+    "solver_payload_bytes": 5370964,
+    "precleanup_scratch_logical_bytes": 317584127,
+    "precleanup_scratch_files": 397,
+    "precleanup_scratch_plus_compact_closed_bytes": 323326219
+  },
+  "total_seconds": 537.2562740999274,
+  "peak_sampled_windows_tree_rss_bytes": 1015422976,
+  "maximum_sampled_controller_output_bytes": 325817242,
+  "limits": [
+    "Single fixed sphere/configured-host qualification only; no broad robustness, portability, continuous-fluid, exact-global-Q or CFD claim.",
+    "Full physical arrays intentionally deleted: no postcleanup full-array equality or semantic replay was performed or claimed. Compact records are not replay proofs; full offline replay is unavailable.",
+    "Immediate all-twelve replay occurred before cleanup. Review authenticates retained summaries/roots and surviving supervisor/source closure, not deleted raw proof operands.",
+    "checkMesh literal Mesh OK/no warnings; approved meshQuality dictionary NOT_RUN. Repair assurance remains UNQUALIFIED.",
+    "Logical bytes and sampled Windows tree RSS do not measure physical allocation or aggregate Linux RSS. Closed scratch-plus-compact cutpoint is not whole-run live staging peak.",
+    "Saved process receipts cover owned processes/groups; no universal process census claim. Prior PERF21 failure remains preserved.",
+    "Read-only standard-library file/JSON/hash/Git inspection only; no project imports, tests, predicates, native calls or new mesh execution."
+  ],
+  "evidencepins": {
+    "outputs\\PERF22_CLOSED_COMPARISON.json": "d98532ae56dd19787a38277c8ea53bda51fa26d01f3ff4321027abb8a7da9429",
+    "outputs\\PERF22_LIFECYCLE_RUN.json": "83ccd5afa48154eed346e05e807e2ed0cd756e943937ae26f44ce65eb6816bfb",
+    "outputs\\PERF22_WRAPPER_SOURCES.json": "14897d2b45644e4d174439487fa7ba69e9bfd7defe45f63de899ff40da4f3103",
+    "outputs\\PERF22_POST_CLEANUP_LINUX.json": "33fce759a3e066d3f3e79ff237741645225b51e1ca5e7b838111a857e997589e",
+    "outputs\\PERF22_LAUNCH_SEAL.json": "18dc80c99e2b97a22ea9a575d6290f445957c44845068da743eb8ed8de0fa4e9",
+    "outputs\\PERF22_LIVE\\solver.retention.json": "71c6b81bf5ade5b9216d780115d13790e826813675b59c5f4bc4dbe6901707a0",
+    "outputs\\PERF22_LIVE\\solver.cleanup-authorization.json": "8608b4ef7bb1fabcc6a75daab9371d44ac03811d06c25e141dc55fe0939466d5",
+    "outputs\\PERF22_COMPONENT_SOURCE_REVIEW.json": "806ec1336904212111366df3392262d82c0ef0aacd35b5e9094743f7a40bf2fe",
+    "outputs\\PERF22_COMPONENT_PREFLIGHT_REVIEW.json": "e003d2dcab6efeced40597522621b9f4b352c65d717ac757ef5448753c350f28",
+    "outputs\\PERF22_LIVE\\solver\\CASE.json": "6931944f9a173e21501b238fdd7ab906294b8d2fea0f10a85c169850381319de",
+    "outputs\\PERF22_LIVE\\solver\\CHECKS.json": "0c563ba604b9587bb388aef6c458601661282a566c34b16e020390ce5e3513af",
+    "outputs\\PERF22_LIVE\\solver\\COMPACT.json": "3740e6ac3c7a842f2d924811717f48570cd2a99f26ac598094f8093a33d4b377",
+    "outputs\\PERF22_LIVE\\solver\\CONSUMER.json": "db9d73dca9a9759b10b4a55956b40d5218c0cf3d8ecafe79a4bf8130194bd186",
+    "outputs\\PERF22_LIVE\\solver\\DELIVERY_OWNER.json": "e6a2ba64c1121fd5e338b3fa444017bff6414e73f5c33beef98b4df0e29e126c",
+    "outputs\\PERF22_LIVE\\solver\\geometry.rhai": "7c97720ecc8b17a861b5c0a9ab9f9119414632b3322c459074157da02630ee67",
+    "outputs\\PERF22_LIVE\\solver\\PROVENANCE.json": "ce4f1a6717e87480166b5da369291c4fd12d2953f9fe1c8add6cb0be8c345828",
+    "outputs\\PERF22_LIVE\\solver\\polyMesh\\boundary": "41fd0e9d3306f37ad1f534e87e1c0b6c918e16f4510ef20070fba1eab425b553",
+    "outputs\\PERF22_LIVE\\solver\\polyMesh\\cellZones": "5c436450c3f9ccc3fd774882a29f1c208809d5e7400685967296bc2d7acd527c",
+    "outputs\\PERF22_LIVE\\solver\\polyMesh\\faces": "397efdadb459acc9df6ba1e50405bb16f74241a38d2de02340ebb1cb90adeaaa",
+    "outputs\\PERF22_LIVE\\solver\\polyMesh\\neighbour": "5dfecff19bb697f0be0a6f1699d34e7f7f87c5f2644877274b96b3555c761155",
+    "outputs\\PERF22_LIVE\\solver\\polyMesh\\owner": "54e555f538f2ca43270c8083a92e6b2a388e25469c9742286e8d06b44f456f92",
+    "outputs\\PERF22_LIVE\\solver\\polyMesh\\points": "1a154ecca4a56357ba732b8eadf556a70f9b2b69117553628ead1454e164e1e9",
+    "outputs\\PERF22_LIVE\\solver\\polyMesh\\sets\\fluid": "495c33f69e1382b5c01739dab4a5503cd934248b6ae225eba1541bb5cf1a8173",
+    "work\\perf22\\research\\sdf_cfd_mesher_v3_5\\standalone\\run_logs\\3842f2651aa1.json": "f70d0d556aeb95ccae88dae51b1f8a985c8382ccfb219495788aebda8117ccf1",
+    "work\\perf22\\research\\sdf_cfd_mesher_v3_5\\standalone\\run_logs\\3842f2651aa1.SOURCES.json": "14897d2b45644e4d174439487fa7ba69e9bfd7defe45f63de899ff40da4f3103"
+  }
+}

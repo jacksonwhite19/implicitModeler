@@ -1,0 +1,51 @@
+{
+  "schema": "perf22.source_resource_review.v1",
+  "passed": true,
+  "source_go": true,
+  "launch_go": false,
+  "disposition": "GO for narrow source commit and subsequent independent preflight; no live campaign authorization from this receipt",
+  "review_mode": "Read-only static source, diff and saved closed test evidence; no candidate imports or reviewer tests/science",
+  "candidate_head": "f525eb0bff6a3f682ffe02feba93bcba52b8ace1",
+  "blockers": [],
+  "source_and_evidence_sha256": {
+    "work/perf22/research/sdf_cfd_mesher_v3_5/standalone/compact_lifecycle.py": "95d2791e5cf625052731aa16c7ed532ebdbe52c27dab9092857e0378f4413e61",
+    "work/perf22/research/sdf_cfd_mesher_v3_5/standalone/compact_paths.py": "34b1fb40c670c515e47fb69dfc016eab35bc71ea8f1cfd6598bd08f724ca6327",
+    "work/perf22/research/sdf_cfd_mesher_v3_5/standalone/tests/test_compact_monitor.py": "10afaafc77d87b0aa2201bca5c04bd2c6af67938f270719bc68afc812e75b67a",
+    "work/perf22/research/sdf_cfd_mesher_v3_5/standalone/compact_delivery.py": "d6d6fb68b1b1c92e2bdd85f3e42aaf66163f003a64ec497d3ac0289ede295af8",
+    "work/perf22/research/sdf_cfd_mesher_v3_5/standalone/compact_native_close.py": "65cd9e44faef698d9c3d4c617e616fc9a87321ebd5ea3a3f737f1657987a3468",
+    "work/perf22/research/sdf_cfd_mesher_v3_5/standalone/mesh.py": "d6b5963cd4afca2f4d3273c3792cea38ed356d0f8cee3a5a927869d91a6a2665",
+    "work/perf22/research/sdf_cfd_mesher_v3_5/standalone/offline_audit.py": "5ce92e801d615a254abe153a062bb8912c32f918a034a2c24d275c52c3257c86",
+    "outputs/PERF22_FOCUSED_TESTS_V2.log": "09696f2bd57df201aa1a1224fd75a6752799f9d7d04d3089f3819b40124508ba",
+    "outputs/PERF22_PATH_DIAGNOSTIC.json": "aedb00cd542332449f855309698d65d8dec69405290bebb5c865319f0a062931",
+    "outputs/PERF22_PATH_DIAGNOSTIC_V2.json": "ddbe291d5bf4ad181981679fbcd8c4b6b2c7d37d91c087bdc21a98a108adac08",
+    "outputs/PERF22_MONITOR_PATH_RISK_REVIEW.json": "3d6ce946571ae732edc0ae4421d922ac45287a154565f45b6ee424583db01716",
+    "outputs/PERF21_FAILED_RESOURCE_REVIEW.json": "5fa81728231e9d7039bf48eb0762c5ac9b8b2d746d2c1d211d71346124b1a0e7"
+  },
+  "focused_tests": {
+    "receipt": "outputs/PERF22_FOCUSED_TESTS_V2.log",
+    "ran": 42,
+    "passed": 42,
+    "skipped": 0,
+    "seconds": 59.787,
+    "scope": "34 existing compact controls plus 8 new monitor controls; saved execution by parent, not reviewer"
+  },
+  "findings": [
+    "live_bytes uses a single no-follow lstat per regular leaf and its observed st_size; it does not resolve mutable checkpoint leaves or read contents.",
+    "Observed symbolic links and all FILE_ATTRIBUTE_REPARSE_POINT leaves/directories refuse, including actual DrvFs LX_SYMLINK fixture. Persistent IO, unexpected type and present directory redirects propagate; only actual FileNotFoundError is skipped.",
+    "Strict checked entry/end directory and device/inode equality detect observed directory replacement. Monitor holds no deny-delete directory handles, so it does not intentionally block scratch removal.",
+    "compact_paths.checked preserves strict resolution comparison and adds error context only. Publication, authentication, inventory, deletion authorization and native census code are otherwise unchanged.",
+    "Saved controls cover actual checkpoint replacement/deletion, concurrent directory removal, junction and LX link refusal, persistent IO/redirect refusal, and actual output quota refusal."
+  ],
+  "limits": [
+    "Metadata sampling is observational. Before/after directory identity checks do not prevent arbitrary transient ancestor swap-and-restore or guarantee no outside metadata observation under hostile races. This monitor grants no copy/publication/deletion authority.",
+    "Concurrent changes can affect sampled logical byte totals; these are not exact physical allocation or lifecycle peak guarantees.",
+    "Diagnostics reproduce old leaf-resolve refusal sensitivity but do not establish the unique cause or omitted path of the original PERF21 failure.",
+    "No corrected full live lifecycle has been qualified here; environment/setup, exact source identity, fresh CASE/output ownership and a literal reviewed launch seal remain separate prerequisites.",
+    "No scientific method or scientific acceptance gate changed; no scientific execution or deletion by reviewer."
+  ],
+  "reviewed_diff": [
+    "compact_lifecycle.py: stat import and live_bytes only",
+    "compact_paths.py: diagnostic context only",
+    "new tests/test_compact_monitor.py"
+  ]
+}

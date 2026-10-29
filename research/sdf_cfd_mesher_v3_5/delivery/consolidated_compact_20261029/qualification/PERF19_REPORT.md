@@ -1,0 +1,21 @@
+PERF19 completed the compact solver-delivery implementation in a separate local candidate. Commit `e065dbd77a3c95c6a65235f4687183ad23be15e0` is on `candidate/mesher-v3-5-compact-delivery`; its worktree is clean. V3 prisms still connect to the existing V4 direct transition/background and joined acceptance/export. There is no separate transition tool. Meshing algorithms and scientific gates are unchanged.
+
+Full evidence remains the default. Retention, verification and source workers are independent. Compact export authenticates the trusted outer root, background manifest, actual native export and any supplied separate audit. It copies all seven recursive solver files, including zones and sets, byte for byte. It retains settings, Rhai geometry, units, CLI, counts, checks, warnings, full repair assurance and source inventories. Compact input is explicitly rejected by full offline replay.
+
+| Case | Full bundle bytes | Compact bytes | Original files unchanged |
+|---|---:|---:|---:|
+| Sphere | 290,195,930 | 5,741,276 | 375 |
+| Blend | 845,472,146 | 13,760,742 | 549 |
+| Passage | 3,843,729,069 | 71,724,797 | 373 |
+
+All 1,297 original files and all 21 solver files passed independent hash, population and byte checks. The three compact copies total 91,226,815 logical bytes; the preserved full bundles total 4,979,397,145 bytes. Full-plus-compact closed coexistence is 295,937,206 / 859,232,888 / 3,915,453,866 bytes. Original sampled production output maxima, including logs, were 292,325,711 / 847,613,927 / 3,845,852,933 bytes. These scopes differ. No new whole-run staging peak, physical allocation, reclaimed space or RAM savings was measured. Full staging is still required before optional cleanup.
+
+Final focused V11 passed 28 controls in 43.249 s. Related verification, audit, supervisor and process-owner suites passed 15 / 9 / 3 / 4 controls. A coherent 58-control suite passed in 103.283 s before the final rename-buffer repair. The final focused suite covers that repair, path alignment, Unicode, no-overwrite, authentication, metadata mutation, process closure and owned cleanup. Synthetic proof premises are labelled; these controls are not new mesh qualification.
+
+All failed logs remain preserved. The first real sphere export exposed a Windows rename-buffer defect and was refused by post-publication verification. Its failed folder remains intact; its 375 source files stayed exact. The repaired UTF-16 buffer passed the new controls before all three fresh V2 exports passed. Earlier test-fixture failures included an uninitialized audit helper, copied native scope paths, missing fault-receipt fields and preflight-preempted timeout/supervisor tests. Their fixes changed fixture setup or interface plumbing; no scientific gate was weakened.
+
+Optional cleanup is restricted to scratch created by that live invocation. Scientific acceptance, separate audit, compact publication and cleanup have independent outcomes. Success cleanup holds the delivery and inspects native processes without signaling; ordinary failure uses exact-owned cancellation and census. The new complete compact CLI lifecycle and cleanup after a live full mesh remain unqualified. Compact files lack complete offline replay. Existing UNQUALIFIED repair assurance limits remain visible in all three deliveries; blend retains its 41-face warning and compression/quality limits. CFD setup and arbitrary-geometry qualification are not supplied.
+
+Consumer identity is `1680be25183adaf72e916b1084aa33303dbe30cf440f0dd7ab75e54b67ed5e98`, with 1,894 files. Earlier numerical qualification stays bound to producer `6d0840f9` / 1,889 files. Independent source and actual-result component/resource reviews passed. No new meshing campaign, full replay, historical deletion, package, push, promotion or automation occurred.
+
+Evidence: `PERF19_MEASUREMENTS.json`, `PERF19_FINAL_COMPONENT_RESULT_REVIEW.json`, `PERF19_FINAL_EXPORT_RESOURCE_REVIEW.json`, and the three `PERF19_*_EXPORT_CONTROL_V2.json` receipts. Deliveries are `PERF19_SPHERE_COMPACT_V2`, `PERF19_BLEND_COMPACT_V2`, and `PERF19_PASSAGE_COMPACT_V2`. Operating instructions are in `work/perf19/research/sdf_cfd_mesher_v3_5/standalone/COMPACT_DELIVERY.md`.

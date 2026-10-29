@@ -1,0 +1,86 @@
+{
+  "schema": "PERF19FinalExportResourceReview/1",
+  "passed": true,
+  "blockers": [],
+  "reviewed_utc": "2026-10-29T03:55:36.995224+00:00",
+  "evidencepins": {
+    "outputs/PERF19_MEASUREMENTS.json": "bfbe7c017b537d896cbbc4cfda7ae5518e1ab83f600e21bec879c1374f3ef7b4",
+    "outputs/PERF19_EXPORT_LAUNCH_V2.json": "ffe441c15b9f229bdacbd24b63d8d9d29aa2a6d3a4a207ae30e719e1f66dd4e6",
+    "outputs/PERF19_SOURCE_RESOURCE_REVIEW_RENAME_V2.json": "ac0b12d19577dfaee997612cf998a35d114466f71b30f5ac52a831642a3eba1e",
+    "outputs/PERF19_REAL_EXPORT_FAILURE.json": "52efcbb8f8fbdf923f0eddbff60327c282db05cff899f07e6d70691231549f06",
+    "outputs/PERF19_FINAL_58_CONTROLS.log": "aa2557386753938daab6d5b163ac2739329df26e5e33e7a68832bff0199467f3",
+    "outputs/PERF19_FOCUSED_TESTS_V11.log": "406696973e4b2fcf3b449c705b0406de72f5e55f1a9c756a389a70a43c84946b",
+    "work/perf19_export_controls.py": "5cf63bdcd8a6bfd7c918bc73fa3077e979fbd5a6e0cb8e0ce39faaa3ba5c65d1",
+    "outputs/PERF19_SPHERE_EXPORT_CONTROL_V2.json": "b7d93d3b13193fe7f64dc17493ac514f4b2a84dffa16dcd09b2fa8110736ec74",
+    "outputs/PERF16_SPHERE_OFFLINE_INPUT_INVENTORY.json": "9d220e61381f27f0d00eea7f4402de8ef94c77b7befbf2e4f99af8f465dc542d",
+    "outputs/PERF19_SPHERE_COMPACT_V2/COMPACT.json": "83540d613fcb87df0c63140dc9df2fb82cd354708612da77592e472a998c1b88",
+    "outputs/PERF19_SPHERE_COMPACT_V2/CONSUMER.json": "f922e49cb3550a0ef4ef2b140e0f0ab4f3b92b7a7a8255d3e14319eb8dc8cee2",
+    "outputs/PERF19_SPHERE_COMPACT_V2/CHECKS.json": "b982c44a23a66456f68503df3a1cdebb48720728365d871c2d7b8ab63077f563",
+    "outputs/PERF19_SPHERE_COMPACT_V2/PROVENANCE.json": "268a2a5a3dc9e0f9669eb2444de486aa974a9c4f2bff9db2bae1991b20241d4e",
+    "outputs/PERF19_BLEND_EXPORT_CONTROL_V2.json": "e965f2dd6f7eb7e5bce1fb78e4fb45fa11f75bf454a05bd94def619aa8444769",
+    "outputs/PERF17_BLEND_OFFLINE_INPUT_INVENTORY.json": "838bd69bead409a126da3bbaf7cedc341d6622a4b92744bb034c4c1f368c48b7",
+    "outputs/PERF19_BLEND_COMPACT_V2/COMPACT.json": "bee77a8db459043a6c437954460a32e743123ef94674a2d07575b84ace1ee3d9",
+    "outputs/PERF19_BLEND_COMPACT_V2/CONSUMER.json": "f922e49cb3550a0ef4ef2b140e0f0ab4f3b92b7a7a8255d3e14319eb8dc8cee2",
+    "outputs/PERF19_BLEND_COMPACT_V2/CHECKS.json": "aef90aa20f664c5678d2de66b6aaf2d8e1312516b28476d5ccaf129d425ea1c1",
+    "outputs/PERF19_BLEND_COMPACT_V2/PROVENANCE.json": "9f1c7220276538ab798e34a40332f51c356e0e8e44e675bc7010255d198a82c9",
+    "outputs/PERF19_PASSAGE_EXPORT_CONTROL_V2.json": "7aedfcb4a46ecab60eb593b98a540bfcde3fbe879cef0568188d992d070a24e7",
+    "outputs/PERF18_PASSAGE_OFFLINE_INPUT_INVENTORY.json": "2427fe3b5fa3f2026cb47e8a5170bf1bff29237c3f41a55983b7386adf7d3a39",
+    "outputs/PERF19_PASSAGE_COMPACT_V2/COMPACT.json": "fe59da44d71d0ae3732541224a5c10551dae9460528986e6d220971d60610f2f",
+    "outputs/PERF19_PASSAGE_COMPACT_V2/CONSUMER.json": "f922e49cb3550a0ef4ef2b140e0f0ab4f3b92b7a7a8255d3e14319eb8dc8cee2",
+    "outputs/PERF19_PASSAGE_COMPACT_V2/CHECKS.json": "f6c77958fe30d23c22beb932cf2a107881ef9b29ef324f03e6cd58254943e648",
+    "outputs/PERF19_PASSAGE_COMPACT_V2/PROVENANCE.json": "cf331652fdc5b419a056a938293304ead6357fa06eabe9b9e6c4c678d68ec858"
+  },
+  "cases": [
+    {
+      "case": "sphere",
+      "source_files": 375,
+      "full_bytes": 290195930,
+      "compact_bytes": 5741276,
+      "solver_bytes": 5370964,
+      "metadata_bytes": 370312,
+      "closed_coexistence_bytes": 295937206,
+      "manifest_sha256": "83540d613fcb87df0c63140dc9df2fb82cd354708612da77592e472a998c1b88"
+    },
+    {
+      "case": "blend",
+      "source_files": 549,
+      "full_bytes": 845472146,
+      "compact_bytes": 13760742,
+      "solver_bytes": 13389825,
+      "metadata_bytes": 370917,
+      "closed_coexistence_bytes": 859232888,
+      "manifest_sha256": "bee77a8db459043a6c437954460a32e743123ef94674a2d07575b84ace1ee3d9"
+    },
+    {
+      "case": "passage",
+      "source_files": 373,
+      "full_bytes": 3843729069,
+      "compact_bytes": 71724797,
+      "solver_bytes": 71347385,
+      "metadata_bytes": 377412,
+      "closed_coexistence_bytes": 3915453866,
+      "manifest_sha256": "fe59da44d71d0ae3732541224a5c10551dae9460528986e6d220971d60610f2f"
+    }
+  ],
+  "original_files_full_population_and_hashes_exact": 1297,
+  "consumer_identity": "1680be25183adaf72e916b1084aa33303dbe30cf440f0dd7ab75e54b67ed5e98",
+  "consumer_files": 1894,
+  "all_current_consumer_hashes_match": true,
+  "launch_and_review_source_pins_exact": true,
+  "assessment": [
+    "All three actual V2 control receipts pass; compact manifest expected hashes and exact file populations/sizes/hashes independently checked without candidate imports.",
+    "Every recursive solver file (seven each incl cellZones and sets/fluid) matches original bytes via hash, bound background MANIFEST and native export pin. Original trusted outer/audit/review/inventory anchors agree.",
+    "All1297original files/populations/hash/size rechecked unchanged across375/549/373. Separate audit records retained exactly, records deny replay-proof/full-offline authority.",
+    "Current1894consumer file hashes and canonical row identity1680be25 agree across three outputs; original scientific producer runtime stays separate.",
+    "Measurements exact full/compact/metadata totals and full+compact closed coexistence agree. Original production sampled output maxima refer to earlier log-inclusive runs and are not new lifecycle peak measurements.",
+    "First failed sphere rename output/log/failure receipt preserved; V2fresh destinations passed after storage interface fix. No mesh/scientific retry or historical cleanup."
+  ],
+  "limits": [
+    "Actual accepted-bundle exporter copies are qualified on this configured host; full new CLI lifecycle, requested immediate audit+cleanup after live mesh remain unqualified.",
+    "58coherent controls preceded final rename buffer correction; final28focused tests cover that delta, not a newly rerun combined58suite.",
+    "Compact retains solver/settings/check records, no full replay evidence/solver configuration/CFD/global exact-Q qualification. Original assurance/repair classifications remain.",
+    "No measured new-lifecycle peak, physical allocation/free-space recovery/RAM saving or deletion result; copies coexist with original full bundles and preserved failed output.",
+    "Reviewer used file/hash/JSON checks only; no candidate imports/tests/native predicates/scientific runs/changes/deletion."
+  ],
+  "disposition": "PASS actual three V2 compact exports and source preservation. Ready for final honest report/docs review. No live mesh/cleanup/promotion/push authorized by this receipt."
+}

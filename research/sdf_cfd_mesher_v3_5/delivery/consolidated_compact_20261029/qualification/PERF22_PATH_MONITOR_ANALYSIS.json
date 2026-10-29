@@ -1,0 +1,74 @@
+{
+  "schema": "PERF22IndependentPathMonitorAnalysis/1",
+  "analysis_completed": true,
+  "implementation_go": false,
+  "classification": "CONFIRMED_FIXTURE_NONSTRICT_RESOLVE_CHURN; MONITOR_ONLY_NOFOLLOW_SNAPSHOT_FIX_SUPPORTED_IN_PRINCIPLE",
+  "blockers_for_old_monitor": [
+    "Nonstrict resolved-path string equality is not a reliable redirect detector for a mutable file name during active create/replace/delete."
+  ],
+  "observations": {
+    "V1": {
+      "checks": 24473,
+      "writes": 29887,
+      "redirect_errors": 4998,
+      "writer_errors": [],
+      "limit": "After-error re-resolution/state did not identify comparison-time result."
+    },
+    "V2": {
+      "checks": 23475,
+      "writes": 30436,
+      "redirect_errors": 6030,
+      "writer_errors": [],
+      "comparison_time_examples": [
+        "Lexical path with extended \\?\\ prefix retained",
+        "NTFS $Extend/$Deleted location for unlinked open object",
+        "checkpoint.pending object now named checkpoint.json"
+      ],
+      "limit": "Eight sampled errors represent these mechanisms; no distribution of all6030 error causes was recorded."
+    }
+  },
+  "source_basis": [
+    {
+      "file": "C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\Lib\\pathlib.py",
+      "lines": "1228-1253",
+      "finding": "Path.resolve defaults strict=False and delegates to Windows flavour realpath. Later stat only checks loops; ordinary disappearance need not turn returned string into a failure."
+    },
+    {
+      "file": "C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\Lib\\ntpath.py",
+      "lines": "705-765",
+      "finding": "realpath first calls _getfinalpathname. For an initially successful lookup initial_winerror is0; it performs another _getfinalpathname on the de-prefixed name to verify prefix removal. If name vanishes before that second call, error2 differs from0 and prefix can remain. A file-handle final-name lookup can also observe a renamed/deleted object. String inequality alone is not evidence of a symlink/junction redirect."
+    }
+  ],
+  "historical_PERF21": "Saved new fixture demonstrates a reproducible sufficient operational mechanism consistent with PERF21. It does not identify the lost PERF21 triggering path or prove which specific mechanism occurred there. Keep historical cause qualified.",
+  "smallest_supported_design": {
+    "scope": "Change only live metadata accounting. Retain strict checked/Handle/member/copy/publication/deletion gates; error-context diagnostic is harmless.",
+    "leaf": "Use one lstat/DirEntry.stat(follow_symlinks=False) snapshot to inspect regular-file attributes and obtain st_size. Reject observed reparse/symlink/nonregular objects. Never resolve/read target contents for mutable file names. Catch only explicit vanished snapshot outcomes; unexpected permission/IO errors remain refusal.",
+    "directory": "Maintain lexical containment and no-follow traversal with explicit reparse attribute pruning and directory-ancestry validation. Before/after identities can reject stable or unaccounted changes. Vanished/identity-changed directories during cleanup need bounded skip/retry snapshot semantics rather than blanket accepting arbitrary stable redirects.",
+    "no_lock_interference": "Do not add strict/no-delete-sharing directory handles in the repeatedly running outer monitor. Such pins can race and fail the authorized cleanup itself. A sampled accounting walker must not change writer/cleanup semantics.",
+    "limits": "This is sampled logical-size accounting, not a new filesystem security or atomic whole-tree snapshot guarantee. Potential transient ancestor races are disclosed; authoritative operations retain independent strict pinned checks."
+  },
+  "required_focused_controls": [
+    "Real bounded checkpoint churn with ordinary pending->final rename/delete; no false redirect refusal or writer errors in new monitor.",
+    "Stable root/nested junction/symlink/reparse fixtures rejected; no target file content dereference or outside-tree traversal treated as accepted payload.",
+    "Deterministic vanish/file replacement between enumeration and metadata stat; bounded snapshot behavior, unexpected IO refuses.",
+    "Real directory rename/delete and a monitor thread concurrently observing actual focused owned cleanup; no monitor-held handle sharing failures.",
+    "Strict original publication/deletion path and negative reparse/containment/alias controls remain unchanged and passing.",
+    "Retain exact failing/resolved path/identity diagnostics when a stable directory mismatch truly refuses."
+  ],
+  "do_not_fix_by": [
+    "Globally stripping \\?\\ or ignoring all $Deleted/CompactPathRedirect results",
+    "Catching every ValueError/OSError and counting zero",
+    "Removing reparse checks or replacing authoritative cleanup/copy validation with monitor observations",
+    "Adding deny-DELETE observation locks or any numerical method/gate change"
+  ],
+  "next_boundary": "Implementation and focused-test review required before any new full sphere; no source implementation, scientific run, test, fixture or mesh was executed by reviewer.",
+  "source_pins": {
+    "C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\Lib\\ntpath.py": "e62526627fe0129120e452f99b05b84965a57451e5ad8d29f0d5f3276cc2c489",
+    "C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\Lib\\pathlib.py": "cd1557dedcaa1be0459cd59760c5ebac83a3e412e0e1b5bc0b1a82a19563a090",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF22_PATH_DIAGNOSTIC.json": "aedb00cd542332449f855309698d65d8dec69405290bebb5c865319f0a062931",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\outputs\\PERF22_PATH_DIAGNOSTIC_V2.json": "ddbe291d5bf4ad181981679fbcd8c4b6b2c7d37d91c087bdc21a98a108adac08",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\perf22_diagnose.py": "f962f5a9bc66ca9e4c345ad071583589661b241f4893469f477239ceeed99ea1",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\perf22_diagnose_v2.py": "c19ff47e09c72eb6a191c2505beca6be7ba21bda579477f60f826b08648b3883",
+    "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\perf22\\research\\sdf_cfd_mesher_v3_5\\standalone\\compact_paths.py": "34b1fb40c670c515e47fb69dfc016eab35bc71ea8f1cfd6598bd08f724ca6327"
+  }
+}
