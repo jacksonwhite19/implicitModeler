@@ -109,6 +109,14 @@ class CompactDelivery(unittest.TestCase):
         (scratch.root/'nested').mkdir();(scratch.root/'nested'/'x').write_text('owned temporary')
         path=scratch.root;r=scratch.cleanup(out,result['manifest_sha256'])
         self.assertEqual(r['status'],'cleanup_complete');self.assertFalse(path.exists())
+        receipt=delivery.read(Path(r['authorization_receipt']['path']))
+        self.assertEqual(delivery.sha(Path(r['authorization_receipt']['path'])),r['authorization_receipt']['sha256'])
+        self.assertEqual(receipt['producer']['verification_sha256'],pin)
+        self.assertEqual(receipt['compact']['manifest_sha256'],result['manifest_sha256'])
+        self.assertEqual(receipt['staging']['owner'],scratch.marker)
+        self.assertTrue(receipt['native_census']['passed']);self.assertTrue(receipt['windows_census']['passed'])
+        self.assertFalse(receipt['full_offline_replay_available_after_cleanup'])
+        self.assertEqual(r['remaining_scratch_logical_bytes'],0)
         delivery.verify(out,result['manifest_sha256']);self.assertFalse(root.exists())
     def test_cleanup_missing_publication_mutated_marker_and_active_process_refuse(self):
         import psutil
@@ -295,6 +303,87 @@ class CompactDelivery(unittest.TestCase):
         with patch('compact_lifecycle.subprocess.run') as launch:
             with self.assertRaisesRegex(ValueError,'Ownership'):scratch.retire_native()
             launch.assert_not_called()
+    def test_cleanup_receipt_write_failure_preserves_all_source(self):
+        scratch=Scratch(self.root);self.addCleanup(scratch.close)
+        root,pin=self.fixture(scratch.root/'bundle');out=self.root/'compact';result=delivery.export(root,pin,out)
+        scratch.authorize_cleanup(out,result['manifest_sha256'],pin)
+        before={p.relative_to(scratch.root).as_posix():delivery.sha(p) for p in delivery.inventory(scratch.root)}
+        with patch('compact_lifecycle.os.fsync',side_effect=OSError('injected receipt write failure')):
+            with self.assertRaisesRegex(OSError,'receipt write failure'):scratch.cleanup(out,result['manifest_sha256'])
+        self.assertEqual(before,{p.relative_to(scratch.root).as_posix():delivery.sha(p) for p in delivery.inventory(scratch.root)})
+        delivery.verify(out,result['manifest_sha256'])
+    def test_cleanup_receipt_tamper_or_wrong_root_blocks_first_delete(self):
+        from compact_lifecycle import atomic_receipt
+        for fault in ['tamper','wrong-root']:
+            parent=self.root/fault;parent.mkdir();scratch=Scratch(parent);self.addCleanup(scratch.close)
+            root,pin=self.fixture(scratch.root/'bundle');out=parent/'compact';result=delivery.export(root,pin,out)
+            scratch.authorize_cleanup(out,result['manifest_sha256'],pin)
+            def changed(path,value):
+                expected=atomic_receipt(path,value)
+                payload=delivery.read(path)
+                if fault=='wrong-root':payload['producer']['verification_sha256']='0'*64
+                else:payload['status']='untrusted'
+                Path(path).write_text(json.dumps(payload))
+                return expected
+            with patch('compact_lifecycle.atomic_receipt',side_effect=changed):
+                with self.assertRaisesRegex(ValueError,'ChangedCleanupAuthorization'):scratch.cleanup(out,result['manifest_sha256'])
+            self.assertTrue(root.exists());self.assertEqual(delivery.sha(root/'VERIFICATION.json'),pin)
+            delivery.verify(out,result['manifest_sha256'])
+    def test_requested_audit_bound_in_small_cleanup_receipt(self):
+        scratch=Scratch(self.root,required_audit=True);self.addCleanup(scratch.close)
+        root,pin=self.fixture(scratch.root/'bundle');target=scratch.root/'offline_audit';target.mkdir()
+        save(target/'VERIFIER_SOURCES.json',dict(state='closed',passed=True,changed=[],added=[],identity='synthetic-verifier'))
+        audit=target/'AUDIT_RESULT.json'
+        save(audit,dict(schema='V35RetainedDirectAudit/1',status='audit_passed',passed=True,source_bundle_root=pin,
+            fresh_source_authority=False,remeshed=False,search_rerun=False,verifier_identity='synthetic-verifier',
+            replay=dict(all_twelve_semantically_replayed=True,proofs=12)))
+        audit_pin=delivery.sha(audit);out=self.root/'compact'
+        result=delivery.export(root,pin,out,audit_path=audit,audit_expected=audit_pin)
+        scratch.authorize_cleanup(out,result['manifest_sha256'],pin,audit_path=audit,audit_expected=audit_pin)
+        closed=scratch.cleanup(out,result['manifest_sha256']);receipt=delivery.read(Path(closed['authorization_receipt']['path']))
+        self.assertEqual(receipt['immediate_audit'],dict(requested=True,status='audit_passed',receipt_sha256=audit_pin,source_verification_sha256=pin))
+        self.assertFalse(target.exists());self.assertEqual(delivery.read(out/'CHECKS.json')['separate_audit']['source_bundle_root'],pin)
+    def test_cleanup_partial_failure_preserves_receipt_and_delivery(self):
+        scratch=Scratch(self.root);self.addCleanup(scratch.close)
+        root,pin=self.fixture(scratch.root/'bundle');out=self.root/'compact';result=delivery.export(root,pin,out)
+        scratch.authorize_cleanup(out,result['manifest_sha256'],pin)
+        original=Handle.dispose;seen=[]
+        def fail(handle):
+            seen.append(handle.path)
+            if len(seen)==2:raise OSError('injected partial deletion')
+            return original(handle)
+        with patch.object(Handle,'dispose',fail):
+            with self.assertRaisesRegex(OSError,'partial deletion'):scratch.cleanup(out,result['manifest_sha256'])
+        self.assertIsNotNone(scratch.cleanup_receipt)
+        receipt=Path(scratch.cleanup_receipt['path']);self.assertEqual(delivery.sha(receipt),scratch.cleanup_receipt['sha256'])
+        self.assertTrue(scratch.root.exists());delivery.verify(out,result['manifest_sha256'])
+    def test_lifecycle_cleanup_failure_keeps_accepted_delivery(self):
+        from compact_lifecycle import run
+        from types import SimpleNamespace
+        destination=self.root/'delivery';args=SimpleNamespace(output=destination,stop_after='complete',immediate_audit=False,
+            verification='production',timeout_seconds=60,cleanup_scratch=True)
+        def stage(command,scratch,args,destination,deadline,label):
+            if label=='mesh':self.fixture(scratch.root/'bundle')
+            else:
+                root=scratch.root/'bundle';value=delivery.export(root,delivery.sha(root/'VERIFICATION.json'),destination)
+                delivery.write(scratch.root/'export.stdout',value)
+        with patch('compact_lifecycle.bounded',side_effect=stage),patch.object(Scratch,'cleanup',side_effect=OSError('injected cleanup failure')):
+            self.assertEqual(run(args,[]),2)
+        value=delivery.read(self.root/'delivery.retention.json')
+        self.assertEqual(value['scientific_status'],'accepted');self.assertEqual(value['compact_publication'],'verified')
+        self.assertEqual(value['status'],'delivery_complete_cleanup_incomplete');self.assertTrue(Path(value['scratch']).exists())
+        delivery.verify(destination,value['delivery']['manifest_sha256'])
+    def test_reserved_cleanup_receipt_refuses_before_new_scratch_or_mesh(self):
+        from compact_lifecycle import run,receipt_path
+        from types import SimpleNamespace
+        destination=self.root/'delivery';delivery.write(receipt_path(destination),dict(existing='keep'))
+        args=SimpleNamespace(output=destination,stop_after='complete',immediate_audit=True,
+            verification='production',timeout_seconds=60,cleanup_scratch=True)
+        with patch('compact_lifecycle.bounded') as stage:
+            with self.assertRaisesRegex(ValueError,'FreshCleanupReceiptRequired'):run(args,[])
+            stage.assert_not_called()
+        self.assertFalse(list(self.root.glob('.v35-compact-scratch-*')))
+        self.assertEqual(delivery.read(receipt_path(destination)),dict(existing='keep'))
     def test_cli_retention_arguments_independent_and_legacy_default(self):
         argv=['--output=dest','--retention','compact-delivery','--verification','production','--source-workers','4','--cleanup-scratch','--immediate-audit']
         child=child_arguments(argv,self.root/'bundle')

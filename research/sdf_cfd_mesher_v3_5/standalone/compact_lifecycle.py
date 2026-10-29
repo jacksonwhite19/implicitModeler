@@ -1,23 +1,40 @@
 """Explicit new-run scratch ownership. Historical export has no cleanup API."""
 from pathlib import Path
 from contextlib import ExitStack
-import datetime,json,os,subprocess,sys,time,uuid,shutil
+import datetime,json,os,subprocess,sys,time,uuid,shutil,hashlib
 import psutil
 from compact_paths import checked,hold_parents,inventory,file_id,Handle,allowed_parent
 from compact_delivery import export,verify,sha,write,read,require
+
+
+def receipt_path(delivery):
+    delivery=Path(delivery)
+    return delivery.with_name(delivery.name+'.cleanup-authorization.json')
+
+
+def atomic_receipt(path,value):
+    """Fresh immutable operational receipt; not part of the compact manifest."""
+    path=checked(path,exists=False)
+    require(not path.exists(),'FreshCleanupReceiptRequired')
+    payload=(json.dumps(value,indent=2,allow_nan=False)+'\n').encode('utf-8')
+    pending=path.with_name('.'+path.name+'.'+uuid.uuid4().hex+'.tmp')
+    with pending.open('xb') as f:
+        f.write(payload);f.flush();os.fsync(f.fileno())
+    with Handle(pending,delete=True) as h:h.rename_flushed(path,payload)
+    return hashlib.sha256(payload).hexdigest()
 
 
 class Scratch:
     def __init__(self,parent,*,required_audit=False):
         self.scope=ExitStack();self.parent=hold_parents(allowed_parent(parent),self.scope)
         self.root=self.parent/('.v35-compact-scratch-'+uuid.uuid4().hex)
-        self.root.mkdir(exist_ok=False);self.initial_id=file_id(self.root)
+        self.root.mkdir(exist_ok=False);self.initial_id=file_id(self.root);self.parent_id=file_id(self.parent)
         self.marker=dict(schema='V35NewCompactScratchOwner/1',nonce=uuid.uuid4().hex,
             root=str(self.root),file_identity=list(self.initial_id),pid=os.getpid(),birth=psutil.Process().create_time())
         write(self.root/'OWNER.json',self.marker)
         self.handle=Handle(self.root);self.scope.enter_context(self.handle)
         require(file_id(self.root)==self.initial_id,'ChangedNewScratchIdentity')
-        self.observed={};self.authorized_here=True;self.required_audit=required_audit;self.accepted=None
+        self.observed={};self.authorized_here=True;self.required_audit=required_audit;self.accepted=None;self.cleanup_receipt=None
     def close(self):self.scope.close()
     def retire_native(self):
         # Only this live, fresh ownership capability permits recorded-group retirement.
@@ -47,18 +64,21 @@ class Scratch:
         value=verify(delivery,manifest);source=self.root/'bundle'
         require(value['source_verification_sha256']==expected and read(Path(delivery)/'PROVENANCE.json')['source_bundle']==str(source),'UnrelatedScratchDelivery')
         with ExitStack() as scope:
-            hold_parents(source,scope);authenticate_source(source,expected,scope)
-            audit_record(audit_path,audit_expected,expected,scope)
-        self.accepted=dict(delivery=str(checked(delivery)),manifest=manifest,source=expected,audit_path=audit_path,audit_expected=audit_expected)
+            hold_parents(source,scope);producer=authenticate_source(source,expected,scope)
+            audited=audit_record(audit_path,audit_expected,expected,scope)
+        self.accepted=dict(delivery=str(checked(delivery)),manifest=manifest,source=expected,audit_path=audit_path,audit_expected=audit_expected,
+            producer_status=producer['status'],producer_source_identity=producer['source_identity'],
+            audit_status=audited['status'] if audited else 'not_requested',
+            audit_source_root=audited['source_bundle_root'] if audited else None)
     def cleanup(self,delivery,manifest):
         with ExitStack() as scope:
             verify(delivery,manifest,retained_scope=scope)
-            return self._cleanup(delivery,manifest)
-    def _cleanup(self,delivery,manifest):
+            return self._cleanup(delivery,manifest,scope)
+    def _cleanup(self,delivery,manifest,scope):
         require(self.accepted is not None and self.accepted['delivery']==str(checked(delivery)) and self.accepted['manifest']==manifest,'ScratchSuccessCutpointMissing')
         require(self.authorized_here and self.root.parent==self.parent and self.root!=self.parent
             and self.root.is_relative_to(self.parent) and self.root.name.startswith('.v35-compact-scratch-'),'NotNewOwnedScratch')
-        checked(self.root);require(file_id(self.root)==self.initial_id and read(self.root/'OWNER.json')==self.marker
+        checked(self.root);require(file_id(self.parent)==self.parent_id and file_id(self.root)==self.initial_id and read(self.root/'OWNER.json')==self.marker
             and self.marker['pid']==os.getpid() and self.marker['birth']==psutil.Process().create_time(),'ChangedNewScratchOwnership')
         delivery=checked(delivery);require(not delivery.is_relative_to(self.root),'DeliveryInsideScratch')
         require(verify(delivery,manifest)['source_verification_sha256']==self.accepted['source']
@@ -80,7 +100,27 @@ class Scratch:
             linux(Path(__file__).with_name('compact_native_close.py')),linux(self.root),'inspect',self.marker['nonce']],
             capture_output=True,text=True,timeout=30)
         require(done.returncode==0,'ScratchNativeClosureUnknownOrActive:'+done.stdout[-4000:]+done.stderr[-4000:])
-        require(json.loads(done.stdout).get('passed') is True,'ScratchNativeClosureUnknownOrActive')
+        native=json.loads(done.stdout)
+        require(native.get('passed') is True,'ScratchNativeClosureUnknownOrActive')
+        # Persist the actual verified cutpoint before the first deletion. No
+        # external ACK or scientific archive is needed or accepted as authority.
+        paths=inventory(self.root)
+        staged_bytes=sum(p.stat().st_size for p in paths)
+        receipt=dict(schema='V35CompactCleanupAuthorization/1',status='precleanup_complete',
+            prepared_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            producer=dict(verification_sha256=self.accepted['source'],status=self.accepted['producer_status'],source_identity=self.accepted['producer_source_identity']),
+            immediate_audit=dict(requested=self.required_audit,status=self.accepted['audit_status'],receipt_sha256=self.accepted['audit_expected'],source_verification_sha256=self.accepted['audit_source_root']),
+            compact=dict(path=str(delivery),manifest_sha256=manifest,status='solver_delivery_complete'),
+            staging=dict(owner=self.marker,parent=str(self.parent),parent_identity=list(self.parent_id)),
+            windows_census=dict(passed=True,observed_pid_birth_pairs=[dict(pid=pid,birth=birth) for pid,birth in sorted(self.observed.items())],all_observed_absent=True,scope='Observed owned Windows processes; each stage also closes its Windows Job'),
+            native_census=native,staged_logical_bytes_before_cleanup=staged_bytes,staged_files_before_cleanup=len(paths),
+            full_offline_replay_available_after_cleanup=False,
+            removed_data='Full producer/replay operands and proof/native logs in owned scratch; compact reports are completed-check records only')
+        path=receipt_path(delivery);require(not path.is_relative_to(self.root),'CleanupReceiptInsideScratch')
+        pin=atomic_receipt(path,receipt)
+        scope.enter_context(Handle(path))
+        require(sha(path)==pin and read(path)==receipt,'ChangedCleanupAuthorizationReceipt')
+        self.cleanup_receipt=dict(path=str(path),sha256=pin)
         # DELETE is set on the same no-reparse, no-replacement Windows handle.
         # No path-based recursive delete, rmtree, shell deletion or loaded marker.
         def remove_children(folder):
@@ -92,7 +132,8 @@ class Scratch:
         remove_children(self.root);self.handle.dispose();self.handle.close()
         require(not self.root.exists(),'ScratchCleanupIncomplete')
         self.authorized_here=False
-        return dict(status='cleanup_complete',removed_root=str(self.root))
+        return dict(status='cleanup_complete',removed_root=str(self.root),authorization_receipt=self.cleanup_receipt,
+            staged_logical_bytes_before_cleanup=staged_bytes,staged_files_before_cleanup=len(paths),remaining_scratch_logical_bytes=0)
 
 
 def bounded(command,scratch,args,destination,deadline,label):
@@ -168,6 +209,8 @@ def run(args,argv):
     require(not args.immediate_audit or args.verification=='production','ImmediateAuditRequiresProduction')
     status=destination.parent/(destination.name+'.retention.json')
     checked(status,exists=False);require(not status.exists(),'FreshRetentionStatusRequired')
+    if args.cleanup_scratch:
+        reserved=checked(receipt_path(destination),exists=False);require(not reserved.exists(),'FreshCleanupReceiptRequired')
     scratch=Scratch(destination.parent,required_audit=args.immediate_audit);deadline=time.monotonic()+args.timeout_seconds
     record=dict(schema='V35CompactLifecycle/1',status='running',output=str(destination),scratch=str(scratch.root),
         retention='compact-delivery',cleanup_requested=args.cleanup_scratch,verification=args.verification,
@@ -208,12 +251,12 @@ def run(args,argv):
                 scratch.authorize_cleanup(destination,delivered['manifest_sha256'],expected,audit_path=audit_path,audit_expected=audit_pin)
                 record['cleanup']=scratch.cleanup(destination,delivered['manifest_sha256'])
             except BaseException as error:
-                record['cleanup']=dict(status='cleanup_failed_or_partial',error=repr(error),remaining_root=str(scratch.root))
+                record['cleanup']=dict(status='cleanup_failed_or_partial',error=repr(error),remaining_root=str(scratch.root),authorization_receipt=scratch.cleanup_receipt)
                 record['status']='delivery_complete_cleanup_incomplete'
         else:record['cleanup']=dict(status='full_scratch_retained',root=str(scratch.root))
         save();return 0 if record['status']=='delivery_complete' else 2
     except BaseException as error:
-        record.update(status='failed_scratch_preserved',error=repr(error))
+        record.update(status='failed_scratch_preserved' if scratch.root.exists() else 'failed_after_scratch_removed',error=repr(error))
         if record['separate_audit']=='running':record['separate_audit']='failed_or_incomplete'
         if record['compact_publication']=='running':record['compact_publication']='failed_or_incomplete'
         try:record['failure_native_closure']=scratch.retire_native()
