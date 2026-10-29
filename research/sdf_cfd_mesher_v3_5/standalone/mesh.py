@@ -315,6 +315,9 @@ def main():
     p.add_argument('--surface-position-error',type=float)
     p.add_argument('--background',type=Path,help='Explicit V4 direct-fill policy; historical finite-row policies remain selectable')
     p.add_argument('--output',type=Path,required=True)
+    p.add_argument('--retention',choices=('full-evidence','compact-delivery'),default='full-evidence',help='Full evidence preserves existing behavior. Compact delivery stages full evidence, then publishes a separate solver mesh without full offline replay.')
+    p.add_argument('--cleanup-scratch',action='store_true',help='Compact only: remove this NEW invocation-owned scratch after verified delivery; never removes an existing bundle')
+    p.add_argument('--immediate-audit',action='store_true',help='Compact production only: require a separate offline audit before delivery and optional cleanup')
     p.add_argument('--stop-after',choices=('surface','prisms','transition','complete'),default='complete')
     p.add_argument('--source-workers',type=int,choices=(1,2,4),default=1,help='Explicit local source-segment workers; serial default, audit serial')
     p.add_argument('--verification',choices=('audit','production'),default='audit',help='Audit retains full cold replay. Production supports complete direct workflow only and records separate audit not_run.')
@@ -331,6 +334,11 @@ def main():
     Policy(args.collision_max_candidates,args.collision_max_seconds)
     if not np.isfinite([args.timeout_seconds,args.memory_limit_gib]).all() or args.timeout_seconds<=0 or args.memory_limit_gib<=0:p.error('Finite positive resource bounds required')
     if args.output_limit_bytes is not None and args.output_limit_bytes<=0:p.error('Positive output byte limit required')
+    if args.retention=='compact-delivery':
+        if args.worker:p.error('Compact lifecycle belongs to the outer invocation')
+        from compact_lifecycle import run
+        return run(args,sys.argv[1:])
+    if args.cleanup_scratch or args.immediate_audit:p.error('cleanup-scratch/immediate-audit require compact-delivery')
     if not args.worker:return supervise(args)
     os.environ['V35_LINUX_AS_BYTES']=str(int(args.memory_limit_gib*2**30))
     source_independence_guard()

@@ -1,3 +1,4 @@
+# Synthetic preflight premise isolates the existing supervisor fault controls.
 from pathlib import Path
 import sys,unittest,tempfile,json,subprocess,contextlib,importlib.util
 from types import SimpleNamespace
@@ -25,7 +26,7 @@ class FailClosed(unittest.TestCase):
      calls.append(command)
      if len(calls)==1:raise failure
      return SimpleNamespace(returncode=0,stderr='')
-    with patch.object(module,'ROOT',root),patch.object(module.sys,'argv',['mesh.py']),patch.object(source_custody,'held',custody),patch.object(module.subprocess,'Popen',Worker),patch.object(module.subprocess,'run',cancel),patch.object(standalone_background,'stop_backend') as backend:
+    with patch('runtime_environment.preflight',return_value=dict(passed=True,synthetic_preflight_precondition=True)),patch.object(module,'ROOT',root),patch.object(module.sys,'argv',['mesh.py']),patch.object(source_custody,'held',custody),patch.object(module.subprocess,'Popen',Worker),patch.object(module.subprocess,'run',cancel),patch.object(standalone_background,'stop_backend') as backend:
      self.assertNotEqual(module.supervise(args),0)
     self.assertEqual(len(calls),2);backend.assert_called_once_with(output)
     final=json.loads((output/'RESULT.json').read_text());self.assertFalse(final['passed']);self.assertFalse(final['full_mesh_complete']);self.assertEqual(final['cleanup_status'],'completed_with_errors');self.assertEqual(final['cleanup'][0]['error'],type(failure).__name__)
@@ -52,7 +53,7 @@ class FailClosed(unittest.TestCase):
     def wait(self):return 1
    parent=SimpleNamespace(children=lambda recursive:[],memory_info=lambda:SimpleNamespace(rss=1),is_running=lambda:True)
    import psutil
-   with patch.object(module,'ROOT',root),patch.object(module.sys,'argv',['mesh.py']),patch.object(source_custody,'held',custody),patch.object(module.subprocess,'Popen',Worker),patch.object(psutil,'Process',lambda pid:parent),patch.object(module.time,'perf_counter',side_effect=[0,6,7]),patch.object(module,'output_bytes',side_effect=PermissionError('injected monitor error')),patch.object(standalone_background,'stop_backend') as backend:
+   with patch('runtime_environment.preflight',return_value=dict(passed=True,synthetic_preflight_precondition=True)),patch.object(module,'ROOT',root),patch.object(module.sys,'argv',['mesh.py']),patch.object(source_custody,'held',custody),patch.object(module.subprocess,'Popen',Worker),patch.object(psutil,'Process',lambda pid:parent),patch.object(module.time,'perf_counter',side_effect=[0,0,6,7]),patch.object(module,'output_bytes',side_effect=PermissionError('injected monitor error')),patch.object(standalone_background,'stop_backend') as backend:
     self.assertNotEqual(module.supervise(args),0)
    self.assertTrue(workers[0].killed);backend.assert_called_once_with(output)
    final=json.loads((output/'RESULT.json').read_text());self.assertFalse(final['passed']);self.assertEqual(final['stop_reason'],'SupervisorFailure');self.assertEqual(final['monitor_error']['type'],'PermissionError')

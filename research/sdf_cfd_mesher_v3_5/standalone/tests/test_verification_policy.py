@@ -18,7 +18,7 @@ from sdf_cfd_mesher_v4.common.authority import identity,file_hash,array_hash
 from path_preserving_deduplication import durable_json as save
 from finite_research.direct_evidence_modules import joined_audit
 
-def production_fixture(root):
+def production_fixture(root,*,case_extra=None,result_extra=None,root_extra=None,repair_report=None):
     """Actual serialized/native fixture with declared synthetic proof premises."""
     base,_,_,_,exported=controls.export_control();folder=root/'background';shutil.copytree(base,folder)
     for name in ('MANIFEST.json','FINALIZATION.json'): (folder/name).unlink()
@@ -35,7 +35,7 @@ def production_fixture(root):
     evaluation=dict(schema=VERSION,mode='production',method='recomputed',independent_source_recomputation=True,layers=1,segments=4)
     (root/'shell').mkdir();(root/'native').mkdir();np.savez(root/'native/SEALED_PLAN.npz',positions=positions)
     with ExitStack() as scope:retain(root/'shell',evaluation,dict(passed=True,layers=rows),positions,'synthetic-original-run',h1,scope)
-    case=dict(background=selected,prisms=dict(first_full_normal_thickness_m_hex=h1.hex()));case['verification']=policy.selection('production',case,'complete');save(root/'CASE.json',case)
+    case=dict(background=selected,prisms=dict(first_full_normal_thickness_m_hex=h1.hex()));case.update(case_extra or {});case['verification']=policy.selection('production',case,'complete');save(root/'CASE.json',case)
     binding=dict(case_sha256=file_hash(root/'CASE.json'),policy_identity=identity(selected),source_identity='synthetic-original-run',actual_positions_sha256=array_hash(positions),source_segments_identity=identity(rows))
     joined['provenance']=dict(binding=binding,live_parent=True,generation_invocations=1,construction_invocations=1)
     arrays=expected_arrays(joined)
@@ -56,8 +56,10 @@ def production_fixture(root):
     for value in shape.values():value['minimum_actual_count']=1
     result=dict(schema=policy.DIRECT,producer_checks_passed=True,geometry_complete=True,artifact_fidelity_passed=True,independent_audit_status='not_run',acceptance_status='provisional',provisional=True,verification_policy='production',acceptance_profile=policy.profile(),audit='not_run',
         parent=binding,producer_shape_contract=contract(selected),geometry_identity=stamp,proof=proof,shape=shape,export=exported)
+    result.update(result_extra or {})
     handoff=dict(binding=binding,method_identity=identity(method()),geometry_identity=stamp,proof=proof,shape=shape,shape_applicability=acceptance(shape,selected),acceptance_contract=contract(selected))
     for name,value in [('POLICY',selected),('PARENT',binding),('PARENT_EXPECTATIONS',parent),('PROVISIONAL',result),('EVIDENCE_HANDOFF',handoff)]:save(folder/(name+'.json'),value)
+    if repair_report is not None:save(folder/'SHARED_APEX_REPAIR.json',repair_report)
     args=(joined,proof,selected,parent,binding,shape,exported,result,handoff,root/'CASE.json')
     with ExitStack() as scope:
         bundle=AuditedBundle(folder,joined,proof,scope,lambda:None,verification='production')
@@ -65,7 +67,7 @@ def production_fixture(root):
         direct=policy.complete_after_finalization(folder,result,descriptor,lambda:10)
         direct.update(manifest_sha256=descriptor['manifest_sha256'],mesh_sha256=file_hash(folder/'COMPLETE_MESH.npz'),seconds=0,stage_seconds={})
         save(folder/'RESULT.json',direct)
-        save(root/'RESULT.json',dict(schema=policy.ROOT_RESULT,producer_checks_passed=True,geometry_complete=True,artifact_fidelity_passed=True,independent_audit_status='not_run',acceptance_status='pending_supervisor',verification_policy='production',acceptance_profile=policy.profile(),audit='not_run',background=direct,export=exported))
+        save(root/'RESULT.json',dict(schema=policy.ROOT_RESULT,producer_checks_passed=True,geometry_complete=True,artifact_fidelity_passed=True,independent_audit_status='not_run',acceptance_status='pending_supervisor',verification_policy='production',acceptance_profile=policy.profile(),audit='not_run',background=direct,export=exported,**(root_extra or {})))
     return descriptor,args
 
 HELPER='''from pathlib import Path

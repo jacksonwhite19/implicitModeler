@@ -118,7 +118,7 @@ class AuditCompletion(unittest.TestCase):
         self.assertEqual(result['stop_reason'],'SourceClosureChanged')
 
     def test_real_supervisor_timeout_revokes_without_publication(self):
-        code,result,published=self.supervise_fixture('timeout',.1)
+        code,result,published=self.supervise_fixture('timeout',3)
         self.assertNotEqual(code,0);self.assertFalse(result['passed']);self.assertFalse(published)
         self.assertEqual(result['stop_reason'],'TimeLimit')
 

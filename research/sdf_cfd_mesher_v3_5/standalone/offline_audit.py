@@ -3,6 +3,8 @@
 Trusted inputs are the expected VERIFICATION hash and explicit verifier runtime
 identity. This audits retained geometry, never grants a live source capability.
 """
+from source_process_owner import worker_start_gate
+worker_start_gate()
 from pathlib import Path
 from contextlib import ExitStack
 import argparse,hashlib,json,math,time
@@ -19,6 +21,7 @@ def verifier_identity(output):
     return hashlib.sha256(json.dumps(rows,sort_keys=True,separators=(',',':')).encode()).hexdigest()
 
 def authenticate(folder,expected,scope):
+    if (Path(folder)/'COMPACT.json').exists():raise ValueError('CompactDeliveryHasNoFullOfflineReplay')
     root=safe_path(folder,'VERIFICATION.json');scope.enter_context(guard(root))
     if file_hash(root)!=expected:raise ValueError('ChangedProductionExpectedRoot')
     value=json.loads(root.read_text())
@@ -57,6 +60,7 @@ def authenticate(folder,expected,scope):
 
 def audit(folder,expected,verifier,output,seconds=10800):
     folder=Path(folder).resolve();output=Path(output).absolute()
+    if (folder/'COMPACT.json').exists():raise ValueError('CompactDeliveryHasNoFullOfflineReplay')
     # Resolve parents before creation and reject any overlap/reparse redirect.
     if output.resolve().is_relative_to(folder) or folder.is_relative_to(output.resolve()):raise ValueError('OfflineOutputMustBeSeparate')
     if output.exists():raise ValueError('FreshOfflineAuditOutputRequired')

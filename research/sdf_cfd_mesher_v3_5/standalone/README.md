@@ -1,5 +1,8 @@
 # Mesher V3.5 verification candidate
 
+PERF19 adds explicit [compact solver delivery](COMPACT_DELIVERY.md) in a separate candidate. Full evidence stays the default. Retention, verification and source workers are independent. The new full CLI lifecycle remains unqualified by a live whole-mesh run. Earlier milestones below apply to their recorded identities.
+
+
 This separate PERF14 candidate is experimental. Optional [source workers](SOURCE_WORKERS.md) have focused controls, but the sample benchmark stopped at the archived CASE profile gate. Earlier full-mesh qualification applies to its recorded older runtime, not this candidate.
 
 

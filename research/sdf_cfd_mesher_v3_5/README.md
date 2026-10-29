@@ -1,5 +1,8 @@
 # Mesher V3.5 verification candidate
 
+PERF19 adds explicit [compact solver delivery](standalone/COMPACT_DELIVERY.md) in a separate candidate. Full evidence stays the default. Retention, verification and source workers are independent. The new full CLI lifecycle remains unqualified by a live whole-mesh run. Earlier milestones below apply to their recorded identities.
+
+
 PERF18 passage campaign dispatch 4/5 is complete. The existing single full passage production with explicit `--source-workers 4` and one separate offline audit passed independent numerical and resource reviews. Runtime `6d0840f9` / 1,889 files is unchanged; tested docs HEAD was `8b2b8811`. V3 prisms connect to the existing V4 direct outer/background workflow and joined acceptance/export. There is no separate transition tool. Status-recovery steering continued the existing attempt without restart; latest advisor steering is 5/5, next outgoing 1/5. Replies do not increment.
 
 Passage has 207,705 points, 298,660 prisms and 247,804 tetrahedra, zero compression and no MeshOK warning. Exact arrays, eight plans, native/owner metadata, upstream metric/request/trajectory chains, quality and all 149,330 final source proofs match both independently authenticated serial references. Actual four-worker sequence 1 binds the final positions and 29,866 H1 checks, with zero final-prepare recomputation and closed workers/parent. Both apex moves (207427 and 207565), 181,034 protected coordinates and connectivity are exact. Conditioning is AlreadyAboveFloor with no cavity edits. All twelve producer checks, native export and finalizer/source/resource closure pass.
