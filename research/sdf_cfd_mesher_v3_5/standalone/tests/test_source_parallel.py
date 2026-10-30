@@ -12,6 +12,7 @@ from source_evidence import validate_execution,retain,validate
 from sdf_cfd_mesher_v4.common.authority import identity
 
 class ParallelSourceTests(unittest.TestCase):
+    WORKERS=4
     @classmethod
     def setUpClass(cls):
         from planner import Request
@@ -27,8 +28,8 @@ class ParallelSourceTests(unittest.TestCase):
         cls.x=np.asarray([direction*(.001+h) for h in np.r_[0,np.cumsum(req.nominal)]])
     @classmethod
     def tearDownClass(cls):cls.host.close();cls.temp.cleanup()
-    def handoff(self,workers=4):return live_handoff(self.source,self.h,'production',source_workers=workers,deadline=time.perf_counter()+120)
-    def pool(self,height=None):return parallel.Pool(self.source,self.h if height is None else height,4,time.perf_counter()+120)
+    def handoff(self,workers=None):return live_handoff(self.source,self.h,'production',source_workers=self.WORKERS if workers is None else workers,deadline=time.perf_counter()+120)
+    def pool(self,height=None):return parallel.Pool(self.source,self.h if height is None else height,self.WORKERS,time.perf_counter()+120)
     def test_01_actual_proofs_consumer_single_use_and_retained_record(self):
         expected=collision._segment_population(self.source,self.h,self.x,True)[1]
         from types import SimpleNamespace
@@ -47,7 +48,7 @@ class ParallelSourceTests(unittest.TestCase):
             actual=json.loads((shell/'SOURCE_SEGMENTS.json').read_text())['layers'];self.assertEqual(actual,expected)
             evaluation=json.loads((shell/'SOURCE_EVALUATION.json').read_text());record=evaluation['execution']
             validate_execution(record,self.x,self.source.geometry_identity,self.h,identity(actual))
-            self.assertEqual(record['effective_workers'],4);self.assertEqual(record['contained_active_processes'],0)
+            self.assertEqual(record['effective_workers'],self.WORKERS);self.assertEqual(record['contained_active_processes'],0)
             self.assertIsNone(consume(owner,self.source,self.h,self.x,'production'))
             (root/'CASE.json').write_bytes(self.case.read_bytes());(root/'native').mkdir();np.savez(root/'native/SEALED_PLAN.npz',positions=self.x)
             from sdf_cfd_mesher_v4.common.authority import array_hash

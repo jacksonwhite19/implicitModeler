@@ -9,6 +9,14 @@ from sdf_cfd_mesher_v4.common.authority import array_hash,identity,frozen
 VERSION='V35OwnedLocalSourceExecution/1'
 MIN_SEGMENTS=1024
 
+def _eight_worker_affinity():
+    """Check the explicit request; never select or increase the worker count."""
+    import psutil
+    affinity=sorted(psutil.Process().cpu_affinity())
+    if (len(affinity)<8 or any(type(i) is not int or i<0 for i in affinity)
+            or len(set(affinity))!=len(affinity)):raise ValueError('EightSourceWorkersRequireEightAvailableCPUs')
+    return affinity
+
 def _semantic(source):
     from source_handoff import _context
     value=_context(source)
@@ -118,6 +126,8 @@ class Pool:
         from source_process_owner import Job
         from immutable_state_access import guard
         from source_custody import held,ROOT,sha
+        if type(workers) is not int or workers not in (2,4,8):raise ValueError('InvalidSourcePoolWorkers')
+        self.affinity=_eight_worker_affinity() if workers==8 else None
         self.source=source;self.height=height;self.workers=workers;self.deadline=deadline
         self.context=_context(source);self.semantic=_semantic(source);self.thread=threading.get_ident()
         self.session=uuid.uuid4().hex;self.sequence=0;self.pending=None;self.poisoned=False;self.closed=False;self.execution=None
@@ -221,6 +231,9 @@ class Pool:
                 for pipe in self.pipes:pipe.close()
                 return None
             self.execution=dict(schema=VERSION,requested_workers=self.workers,effective_workers=self.workers,reason='eligible_production_population',state='closed',runtime_identity=self.custody['identity'],runtime_files=len(self.custody['files']),case_sha256=self.case_sha,geometry=self.geometry,height_hex=float(self.height).hex(),positions_shape=list(positions.shape),positions_sha256=array_hash(positions),proof_identity=identity(proofs),semantic_context_sha256=hashlib.sha256(self.semantic.encode()).hexdigest(),session=self.session,sequence=self.sequence,transcript_sha256=identity(self.transcript),refusal_diagnostics=[r for entry in self.transcript for r in entry['raw_refusals']],workers=closed,contained_active_processes=0,source_assurance='owned_current_local_execution; not an independent H1 certificate',speculation='all shards resolve current layer before earliest original index refusal')
+            if self.affinity is not None:
+                self.execution['parent_cpu_affinity']=list(self.affinity)
+                self.execution['parent_cpu_affinity_check']='pool_pre_spawn'
             self.closed=True;self.job.close()
             for pipe in self.pipes:pipe.close()
             return self.execution

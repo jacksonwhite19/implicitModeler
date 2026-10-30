@@ -12,6 +12,29 @@ from sdf_cfd_mesher_v4.certificate.parallel_screen import screen
 from identity_timing import measure
 
 
+def _pair_batches(index,active):
+    """Preserve legacy50000-row boundaries without a tuple round trip.
+
+    A proven complete integer population can use the existing full walk.
+    Partial or invalid populations retain the original delta validation.
+    """
+    complete=(len(active)==len(index.lo) and all(
+        isinstance(i,(int,np.integer)) and not isinstance(i,(bool,np.bool_))
+        and 0<=i<len(index.lo) for i in active))
+    batch=np.empty((50000,2),dtype='u4');used=0
+    for block in index.pair_blocks(None if complete else active):
+        if np.any(block>np.iinfo(np.uint32).max):raise ValueError('CertificatePairIndexOverflow')
+        offset=0
+        while offset<len(block):
+            count=min(len(batch)-used,len(block)-offset)
+            batch[used:used+count]=block[offset:offset+count]
+            used+=count;offset+=count
+            if used==len(batch):
+                yield batch
+                batch=np.empty((50000,2),dtype='u4');used=0
+    if used:yield batch[:used]
+
+
 def certify(points,faces,active,*,workers=4):
     # Existing bounded native worker policy; ordered proof handling stays here.
     # One worker retains the direct serial kernel for equivalence controls.
@@ -19,9 +42,8 @@ def certify(points,faces,active,*,workers=4):
     with measure('native_certificate.bounds',len(faces)):
         active=set(active);lo=np.array([points[list(f)].min(0) for f in faces]);hi=np.array([points[list(f)].max(0) for f in faces])
     from sdf_cfd_mesher_v4.certificate.aabb_index import AABBIndex
-    from itertools import islice
     with measure('native_certificate.index'):
-        pairs=iter(AABBIndex(lo,hi).pairs(active))
+        pairs=iter(_pair_batches(AABBIndex(lo,hi),active))
     with measure('native_certificate.packing',len(faces)):
         ids=np.asarray([list(f) if len(f)==4 else list(f)+[f[2]] for f in faces],dtype='u8')
         for i,f in enumerate(faces):
@@ -31,8 +53,8 @@ def certify(points,faces,active,*,workers=4):
     native=Filter();q=np.ascontiguousarray(points[ids]);rows=PackedRows();bad=[]
     while True:
         with measure('native_certificate.enumeration'):
-            batch=np.asarray(list(islice(pairs,50000)),dtype='u4')
-        if not len(batch):break
+            batch=next(pairs,None)
+        if batch is None:break
         with measure('native_certificate.screen',len(batch)):
             codes,witness=(native.screen(q,ids,batch) if workers==1 else screen(native,q,ids,batch,workers=workers))
         with measure('native_certificate.proof_handling',len(batch)):

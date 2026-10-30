@@ -1,0 +1,453 @@
+{
+  "schema": "V35CompactCleanupAuthorization/1",
+  "status": "precleanup_complete",
+  "prepared_utc": "2026-10-30T05:46:51.124945+00:00",
+  "producer": {
+    "verification_sha256": "40c26058e8995cba7ca7d6f248c385baedd8a443b64d6b32fee623c498ee4370",
+    "status": "production_accepted",
+    "source_identity": "97d081d262f87756109dca1ae54bdf409382922d734f32910bf9a3d93cd4196f"
+  },
+  "immediate_audit": {
+    "requested": true,
+    "status": "audit_passed",
+    "receipt_sha256": "02c7819f722f18379d48d8a7e13558b41ee16d7bd1ad7aa2f2af4c6d543ad901",
+    "source_verification_sha256": "40c26058e8995cba7ca7d6f248c385baedd8a443b64d6b32fee623c498ee4370"
+  },
+  "compact": {
+    "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\perf34\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf39_close_spheres\\solver",
+    "manifest_sha256": "c44676721eeb3a4580fac0c5f5a8f0019654423526fc2cc1fe97a58b2d3d2160",
+    "status": "solver_delivery_complete"
+  },
+  "staging": {
+    "owner": {
+      "schema": "V35NewCompactScratchOwner/1",
+      "nonce": "999e68c782754cb2a08fa0c3bac152c9",
+      "root": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\perf34\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf39_close_spheres\\.v35-compact-scratch-7b18b06f26574d0faaeea628affcaf3f",
+      "file_identity": [
+        9562447785075378926,
+        21673573209537965
+      ],
+      "pid": 37648,
+      "birth": 1793338438.4523933
+    },
+    "parent": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\perf34\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf39_close_spheres",
+    "parent_identity": [
+      9562447785075378926,
+      607985949695019709
+    ]
+  },
+  "windows_census": {
+    "passed": true,
+    "observed_pid_birth_pairs": [
+      {
+        "pid": 2060,
+        "birth": 1793338439.630298
+      },
+      {
+        "pid": 2144,
+        "birth": 1793339035.5189936
+      },
+      {
+        "pid": 2612,
+        "birth": 1793338744.2987497
+      },
+      {
+        "pid": 3128,
+        "birth": 1793338744.346453
+      },
+      {
+        "pid": 3372,
+        "birth": 1793338676.9485283
+      },
+      {
+        "pid": 5444,
+        "birth": 1793338443.275188
+      },
+      {
+        "pid": 7684,
+        "birth": 1793339033.5998719
+      },
+      {
+        "pid": 7924,
+        "birth": 1793338674.8808663
+      },
+      {
+        "pid": 8756,
+        "birth": 1793339031.6733537
+      },
+      {
+        "pid": 8932,
+        "birth": 1793338839.965693
+      },
+      {
+        "pid": 9940,
+        "birth": 1793338838.343792
+      },
+      {
+        "pid": 10228,
+        "birth": 1793338674.9418738
+      },
+      {
+        "pid": 11196,
+        "birth": 1793338646.247716
+      },
+      {
+        "pid": 12196,
+        "birth": 1793338838.4094822
+      },
+      {
+        "pid": 13152,
+        "birth": 1793339035.4713233
+      },
+      {
+        "pid": 13660,
+        "birth": 1793339033.5937133
+      },
+      {
+        "pid": 13748,
+        "birth": 1793338646.6216931
+      },
+      {
+        "pid": 15760,
+        "birth": 1793338744.3065405
+      },
+      {
+        "pid": 17120,
+        "birth": 1793339033.6514144
+      },
+      {
+        "pid": 17316,
+        "birth": 1793338838.4009607
+      },
+      {
+        "pid": 18308,
+        "birth": 1793338676.8723652
+      },
+      {
+        "pid": 18572,
+        "birth": 1793339031.6638443
+      },
+      {
+        "pid": 19424,
+        "birth": 1793339035.5269015
+      },
+      {
+        "pid": 20156,
+        "birth": 1793338676.7567759
+      },
+      {
+        "pid": 22804,
+        "birth": 1793338742.665825
+      },
+      {
+        "pid": 22992,
+        "birth": 1793338709.2220533
+      },
+      {
+        "pid": 24088,
+        "birth": 1793338439.6367612
+      },
+      {
+        "pid": 24200,
+        "birth": 1793338646.3047175
+      },
+      {
+        "pid": 24384,
+        "birth": 1793338742.3599489
+      },
+      {
+        "pid": 24892,
+        "birth": 1793339205.8265123
+      },
+      {
+        "pid": 24920,
+        "birth": 1793338839.99393
+      },
+      {
+        "pid": 24968,
+        "birth": 1793338838.0785325
+      },
+      {
+        "pid": 24976,
+        "birth": 1793338643.7374809
+      },
+      {
+        "pid": 25056,
+        "birth": 1793338742.6580203
+      },
+      {
+        "pid": 25480,
+        "birth": 1793339035.4643767
+      },
+      {
+        "pid": 25968,
+        "birth": 1793338710.9013677
+      },
+      {
+        "pid": 27112,
+        "birth": 1793338643.683254
+      },
+      {
+        "pid": 27252,
+        "birth": 1793338646.2543144
+      },
+      {
+        "pid": 27848,
+        "birth": 1793338675.0738893
+      },
+      {
+        "pid": 27912,
+        "birth": 1793338838.0860703
+      },
+      {
+        "pid": 28360,
+        "birth": 1793338838.0362256
+      },
+      {
+        "pid": 28912,
+        "birth": 1793338643.6898007
+      },
+      {
+        "pid": 29772,
+        "birth": 1793338840.0025833
+      },
+      {
+        "pid": 29852,
+        "birth": 1793338677.0088449
+      },
+      {
+        "pid": 30224,
+        "birth": 1793338742.6063335
+      },
+      {
+        "pid": 30424,
+        "birth": 1793338646.313099
+      },
+      {
+        "pid": 30768,
+        "birth": 1793338838.3497925
+      },
+      {
+        "pid": 31060,
+        "birth": 1793338838.030038
+      },
+      {
+        "pid": 32372,
+        "birth": 1793339033.659315
+      },
+      {
+        "pid": 32420,
+        "birth": 1793338674.8203323
+      },
+      {
+        "pid": 32880,
+        "birth": 1793338709.2301292
+      },
+      {
+        "pid": 34308,
+        "birth": 1793338643.729108
+      },
+      {
+        "pid": 34780,
+        "birth": 1793338438.7167192
+      },
+      {
+        "pid": 36384,
+        "birth": 1793338839.9592524
+      },
+      {
+        "pid": 36548,
+        "birth": 1793338676.6668217
+      },
+      {
+        "pid": 36600,
+        "birth": 1793338675.2697473
+      },
+      {
+        "pid": 36648,
+        "birth": 1793338675.0088391
+      },
+      {
+        "pid": 39048,
+        "birth": 1793338675.2014613
+      },
+      {
+        "pid": 40128,
+        "birth": 1793338676.6080887
+      },
+      {
+        "pid": 40592,
+        "birth": 1793338710.9077196
+      },
+      {
+        "pid": 41220,
+        "birth": 1793338709.2764513
+      },
+      {
+        "pid": 41536,
+        "birth": 1793338442.368642
+      },
+      {
+        "pid": 41576,
+        "birth": 1793339062.1503649
+      },
+      {
+        "pid": 42540,
+        "birth": 1793338744.338739
+      },
+      {
+        "pid": 44036,
+        "birth": 1793338742.6001973
+      },
+      {
+        "pid": 45428,
+        "birth": 1793338439.6740165
+      },
+      {
+        "pid": 46736,
+        "birth": 1793339031.7134025
+      },
+      {
+        "pid": 46812,
+        "birth": 1793338709.2686727
+      },
+      {
+        "pid": 47076,
+        "birth": 1793338675.1377523
+      },
+      {
+        "pid": 47692,
+        "birth": 1793338742.3531933
+      },
+      {
+        "pid": 48868,
+        "birth": 1793338710.9547148
+      },
+      {
+        "pid": 49000,
+        "birth": 1793338710.9459372
+      },
+      {
+        "pid": 50328,
+        "birth": 1793339031.7034028
+      },
+      {
+        "pid": 51220,
+        "birth": 1793338677.0642493
+      },
+      {
+        "pid": 51504,
+        "birth": 1793338676.8379188
+      },
+      {
+        "pid": 51784,
+        "birth": 1793338439.6820817
+      }
+    ],
+    "all_observed_absent": true,
+    "scope": "Observed owned Windows processes; each stage also closes its Windows Job"
+  },
+  "native_census": {
+    "schema": "V35CompactNativeClosure/1",
+    "passed": true,
+    "normal_root_exit": true,
+    "scope_count": 7,
+    "scopes": [
+      {
+        "path": "/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf39_close_spheres/.v35-compact-scratch-7b18b06f26574d0faaeea628affcaf3f/bundle/background/export/checkMesh.linux_scope.json",
+        "argv": [
+          "checkMesh",
+          "-constant",
+          "-allGeometry",
+          "-allTopology",
+          "-case",
+          "/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf39_close_spheres/.v35-compact-scratch-7b18b06f26574d0faaeea628affcaf3f/bundle/background/export/openfoam_case"
+        ],
+        "pid": 1853888,
+        "start_ticks": 136803763
+      },
+      {
+        "path": "/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf39_close_spheres/.v35-compact-scratch-7b18b06f26574d0faaeea628affcaf3f/bundle/background/export/gmshToFoam.linux_scope.json",
+        "argv": [
+          "gmshToFoam",
+          "/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf39_close_spheres/.v35-compact-scratch-7b18b06f26574d0faaeea628affcaf3f/bundle/background/export/complete_transfer.msh",
+          "-case",
+          "/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf39_close_spheres/.v35-compact-scratch-7b18b06f26574d0faaeea628affcaf3f/bundle/background/export/openfoam_case"
+        ],
+        "pid": 1852358,
+        "start_ticks": 136803399
+      },
+      {
+        "path": "/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf39_close_spheres/.v35-compact-scratch-7b18b06f26574d0faaeea628affcaf3f/bundle/background/export/openfoam_case/contractAudit.linux_scope.json",
+        "argv": [
+          "/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/native_bin/contractAudit",
+          "-case",
+          "/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf39_close_spheres/.v35-compact-scratch-7b18b06f26574d0faaeea628affcaf3f/bundle/background/export/openfoam_case",
+          "-outputDir",
+          "/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf39_close_spheres/.v35-compact-scratch-7b18b06f26574d0faaeea628affcaf3f/bundle/background/export/foundation_audit"
+        ],
+        "pid": 1853124,
+        "start_ticks": 136803583
+      },
+      {
+        "path": "/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf39_close_spheres/.v35-compact-scratch-7b18b06f26574d0faaeea628affcaf3f/bundle/background/farfield/v4_direct_farfield.linux_scope.json",
+        "argv": [
+          "/usr/bin/env",
+          "PYTHONPATH=/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/safety:/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/v4/runtime/lib/finite_native_packages:/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/v4/tools:/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/v4/src",
+          "PYTHONDONTWRITEBYTECODE=1",
+          "python3",
+          "-B",
+          "/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/direct_worker.py",
+          "/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf39_close_spheres/.v35-compact-scratch-7b18b06f26574d0faaeea628affcaf3f/bundle/background/farfield",
+          "eb926f1c6cfc55f7b7559b125d9d16922025d34cd4643e0a14e62557a7b9b073"
+        ],
+        "pid": 1850532,
+        "start_ticks": 136775955
+      },
+      {
+        "path": "/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf39_close_spheres/.v35-compact-scratch-7b18b06f26574d0faaeea628affcaf3f/bundle/background/native/v4_direct_candidate.linux_scope.json",
+        "argv": [
+          "/usr/bin/env",
+          "PYTHONPATH=/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/safety:/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/v4/runtime/lib/finite_native_packages:/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/v4/tools:/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/v4/src",
+          "PYTHONDONTWRITEBYTECODE=1",
+          "python3",
+          "-B",
+          "/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/direct_worker.py",
+          "/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf39_close_spheres/.v35-compact-scratch-7b18b06f26574d0faaeea628affcaf3f/bundle/background/native",
+          "af868b88773a9567f46c8ce718da39ac64c88e57f111e2120dc3c53c8245de5d"
+        ],
+        "pid": 1851473,
+        "start_ticks": 136785094
+      },
+      {
+        "path": "/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf39_close_spheres/.v35-compact-scratch-7b18b06f26574d0faaeea628affcaf3f/bundle/native/contractDirect.linux_scope.json",
+        "argv": [
+          "/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/native_bin/contractDirect",
+          "-case",
+          "/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf39_close_spheres/.v35-compact-scratch-7b18b06f26574d0faaeea628affcaf3f/bundle/native"
+        ],
+        "pid": 1848904,
+        "start_ticks": 136772612
+      },
+      {
+        "path": "/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf39_close_spheres/.v35-compact-scratch-7b18b06f26574d0faaeea628affcaf3f/bundle/native/contractStaged.linux_scope.json",
+        "argv": [
+          "/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/native_bin/contractStaged",
+          "-case",
+          "/mnt/c/Users/Jackson/Documents/Codex/2026-10-26/mesher-v3-5-integration/work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf39_close_spheres/.v35-compact-scratch-7b18b06f26574d0faaeea628affcaf3f/bundle/native"
+        ],
+        "pid": 1849669,
+        "start_ticks": 136772774
+      }
+    ],
+    "unexpected_live_groups": [],
+    "actions": [],
+    "unknown": [],
+    "remaining": [],
+    "scope": "Recorded birth/argv/PGID or root-bound orphan groups; exact fresh-output argv/cwd census. Does not promise cleanup after hard death of this external controller."
+  },
+  "staged_logical_bytes_before_cleanup": 521135006,
+  "staged_files_before_cleanup": 397,
+  "full_offline_replay_available_after_cleanup": false,
+  "removed_data": "Full producer/replay operands and proof/native logs in owned scratch; compact reports are completed-check records only"
+}

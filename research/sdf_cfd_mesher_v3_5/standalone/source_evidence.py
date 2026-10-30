@@ -13,12 +13,16 @@ def validate_execution(record,positions,source_identity,h1,proof_identity):
     """Authenticate retained original execution, never issue live authority."""
     if record is None:return # Historical serial evidence retains its schema.
     requested=record.get('requested_workers');effective=record.get('effective_workers')
-    if type(requested) is not int or requested not in (1,2,4) or type(effective) is not int:raise ValueError('InvalidSourceExecutionSelection')
+    if type(requested) is not int or requested not in (1,2,4,8) or type(effective) is not int:raise ValueError('InvalidSourceExecutionSelection')
     if record.get('schema')=='V35SourceExecutionSelection/1':
         if effective!=1 or not isinstance(record.get('reason'),str) or not record['reason']:raise ValueError('InvalidSerialSourceExecution')
         return
     from source_parallel import VERSION
-    if (record.get('schema')!=VERSION or requested not in (2,4) or effective!=requested or record.get('state')!='closed' or record.get('geometry')!=source_identity or record.get('height_hex')!=float(h1).hex() or record.get('positions_shape')!=list(positions.shape) or record.get('positions_sha256')!=array_hash(positions) or record.get('proof_identity')!=proof_identity or record.get('contained_active_processes')!=0 or type(record.get('runtime_files')) is not int or record['runtime_files']<1 or type(record.get('sequence')) is not int or record['sequence']<1):raise ValueError('InvalidClosedSourceExecution')
+    if (record.get('schema')!=VERSION or requested not in (2,4,8) or effective!=requested or record.get('state')!='closed' or record.get('geometry')!=source_identity or record.get('height_hex')!=float(h1).hex() or record.get('positions_shape')!=list(positions.shape) or record.get('positions_sha256')!=array_hash(positions) or record.get('proof_identity')!=proof_identity or record.get('contained_active_processes')!=0 or type(record.get('runtime_files')) is not int or record['runtime_files']<1 or type(record.get('sequence')) is not int or record['sequence']<1):raise ValueError('InvalidClosedSourceExecution')
+    if requested==8:
+        affinity=record.get('parent_cpu_affinity')
+        if (record.get('parent_cpu_affinity_check')!='pool_pre_spawn' or not isinstance(affinity,list) or len(affinity)<8 or any(type(i) is not int or i<0 for i in affinity)
+                or len(set(affinity))!=len(affinity)):raise ValueError('InvalidEightWorkerAffinityEvidence')
     for key in ('runtime_identity','case_sha256','positions_sha256','proof_identity','semantic_context_sha256','transcript_sha256'):
         value=record.get(key)
         if type(value) is not str or len(value)!=64 or any(c not in '0123456789abcdef' for c in value):raise ValueError('InvalidSourceExecutionDigest',key)

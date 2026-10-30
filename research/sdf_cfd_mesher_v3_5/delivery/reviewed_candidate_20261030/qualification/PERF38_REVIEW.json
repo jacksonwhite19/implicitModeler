@@ -1,0 +1,165 @@
+{
+  "schema": "PERF38IndependentDownstreamAndComponentReview/1",
+  "passed": true,
+  "blockers": [],
+  "disposition": "PASS for isolated conditional exterior-obstacle contract and source-backed diagnosis; ready to design/review narrow integration, not production admission or execution authorization",
+  "source_identity": "b924493718350a9f1aa6313a52cd457fabd7d42d3058dcf2b6e17ef2ceddaee6",
+  "source_files": 1904,
+  "scientific_commit": "47d2e0a8aecbc606235265497853e98f93f465b5",
+  "production_integrated": false,
+  "failed_case_qualified": false,
+  "findings": [
+    "The observed failure is the existing combined-surface connectedness requirement. It establishes no downstream collision/filling failure and does not establish success either.",
+    "Two nonnested exterior obstacle shells inside one connected farfield are compatible with oriented additive boundary degree and exact total volume accounting. This is not a general statement about nested cavities, hollow material or disconnected fluid pockets.",
+    "The isolated contract retains the original connected-surface duplicate/edge/orientation/vertex-link checks per component, exact role signs, ordinary-prism bijective wall-to-cap lineage, connected farfield, and conditional nesting classification. No fixture count or genus-zero dispatch is hard-coded.",
+    "Representative degrees classify connected, embedded, mutually nonintersecting surfaces only conditionally. Original complete global collision coverage, exact positive cells, incidence, enclosure and filling must still succeed before admission.",
+    "The saved retained input remains unaccepted. Parent array hash equality is consistency, not live-parent authentication. No original source-fluid completeness or CFD claim follows.",
+    "The separate additive control intentionally obtains original_degree_result.passed=false: its expected degrees are [1,0,0,0], whereas that original aggregate requires all witness degrees equal one."
+  ],
+  "downstream_map": [
+    {
+      "files": [
+        "direct_connection.py:60-64",
+        "v4/tools/finite_support/collar.py:42-62"
+      ],
+      "claim": "Actual direct construction reuses collar checks, never collar proposal/generation. Global BFS at collar line59 is the observed single-component barrier; vertex links follow it."
+    },
+    {
+      "files": [
+        "v4/tools/finite_research/direct_evidence_modules/joined_audit.py:75-108"
+      ],
+      "claim": "Surfaces wall/prefix_front/farfield are followed by boundary collision, farfield enclosure, all-owner-face collision with all active, and full-cell filling. No per-component filtering may replace these populations."
+    },
+    {
+      "files": [
+        "v4/tools/finite_support/stored_wall_contract.py:13-70",
+        "v4/tools/background_topology_repair.py:17-25"
+      ],
+      "claim": "Actual outward-from-fluid boundary cycles and internal opposite-owner incidence are component-independent. They remain mandatory."
+    },
+    {
+      "files": [
+        "producer_filling.py:2-7",
+        "v4/tools/cavity_volume_audit.py:12-59",
+        "v4/tools/prism_degree.py:17-63"
+      ],
+      "claim": "Filling uses the whole actual outward boundary, exact positive standard cells, all cell witnesses, additive oriented degree, and exact boundary/cell volume equality. No boundary connectedness filter occurs here."
+    },
+    {
+      "files": [
+        "v4/tools/finite_research/direct_evidence_modules/collision.py:6-54",
+        "v4/tools/finite_research/direct_evidence_modules/joined_audit.py:98-108"
+      ],
+      "claim": "Full global boundary and all-cell-face certificates plus independent coverage include cross-component relations; retained component success does not substitute for them."
+    },
+    {
+      "files": [
+        "v4/tools/finite_research/direct_recipe155.py:28-69",
+        "v4/tools/capsule_sizing_control.py:177-206",
+        "v4/tools/finite_research/direct_evidence_modules/background_audit.py:10-19"
+      ],
+      "claim": "Native import preserves all cap/farfield cycles as two discrete surface entities bounding one volume. Mapping/audit preserve all triangles and actual one-owner interface relations; no cap component count assumption found. This is not a multi-region native design."
+    },
+    {
+      "files": [
+        "background_conditioning.py:37-105",
+        "v4/tools/finite_research/direct_shared_apex.py:41-95",
+        "v4/tools/finite_research/direct_shared_apex.py:134-186",
+        "v4/tools/finite_research/direct_repair_custody.py:24-47"
+      ],
+      "claim": "Conditioning and local shared-apex repair use actual cells/owners, protected prefix/wall/cap/farfield and complete local stars; no additional global wall-count gate found. Repair classification remains UNQUALIFIED."
+    },
+    {
+      "files": [
+        "export_mesh.py:33-108",
+        "export_sources/run_farfield_complete.py:271-293"
+      ],
+      "claim": "Exact export mapping represents disconnected wall triangles in one wall patch and one fluid physical region. Arbitrary disconnected fluid regions/per-body labels/solver properties remain unqualified."
+    },
+    {
+      "files": [
+        "direct_readback.py:20,53",
+        "v4/tools/finite_research/direct_readback.py:97-124"
+      ],
+      "claim": "Cold reader independently reconstructs parent-bound arrays/ownership/preservation and calls joined_audit again at114. Both producer and reader require the reviewed role-bound contract, never just a new producer receipt."
+    },
+    {
+      "files": [
+        "v4/tools/capsule_core_control_audit.py:90-174"
+      ],
+      "claim": "Its historical connected-component core audit is not the active direct-path audit. Do not claim it ran or cite its single-component refusal as an additional current gate."
+    }
+  ],
+  "integration_requirements": [
+    "Use an explicit standalone direct role interface with authenticated full parent/points/wall/cap/prisms; candidate is not a drop-in surface(points,faces,check) callable.",
+    "Bind both producer and independent semantic replay to the same reviewed component contract and independently authenticated input arrays. Preserve live terminal lease, custody and finalization; no receipt boolean grants authority.",
+    "Preserve original connected farfield check and original finite collar proposal. Do not globally monkey-patch collar or infer roles by call order.",
+    "Keep all twelve producer/replay obligations, unchanged full collision/enclosure/filling populations and exact witness semantics, native/export fidelity, successful-only publication and no live authority substitution.",
+    "Version/document the composed standalone admission scope and corresponding policy identity; preserve legacy single-body behavior with focused integration controls."
+  ],
+  "advisories": [
+    "Before promotion, exercise one genus-one single-body legacy control and a valid nonnested pair with overlapping AABBs, covering the exact representative-degree branch not exercised by retained separated boxes. These are future integration regressions, not extra execution in this dispatch.",
+    "No additional component controls are required to close this isolated diagnostic review. Full close-spheres qualification still requires separately authorized reviewed integration and all original global proofs.",
+    "The small wrapper samples RSS but does not implement a new memory/job security framework. Its cumulative elapsed/output ledger is adequate for the observed bounded local-only tests; this review does not approve that wrapper for a meshing campaign."
+  ],
+  "evidence_summary": {
+    "synthetic_controls": 18,
+    "positive": 2,
+    "negative": 16,
+    "retained_local_contract_passed": true,
+    "retained_original_combined_wall": "DisconnectedCollarSurface",
+    "retained_original_combined_cap": "DisconnectedCollarSurface",
+    "retained_original_farfield": "PASS",
+    "bulk_discrete_face_adjacency_components": 1,
+    "closed_child_runs": 11,
+    "aggregate_child_seconds": 12.34947740053758,
+    "initial_failed_children": 2,
+    "complete_global_obligations_replayed": false
+  },
+  "report_consistency": "Current REPORT/README correctly distinguish local conditional contract, retained failed snapshot, source-only downstream design, actual global obligations NOT_RUN, future integration and no authorized retry. Final 11-child ledger and intentional additive aggregate false are disclosed.",
+  "reviewer_method": "Read-only source and saved JSON inspection, standard-library hashing only. No project imports, predicates, tests, native execution, source queries, remesh or proof replay.",
+  "source_pins": {
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/direct_connection.py": "61ac88ef87e89371f61e1ca8659a792f5f9dab5667f2898b3f476643a02ffb49",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/direct_readback.py": "b24e1738d30e1980ccdf68482b730b480588d7d8cc434b3786143a96370c3bab",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/producer_filling.py": "fea3e936658cc18f683d4271acac14a5d859ea7a20991d838badcf8fdbf42e42",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/export_mesh.py": "43e13a81ef8fffe5dda4ffede09b97610dd504996b8fe0eac2bc2671feb01f69",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/export_sources/run_farfield_complete.py": "365649cc3131a1eed5fdc43bcb60738201ed4d6c647c9150c7ba5cbaa9e48ebd",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/background_conditioning.py": "ca12191ceeb2c5c2c004ae73bd6c7ed6835a75b6229f74528623c6a1852a1683",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/v4/tools/finite_support/collar.py": "6468a3898e7f59069604ccfd10fc2b5e12fa8714fcf15de7f21d18d82a1a0597",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/v4/tools/finite_support/stored_wall_contract.py": "9ec1075c97c01569caa5c6f5c4d66dc6dd32db5b1d66530d9a3f473f84a164b1",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/v4/tools/finite_research/direct_recipe155.py": "e6ffc10fafbb6414c5396895bbcc05665d32e03b58ac69565705e96c5688c851",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/v4/tools/finite_research/direct_shared_apex.py": "83c1880398c572b5ffe758d4c048847f07b29c7c5f46f7e42a671ad1ce4accc4",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/v4/tools/finite_research/direct_repair_custody.py": "91e20f06c39ac75a758c6dd53b3e3a18995fcf0894025b0651a7f101d21b696f",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/v4/tools/finite_research/direct_readback.py": "c4effdd7673801a3f4f7751a8171b0478ba6f4a1c1381eac048b49067b6eb8ff",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/v4/tools/finite_research/direct_evidence_modules/joined_audit.py": "5d2abef225ddb902293296111785e8a1d97cdd4251ceef113a88f1091e75af48",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/v4/tools/finite_research/direct_evidence_modules/collision.py": "a6c12c85742f606f668b180983967764b3c8f2540692af1e5b1e84ab0bfbf8de",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/v4/tools/finite_research/direct_evidence_modules/background_audit.py": "58ac60468be1de22b0ca2829f2074423f7094cfd568159dbea1788aeb84a7c63",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/v4/tools/cavity_volume_audit.py": "8e1f2b2283e2a61dc784c6e6ca1ea0f6ec74fc8c2fcf34f2935f246ce18077c6",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/v4/tools/prism_degree.py": "498a313310af99c24df81a78af4f5d544d7a3a1c143f9f1048fd396906a9f89c",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/v4/tools/local_termination_topology.py": "e2bc5234fc4f85e254d89cc60e6be2e853b36d2541e8d3f4cbba7dcfdd40f995",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/v4/tools/background_topology_repair.py": "0e4270206a6d18ee00042f1b00241e26f0bc2d1f3b42794c36e273132fdebdd6",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/v4/tools/shape_transition_topology.py": "3533532e285fde02dd865e0f83df5b8c4771330a227f64dba51830d13d71175e",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/v4/tools/capsule_core_control_audit.py": "e847306316787196cc1a0f0501ad1dd8d60b10ae0fbfafc19ed64d39c4acfd37",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/v4/tools/capsule_sizing_control.py": "b6c41c15f1e9093b02f38bf8852de2b4c2e8f81114d2844eddb7071340a2aa2a",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/campaigns/perf38_component_contract_20261030/component_contract.py": "2425bc6df634a360001cb40272b162973946e9d63d3bdd5003c64586adb676d3",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/campaigns/perf38_component_contract_20261030/tests.py": "93b5b31904ac3a171fb8ea5347f6b474c4229b0d397a79d96821197e5d0e05eb",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/campaigns/perf38_component_contract_20261030/bounded.py": "20a4cd1dd7a0f99dfee1f1c46d1390a0edcd0370fc78fcd58756199d10bdaa16",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/campaigns/perf38_component_contract_20261030/REPORT.md": "1847e7e1169144ab126234a0921a2c5233285a2b6ef603327852598844d05bb1",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/campaigns/perf38_component_contract_20261030/README.md": "4d97fea061baa054d69832c98847265eac2c9bf0f29d1995a3cfae9794f890f4",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/campaigns/perf38_component_contract_20261030/results/SYNTHETIC_TESTS.json": "2a328f9ec1e1a580f051ef7f640a2795a5977d0a77982caea1bc85703be36e2d",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/campaigns/perf38_component_contract_20261030/results/RETAINED_CONTRACT.json": "94f9483dd35ebd696cd81e3f08f4508f46e5ab3a2fb1e87bd9d915b44728d280",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/campaigns/perf38_component_contract_20261030/results/ADDITIVE_DEGREE_CONTROL.json": "cf0187ba519fd4105b8766ff7150eb759860645bb00c9c0c69d8e3676d9f6126",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/campaigns/perf38_component_contract_20261030/results/BUDGET.json": "9e72885d673000390d0d490c29457ac8dc3d8d9818846572def7b214c6294c1e",
+    "outputs/PERF37_CASE03_FAILURE_REVIEW.json": "03b5a701272b014356dae794545b699c6c69121a6455d52ab77fcf587f77dd4b",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/CURRENT_TASK.md": "e0b052b7b7966ccccfee09b924eb847e0a0b63c42663e7b42eeffb61d4b80240",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/README.md": "60e5a29eee054bf6daa30360bb9836cbaf9d73b7f9e24c5737b6cbd3b203a284",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/campaigns/perf38_component_contract_20261030/.gitattributes": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da"
+  },
+  "final_document_refresh": {
+    "passed": true,
+    "serial_vs_rational": "Report explicitly distinguishes production exact integer serial evaluator/static inspection from original rational reader and executed additive control.",
+    "status_prefixes": "Both PERF38 prefixes consistent. Historical text matches da55f8cf exactly after CRLF-to-LF normalization; current checkout historical tails are CRLF and Git blobs LF, so no cross-representation literal byte equality is claimed.",
+    "attributes": "Campaign-local * -text only; preserves experimental file bytes, no runtime change.",
+    "scope_unchanged": true
+  }
+}

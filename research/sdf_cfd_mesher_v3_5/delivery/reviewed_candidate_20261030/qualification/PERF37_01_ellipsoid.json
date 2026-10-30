@@ -1,0 +1,398 @@
+{
+  "case": "01_ellipsoid",
+  "status": "PASS",
+  "scientific_attempts": 1,
+  "stock_cli_passed": true,
+  "dimensions_mm": [
+    4.5,
+    2.5,
+    1.75
+  ],
+  "field_assumption": "Stock min(scale)*sphere(p/scale): correct sign/ellipsoid zero set and conservative 1-Lipschitz bound; NOT exact Euclidean signed distance. No exact-distance shortcut.",
+  "frozen_case_sha256": "90a78258a47ef10db8f80e7f14a69c034050e87731e5215b85931b6aa55087a6",
+  "frozen_geometry_sha256": "3e1ade66e4db8ac17ae3972ea95eb04bb5302e11010f319ee6251b0d8e58f9a3",
+  "runtime_identity": "b924493718350a9f1aa6313a52cd457fabd7d42d3058dcf2b6e17ef2ceddaee6",
+  "runtime_files": 1904,
+  "counts": {
+    "points": 31740,
+    "prisms": 35830,
+    "tetrahedra": 65682
+  },
+  "requested": {
+    "first_height_m": 2e-05,
+    "growth": 1.3,
+    "layers": 5,
+    "nominal_increments_m": [
+      2e-05,
+      2.6000000000000002e-05,
+      3.380000000000001e-05,
+      4.394e-05,
+      5.712200000000001e-05
+    ],
+    "nominal_total_m": 0.000180862
+  },
+  "achieved": {
+    "layers": 5,
+    "scalar_total_min_m": 0.000180862,
+    "scalar_total_max_m": 0.000180862,
+    "compressed_vertices": 0,
+    "row2_increased_vertices": 0,
+    "per_layer_min_m": [
+      2e-05,
+      2.6000000000000002e-05,
+      3.380000000000001e-05,
+      4.394e-05,
+      5.712200000000001e-05
+    ],
+    "per_layer_max_m": [
+      2e-05,
+      2.6000000000000002e-05,
+      3.380000000000001e-05,
+      4.394e-05,
+      5.712200000000001e-05
+    ],
+    "changed_from_numerical_plan_vertices": 0
+  },
+  "warnings": [],
+  "mesh_quality": {
+    "returncode": 0,
+    "literal_mesh_ok": true,
+    "failed_lines": [],
+    "warnings": [],
+    "mesh_quality": "NOT_RUN_NO_APPLICABLE_APPROVED_DICTIONARY",
+    "passed": true
+  },
+  "shape": {
+    "interface_tetrahedra": {
+      "passed": true,
+      "count": 7166,
+      "minimum": 0.5771404365896095,
+      "required_minimum": 0.25,
+      "minimum_passed": true,
+      "population_targets": [
+        {
+          "fraction": 0.99,
+          "minimum": 0.4,
+          "required_count": 7095,
+          "actual_count": 7166,
+          "actual_fraction": 1.0,
+          "passed": true
+        },
+        {
+          "fraction": 0.9,
+          "minimum": 0.6,
+          "required_count": 6450,
+          "actual_count": 7153,
+          "actual_fraction": 0.9981858777560704,
+          "passed": true
+        }
+      ],
+      "quantiles": [
+        0,
+        0.01,
+        0.1,
+        0.5,
+        0.9,
+        1
+      ],
+      "diagnostic_quantile_values": [
+        0.5771404365896095,
+        0.639550588947558,
+        0.7155305069185964,
+        0.822604102456292,
+        0.9321634901038359,
+        0.9976115124178225
+      ],
+      "contract_version": "DirectFillEngineering/1",
+      "contract_identity": "0ca4092aff4f177c7742bfe1d0a5d1575b7a353298992c8b3245c433d1a2aa4a",
+      "minimum_role": "MANDATORY",
+      "percentage_role": "NONBLOCKING_ENGINEERING_DIAGNOSTIC",
+      "population_targets_blocking": false,
+      "mandatory_passed": true,
+      "percentage_targets_met": true,
+      "percentage_status": "TARGETS_MET",
+      "minimum_actual_count": 7166,
+      "population_identity": "4af0c2ce63bbcc5d96dcd5f568fb774710dd7bc1a64e262dff04497f3a1720ff",
+      "points_identity": "f3d2d2226df770b0cdc18767115d19d070dff75246f72993382dc77592f6ae89",
+      "targets_identity": "75763b4442a0724d5fa2225b297fbd5169cb849d89f969b229faa9977cd7eceb"
+    },
+    "all_bulk_tetrahedra": {
+      "passed": true,
+      "count": 65682,
+      "minimum": 0.4851561713420637,
+      "required_minimum": 0.25,
+      "minimum_passed": true,
+      "population_targets": [
+        {
+          "fraction": 0.99,
+          "minimum": 0.4,
+          "required_count": 65026,
+          "actual_count": 65682,
+          "actual_fraction": 1.0,
+          "passed": true
+        },
+        {
+          "fraction": 0.9,
+          "minimum": 0.6,
+          "required_count": 59114,
+          "actual_count": 65590,
+          "actual_fraction": 0.998599311835815,
+          "passed": true
+        }
+      ],
+      "quantiles": [
+        0,
+        0.01,
+        0.1,
+        0.5,
+        0.9,
+        1
+      ],
+      "diagnostic_quantile_values": [
+        0.4851561713420637,
+        0.6646427752829093,
+        0.7699444727508528,
+        0.8805075532155764,
+        0.9533309145059682,
+        0.9997182867300317
+      ],
+      "contract_version": "DirectFillEngineering/1",
+      "contract_identity": "0ca4092aff4f177c7742bfe1d0a5d1575b7a353298992c8b3245c433d1a2aa4a",
+      "minimum_role": "MANDATORY",
+      "percentage_role": "NONBLOCKING_ENGINEERING_DIAGNOSTIC",
+      "population_targets_blocking": false,
+      "mandatory_passed": true,
+      "percentage_targets_met": true,
+      "percentage_status": "TARGETS_MET",
+      "minimum_actual_count": 65682,
+      "population_identity": "7e76a3625c592d0ecad0302a6e0461772d5a979a553c370cd1e2a7d1e0eea21f",
+      "points_identity": "f3d2d2226df770b0cdc18767115d19d070dff75246f72993382dc77592f6ae89",
+      "targets_identity": "75763b4442a0724d5fa2225b297fbd5169cb849d89f969b229faa9977cd7eceb"
+    },
+    "preserved_cap_triangles": {
+      "passed": true,
+      "count": 7166,
+      "minimum": 0.7061214438902013,
+      "required_minimum": 0.3,
+      "minimum_passed": true,
+      "population_targets": [
+        {
+          "fraction": 0.99,
+          "minimum": 0.6,
+          "required_count": 7095,
+          "actual_count": 7166,
+          "actual_fraction": 1.0,
+          "passed": true
+        },
+        {
+          "fraction": 0.9,
+          "minimum": 0.8,
+          "required_count": 6450,
+          "actual_count": 7159,
+          "actual_fraction": 0.9990231649455763,
+          "passed": true
+        }
+      ],
+      "quantiles": [
+        0,
+        0.01,
+        0.1,
+        0.5,
+        0.9,
+        1
+      ],
+      "diagnostic_quantile_values": [
+        0.7061214438902013,
+        0.8471654025533532,
+        0.9156010175946245,
+        0.9754691319846049,
+        0.9963260078507901,
+        0.9999966210677893
+      ],
+      "contract_version": "DirectFillEngineering/1",
+      "contract_identity": "0ca4092aff4f177c7742bfe1d0a5d1575b7a353298992c8b3245c433d1a2aa4a",
+      "minimum_role": "MANDATORY",
+      "percentage_role": "NONBLOCKING_ENGINEERING_DIAGNOSTIC",
+      "population_targets_blocking": false,
+      "mandatory_passed": true,
+      "percentage_targets_met": true,
+      "percentage_status": "TARGETS_MET",
+      "minimum_actual_count": 7166,
+      "population_identity": "36ce8476d5b7db41b1b1bf185da63b7e977f8d7717e5375940217dd29a34404b",
+      "points_identity": "f3d2d2226df770b0cdc18767115d19d070dff75246f72993382dc77592f6ae89",
+      "targets_identity": "953e753c9e2f5a24abc6a0478d5c518bee21d30ccc8415cec488e048cd34338b"
+    }
+  },
+  "conditioning": {
+    "method_identity": "f304264e3e13202b0e0c1e0fc4ab629316896968d22bc97fe5af87900d864b30",
+    "receipt_sha256": "653c37c98c935bfedcc9ae51b6855291062768975152c66170001c6f28a710c7",
+    "input_sha256": "d989b4e30b377924ac6cc461f2caf22e946c0b30526b49d6d3605dda3ed9b086",
+    "output_sha256": "d989b4e30b377924ac6cc461f2caf22e946c0b30526b49d6d3605dda3ed9b086",
+    "outcome": "AlreadyAboveFloor",
+    "initial_bad_count": 0,
+    "final_bad_count": 0,
+    "original_coordinate_identity": "f3d2d2226df770b0cdc18767115d19d070dff75246f72993382dc77592f6ae89",
+    "coordinate_identity": "f3d2d2226df770b0cdc18767115d19d070dff75246f72993382dc77592f6ae89",
+    "existing_vertex_commits": 0,
+    "cavity_commits": 0,
+    "native_calls": 0,
+    "timings": {
+      "initial_population": 5.688000000081956
+    }
+  },
+  "repair": {
+    "method_identity": "ed9a12ebb9c793a408bc4507f21669df8e050d7a13e8ff6c73b5fdb7340d8928",
+    "receipt_sha256": "2a0af2681e3e5450e9f1a3823e009ec0125f564cfa2b3966a84d63c7dcc59cc8",
+    "original_coordinate_identity": "f3d2d2226df770b0cdc18767115d19d070dff75246f72993382dc77592f6ae89",
+    "coordinate_identity": "f3d2d2226df770b0cdc18767115d19d070dff75246f72993382dc77592f6ae89",
+    "changed_count": 0,
+    "changed_vertices": [],
+    "repair_invocations": 1,
+    "acceptance_contract": {
+      "version": "DirectFillEngineering/1",
+      "contract_identity": "0ca4092aff4f177c7742bfe1d0a5d1575b7a353298992c8b3245c433d1a2aa4a",
+      "policy_identity": "11c1b1a36125a20707239a581bdaffca6a7b87bf694b2d1c22cf2d5eaba64260"
+    }
+  },
+  "repair_classification": "UNQUALIFIED",
+  "bounded_repair_records": [],
+  "actual_source_workers": 8,
+  "source_segments": 17925,
+  "producer_checks": 12,
+  "actual_audit_checks": 12,
+  "audit_seconds": 173.07800000021234,
+  "whole_cli_seconds": 863.1371726,
+  "whole_cli_timer_boundary": "PowerShell stopwatch immediately before actual Python CLI invocation through exit including audit/export/cleanup; excludes preflight and receipt writing",
+  "producer_supervisor_seconds": 679.8323331996799,
+  "worker_pipeline_seconds": 673.6680872999132,
+  "root_stage_seconds": {
+    "surface": 213.69319000001997,
+    "first_front": 29.874039699789137,
+    "v3_complete_plan": 17.76777540007606,
+    "v4_prospective_shell_checks": 31.6126164002344,
+    "v3_native_construction": 5.2240789998322725,
+    "v4_shell_admission": 12.66726789996028,
+    "v4_direct_fill": 358.8985723997466
+  },
+  "direct_nested_stage_seconds": {
+    "parent": 17.145758099853992,
+    "cap_compatibility": 2.008085800334811,
+    "farfield": 96.20950890006498,
+    "bulk": 121.67740109981969,
+    "bulk_conditioning": 13.859914700035006,
+    "repair": 6.614721399731934,
+    "joined_proofs": 69.29429970029742,
+    "export": 31.58153809979558,
+    "production_finalization": 0.3625436001457274
+  },
+  "joined_nested_obligation_seconds": {
+    "preservation": 8.00006091594696e-07,
+    "domain": 0.03273630002513528,
+    "incidence": 3.933361900039017,
+    "winding": 2.5317890997976065,
+    "interface_qa": 2.1960102999582887,
+    "joined_qa": 4.237112400121987,
+    "physical_qa": 1.8902635001577437,
+    "surfaces": 0.3160449001006782,
+    "boundary_collision": 1.0223074001260102,
+    "enclosure": 1.5366092999465764,
+    "collision": 14.819849100429565,
+    "filling": 8.614769699983299
+  },
+  "observed_topology": {
+    "wall_components": 1,
+    "vertices": 3585,
+    "edges": 10749,
+    "faces": 7166,
+    "euler_total": 2,
+    "all_wall_edges_two_faces": true,
+    "components": [
+      {
+        "vertices": 3585,
+        "edges": 10749,
+        "faces": 7166,
+        "euler": 2,
+        "inferred_genus_if_closed_orientable": 0.0,
+        "bounds_m": [
+          [
+            -0.002249734688524162,
+            0.002249961203234935
+          ],
+          [
+            -0.0012499266270024117,
+            0.0012499722007355749
+          ],
+          [
+            -0.0008749364879996356,
+            0.0008740290308079315
+          ]
+        ]
+      }
+    ],
+    "scope": "Observed accepted mesh connectivity. Genus interpretation assumes closed orientable components; not a continuous-source topology proof.",
+    "source_root": "64332c3e63e887c67b06dbf561523fe074fe6f9e237f8c184ecad442bf4f174b",
+    "mesh_sha256": "d7ed526dcefe0d8edfc2c4d0ff2c10e52c13e2abab76ce8e210b0b6b591082a6",
+    "intended_components": 1,
+    "intended_euler_total": 2,
+    "matches_declared_discrete_topology": true
+  },
+  "compression_diagnostic": {
+    "associated_source_root": "64332c3e63e887c67b06dbf561523fe074fe6f9e237f8c184ecad442bf4f174b",
+    "bound_to_accepted_root": false,
+    "input_snapshot_sha256": {
+      "increments": "0958eafe4d1e45052a9058f27c2bc1ae1dca1cae931d0330a87a3eab688d8f3f",
+      "wall": "74717917ac2b2c754a5a18d7ea26be21d6cbd98ed346fcd9128f9744dae257e1"
+    },
+    "planned_compressed_vertices": 0,
+    "reported_compressed_vertices": 0,
+    "first_indices": [],
+    "first_wall_locations_m": [],
+    "scope": "Unbound diagnostic snapshot of existing final plan, same strict h<nominal definition. First32 locations only; not authenticated accepted coordinates or a new source query/acceptance result."
+  },
+  "compact_files": 14,
+  "solver_files": [
+    "boundary",
+    "cellZones",
+    "faces",
+    "neighbour",
+    "owner",
+    "points",
+    "sets/fluid"
+  ],
+  "compact_logical_bytes": 11435434,
+  "cleanup": {
+    "status": "cleanup_complete",
+    "removed_root": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\perf34\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf37_generic\\01_ellipsoid\\.v35-compact-scratch-228ae08861f8492f92d35f93e4c8472e",
+    "authorization_receipt": {
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\perf34\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf37_generic\\01_ellipsoid\\solver.cleanup-authorization.json",
+      "sha256": "d309142505109251e998db0d8e6d83b9cffb48098c978bf5601ccffa93e7e88a"
+    },
+    "staged_logical_bytes_before_cleanup": 657440311,
+    "staged_files_before_cleanup": 397,
+    "remaining_scratch_logical_bytes": 0
+  },
+  "windows_observed_pairs": 72,
+  "native_scopes": 7,
+  "roots": {
+    "producer": "64332c3e63e887c67b06dbf561523fe074fe6f9e237f8c184ecad442bf4f174b",
+    "audit": "77697135c390eda9e708c54e908308f7c131d6271c65b254ce7b42c866dec99c",
+    "compact": "06f7891de419faad47a4325906c6e33f577758d23afdac645d822f85224da48d"
+  },
+  "pins": {
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf37_generic/01_ellipsoid/CLI_INVOCATION.json": "c4fcc848db13d930740cb3c6245a20c82eab189c985c5c78c0f3d5a6adb8dbaa",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf37_generic/01_ellipsoid/solver.retention.json": "1c6e9b0cc22b0fdc57a0c3bf4b13f8ecd43b8db84fd41040c3c0dc37a3c3e4cb",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf37_generic/01_ellipsoid/solver.cleanup-authorization.json": "d309142505109251e998db0d8e6d83b9cffb48098c978bf5601ccffa93e7e88a",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf37_generic/01_ellipsoid/solver/COMPACT.json": "06f7891de419faad47a4325906c6e33f577758d23afdac645d822f85224da48d",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf37_generic/01_ellipsoid/solver/CHECKS.json": "3688e212f7978d2688481e0ffb2dbf5efada5f5d2ed620d82512ce7ca699976c",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf37_generic/01_ellipsoid/solver/CASE.json": "90a78258a47ef10db8f80e7f14a69c034050e87731e5215b85931b6aa55087a6",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf37_generic/01_ellipsoid/solver/PROVENANCE.json": "928b2bed78625811f9ca762f79d694a5b183c9dae9e5e0522bb93db4c19b17ba",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf37_generic/01_ellipsoid/solver/CONSUMER.json": "16f9492dcf8d7a45d8a4a8613b2bf63fedb369a43b7762554ff6bc1aae613831",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/campaigns/perf37_generic_20261029/inputs/01_ellipsoid/CASE.json": "90a78258a47ef10db8f80e7f14a69c034050e87731e5215b85931b6aa55087a6",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/campaigns/perf37_generic_20261029/inputs/01_ellipsoid/geometry.rhai": "3e1ade66e4db8ac17ae3972ea95eb04bb5302e11010f319ee6251b0d8e58f9a3",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf37_generic/01_ellipsoid/METRICS_CAPTURE.json": "d5714f823b4062aaa3040ade53322250d10c64a576491d5eff16e570faf9218c",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf37_generic/01_ellipsoid/SUPERVISOR_CAPTURE.json": "ef22fb375fb08aea78487c69dd1183c4d668d9e8f76bc7c8130b3189f42b0413",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf37_generic/01_ellipsoid/TOPOLOGY_CAPTURE.json": "cb56ccd69be8cf9fa0e0282eaa191ac59bceb98b8d565b22ec361c5e202c4e6c",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf37_generic/01_ellipsoid/COMPRESSION_CAPTURE.json": "af2f1210299417d0d885240d999ef4bd0a6712ba290e95d3eb8a03260cc2eddb"
+  },
+  "scope": "This frozen input/configuration on configured host only. No cross-shape byte comparison, arbitrary-geometry/CFD qualification or retained full replay. Source topology intent is separately observed; compression locations are unbound diagnostics."
+}

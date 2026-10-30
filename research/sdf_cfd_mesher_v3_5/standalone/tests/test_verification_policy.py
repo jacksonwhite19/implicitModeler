@@ -37,6 +37,8 @@ def production_fixture(root,*,case_extra=None,result_extra=None,root_extra=None,
     with ExitStack() as scope:retain(root/'shell',evaluation,dict(passed=True,layers=rows),positions,'synthetic-original-run',h1,scope)
     case=dict(background=selected,prisms=dict(first_full_normal_thickness_m_hex=h1.hex()));case.update(case_extra or {});case['verification']=policy.selection('production',case,'complete');save(root/'CASE.json',case)
     binding=dict(case_sha256=file_hash(root/'CASE.json'),policy_identity=identity(selected),source_identity='synthetic-original-run',actual_positions_sha256=array_hash(positions),source_segments_identity=identity(rows))
+    from direct_surface_contract import profile as surface_profile
+    binding['surface_contract']=surface_profile()
     joined['provenance']=dict(binding=binding,live_parent=True,generation_invocations=1,construction_invocations=1)
     arrays=expected_arrays(joined)
     parent=dict(binding=binding,prefix_points=joined['prefix_points'],prefix_digest=joined['prefix_digest'],cells_identity=identity(joined['cells']),

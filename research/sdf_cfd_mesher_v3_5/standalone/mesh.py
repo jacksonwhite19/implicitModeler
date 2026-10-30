@@ -199,13 +199,17 @@ def execute(args):
             cli.first_request(first,wall,case)
             host,binding=cli.geometry(case);lifetime.callback(host.close)
             provider=SourceSheetFirstLayerProvider(first/'source',wall,first/'REQUEST.json',binding)
-            with provider.source.prism_query_scope(),provider.source.verified_operation('trajectory'):
-                provider._generate_trajectory()
-            req=read_request(provider.request,provider.wall_authority)
-            def owner_for(schedule):
-                with provider.source.prism_query_scope(),provider.source.verified_operation('trajectory'):
-                    return AcceptedTrajectoryOwner.from_inputs(provider.source,provider.x,provider.high,provider.tri,provider.refs['face_refs'],schedule,parent='V35CompleteHorizonBeforeConstruction',surface=provider.wall_authority['surface_identity'],request=req,case_identity=identity(settings))
-            nominal_owner=owner_for(request.nominal);mark(stage,t)
+            # Share exact normal values only until the initial owner is bound.
+            # End this scope before live_handoff so worker eligibility is unchanged.
+            with provider.source.prism_query_scope():
+                with provider.source.verified_operation('trajectory'):
+                    provider._generate_trajectory()
+                req=read_request(provider.request,provider.wall_authority)
+                def owner_for(schedule):
+                    with provider.source.prism_query_scope(),provider.source.verified_operation('trajectory'):
+                        return AcceptedTrajectoryOwner.from_inputs(provider.source,provider.x,provider.high,provider.tri,provider.refs['face_refs'],schedule,parent='V35CompleteHorizonBeforeConstruction',surface=provider.wall_authority['surface_identity'],request=req,case_identity=identity(settings))
+                nominal_owner=owner_for(request.nominal)
+            mark(stage,t)
             from source_handoff import live_handoff
             with live_handoff(provider.source,provider.h1,verification['mode'],source_workers=getattr(args,'source_workers',1),deadline=started+args.timeout_seconds) as handoff:
                 stage='v3_complete_plan';t=time.perf_counter()
@@ -244,7 +248,10 @@ def execute(args):
                 if owner.positions().tobytes()!=plan['positions'].tobytes():raise ValueError('V3V4PlannedArithmeticMismatch')
                 owner.state.save(out/'plan',plan['schedule']);mark(stage,t)
                 stage='v4_prospective_shell_checks';t=time.perf_counter()
-                prepared=prepare(provider,owner,out/'shell',source_handoff=handoff,verification_mode=verification['mode'],_source_evidence_scope=lifetime);mark(stage,t)
+                from prospective_volume import for_mode as prospective_volume_mode
+                with prospective_volume_mode(verification['mode']):
+                    prepared=prepare(provider,owner,out/'shell',source_handoff=handoff,verification_mode=verification['mode'],_source_evidence_scope=lifetime)
+                mark(stage,t)
             plan['source_global_proof']='passed_before_native_construction'
             save(out/'PRISM_PLAN.json',{k:v for k,v in plan.items() if k not in ('positions','delta','schedule')})
             stage='v3_native_construction';t=time.perf_counter()
@@ -319,7 +326,7 @@ def main():
     p.add_argument('--cleanup-scratch',action='store_true',help='Compact only: remove this NEW invocation-owned scratch after verified delivery; never removes an existing bundle')
     p.add_argument('--immediate-audit',action='store_true',help='Compact production only: require a separate offline audit before delivery and optional cleanup')
     p.add_argument('--stop-after',choices=('surface','prisms','transition','complete'),default='complete')
-    p.add_argument('--source-workers',type=int,choices=(1,2,4),default=1,help='Explicit local source-segment workers; serial default, audit serial')
+    p.add_argument('--source-workers',type=int,choices=(1,2,4,8),default=1,help='Explicit local source-segment workers; serial default, audit serial')
     p.add_argument('--verification',choices=('audit','production'),default='audit',help='Audit retains full cold replay. Production supports complete direct workflow only and records separate audit not_run.')
     p.add_argument('--timeout-seconds',type=float,default=3600,help='Whole worker resource bound, not a runtime target')
     p.add_argument('--memory-limit-gib',type=float,default=16,help='Sampled Windows tree RSS and Linux per-process virtual-address-space limit; not aggregate Linux RSS')
@@ -334,6 +341,9 @@ def main():
     Policy(args.collision_max_candidates,args.collision_max_seconds)
     if not np.isfinite([args.timeout_seconds,args.memory_limit_gib]).all() or args.timeout_seconds<=0 or args.memory_limit_gib<=0:p.error('Finite positive resource bounds required')
     if args.output_limit_bytes is not None and args.output_limit_bytes<=0:p.error('Positive output byte limit required')
+    if args.source_workers==8 and args.verification=='production':
+        from source_parallel import _eight_worker_affinity
+        _eight_worker_affinity() # Explicit eight production request; check before geometry or child launch.
     if args.retention=='compact-delivery':
         if args.worker:p.error('Compact lifecycle belongs to the outer invocation')
         from compact_lifecycle import run

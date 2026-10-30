@@ -153,6 +153,8 @@ def execute(run,case_path,folder,*,trace_files=False,_finalization_scope=None):
             binding=dict(schema='V35V4DirectParent/1',case_sha256=case_pin,parent_prism_mesh=token.mesh,
                 native_identity=run.provider.native_identity,actual_positions_sha256=array_hash(run.provider.positions),
                 source_identity=run.provider.binding.geometry_identity,policy_identity=identity(selected),interface_identity=metadata['identity'])
+            from direct_surface_contract import profile as surface_profile
+            binding['surface_contract']=surface_profile()
             if mode=='production':binding['source_segments_identity']=run.tx.current['authority']['v35_source_segments']
             save(folder/'PARENT.json',binding)
             parent_expectations=dict(binding=binding,prefix_points=len(state['points']),prefix_digest=prefix_digest,
@@ -205,7 +207,13 @@ def execute(run,case_path,folder,*,trace_files=False,_finalization_scope=None):
             import standalone_background,tet_layer_adapter
             helpers=dict(finite_stage_background=standalone_background,finite_stage_adapter=tet_layer_adapter)
             audit=folder/'audit';audit.mkdir()
-            proof=joined_audit.audit(joined,preservation,helpers,construction,require,audit)
+            from producer_filling import for_mode
+            from producer_collision import for_mode as collision_mode
+            from direct_surface_contract import bind as bind_surfaces
+            surfaces=bind_surfaces(construction,parent_expectations,saved,require,binding)
+            with collision_mode(mode):
+                proof=joined_audit.audit(joined,preservation,helpers,surfaces,require,audit,
+                                         filling_producer=for_mode(mode))
             if not proof['whole_joined_geometry_passed']:raise ValueError('DirectWholeGeometryProofFailed',proof.get('failed_stage'))
             bundle=AuditedBundle(folder,joined,proof,_finalization_scope,require,verification=mode)
             from finite_research.direct_evidence_modules.collision import verify_retained

@@ -1,0 +1,144 @@
+{
+  "geometry": {
+    "rhai": "torus(1.5, 0.625)\n",
+    "metres_per_model_unit": 0.001
+  },
+  "prisms": {
+    "first_full_normal_thickness_m_hex": "0x1.4f8b588e368f1p-16",
+    "fluid_side": "positive_sdf",
+    "later_path_lengths_m_hex": [
+      "0x1.b43526527a206p-16",
+      "0x1.1b88f28268fb8p-15",
+      "0x1.70986e765546ep-15",
+      "0x1.df2c8f99d542ap-15"
+    ]
+  },
+  "purpose": "V3.5 generic standalone integration; explicit sampled numerical surface policy; no CFD qualification.",
+  "resources": {
+    "minimum_free_bytes": 1000000000,
+    "output_limit_bytes": 16000000000
+  },
+  "schema": "V4MeshCase/4",
+  "surface": {
+    "carrier_maximum_depth": 4,
+    "grading": 1.3,
+    "length_scale": 1.0,
+    "maximum_size_m": 0.0005,
+    "metric_multiplier": 1,
+    "minimum_size_m": 1e-07,
+    "normal_limit_rad": 0.2617993877991494,
+    "normal_qualification_fraction": 0.9,
+    "position_limit_m": 5e-05,
+    "prism_host": {
+      "first_height_m": 2e-05,
+      "foundation_qualification_target": 0.00121,
+      "metric_response_factor": 0.7250391657507819,
+      "minimum_owned_layer_thickness_m": 2.6000000000000002e-05,
+      "reference_shape": "right_isosceles_parallel_trajectory"
+    },
+    "shape_response_reserve": 5.5
+  },
+  "general_sdf": {
+    "profile": "explicit_numerical_surface_requirements/1",
+    "manual": {
+      "size_m": 0.0002,
+      "minimum_size_m": 1e-07,
+      "maximum_size_m": 0.0005,
+      "projection_tolerance_m": 2e-12,
+      "maximum_projection_displacement_m": 0.001,
+      "maximum_projection_iterations": 20,
+      "normal_estimate_bound_rad": 1e-10
+    },
+    "proof": {
+      "root_ref": 1,
+      "maximum_nodes": 128,
+      "maximum_depth": 6,
+      "maximum_patches": 1000,
+      "precision_bits": 80,
+      "interior_m": [
+        0.0015,
+        0,
+        0
+      ],
+      "topology_depth": 18,
+      "topology_boxes": 15000,
+      "coverage_depth": 27,
+      "coverage_boxes": 500000
+    },
+    "seed": {
+      "method": "CanonicalMarchingCubesSeed/1",
+      "spacing_m": 0.0001,
+      "padding_m": 0.0001,
+      "timeout_seconds": 300,
+      "maximum_queries": 4000000
+    }
+  },
+  "background": {
+    "schema": "V4DirectFillEngineeringPolicy/1",
+    "backend_method": "DelaunayDirectSizing095SharedApex231/1",
+    "bounds_m": [
+      [
+        -0.008,
+        0.008
+      ],
+      [
+        -0.008,
+        0.008
+      ],
+      [
+        -0.008,
+        0.008
+      ]
+    ],
+    "growth_per_m": 0.26236426446749106,
+    "maximum_size_m": 0.001,
+    "interface_seed_policy": "balanced_centroid_volume/1",
+    "quality_targets": {
+      "outer_tetrahedra": {
+        "minimum": 0.25,
+        "population_targets": [
+          {
+            "fraction": 0.99,
+            "minimum": 0.4
+          },
+          {
+            "fraction": 0.9,
+            "minimum": 0.6
+          }
+        ]
+      },
+      "outer_triangles": {
+        "minimum": 0.3,
+        "population_targets": [
+          {
+            "fraction": 0.99,
+            "minimum": 0.6
+          },
+          {
+            "fraction": 0.9,
+            "minimum": 0.8
+          }
+        ]
+      }
+    },
+    "downstream_seconds": 10800,
+    "native_seconds": 7200,
+    "geometry_assurance": "all_twelve_fresh",
+    "continuous_sdf_fluid": "NOT_PERFORMED",
+    "acceptance_contract_version": "DirectFillEngineering/1",
+    "acceptance_contract_identity": "0ca4092aff4f177c7742bfe1d0a5d1575b7a353298992c8b3245c433d1a2aa4a"
+  },
+  "verification": {
+    "schema": "V35VerificationSelection/1",
+    "mode": "production",
+    "requested": "production",
+    "effective": "production",
+    "origin": "explicit_cli",
+    "profile": {
+      "version": "V35DirectProducerAcceptance/1",
+      "identity": "aaaf89037f5cab122eb2fa7e63850d8f8687d33684e274770627f3c74930c648"
+    },
+    "background_identity": "11c1b1a36125a20707239a581bdaffca6a7b87bf694b2d1c22cf2d5eaba64260",
+    "stop_after": "complete"
+  }
+}

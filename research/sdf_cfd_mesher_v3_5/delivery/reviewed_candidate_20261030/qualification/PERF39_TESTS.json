@@ -1,0 +1,29 @@
+{
+  "passed": true,
+  "exit_code": 0,
+  "tests": 93,
+  "unittest_seconds": 120.877,
+  "modules": [
+    "test_direct_connection",
+    "test_direct_surfaces",
+    "test_verification_policy",
+    "test_artifact_finalization",
+    "test_audit_completion",
+    "test_compact_delivery",
+    "test_compact_monitor",
+    "test_source_custody"
+  ],
+  "log_sha256": "227cc746eedabc14d5941d3e22ac5025fa526e1663b4ccd9d8747193d5b0deef",
+  "initial": {
+    "tests": 92,
+    "failures": 1,
+    "reason": "Synthetic parent fixture lacked new surface-contract binding; fixture updated, enforcement unchanged",
+    "log_sha256": "d84c53d777a742069f52915dd11e4fcdae057a4e1a102a06fccd11f57f4fdc94"
+  },
+  "runtime_identity": "97d081d262f87756109dca1ae54bdf409382922d734f32910bf9a3d93cd4196f",
+  "runtime_files": 1906,
+  "test_pins": {
+    "tests\\test_direct_surfaces.py": "bdc09cf639e4b03bfdfb2a8e580f4e9990bdb14c4afc6a7724700692db8c621d",
+    "tests\\test_verification_policy.py": "3fb370a58ce0054bd6953c59f32e9746b59276517061c02f579731a71d9bcff1"
+  }
+}

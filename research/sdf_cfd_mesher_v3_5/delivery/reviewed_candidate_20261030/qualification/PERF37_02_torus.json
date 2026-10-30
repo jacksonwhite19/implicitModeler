@@ -1,0 +1,398 @@
+{
+  "case": "02_torus",
+  "status": "PASS",
+  "scientific_attempts": 1,
+  "stock_cli_passed": true,
+  "dimensions_mm": [
+    4.25,
+    4.25,
+    1.25
+  ],
+  "field_assumption": "Stock torus about z: exact primitive signed distance, globally 1-Lipschitz. Axis nondifferentiability is away from the zero surface; existing source predicates own every requested enclosure.",
+  "frozen_case_sha256": "defe57b60d6f8b349920f4d8b4b00597c06ee5b29c929a43ac94a013f9a7ba7f",
+  "frozen_geometry_sha256": "449f3df8c5be710b9507762ceff58637de2d75389ac69b3ce2cdd5fecd9bda99",
+  "runtime_identity": "b924493718350a9f1aa6313a52cd457fabd7d42d3058dcf2b6e17ef2ceddaee6",
+  "runtime_files": 1904,
+  "counts": {
+    "points": 67134,
+    "prisms": 86630,
+    "tetrahedra": 109929
+  },
+  "requested": {
+    "first_height_m": 2e-05,
+    "growth": 1.3,
+    "layers": 5,
+    "nominal_increments_m": [
+      2e-05,
+      2.6000000000000002e-05,
+      3.380000000000001e-05,
+      4.394e-05,
+      5.712200000000001e-05
+    ],
+    "nominal_total_m": 0.000180862
+  },
+  "achieved": {
+    "layers": 5,
+    "scalar_total_min_m": 0.000180862,
+    "scalar_total_max_m": 0.000180862,
+    "compressed_vertices": 0,
+    "row2_increased_vertices": 0,
+    "per_layer_min_m": [
+      2e-05,
+      2.6000000000000002e-05,
+      3.380000000000001e-05,
+      4.394e-05,
+      5.712200000000001e-05
+    ],
+    "per_layer_max_m": [
+      2e-05,
+      2.6000000000000002e-05,
+      3.380000000000001e-05,
+      4.394e-05,
+      5.712200000000001e-05
+    ],
+    "changed_from_numerical_plan_vertices": 0
+  },
+  "warnings": [],
+  "mesh_quality": {
+    "returncode": 0,
+    "literal_mesh_ok": true,
+    "failed_lines": [],
+    "warnings": [],
+    "mesh_quality": "NOT_RUN_NO_APPLICABLE_APPROVED_DICTIONARY",
+    "passed": true
+  },
+  "shape": {
+    "interface_tetrahedra": {
+      "passed": true,
+      "count": 17326,
+      "minimum": 0.4861625098094943,
+      "required_minimum": 0.25,
+      "minimum_passed": true,
+      "population_targets": [
+        {
+          "fraction": 0.99,
+          "minimum": 0.4,
+          "required_count": 17153,
+          "actual_count": 17326,
+          "actual_fraction": 1.0,
+          "passed": true
+        },
+        {
+          "fraction": 0.9,
+          "minimum": 0.6,
+          "required_count": 15594,
+          "actual_count": 17253,
+          "actual_fraction": 0.9957866789795683,
+          "passed": true
+        }
+      ],
+      "quantiles": [
+        0,
+        0.01,
+        0.1,
+        0.5,
+        0.9,
+        1
+      ],
+      "diagnostic_quantile_values": [
+        0.4861625098094943,
+        0.6222195859686159,
+        0.6978592297466508,
+        0.8054648432787012,
+        0.925418627011146,
+        0.997545353737649
+      ],
+      "contract_version": "DirectFillEngineering/1",
+      "contract_identity": "0ca4092aff4f177c7742bfe1d0a5d1575b7a353298992c8b3245c433d1a2aa4a",
+      "minimum_role": "MANDATORY",
+      "percentage_role": "NONBLOCKING_ENGINEERING_DIAGNOSTIC",
+      "population_targets_blocking": false,
+      "mandatory_passed": true,
+      "percentage_targets_met": true,
+      "percentage_status": "TARGETS_MET",
+      "minimum_actual_count": 17326,
+      "population_identity": "8f0efa012f59fcaa2783b0a6c273410071762ad920325693db2a97958a42695b",
+      "points_identity": "a2fd0be3bfd875c43d15515b2edfe223db885b14e420f16ff2729edfaa256c72",
+      "targets_identity": "75763b4442a0724d5fa2225b297fbd5169cb849d89f969b229faa9977cd7eceb"
+    },
+    "all_bulk_tetrahedra": {
+      "passed": true,
+      "count": 109929,
+      "minimum": 0.45972529344604224,
+      "required_minimum": 0.25,
+      "minimum_passed": true,
+      "population_targets": [
+        {
+          "fraction": 0.99,
+          "minimum": 0.4,
+          "required_count": 108830,
+          "actual_count": 109929,
+          "actual_fraction": 1.0,
+          "passed": true
+        },
+        {
+          "fraction": 0.9,
+          "minimum": 0.6,
+          "required_count": 98937,
+          "actual_count": 109623,
+          "actual_fraction": 0.9972163851213056,
+          "passed": true
+        }
+      ],
+      "quantiles": [
+        0,
+        0.01,
+        0.1,
+        0.5,
+        0.9,
+        1
+      ],
+      "diagnostic_quantile_values": [
+        0.45972529344604224,
+        0.641898404568964,
+        0.7484436071173649,
+        0.871960434406412,
+        0.9505381085102494,
+        0.9991881677526148
+      ],
+      "contract_version": "DirectFillEngineering/1",
+      "contract_identity": "0ca4092aff4f177c7742bfe1d0a5d1575b7a353298992c8b3245c433d1a2aa4a",
+      "minimum_role": "MANDATORY",
+      "percentage_role": "NONBLOCKING_ENGINEERING_DIAGNOSTIC",
+      "population_targets_blocking": false,
+      "mandatory_passed": true,
+      "percentage_targets_met": true,
+      "percentage_status": "TARGETS_MET",
+      "minimum_actual_count": 109929,
+      "population_identity": "07616f5b06ee57647941af275103576c2081cedee36540e091500112002ea262",
+      "points_identity": "a2fd0be3bfd875c43d15515b2edfe223db885b14e420f16ff2729edfaa256c72",
+      "targets_identity": "75763b4442a0724d5fa2225b297fbd5169cb849d89f969b229faa9977cd7eceb"
+    },
+    "preserved_cap_triangles": {
+      "passed": true,
+      "count": 17326,
+      "minimum": 0.642733673623993,
+      "required_minimum": 0.3,
+      "minimum_passed": true,
+      "population_targets": [
+        {
+          "fraction": 0.99,
+          "minimum": 0.6,
+          "required_count": 17153,
+          "actual_count": 17326,
+          "actual_fraction": 1.0,
+          "passed": true
+        },
+        {
+          "fraction": 0.9,
+          "minimum": 0.8,
+          "required_count": 15594,
+          "actual_count": 17137,
+          "actual_fraction": 0.9890915387279233,
+          "passed": true
+        }
+      ],
+      "quantiles": [
+        0,
+        0.01,
+        0.1,
+        0.5,
+        0.9,
+        1
+      ],
+      "diagnostic_quantile_values": [
+        0.642733673623993,
+        0.7965243926951345,
+        0.8893352747078718,
+        0.9654210245380885,
+        0.994829075172357,
+        0.9999988824836125
+      ],
+      "contract_version": "DirectFillEngineering/1",
+      "contract_identity": "0ca4092aff4f177c7742bfe1d0a5d1575b7a353298992c8b3245c433d1a2aa4a",
+      "minimum_role": "MANDATORY",
+      "percentage_role": "NONBLOCKING_ENGINEERING_DIAGNOSTIC",
+      "population_targets_blocking": false,
+      "mandatory_passed": true,
+      "percentage_targets_met": true,
+      "percentage_status": "TARGETS_MET",
+      "minimum_actual_count": 17326,
+      "population_identity": "5d3dde6a14d08d534f2819078aee24c3182dd9f52b07dacc5e5b2925aa514846",
+      "points_identity": "a2fd0be3bfd875c43d15515b2edfe223db885b14e420f16ff2729edfaa256c72",
+      "targets_identity": "953e753c9e2f5a24abc6a0478d5c518bee21d30ccc8415cec488e048cd34338b"
+    }
+  },
+  "conditioning": {
+    "method_identity": "f304264e3e13202b0e0c1e0fc4ab629316896968d22bc97fe5af87900d864b30",
+    "receipt_sha256": "0d54e1dcb8cf43cb76680f99d456caa8c560ae63a9b15adcd106d1b3ef3151ae",
+    "input_sha256": "09407ce300c6a444cb60ff2171164d6d0e4d8456a146f3ee1df3b421d98f275b",
+    "output_sha256": "09407ce300c6a444cb60ff2171164d6d0e4d8456a146f3ee1df3b421d98f275b",
+    "outcome": "AlreadyAboveFloor",
+    "initial_bad_count": 0,
+    "final_bad_count": 0,
+    "original_coordinate_identity": "a2fd0be3bfd875c43d15515b2edfe223db885b14e420f16ff2729edfaa256c72",
+    "coordinate_identity": "a2fd0be3bfd875c43d15515b2edfe223db885b14e420f16ff2729edfaa256c72",
+    "existing_vertex_commits": 0,
+    "cavity_commits": 0,
+    "native_calls": 0,
+    "timings": {
+      "initial_population": 9.436999999918044
+    }
+  },
+  "repair": {
+    "method_identity": "ed9a12ebb9c793a408bc4507f21669df8e050d7a13e8ff6c73b5fdb7340d8928",
+    "receipt_sha256": "2706c5579758e7c0cd955eeb8b2434355b717dae2af64b273d1e075ee8c849f0",
+    "original_coordinate_identity": "a2fd0be3bfd875c43d15515b2edfe223db885b14e420f16ff2729edfaa256c72",
+    "coordinate_identity": "a2fd0be3bfd875c43d15515b2edfe223db885b14e420f16ff2729edfaa256c72",
+    "changed_count": 0,
+    "changed_vertices": [],
+    "repair_invocations": 1,
+    "acceptance_contract": {
+      "version": "DirectFillEngineering/1",
+      "contract_identity": "0ca4092aff4f177c7742bfe1d0a5d1575b7a353298992c8b3245c433d1a2aa4a",
+      "policy_identity": "11c1b1a36125a20707239a581bdaffca6a7b87bf694b2d1c22cf2d5eaba64260"
+    }
+  },
+  "repair_classification": "UNQUALIFIED",
+  "bounded_repair_records": [],
+  "actual_source_workers": 8,
+  "source_segments": 43315,
+  "producer_checks": 12,
+  "actual_audit_checks": 12,
+  "audit_seconds": 346.56199999991804,
+  "whole_cli_seconds": 1365.0094166,
+  "whole_cli_timer_boundary": "PowerShell stopwatch immediately before actual Python CLI invocation through exit including audit/export/cleanup; excludes preflight and receipt writing",
+  "producer_supervisor_seconds": 1006.9747175001539,
+  "worker_pipeline_seconds": 1000.2023343001492,
+  "root_stage_seconds": {
+    "surface": 259.45481149991974,
+    "first_front": 70.0177469002083,
+    "v3_complete_plan": 38.459084200207144,
+    "v4_prospective_shell_checks": 74.05955370003358,
+    "v3_native_construction": 7.887148799840361,
+    "v4_shell_admission": 30.593423699960113,
+    "v4_direct_fill": 510.29226869996637
+  },
+  "direct_nested_stage_seconds": {
+    "parent": 31.007057100068778,
+    "cap_compatibility": 5.792309199925512,
+    "farfield": 96.28990780003369,
+    "bulk": 139.80398279987276,
+    "bulk_conditioning": 27.667771900072694,
+    "repair": 12.295697399880737,
+    "joined_proofs": 140.76661879988387,
+    "export": 55.84289230033755,
+    "production_finalization": 0.5744888000190258
+  },
+  "joined_nested_obligation_seconds": {
+    "preservation": 7.003545761108398e-07,
+    "domain": 0.03357810014858842,
+    "incidence": 7.81005150033161,
+    "winding": 5.984817199874669,
+    "interface_qa": 5.38015770027414,
+    "joined_qa": 8.815809700172395,
+    "physical_qa": 4.084499399643391,
+    "surfaces": 0.9172505000606179,
+    "boundary_collision": 1.8458515000529587,
+    "enclosure": 3.654465399682522,
+    "collision": 28.260791399981827,
+    "filling": 16.993697099853307
+  },
+  "observed_topology": {
+    "wall_components": 1,
+    "vertices": 8663,
+    "edges": 25989,
+    "faces": 17326,
+    "euler_total": 0,
+    "all_wall_edges_two_faces": true,
+    "components": [
+      {
+        "vertices": 8663,
+        "edges": 25989,
+        "faces": 17326,
+        "euler": 0,
+        "inferred_genus_if_closed_orientable": 1.0,
+        "bounds_m": [
+          [
+            -0.0021248081219097407,
+            0.0021246114886764697
+          ],
+          [
+            -0.0021245418766811628,
+            0.0021247072790810794
+          ],
+          [
+            -0.0006249997027242773,
+            0.0006249999394896741
+          ]
+        ]
+      }
+    ],
+    "scope": "Observed accepted mesh connectivity. Genus interpretation assumes closed orientable components; not a continuous-source topology proof.",
+    "source_root": "ccbbfd8f5a4989437c76ed68aba46b9e00ec520b9f62d28245af576bf8c61bbc",
+    "mesh_sha256": "06b512977b1cdd0954167450925ed631ac0d479b156d7f463c41058a30d84cf2",
+    "intended_components": 1,
+    "intended_euler_total": 0,
+    "matches_declared_discrete_topology": true
+  },
+  "compression_diagnostic": {
+    "associated_source_root": "ccbbfd8f5a4989437c76ed68aba46b9e00ec520b9f62d28245af576bf8c61bbc",
+    "bound_to_accepted_root": false,
+    "input_snapshot_sha256": {
+      "increments": "fd01fc0843922f56614a90aa7a8273a2a5e57875efa15c4434911c36cfaf5951",
+      "wall": "91b0d3ba47d85df333050d3650a0b56349d8acee4302f589aa0aa98da613e35a"
+    },
+    "planned_compressed_vertices": 0,
+    "reported_compressed_vertices": 0,
+    "first_indices": [],
+    "first_wall_locations_m": [],
+    "scope": "Unbound diagnostic snapshot of existing final plan, same strict h<nominal definition. First32 locations only; not authenticated accepted coordinates or a new source query/acceptance result."
+  },
+  "compact_files": 14,
+  "solver_files": [
+    "boundary",
+    "cellZones",
+    "faces",
+    "neighbour",
+    "owner",
+    "points",
+    "sets/fluid"
+  ],
+  "compact_logical_bytes": 23464838,
+  "cleanup": {
+    "status": "cleanup_complete",
+    "removed_root": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\perf34\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf37_generic\\02_torus\\.v35-compact-scratch-befe5a25fe514470a4d01fa97257787f",
+    "authorization_receipt": {
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\perf34\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf37_generic\\02_torus\\solver.cleanup-authorization.json",
+      "sha256": "efc2e16afa6d9892b8395f185360ae4a97cb0bf4e305e8619c6f2a99d2b7bca7"
+    },
+    "staged_logical_bytes_before_cleanup": 1350916704,
+    "staged_files_before_cleanup": 398,
+    "remaining_scratch_logical_bytes": 0
+  },
+  "windows_observed_pairs": 72,
+  "native_scopes": 7,
+  "roots": {
+    "producer": "ccbbfd8f5a4989437c76ed68aba46b9e00ec520b9f62d28245af576bf8c61bbc",
+    "audit": "2c9f6b3e562ab766c21dedeacb7bde7c14653e6ff4816071c2dd4c2cc534bca1",
+    "compact": "7df5551f314c7b53463c9922e3ad21fca1863e650d1f4098a75bf3a0ae7a5f79"
+  },
+  "pins": {
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf37_generic/02_torus/CLI_INVOCATION.json": "16a40708a740e5f41cb624db206271eb95262c7fb3d6f457ccde3bd904211e85",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf37_generic/02_torus/solver.retention.json": "2203e54d8beecfbbfcdd13be4340bd7976043f35fd13e30bf2b8b1262ee66c59",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf37_generic/02_torus/solver.cleanup-authorization.json": "efc2e16afa6d9892b8395f185360ae4a97cb0bf4e305e8619c6f2a99d2b7bca7",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf37_generic/02_torus/solver/COMPACT.json": "7df5551f314c7b53463c9922e3ad21fca1863e650d1f4098a75bf3a0ae7a5f79",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf37_generic/02_torus/solver/CHECKS.json": "dea1c88524eaec9c6e02bd8393bb3b1c04cd61236fd14722ff38be107ff897cd",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf37_generic/02_torus/solver/CASE.json": "defe57b60d6f8b349920f4d8b4b00597c06ee5b29c929a43ac94a013f9a7ba7f",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf37_generic/02_torus/solver/PROVENANCE.json": "31b7b8f01397a7ef64ee9ec1811ff4bc2df23824ced53a341228fcda63e664cc",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf37_generic/02_torus/solver/CONSUMER.json": "16f9492dcf8d7a45d8a4a8613b2bf63fedb369a43b7762554ff6bc1aae613831",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/campaigns/perf37_generic_20261029/inputs/02_torus/CASE.json": "defe57b60d6f8b349920f4d8b4b00597c06ee5b29c929a43ac94a013f9a7ba7f",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/campaigns/perf37_generic_20261029/inputs/02_torus/geometry.rhai": "449f3df8c5be710b9507762ceff58637de2d75389ac69b3ce2cdd5fecd9bda99",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf37_generic/02_torus/METRICS_CAPTURE.json": "b230375f092f9c6f04108fbe36ac714d710ac41e1904a13188180b3aa86022fa",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf37_generic/02_torus/SUPERVISOR_CAPTURE.json": "274f13538143b991e4338bcca322a5549b24f1f4dc86e96ea9597b2ea398daa5",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf37_generic/02_torus/TOPOLOGY_CAPTURE.json": "4d2dc30ab7e3788ade26bcfa28d7bc4aadeaad7efb0f6c366fc338a0b3716638",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/results/perf37_generic/02_torus/COMPRESSION_CAPTURE.json": "42633160a61ce6a554028d745518880b15ea61dfb55024da888c70181ce20eeb"
+  },
+  "scope": "This frozen input/configuration on configured host only. No cross-shape byte comparison, arbitrary-geometry/CFD qualification or retained full replay. Source topology intent is separately observed; compression locations are unbound diagnostics."
+}

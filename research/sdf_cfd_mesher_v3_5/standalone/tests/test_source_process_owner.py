@@ -54,12 +54,14 @@ def remaining(rows):
     return values
 
 class ProcessOwnerTests(unittest.TestCase):
+    WORKERS=4
+    def source_child(self):return SOURCE_CHILD.replace('2e-5,4,time.perf_counter()','2e-5,'+str(self.WORKERS)+',time.perf_counter()')
     def test_parallel_monitor_access_denied_fails_and_retires_owned_job(self):
         import mesh,runtime_environment
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);helper=root/'gated.py'
             helper.write_text('import sys\nsys.path.insert(0,'+repr(str(S))+')\nfrom source_process_owner import worker_start_gate\nworker_start_gate()\nimport time\ntime.sleep(60)\n')
-            args=SimpleNamespace(output=root/'run',timeout_seconds=20,memory_limit_gib=8,output_limit_bytes=128*2**20,source_workers=4,verification='production')
+            args=SimpleNamespace(output=root/'run',timeout_seconds=20,memory_limit_gib=8,output_limit_bytes=128*2**20,source_workers=self.WORKERS,verification='production')
             def denied(pid):raise psutil.AccessDenied(pid)
             with patch.object(runtime_environment,'preflight',return_value=dict(passed=True)),patch.object(mesh,'__file__',str(helper)),patch.object(mesh.sys,'argv',['mesh.py']),patch.object(psutil,'Process',side_effect=denied):
                 self.assertEqual(mesh.supervise(args),125)
@@ -72,8 +74,8 @@ class ProcessOwnerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             path=Path(folder)/'pids.json';rows=[]
             # Outer containment also bounds the test if the inner ownership fails.
-            with launch([sys.executable,'-B','-c',SOURCE_CHILD,str(path),'pool_parent_exit'],contained=True,cwd=S) as p:
-                rows=ready(path,p);self.assertGreaterEqual(len(rows),9)
+            with launch([sys.executable,'-B','-c',self.source_child(),str(path),'pool_parent_exit'],contained=True,cwd=S) as p:
+                rows=ready(path,p);self.assertGreaterEqual(len(rows),2*self.WORKERS+1)
                 self.assertEqual(p.wait(timeout=20),17)
                 deadline=time.monotonic()+5
                 while remaining(rows) and time.monotonic()<deadline:time.sleep(.02)
@@ -87,8 +89,8 @@ class ProcessOwnerTests(unittest.TestCase):
                         rows=ready(path,p);raise exception()
                 self.assertFalse(remaining(rows))
     def test_outer_supervisor_hard_exit_closes_noninherited_job(self):
-        for child in (CHILD,SOURCE_CHILD):
-          with self.subTest(actual_source_pool=child is SOURCE_CHILD),tempfile.TemporaryDirectory() as folder:
+        for child in (CHILD,self.source_child()):
+          with self.subTest(actual_source_pool=child!=CHILD),tempfile.TemporaryDirectory() as folder:
             path=Path(folder)/'pids.json'
             supervisor='''from source_process_owner import launch
 from pathlib import Path

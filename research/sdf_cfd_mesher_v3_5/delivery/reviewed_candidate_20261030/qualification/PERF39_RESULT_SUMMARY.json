@@ -1,0 +1,294 @@
+{
+  "status": "PASS",
+  "scientific_attempts": 1,
+  "code_freeze": "9a3a63d6456dc0d429a86edd2f35e056a49998ff",
+  "runtime_identity": "97d081d262f87756109dca1ae54bdf409382922d734f32910bf9a3d93cd4196f",
+  "runtime_files": 1906,
+  "counts": {
+    "points": 24806,
+    "prisms": 26060,
+    "tetrahedra": 56611
+  },
+  "requested": {
+    "first_height_m": 2e-05,
+    "growth": 1.3,
+    "layers": 5,
+    "nominal_increments_m": [
+      2e-05,
+      2.6000000000000002e-05,
+      3.380000000000001e-05,
+      4.394e-05,
+      5.712200000000001e-05
+    ],
+    "nominal_total_m": 0.000180862
+  },
+  "achieved": {
+    "layers": 5,
+    "scalar_total_min_m": 0.000180862,
+    "scalar_total_max_m": 0.000180862,
+    "compressed_vertices": 0,
+    "row2_increased_vertices": 0,
+    "per_layer_min_m": [
+      2e-05,
+      2.6000000000000002e-05,
+      3.380000000000001e-05,
+      4.394e-05,
+      5.712200000000001e-05
+    ],
+    "per_layer_max_m": [
+      2e-05,
+      2.6000000000000002e-05,
+      3.380000000000001e-05,
+      4.394e-05,
+      5.712200000000001e-05
+    ],
+    "changed_from_numerical_plan_vertices": 0
+  },
+  "warnings": [],
+  "mesh_quality": {
+    "returncode": 0,
+    "literal_mesh_ok": true,
+    "failed_lines": [],
+    "warnings": [],
+    "mesh_quality": "NOT_RUN_NO_APPLICABLE_APPROVED_DICTIONARY",
+    "passed": true
+  },
+  "producer_checks": 12,
+  "actual_audit_checks": 12,
+  "whole_cli_seconds": 773.5520634,
+  "producer_supervisor_seconds": 621.0688537000678,
+  "producer_peak_sampled_windows_tree_rss_bytes": 1494540288,
+  "worker_pipeline_seconds": 614.9910880001262,
+  "audit_seconds": 142.82799999974668,
+  "root_stage_seconds": {
+    "surface": 203.39307389967144,
+    "first_front": 24.32387929968536,
+    "v3_complete_plan": 14.547441999893636,
+    "v4_prospective_shell_checks": 23.549641500227153,
+    "v3_native_construction": 4.58036039955914,
+    "v4_shell_admission": 9.05829990003258,
+    "v4_direct_fill": 332.86084119975567
+  },
+  "direct_nested_stage_seconds": {
+    "parent": 15.522657599765807,
+    "cap_compatibility": 1.440178000368178,
+    "farfield": 95.75189459975809,
+    "bulk": 119.41577100008726,
+    "bulk_conditioning": 11.354250899981707,
+    "repair": 5.302412999793887,
+    "joined_proofs": 56.753816599957645,
+    "export": 26.862837800290436,
+    "production_finalization": 0.33446979988366365
+  },
+  "joined_nested_obligation_seconds": {
+    "preservation": 6.998889148235321e-07,
+    "domain": 0.032458100002259016,
+    "incidence": 3.19606940029189,
+    "winding": 1.4794223001226783,
+    "interface_qa": 1.620207800064236,
+    "joined_qa": 3.4489847999066114,
+    "physical_qa": 1.4880141001194715,
+    "surfaces": 1.3634513998404145,
+    "boundary_collision": 0.784587100148201,
+    "enclosure": 1.0972605999559164,
+    "collision": 12.31326390011236,
+    "filling": 7.348593299742788
+  },
+  "surface_components": {
+    "cap": [
+      {
+        "edges": 3903,
+        "euler": 2,
+        "faces": 2602,
+        "signed_volume": "86485698227185483066948217278808745939645520315541225/25711008708143844408671393477458601640355247900524685364822016",
+        "vertex_links_passed": true,
+        "vertices": 1303
+      },
+      {
+        "edges": 3915,
+        "euler": 2,
+        "faces": 2610,
+        "signed_volume": "64863933696625413124977057365388946951736794948358165/19283256531107883306503545108093951230266435925393514023616512",
+        "vertex_links_passed": true,
+        "vertices": 1307
+      }
+    ],
+    "farfield": [
+      {
+        "edges": 5508,
+        "euler": 2,
+        "faces": 3672,
+        "signed_volume": "1532495540865888954062762723664254024941207423/374144419156711147060143317175368453031918731001856",
+        "vertex_links_passed": true,
+        "vertices": 1838
+      }
+    ],
+    "wall": [
+      {
+        "edges": 3903,
+        "euler": 2,
+        "faces": 2602,
+        "signed_volume": "-67852122892656075615272452593683665332698554207688491/38566513062215766613007090216187902460532871850787028047233024",
+        "vertex_links_passed": true,
+        "vertices": 1303
+      },
+      {
+        "edges": 3915,
+        "euler": 2,
+        "faces": 2610,
+        "signed_volume": "-135703534517296972996048400035687355291559040315169263/77133026124431533226014180432375804921065743701574056094466048",
+        "vertex_links_passed": true,
+        "vertices": 1307
+      }
+    ]
+  },
+  "native_fluid_regions": [
+    1
+  ],
+  "observed_wall_topology": {
+    "wall_components": 2,
+    "vertices": 2610,
+    "edges": 7818,
+    "faces": 5212,
+    "euler_total": 4,
+    "all_wall_edges_two_faces": true,
+    "components": [
+      {
+        "vertices": 1303,
+        "edges": 3903,
+        "faces": 2602,
+        "euler": 2,
+        "inferred_genus_if_closed_orientable": 0.0,
+        "bounds_m": [
+          [
+            -0.0018747754355429008,
+            -0.0003756398641621874
+          ],
+          [
+            -0.0007492957572344351,
+            0.0007492874387030129
+          ],
+          [
+            -0.0007499161952880278,
+            0.0007491953574400047
+          ]
+        ]
+      },
+      {
+        "vertices": 1307,
+        "edges": 3915,
+        "faces": 2610,
+        "euler": 2,
+        "inferred_genus_if_closed_orientable": 0.0,
+        "bounds_m": [
+          [
+            0.0003753146956746022,
+            0.0018747955273359298
+          ],
+          [
+            -0.0007494771918229083,
+            0.0007493414219044231
+          ],
+          [
+            -0.0007494105528590335,
+            0.0007497235369595064
+          ]
+        ]
+      }
+    ],
+    "scope": "Observed accepted mesh connectivity. Genus interpretation assumes closed orientable components; not a continuous-source topology proof.",
+    "source_root": "40c26058e8995cba7ca7d6f248c385baedd8a443b64d6b32fee623c498ee4370",
+    "mesh_sha256": "44a85f376f124a799819b64d19f2c38ca0159c2c859e4e712f024273a9e3fbba",
+    "intended_components": 2,
+    "intended_euler_total": 4,
+    "matches_declared_discrete_topology": true
+  },
+  "compression_diagnostic": {
+    "associated_source_root": "40c26058e8995cba7ca7d6f248c385baedd8a443b64d6b32fee623c498ee4370",
+    "bound_to_accepted_root": false,
+    "input_snapshot_sha256": {
+      "increments": "f7eddc26893a510e092be0da41563995d0e33af99c31ae407a37308f9740eb6a",
+      "wall": "8f41887dac10c2c9630c89984724607b22ad5db89e3a556e43b21ee2258791b4"
+    },
+    "planned_compressed_vertices": 0,
+    "reported_compressed_vertices": 0,
+    "first_indices": [],
+    "first_wall_locations_m": [],
+    "scope": "Unbound diagnostic snapshot of existing final plan, same strict h<nominal definition. First32 locations only; not authenticated accepted coordinates or a new source query/acceptance result."
+  },
+  "conditioning": {
+    "method_identity": "f304264e3e13202b0e0c1e0fc4ab629316896968d22bc97fe5af87900d864b30",
+    "receipt_sha256": "87f02fa9af0812fdbaa85be50d861bba078d3e1d640819d90685f4440cc94faf",
+    "input_sha256": "27436a6ed996b745d51140ad344cfaf980af8d89d9fd259948152d9e6061c0b9",
+    "output_sha256": "27436a6ed996b745d51140ad344cfaf980af8d89d9fd259948152d9e6061c0b9",
+    "outcome": "AlreadyAboveFloor",
+    "initial_bad_count": 0,
+    "final_bad_count": 0,
+    "original_coordinate_identity": "f3aad1d96a6c99f3d2be462a6fd8e83916dcd2b99aeb7f00455f47419391bd6b",
+    "coordinate_identity": "f3aad1d96a6c99f3d2be462a6fd8e83916dcd2b99aeb7f00455f47419391bd6b",
+    "existing_vertex_commits": 0,
+    "cavity_commits": 0,
+    "native_calls": 0,
+    "timings": {
+      "initial_population": 4.859000000171363
+    }
+  },
+  "repair": {
+    "method_identity": "ed9a12ebb9c793a408bc4507f21669df8e050d7a13e8ff6c73b5fdb7340d8928",
+    "receipt_sha256": "78ec279314238c3afc1103215ead399e4fc3d411074ec28c37c8ddcdf07e4cfe",
+    "original_coordinate_identity": "f3aad1d96a6c99f3d2be462a6fd8e83916dcd2b99aeb7f00455f47419391bd6b",
+    "coordinate_identity": "f3aad1d96a6c99f3d2be462a6fd8e83916dcd2b99aeb7f00455f47419391bd6b",
+    "changed_count": 0,
+    "changed_vertices": [],
+    "repair_invocations": 1,
+    "acceptance_contract": {
+      "version": "DirectFillEngineering/1",
+      "contract_identity": "0ca4092aff4f177c7742bfe1d0a5d1575b7a353298992c8b3245c433d1a2aa4a",
+      "policy_identity": "11c1b1a36125a20707239a581bdaffca6a7b87bf694b2d1c22cf2d5eaba64260"
+    }
+  },
+  "repair_classification": "UNQUALIFIED",
+  "actual_source_workers": 8,
+  "source_segments": 13050,
+  "compact_files": 14,
+  "compact_logical_bytes": 9178154,
+  "cleanup": {
+    "status": "cleanup_complete",
+    "removed_root": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\perf34\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf39_close_spheres\\.v35-compact-scratch-7b18b06f26574d0faaeea628affcaf3f",
+    "authorization_receipt": {
+      "path": "C:\\Users\\Jackson\\Documents\\Codex\\2026-10-26\\mesher-v3-5-integration\\work\\perf34\\research\\sdf_cfd_mesher_v3_5\\standalone\\results\\perf39_close_spheres\\solver.cleanup-authorization.json",
+      "sha256": "6fc8ee731c8b235e82eee177e9aa4556662fd82dbc0886b9061fbc38494cf3e1"
+    },
+    "staged_logical_bytes_before_cleanup": 521135006,
+    "staged_files_before_cleanup": 397,
+    "remaining_scratch_logical_bytes": 0
+  },
+  "closure": {
+    "windows_observed_pairs": 76,
+    "native_scope_count": 7,
+    "native_passed": true
+  },
+  "old_failure_preserved": true,
+  "old_failure_array_pins": {
+    "MESH.npz": "8bf55ddea3e0854eabda45cb50b33e328c7c11dec93d91901a8b9e3dc0672ae7",
+    "background/JOINED_EVIDENCE.npz": "4c1c225a2bead4e0e50aad97f33c92a8fdb35882f416d9034b9da31564e13c4a"
+  },
+  "roots": {
+    "producer": "40c26058e8995cba7ca7d6f248c385baedd8a443b64d6b32fee623c498ee4370",
+    "audit": "02c7819f722f18379d48d8a7e13558b41ee16d7bd1ad7aa2f2af4c6d543ad901",
+    "compact": "c44676721eeb3a4580fac0c5f5a8f0019654423526fc2cc1fe97a58b2d3d2160"
+  },
+  "pins": {
+    "CHECKMESH_CAPTURE.json": "6f86cbba094318d4d1b3aaac7c1d8f9bdae2be7ba7b223053c5652ceb7d629f3",
+    "CLI_INVOCATION.json": "1a9a445405fd31bd77a45ebb52cc51f70b9948801f270b0d6eead80ea6ad7610",
+    "COMPRESSION_CAPTURE.json": "4912d36197c43393c19aef586580c1354f809a3381a2070a826b6ee78d7238a4",
+    "JOINED_RECEIPTS_CAPTURE.json": "a3fc3729138a8239e2135bc3beb72c0c64c32fb585de1e4e4ab6b5903e13a127",
+    "LATEST_OBSERVATION.json": "0e6fee8255d7ebc78d3b111e3c6f6ed26bc35fa77baad979d0a57baef475e693",
+    "METRICS_CAPTURE.json": "7770cd7bd1a4a1cc93a1d74d677c0c9f910158ae83094d74817f262033863287",
+    "solver.cleanup-authorization.json": "6fc8ee731c8b235e82eee177e9aa4556662fd82dbc0886b9061fbc38494cf3e1",
+    "solver.retention.json": "7d9c194a79d9c2cd9a975d555db21c2e54ad2cfd83c53338c8f3d42b95895de5",
+    "SUPERVISOR_CAPTURE.json": "2011a7621c3b72e7094afda3718e0679444f0b3dd7a9618f9e59be3a516ab050",
+    "TOPOLOGY_CAPTURE.json": "ab76517cbf81f93978f995e2f7f65fd2125c3acb6f1c79add10faee73cc3e056"
+  },
+  "scope": "One fixed close-spheres configured-host normal CLI; compact records not full replay. No generic multi-body/cavity/CFD qualification; no speed comparison."
+}

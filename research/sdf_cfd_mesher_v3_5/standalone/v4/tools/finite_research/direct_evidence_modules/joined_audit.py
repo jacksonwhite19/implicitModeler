@@ -33,7 +33,7 @@ def readback(out,receipts,stamp):
     return len(receipts)
 
 
-def audit(state,preservation,helpers,construction,check,out,*,collision_reader=None):
+def audit(state,preservation,helpers,construction,check,out,*,collision_reader=None,filling_producer=None):
     from finite_research.direct_evidence_modules.collision import retained
     if collision_reader is not None:
         retained=collision_reader
@@ -103,7 +103,8 @@ def audit(state,preservation,helpers,construction,check,out,*,collision_reader=N
         active=list(range(len(all_faces)))
         checkpoint('collision',lambda:retained(points,all_faces,active,check,out/'collision_witnesses'),
             lambda value:value['passed'] and value['independent_coverage_passed'])
-        checkpoint('filling',lambda:helpers['finite_stage_adapter'].filling(dict(points=points,cells=cells),None),
+        checkpoint('filling',lambda:(helpers['finite_stage_adapter'].filling(dict(points=points,cells=cells),None)
+            if filling_producer is None else filling_producer(dict(points=points,cells=cells))),
             lambda value:value['positive_cells'] and value['exact_volume_balance'] and value['interior_degree']['passed'] and len(value['exact_cells'])==len(cells) and len(value['interior_degree']['values'])==len(cells))
         result.update(whole_joined_geometry_passed=True,receipt_readbacks=readback(out,receipts,stamp),
             all_faces_checked=len(all_faces),collision_scope='ALL_FACES_INCLUDING_ALL_OLD_OLD_RELATIONS')

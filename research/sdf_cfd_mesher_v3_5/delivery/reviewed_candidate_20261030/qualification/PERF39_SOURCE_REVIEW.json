@@ -1,0 +1,89 @@
+{
+  "schema": "PERF39IndependentSourceReview/1",
+  "passed": true,
+  "blockers": [],
+  "source_go": true,
+  "full_run_launch_go": false,
+  "disposition": "PASS for reviewed source and closed focused regressions. One normal CLI launch is addressed separately by PERF39_LAUNCH_REVIEW.json.",
+  "baseline": "fdba8611",
+  "candidate_branch": "candidate/mesher-v3-5-components-perf39",
+  "review_scope": "Read-only source and test-oracle inspection. No project imports, tests, predicates, native tools, source queries or scientific execution.",
+  "findings": [
+    {
+      "area": "Live producer authority",
+      "evidence": "direct_connection.py:133-165,209-217",
+      "conclusion": "New binding includes explicit surface contract. Parent expectations originate inside existing live background-input/terminal-lease context; points/prisms/IDs/wall/cap hashes and prefix digest are held. Adapter receives original lease callback, not a detached local boolean."
+    },
+    {
+      "area": "Independent reader authority",
+      "evidence": "direct_readback.py:22-56; copied finite_research/direct_readback.py:14-47,97-124",
+      "conclusion": "Reader authenticates existing manifest and matching parent roots, binds decoded role arrays, then original semantics independently reconstructs cells/IDs/metadata/owners and prefix digest, replays actual repair, checks geometry identity and reruns all twelve. New producer receipt is not treated as replay authority."
+    },
+    {
+      "area": "Role binding and lifetime",
+      "evidence": "direct_surface_contract.py:BoundSurfaces.__init__,_check,surface",
+      "conclusion": "Exact dtype/shape/bytes compact geometry identifies roles; role calls can arrive in any order. Prefix/prisms/IDs/wall/cap match caller-authenticated parent; full actual points/farfield and all role arrays receive current hashes. Parent identity and original authority rechecked before/after composite computation and cached role responses. All three role receipts remain conditional local results."
+    },
+    {
+      "area": "Topology mathematics",
+      "evidence": "direct_surface_contract.py:partition,inherited,contract",
+      "conclusion": "Retains reviewed original per-component surface/link checks, exact role volume signs, connected farfield, complete bijective ordinary-prism lineage and explicit exterior-body nesting checks. Representative degree is conditional on original full nonintersection/positive-cell proofs; nested cavity/fluid-pocket/multi-region semantics remain unsupported."
+    },
+    {
+      "area": "Mandatory global gates",
+      "evidence": "copied joined_audit.py:89-115; artifact_finalization.py:54-117",
+      "conclusion": "No copied auditor/collar changes. Preservation/domain/incidence/winding/all QA precede surfaces; complete boundary collision, all-vertex enclosure, all-owner-face collision plus independent coverage, full exact filling and twelve receipt readbacks remain decisive. Finalizer/native/export/cold/supervisor requirements remain."
+    },
+    {
+      "area": "Contract identity",
+      "evidence": "verification_policy.py:profile; direct_connection.py:153-158",
+      "conclusion": "Both composed verification profile and actual parent binding carry new local surface-contract identity, preventing an undisclosed admission-scope change under the old current profile. Historical runs remain bound to their historical runtime; no claim they replay under this changed runtime."
+    },
+    {
+      "area": "Focused controls",
+      "evidence": "tests/test_direct_surfaces.py",
+      "conclusion": "Static oracle inspection covers original local controls, separate producer/reader instances and role-order independence, stale role/parent/authority rejection, overlapping-AABB nonnested positive branch, and a retained qualified torus wall with explicitly synthetic one-layer cap. This last control is neither retained full cap nor a full torus replay. Five reported unittest groups were not executed by this reviewer; final closed regression evidence belongs in launch review."
+    }
+  ],
+  "advisories": [
+    "Adapter deliberately adds conditional classification requirements beyond the old global connected predicate. Single-body and genus-one controls constrain compatibility; no all-geometries legacy preservation guarantee is claimed.",
+    "Repeated full-array hash checks and exact component volumes/degree add work; no performance prediction follows from source review.",
+    "Keep source frozen after final tests and record the current selected runtime identity/profile before the single frozen close-spheres attempt. Preserve PERF37 failed scratch; no bypass or retry is authorized by this receipt."
+  ],
+  "tracked_diff_paths": [
+    "research/sdf_cfd_mesher_v3_5/standalone/direct_connection.py",
+    "research/sdf_cfd_mesher_v3_5/standalone/direct_readback.py",
+    "research/sdf_cfd_mesher_v3_5/standalone/verification_policy.py"
+  ],
+  "untracked_new_source": [
+    "direct_surface_contract.py",
+    "tests/test_direct_surfaces.py"
+  ],
+  "source_pins": {
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/direct_surface_contract.py": "389b5c0cdd2ad133d0ff0d6d9f473271e6a1d907903979793b4799a8a92cd591",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/direct_connection.py": "7a4bcae4f9983a843a05a1116888574acad84b266707ade16fc9fa5aef47f2c1",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/direct_readback.py": "2e45402b1c04c4f405615a65049e8bc671bad27cbeb6cab96696a982a67231d3",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/verification_policy.py": "431cead46dba9162b9abee0a911b4b9312aad98ae23536e4e6ef0300b2dc313b",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/tests/test_direct_surfaces.py": "bdc09cf639e4b03bfdfb2a8e580f4e9990bdb14c4afc6a7724700692db8c621d",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/artifact_finalization.py": "5b3b36d93ed0835c05ded46827450a4291bbdeef70800e7a1982bbd3ce8bfb31",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/v4/tools/finite_research/direct_evidence_modules/joined_audit.py": "5d2abef225ddb902293296111785e8a1d97cdd4251ceef113a88f1091e75af48",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/v4/tools/finite_research/direct_readback.py": "c4effdd7673801a3f4f7751a8171b0478ba6f4a1c1381eac048b49067b6eb8ff",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/v4/tools/finite_support/collar.py": "6468a3898e7f59069604ccfd10fc2b5e12fa8714fcf15de7f21d18d82a1a0597",
+    "outputs/PERF38_REVIEW.json": "631819a1418485f95f524e462b57af6404731fb03a645a34deb21b3a65edba0f",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/standalone/tests/test_verification_policy.py": "3fb370a58ce0054bd6953c59f32e9746b59276517061c02f579731a71d9bcff1",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/campaigns/perf39_integration_20261030/TESTS_RECEIPT.json": "d4a56eccd6fc85d1154d8c88751066c8bfe4101c67909710b2f506dd36089cd0",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/campaigns/perf39_integration_20261030/FOCUSED_TESTS.log": "227cc746eedabc14d5941d3e22ac5025fa526e1663b4ccd9d8747193d5b0deef",
+    "work/perf34/research/sdf_cfd_mesher_v3_5/campaigns/perf39_integration_20261030/FOCUSED_TESTS.initial.log": "d84c53d777a742069f52915dd11e4fcdae057a4e1a102a06fccd11f57f4fdc94"
+  },
+  "source_identity": "97d081d262f87756109dca1ae54bdf409382922d734f32910bf9a3d93cd4196f",
+  "source_files": 1906,
+  "focused_regression_refresh": {
+    "passed": true,
+    "tests": 93,
+    "seconds": 120.877,
+    "exit_code": 0,
+    "initial_failure": "Preserved 92-test run rejected synthetic parent missing new required surface_contract; only fixture updated. Implementation unchanged.",
+    "cached_result_advisory": "Closed by new test: compute successful result then independently mutate role/parent or revoke authority before second role.",
+    "limitations": "Focused controls, not whole close-spheres admission or generalized topology qualification."
+  }
+}

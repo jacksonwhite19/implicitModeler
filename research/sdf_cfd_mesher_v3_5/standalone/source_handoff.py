@@ -62,7 +62,7 @@ class _HandoffState:
         self.source=source;self.height=height;self.mode=mode
         self.active=True;self.thread=threading.get_ident();self.pending=None;self.accepted=None
         self.context=_context(source) if mode=='production' else None
-        if type(source_workers) is not int or source_workers not in (1,2,4):raise ValueError('InvalidSourceWorkerSelection')
+        if type(source_workers) is not int or source_workers not in (1,2,4,8):raise ValueError('InvalidSourceWorkerSelection')
         self.workers=source_workers;self.deadline=deadline;self.pool=None;self.execution=None
         if source_workers>1 and (deadline is None or not np.isfinite(deadline) or deadline<=time.perf_counter()):raise ValueError('SourceWorkerDeadlineRequired')
         self.events=[]

@@ -14,14 +14,19 @@ CONTRACT=dict(version=PROFILE,workflow='complete_v3_prisms_v4_direct',
     artifact_binding='GUARDED_PRODUCER_SERIALIZED_NATIVE',source_resource_closure='MANDATORY',
     separate_semantic_replay='NOT_RUN',legacy_cold_required_acceptance=False,
     source_assurance='ORIGINAL_RUN_ONLY',source_evidence_binding='V35RetainedSourceEvidence/1:producer_held_full_population_and_method;offline_authenticated_no_live_source',
-    source_execution='V35OwnedLocalSourceExecution/1:explicit_1_2_4;serial_default;owned_workers_closed_before_consume',
-    source_segments='V35LiveFinalSourcePopulation/1:production_same_run_authentication_or_recompute;audit_recompute',continuous_sdf_fluid='NOT_PERFORMED',CFD_qualified=False)
+    source_execution='V35OwnedLocalSourceExecution/1:explicit_1_2_4_8;serial_default;eight_requires_cpu_affinity;owned_workers_closed_before_consume',
+    source_segments='V35LiveFinalSourcePopulation/1:production_same_run_authentication_or_recompute;audit_recompute',
+    filling_execution='production:existing_exact_integer_degree_serial;audit:original_rational_degree;identical_persisted_proofs',
+    collision_execution='production:existing_guarded_cold_batch_four_for_complete_eligible_populations;unsupported_and_audit:original_streamed_four;identical_ordered_proofs_and_independent_coverage',
+    prospective_volume_execution='production:existing_exact_integer_degree_serial_for_stock_prism_audit;unsupported_custom_and_audit:original_rational;identical_complete_ordered_volume_proofs',
+    continuous_sdf_fluid='NOT_PERFORMED',CFD_qualified=False)
 
 def profile():
     from finite_research.direct_fill_contract import contract_identity,VERSION
     from finite_research.direct_contract import method
     from runtime_environment import profile as runtime_profile
-    composed=dict(CONTRACT,physical_shape_component=dict(version=VERSION,identity=contract_identity()),method_identity=identity(method()),runtime_environment=runtime_profile())
+    from direct_surface_contract import profile as surface_profile
+    composed=dict(CONTRACT,physical_shape_component=dict(version=VERSION,identity=contract_identity()),method_identity=identity(method()),runtime_environment=runtime_profile(),surface_contract=surface_profile())
     return dict(version=PROFILE,identity=identity(composed))
 
 def selection(mode,settings,stop_after,origin='explicit_api'):

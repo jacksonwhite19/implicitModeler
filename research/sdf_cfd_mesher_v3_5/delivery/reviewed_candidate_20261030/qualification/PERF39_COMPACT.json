@@ -1,0 +1,75 @@
+{
+  "schema": "V35CompactSolverDelivery/1",
+  "status": "solver_delivery_complete",
+  "scientific_status": "production_accepted",
+  "source_verification_sha256": "40c26058e8995cba7ca7d6f248c385baedd8a443b64d6b32fee623c498ee4370",
+  "source_background_manifest_sha256": "09cde8ad39a71d0f2825cd88dfe2b9e8507f9417e12cd99184b4fd316570b361",
+  "source_native_export_sha256": "75a9307c6f41e979454e9675450215127fbfbfb4fac1a978fef69e683ace4063",
+  "full_offline_replay_available": false,
+  "reports_are_replay_proofs": false,
+  "solver_mesh_files": [
+    "boundary",
+    "cellZones",
+    "faces",
+    "neighbour",
+    "owner",
+    "points",
+    "sets/fluid"
+  ],
+  "files": {
+    "CASE.json": {
+      "bytes": 4173,
+      "sha256": "ca9daf4139842b30072e4be0525a0fea4ca077420c52655b841d43169bd40266"
+    },
+    "CHECKS.json": {
+      "bytes": 22748,
+      "sha256": "1b5b7be5c749437d2d6db866eb7ba7c8f25997e78da50572c5394a38af8de47e"
+    },
+    "CONSUMER.json": {
+      "bytes": 342510,
+      "sha256": "b3b4999a02bd4707addb3d1ad477b5730bce56de04bb8b5cb5366e11501f9131"
+    },
+    "DELIVERY_OWNER.json": {
+      "bytes": 92,
+      "sha256": "23b20924fcc4aa93e0bf961995b2de02f40ca8978812622cc3ecf893beda1767"
+    },
+    "geometry.rhai": {
+      "bytes": 127,
+      "sha256": "195f33bce1e81c521538c98711f1ca8cb14a385198d39facea0eb2f03890890e"
+    },
+    "polyMesh/boundary": {
+      "bytes": 987,
+      "sha256": "0b9dc6cb1bff3b0a1208975dfcd83601885c8ae915dc2324293e2a19ff3e1ebf"
+    },
+    "polyMesh/cellZones": {
+      "bytes": 485657,
+      "sha256": "172fb5e66195a3ebe3c8fa89bcff47a3b06ab12753b6338849ed170581d57edd"
+    },
+    "polyMesh/faces": {
+      "bytes": 3896954,
+      "sha256": "c953e578d87d5a1bd053b60913d9f302e5e12ee7a11bf1d9e3615dcd32b213a2"
+    },
+    "polyMesh/neighbour": {
+      "bytes": 1022979,
+      "sha256": "18c41b8973fbc739f92f55a89c6040708607012819bf1301afe690970af15917"
+    },
+    "polyMesh/owner": {
+      "bytes": 1063489,
+      "sha256": "b225ec2011397becf97c7c86e1b19bc032eec81f5f7d568b7591bf50822f3d66"
+    },
+    "polyMesh/points": {
+      "bytes": 1764407,
+      "sha256": "b581ee546c017efad114321d435f5efd8c96483b2030b3f290ffc3afd9f1ece8"
+    },
+    "polyMesh/sets/fluid": {
+      "bytes": 568278,
+      "sha256": "8d2b6ee1b57938eea4586f3444a861b6847d7f40ca57fbfcee9d0f8b7c084eaf"
+    },
+    "PROVENANCE.json": {
+      "bytes": 3222,
+      "sha256": "e25da02ba42e0502d1c711ab1246719fa2e355d0ef6c38789c8ff291956353b5"
+    }
+  },
+  "source_cleanup": "not_performed_by_exporter",
+  "CFD_qualified": false
+}

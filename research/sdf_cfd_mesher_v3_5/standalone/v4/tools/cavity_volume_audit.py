@@ -42,13 +42,14 @@ def degree(points,faces,samples,*,stats=None):
         if not pending:break
     return dict(values=out,unresolved=pending,passed=not pending and all(x['degree']==1 for x in out))
 
-def audit(points,cells,outer,wall):
+def audit(points,cells,outer,wall,*,_degree=None):
     P=s.cert.rational(points);samples=[];valid=[]
     for cell in cells:
         ids=sorted(set(cell['vertices']));samples.append(tuple(sum(P[v][j] for v in ids)/len(ids) for j in range(3)))
         z=t.exact_cell(points,cell);valid.append(dict(id=cell['id'],**z))
     boundary=[tuple(reversed(f)) for f in wall]+outer
-    d=degree(points,boundary,samples)
+    # Default remains dynamic for the original reader and existing prism scope.
+    d=(degree if _degree is None else _degree)(points,boundary,samples)
     cell_volume=sum(F(x['signed_volume']) for x in valid)
     boundary_volume=sum(t.dot(P[f[0]],t.cross(P[f[1]],P[f[2]]))/6 for f in boundary)
     return dict(interior_degree=d,exact_cells=valid,cell_volume=str(cell_volume),boundary_volume=str(boundary_volume),

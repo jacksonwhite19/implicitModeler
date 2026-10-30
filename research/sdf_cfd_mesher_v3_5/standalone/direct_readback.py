@@ -49,8 +49,11 @@ def _verify(folder,expected,seconds,*,production=False,output=None):
     helpers=dict(finite_stage_background=standalone_background,finite_stage_adapter=tet_layer_adapter)
     from contextlib import nullcontext
     from background_conditioning import replay_output_scope
+    from direct_surface_contract import FIELDS,bind as bind_surfaces
+    surface_arrays=driver.arrays(folder/'JOINED_EVIDENCE.npz',FIELDS,check)
+    surfaces=bind_surfaces(_construction(),parent,surface_arrays,check,result['parent'])
     with replay_output_scope(Path(output).parent/'conditioning') if production else nullcontext():
-        arrays,joined,replayed=existing_readback.semantics(folder,parent,selected,helpers,_construction(),check,Path(output) if output is not None else folder/'readback_audit')
+        arrays,joined,replayed=existing_readback.semantics(folder,parent,selected,helpers,surfaces,check,Path(output) if output is not None else folder/'readback_audit')
     if joined['provenance']['live_parent'] is not True or joined['provenance']['generation_invocations']!=1:raise ValueError('FreshDirectGenerationAndParentRequired')
     with np.load(folder/'COMPLETE_MESH.npz',allow_pickle=False) as data:
         for name,key in dict(points='points',prisms='prisms',tetrahedra='background_tets',wall='wall',farfield='farfield').items():driver.same(data[name],arrays[key],'complete archive '+name)
